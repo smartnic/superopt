@@ -13,10 +13,11 @@ uniform_real_distribution<double> unidist(0.0, 1.0);
 /* Function that provides the probability density given a support variable x */
 double pi(double x) {
   double center = 15.0;
+  double width = 5.0;
   if (x > center)
-    return max(0.0, (2.0 * center) - x);
+    return max(0.0, center + width - x);
   else
-    return max(0.0, x);
+    return max(0.0, width - center + x);
 }
 
 /* Generate a new sample from proposal distribution */
@@ -48,19 +49,25 @@ int main() {
   int p[PDF_SUPPORT] = {};
   int nrolls = 100000;
   int nstars = 100;
+  double support_lower_end = -10.0;
+  double support_higher_end = PDF_SUPPORT + support_lower_end;
 
   cout << "pi " << pi(x) << endl << "Dist computed:" << endl;
 
   /* MH iterations */
   for (int i=0; i<nrolls; i++) {
     y = mh_next(x);
-    if (y >= 0 && y < PDF_SUPPORT) ++p[int(y)];
+    if (y >= support_lower_end && y < support_higher_end) {
+      int index = int(y - support_lower_end);
+      ++p[index];
+    }
     x = y;
   }
 
   /* Print the distribution */
-  for (int i=0; i<PDF_SUPPORT; i++)
-    cout << i << ": " << string(p[i] * nstars/nrolls, '*') << endl;
+  for (int i=0; i<PDF_SUPPORT; i++) {
+    cout << i + int(support_lower_end) << ": " << string(p[i] * nstars/nrolls, '*') << endl;
+  }
   
   return 0;
 }
