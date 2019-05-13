@@ -17,6 +17,12 @@ void prog_state::print() {
         }
 }
 
+class inst {
+ public:
+  inst();
+  virtual int interpret(prog_state &ps);
+};
+
 class addxy {
         int _x, _y;
 public:
