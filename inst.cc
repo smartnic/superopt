@@ -36,6 +36,11 @@ class inst {
 #define MOVXC 1
 #define RETX 2
 #define RETC 3
+#define JMPEQ 4
+#define JMPGT 5
+#define JMPGE 6
+#define JMPLT 7
+#define JMPLE 8
 
 int interpret(inst *program, int length, prog_state &ps) {
   inst *insn = program;
@@ -45,15 +50,23 @@ int interpret(inst *program, int length, prog_state &ps) {
     [MOVXC] = &&INSN_MOVXC,
     [RETX] = &&INSN_RETX,
     [RETC] = &&INSN_RETC,
-    [4 ... 255] = &&error_label,
+    [JMPEQ] = &&INSN_JMPEQ,
+    [JMPGT] = &&INSN_JMPGT,
+    [JMPGE] = &&INSN_JMPGE,
+    [JMPLT] = &&INSN_JMPLT,
+    [JMPLE] = &&INSN_JMPLE,
+    [9 ... 255] = &&error_label,
   };
 
-#define CONT ({ ps.print(); insn++; if (insn < program + length) goto select_insn; })
+#define CONT { \
+      cout << "Finished insn with opcode " << insn->_opcode << endl; \
+      insn++; ps.print(); \
+      if (insn < program + length) goto select_insn;  \
+      else goto out; }
 #define DST ps.regs[insn->_arg1]
 #define SRC ps.regs[insn->_arg2]
 #define IMM1 insn->_arg1
 #define IMM2 insn->_arg2
-#define JMP_OFF ps.regs[insn->_jmp_off]
 
 select_insn:
   goto *jumptable[insn->_opcode];
@@ -72,21 +85,38 @@ INSN_RETX:
 INSN_RETC:
   return IMM1;
 
+#define JMP(SUFFIX, OP)                         \
+  INSN_JMP##SUFFIX:                             \
+      if (DST OP SRC)                           \
+        insn += insn->_jmp_off;                 \
+  CONT;
+
+  JMP(EQ, ==)
+  JMP(GT, >)
+  JMP(GE, >=)
+  JMP(LT, <)
+  JMP(LE, <=)
+
 error_label:
   cout << "Error in processing instruction; unknown opcode" << endl;
   return -1;
+
+out:
+  return -2; /* Terminate without return */
 }
 
 int main() {
-  inst instructions[6] = {inst(MOVXC, 1, 10), /* mov r1, 10 */
+  inst instructions[8] = {inst(MOVXC, 1, 10), /* mov r1, 10 */
                           inst(MOVXC, 2, 4),  /* mov r2, 4  */
                           inst(ADDXY, 1, 2),  /* add r1, r2 */
                           inst(MOVXC, 3, 5),  /* mov r3, 5  */
                           inst(ADDXY, 1, 3),  /* add r1, r3 */
-                          inst(RETX, 1),      /* ret r1     */
+                          inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                          inst(RETX, 3),      /* ret r3 */
+                          inst(RETC, 11),      /* else ret 11 */
   };
   prog_state ps;
 
-  cout << "Result of full interpretation: " << interpret(instructions, 6, ps) << endl;
+  cout << "Result of full interpretation: " << interpret(instructions, 8, ps) << endl;
   return 0;
 }
