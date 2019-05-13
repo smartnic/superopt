@@ -19,18 +19,18 @@ void prog_state::print() {
 
 class inst {
  public:
-  inst();
-  virtual int interpret(prog_state &ps);
+  inst() = default;
+  virtual int interpret(prog_state &ps) { return 0; };
 };
 
-class addxy {
+class addxy : public inst {
   int _x, _y;
  public:
   addxy(int x, int y) { _x = x; _y = y; }
   int interpret(prog_state &ps);
 };
 
-class movxc {
+class movxc : public inst {
   int _x, _c;
  public:
   movxc(int x, int c) { _x = x; _c = c; }
