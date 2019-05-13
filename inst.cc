@@ -94,8 +94,14 @@ int main() {
   addxy add(1, 2);
   retx ret(1);
   movxc mov3(2, 5);
-
+  inst instructions[5] = {mov1, mov2, add, ret, mov3};
   prog_state ps;
+
+  // for (int i = 0; i < 5; i++ ) {
+  //   cout << "Result of instruction " << i << ": " <<
+  //       dynamic_cast<void*>(&instructions[i]).interpret(ps) << endl;
+  //   ps.print();
+  // }
 
   cout << "Result of first move:" << mov1.interpret(ps) << endl;
   ps.print();
