@@ -41,6 +41,8 @@ class inst {
 #define JMPGE 6
 #define JMPLT 7
 #define JMPLE 8
+#define MAXC 9
+#define MAXX 10
 
 int interpret(inst *program, int length, prog_state &ps) {
   inst *insn = program;
@@ -55,7 +57,9 @@ int interpret(inst *program, int length, prog_state &ps) {
     [JMPGE] = &&INSN_JMPGE,
     [JMPLT] = &&INSN_JMPLT,
     [JMPLE] = &&INSN_JMPLE,
-    [9 ... 255] = &&error_label,
+    [MAXC] = &&INSN_MAXC,
+    [MAXX] = &&INSN_MAXX,
+    [11 ... 255] = &&error_label,
   };
 
 #define CONT { \
@@ -86,6 +90,14 @@ INSN_RETX:
 
 INSN_RETC:
   return IMM1;
+
+INSN_MAXC:
+  DST = max(DST, IMM2);
+  CONT;
+
+INSN_MAXX:
+  DST = max(DST, SRC);
+  CONT;
 
 #define JMP(SUFFIX, OP)                         \
   INSN_JMP##SUFFIX:                             \
@@ -125,6 +137,16 @@ int main(int argc, char *argv[]) {
   };
   prog_state ps;
 
-  cout << "Result of full interpretation: " << interpret(instructions, N, ps) << endl;
+  inst instructions2[5] = {inst(MOVXC, 1, input), /* mov r1, input */
+                           inst(MOVXC, 2, 4),     /* mov r2, 4 */
+                           inst(ADDXY, 1, 2),     /* add r1, r2 */
+                           inst(MAXC, 1, 15),     /* max r1, 15 */
+                           inst(RETX, 1),         /* ret r1 */
+  };
+
+  cout << "Result of full interpretation: " << endl;
+  cout << interpret(instructions, N, ps) << endl;
+  cout << "Program 2" << endl;
+  cout << interpret(instructions2, 5, ps) << endl;
   return 0;
 }
