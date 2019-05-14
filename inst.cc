@@ -59,10 +59,12 @@ int interpret(inst *program, int length, prog_state &ps) {
   };
 
 #define CONT { \
-      cout << "Finished insn with opcode " << insn->_opcode << endl; \
-      insn++; ps.print(); \
-      if (insn < program + length) goto select_insn;  \
-      else goto out; }
+      insn++; ps.print();                                               \
+      if (insn < program + length) {                                    \
+        cout << "Executing insn with opcode " << insn->_opcode << endl; \
+        goto select_insn;                                               \
+      } else goto out;                                                  \
+  }
 #define DST ps.regs[insn->_arg1]
 #define SRC ps.regs[insn->_arg2]
 #define IMM1 insn->_arg1
@@ -102,21 +104,27 @@ error_label:
   return -1;
 
 out:
+  cout << "Error: program terminated without a return instruction" << endl;
   return -2; /* Terminate without return */
 }
 
-int main() {
-  inst instructions[8] = {inst(MOVXC, 1, 10), /* mov r1, 10 */
+int main(int argc, char *argv[]) {
+#define N 7
+  /* Add the notion of program input */
+  int input = 10;
+  if (argc > 1) {
+    input = atoi(argv[1]);
+  }
+  inst instructions[N] = {inst(MOVXC, 1, input), /* mov r1, input */
                           inst(MOVXC, 2, 4),  /* mov r2, 4  */
                           inst(ADDXY, 1, 2),  /* add r1, r2 */
-                          inst(MOVXC, 3, 5),  /* mov r3, 5  */
-                          inst(ADDXY, 1, 3),  /* add r1, r3 */
+                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
                           inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
                           inst(RETX, 3),      /* ret r3 */
-                          inst(RETC, 11),      /* else ret 11 */
+                          inst(RETX, 1),      /* else ret r1 */
   };
   prog_state ps;
 
-  cout << "Result of full interpretation: " << interpret(instructions, 8, ps) << endl;
+  cout << "Result of full interpretation: " << interpret(instructions, N, ps) << endl;
   return 0;
 }
