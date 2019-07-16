@@ -53,7 +53,7 @@ int interpret(inst *program, int length, prog_state &ps) {
     [JMPLE] = &&INSN_JMPLE,
     [MAXC] = &&INSN_MAXC,
     [MAXX] = &&INSN_MAXX,
-    [11 ... 255] = &&error_label,
+    [NUM_INSTR ... 255] = &&error_label,
   };
 
 #define CONT { \
