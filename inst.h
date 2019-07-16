@@ -46,3 +46,44 @@ class inst {
 #define MAXX 10
 
 #define NUM_INSTR 11
+
+/* The definitions below assume a minimum 16-bit integer data type */
+#define FSTOP(x) (x)
+#define SNDOP(x) (x << 5)
+#define TRDOP(x) (x << 10)
+#define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex-1) * 5)) & 31)
+
+#define JMP_OPS (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
+
+static int optable[256] = {
+  [ADDXY] = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
+  [MOVXC] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
+  [RETX]  = FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
+  [RETC]  = FSTOP(OP_IMM) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
+  [JMPEQ] = JMP_OPS,
+  [JMPGT] = JMP_OPS,
+  [JMPGE] = JMP_OPS,
+  [JMPLT] = JMP_OPS,
+  [JMPLE] = JMP_OPS,
+  [MAXC]  = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
+  [MAXX]  = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
+  [NUM_INSTR ... 255] = FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
+};
+
+static int num_operands[256] = {
+  [ADDXY] = 2,
+  [MOVXC] = 2,
+  [RETX]  = 1,
+  [RETC]  = 1,
+  [JMPEQ] = 3,
+  [JMPGT] = 3,
+  [JMPGE] = 3,
+  [JMPLT] = 3,
+  [JMPLE] = 3,
+  [MAXC]  = 2,
+  [MAXX]  = 2,
+  [NUM_INSTR ... 255] = 0,
+};
+
+void print_program(inst* program, int length);
+int interpret(inst* program, int length, prog_state &ps);

@@ -41,28 +41,6 @@ void print_program(inst* program, int length) {
 int interpret(inst *program, int length, prog_state &ps) {
   inst *insn = program;
 
-  /* The definitions below assume a minimum 16-bit integer data type */
-#define FSTOP(x) (x << 10)
-#define SNDOP(x) (x << 5)
-#define TRDOP(x) (x)
-
-#define JMP_OPS (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
-
-  static int optable[256] = {
-    [ADDXY] = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
-    [MOVXC] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
-    [RETX]  = FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
-    [RETC]  = FSTOP(OP_IMM) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
-    [JMPEQ] = JMP_OPS,
-    [JMPGT] = JMP_OPS,
-    [JMPGE] = JMP_OPS,
-    [JMPLT] = JMP_OPS,
-    [JMPLE] = JMP_OPS,
-    [MAXC]  = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
-    [MAXX]  = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
-    [11 ... 255] = FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
-  };
-
   static void *jumptable[256] = {
     [ADDXY] = &&INSN_ADDXY,
     [MOVXC] = &&INSN_MOVXC,
