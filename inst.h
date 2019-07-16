@@ -23,6 +23,12 @@ class inst {
   }
 };
 
+// Operand types for instructions
+#define OP_UNUSED 0
+#define OP_REG 1
+#define OP_IMM 2
+#define OP_OFF 3
+
 // Instruction opcodes
 #define ADDXY 0
 #define MOVXC 1
