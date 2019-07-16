@@ -9,6 +9,35 @@ void prog_state::print() {
   }
 }
 
+std::string inst::opcode_to_str() {
+  switch(_opcode) {
+    case ADDXY: return "ADDXY";
+    case MOVXC: return "MOVXC";
+    case RETX: return "RETX";
+    case RETC: return "RETC";
+    case JMPEQ: return "JMPEQ";
+    case JMPGT: return "JMPGT";
+    case JMPGE: return "JMPGE";
+    case JMPLT: return "JMPLT";
+    case JMPLE: return "JMPLE";
+    case MAXC: return "MAXC";
+    case MAXX: return "MAXX";
+    default: return "unknown opcode";
+  }
+}
+
+void inst::print() {
+  cout << opcode_to_str() << " " << _arg1 << " " << _arg2 <<
+      " " << _jmp_off << endl;
+}
+
+void print_program(inst* program, int length) {
+  for (int i = 0; i < length; i++) {
+    program[i].print();
+  }
+  cout << endl;
+}
+
 int interpret(inst *program, int length, prog_state &ps) {
   inst *insn = program;
 

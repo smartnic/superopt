@@ -10,6 +10,8 @@ class prog_state {
 };
 
 class inst {
+ private:
+  string opcode_to_str();
  public:
   int _opcode;
   int _arg1;
@@ -21,6 +23,7 @@ class inst {
     _arg2    = arg2;
     _jmp_off = jmp_off;
   }
+  void print();
 };
 
 // Operand types for instructions
