@@ -1,6 +1,7 @@
 using namespace std;
 
 #define NUM_REGS 4
+#define MAX_CONST 20
 
 class prog_state {
   int pc = 0; /* Assume only straight line code execution for now */
