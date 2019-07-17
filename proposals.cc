@@ -46,6 +46,7 @@ inst* mod_operand(inst* program, inst* sel_inst, int op_to_change,
   int sel_opcode = sel_inst->_opcode;
   int optype = OPTYPE(sel_opcode, op_to_change);
   int old_opvalue = sel_inst->_args[op_to_change];
+  // TODO: is it wise to sample with exception?
   int new_opvalue = sample_int_with_exception(num_poss[optype], old_opvalue);
   cout << "operand " << op_to_change << " of type " <<
       optype << " to new value " << new_opvalue << endl;
@@ -70,6 +71,7 @@ inst* mod_random_inst(inst* program, int prog_length) {
   int inst_index = sample_int(prog_length);
   inst* sel_inst = &program[inst_index];
   int old_opcode = sel_inst->_opcode;
+  // TODO: is it wise to sample with exception?
   int new_opcode = sample_int_with_exception(NUM_INSTR, old_opcode);
   sel_inst->_opcode = new_opcode;
   inst* new_prog;
