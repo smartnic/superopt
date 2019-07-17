@@ -45,7 +45,7 @@ inst* mod_operand(inst* program, inst* sel_inst, int op_to_change,
 inst* mod_random_operand(inst* program, int inst_index, int prog_length) {
   inst* sel_inst = &program[inst_index];
   int sel_opcode = sel_inst->_opcode;
-  int op_to_change = sample_int(num_operands[sel_opcode]) + 1;
+  int op_to_change = sample_int(num_operands[sel_opcode]);
   return mod_operand(program, sel_inst, op_to_change, prog_length);
 }
 

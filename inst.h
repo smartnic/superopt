@@ -50,7 +50,7 @@ class inst {
 #define FSTOP(x) (x)
 #define SNDOP(x) (x << 5)
 #define TRDOP(x) (x << 10)
-#define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex-1) * 5)) & 31)
+#define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex) * 5)) & 31)
 
 #define JMP_OPS (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
 #define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
