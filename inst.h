@@ -25,6 +25,7 @@ class inst {
     _jmp_off = jmp_off;
   }
   void print();
+  string opcode_to_str(int);
 };
 
 // Operand types for instructions

@@ -9,8 +9,8 @@ void prog_state::print() {
   }
 }
 
-std::string inst::opcode_to_str() {
-  switch(_opcode) {
+string inst::opcode_to_str(int opcode) {
+  switch(opcode) {
     case NOP: return "NOP";
     case ADDXY: return "ADDXY";
     case MOVXC: return "MOVXC";
