@@ -21,6 +21,16 @@ int sample_int(int limit) {
   return val;
 }
 
+/* Return a uniformly random integer from 0 to limit - 1 inclusive, with the
+ * exception of  `except`. */
+int sample_int_with_exception(int limit, int except) {
+  int val;
+  do {
+    val = (int)(unidist(gen) * (double)limit);
+  } while ((val == limit || val == except) && limit > 1);
+  return val;
+}
+
 inst* mod_operand(inst* program, inst* sel_inst, int op_to_change,
                   int prog_length) {
   // Number of possibilities for each operand type
@@ -35,7 +45,8 @@ inst* mod_operand(inst* program, inst* sel_inst, int op_to_change,
   assert (op_to_change < 3);
   int sel_opcode = sel_inst->_opcode;
   int optype = OPTYPE(sel_opcode, op_to_change);
-  int new_opvalue = sample_int(num_poss[optype]);
+  int old_opvalue = sel_inst->_args[op_to_change];
+  int new_opvalue = sample_int_with_exception(num_poss[optype], old_opvalue);
   cout << "operand " << op_to_change << " of type " <<
       optype << " to new value " << new_opvalue << endl;
   sel_inst->_args[op_to_change] = new_opvalue;
