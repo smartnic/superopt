@@ -28,12 +28,13 @@ string inst::opcode_to_str(int opcode) {
 }
 
 void inst::print() {
-  cout << opcode_to_str() << " " << _arg1 << " " << _arg2 <<
-      " " << _jmp_off << endl;
+  cout << opcode_to_str(_opcode) << " " << _args[0] << " " << _args[1] <<
+      " " << _args[2] << endl;
 }
 
 void print_program(inst* program, int length) {
   for (int i = 0; i < length; i++) {
+    cout << i << ": ";
     program[i].print();
   }
   cout << endl;
