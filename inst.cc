@@ -11,6 +11,7 @@ void prog_state::print() {
 
 std::string inst::opcode_to_str() {
   switch(_opcode) {
+    case NOP: return "NOP";
     case ADDXY: return "ADDXY";
     case MOVXC: return "MOVXC";
     case RETX: return "RETX";
@@ -42,6 +43,7 @@ int interpret(inst *program, int length, prog_state &ps) {
   inst *insn = program;
 
   static void *jumptable[256] = {
+    [NOP]   = &&INSN_NOP,
     [ADDXY] = &&INSN_ADDXY,
     [MOVXC] = &&INSN_MOVXC,
     [RETX] = &&INSN_RETX,
@@ -70,6 +72,9 @@ int interpret(inst *program, int length, prog_state &ps) {
 
 select_insn:
   goto *jumptable[insn->_opcode];
+
+INSN_NOP:
+  CONT;
 
 INSN_ADDXY:
   DST = DST + SRC;

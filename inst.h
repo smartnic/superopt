@@ -18,7 +18,7 @@ class inst {
   int _arg1;
   int _arg2;
   int _jmp_off;
-  inst(int opcode, int arg1, int arg2=0, int jmp_off=0) {
+  inst(int opcode, int arg1=0, int arg2=0, int jmp_off=0) {
     _opcode  = opcode;
     _arg1    = arg1;
     _arg2    = arg2;
@@ -34,19 +34,20 @@ class inst {
 #define OP_OFF 3
 
 // Instruction opcodes
-#define ADDXY 0
-#define MOVXC 1
-#define RETX 2
-#define RETC 3
-#define JMPEQ 4
-#define JMPGT 5
-#define JMPGE 6
-#define JMPLT 7
-#define JMPLE 8
-#define MAXC 9
-#define MAXX 10
+#define NOP 0
+#define ADDXY 1
+#define MOVXC 2
+#define RETX 3
+#define RETC 4
+#define JMPEQ 5
+#define JMPGT 6
+#define JMPGE 7
+#define JMPLT 8
+#define JMPLE 9
+#define MAXC 10
+#define MAXX 11
 
-#define NUM_INSTR 11
+#define NUM_INSTR 12
 
 /* The definitions below assume a minimum 16-bit integer data type */
 #define FSTOP(x) (x)
@@ -57,6 +58,7 @@ class inst {
 #define JMP_OPS (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
 
 static int optable[256] = {
+  [NOP]   = UNUSED_OPS,
   [ADDXY] = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
   [MOVXC] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
   [RETX]  = FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
@@ -68,10 +70,11 @@ static int optable[256] = {
   [JMPLE] = JMP_OPS,
   [MAXC]  = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
   [MAXX]  = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
-  [NUM_INSTR ... 255] = FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
+  [NUM_INSTR ... 255] = UNUSED_OPS,
 };
 
 static int num_operands[256] = {
+  [NOP]   = 0,
   [ADDXY] = 2,
   [MOVXC] = 2,
   [RETX]  = 1,
