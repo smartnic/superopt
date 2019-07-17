@@ -67,10 +67,10 @@ int interpret(inst *program, int length, prog_state &ps) {
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
-#define DST ps.regs[insn->_arg1]
-#define SRC ps.regs[insn->_arg2]
-#define IMM1 insn->_arg1
-#define IMM2 insn->_arg2
+#define DST ps.regs[insn->_args[0]]
+#define SRC ps.regs[insn->_args[1]]
+#define IMM1 insn->_args[0]
+#define IMM2 insn->_args[1]
 
 select_insn:
   goto *jumptable[insn->_opcode];
@@ -103,7 +103,7 @@ INSN_MAXX:
 #define JMP(SUFFIX, OP)                         \
   INSN_JMP##SUFFIX:                             \
       if (DST OP SRC)                           \
-        insn += insn->_jmp_off;                 \
+        insn += insn->_args[2];                 \
   CONT;
 
   JMP(EQ, ==)

@@ -11,18 +11,14 @@ class prog_state {
 };
 
 class inst {
- private:
-  string opcode_to_str();
  public:
   int _opcode;
-  int _arg1;
-  int _arg2;
-  int _jmp_off;
-  inst(int opcode, int arg1=0, int arg2=0, int jmp_off=0) {
+  int _args[3];
+  inst(int opcode, int arg1=0, int arg2=0, int arg3=0) {
     _opcode  = opcode;
-    _arg1    = arg1;
-    _arg2    = arg2;
-    _jmp_off = jmp_off;
+    _args[0] = arg1;
+    _args[1] = arg2;
+    _args[2] = arg3;
   }
   void print();
   string opcode_to_str(int);

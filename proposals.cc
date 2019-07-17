@@ -32,17 +32,13 @@ inst* mod_operand(inst* program, inst* sel_inst, int op_to_change,
   };
   // TODO: Make a copy of this program for later reference, rather than update
   // in place
+  assert (op_to_change < 3);
   int sel_opcode = sel_inst->_opcode;
   int optype = OPTYPE(sel_opcode, op_to_change);
   int new_opvalue = sample_int(num_poss[optype]);
   cout << "operand " << op_to_change << " of type " <<
       optype << " to new value " << new_opvalue << endl;
-  switch(op_to_change) {
-    case 1: sel_inst->_arg1 = new_opvalue; break;
-    case 2: sel_inst->_arg2 = new_opvalue; break;
-    case 3: sel_inst->_jmp_off = new_opvalue; break;
-    default: cout << "Error setting new operand" << endl; return NULL;
-  }
+  sel_inst->_args[op_to_change] = new_opvalue;
   return program;
 }
 
