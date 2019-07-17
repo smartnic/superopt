@@ -56,6 +56,7 @@ class inst {
 #define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex-1) * 5)) & 31)
 
 #define JMP_OPS (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
+#define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 
 static int optable[256] = {
   [NOP]   = UNUSED_OPS,
