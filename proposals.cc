@@ -21,7 +21,8 @@ int sample_int(int limit) {
   return val;
 }
 
-inst* mod_random_operand(inst* program, int inst_index, int prog_length) {
+inst* mod_operand(inst* program, inst* sel_inst, int op_to_change,
+                  int prog_length) {
   // Number of possibilities for each operand type
   int num_poss[4] = {
     [OP_UNUSED] = 0,
@@ -31,9 +32,7 @@ inst* mod_random_operand(inst* program, int inst_index, int prog_length) {
   };
   // TODO: Make a copy of this program for later reference, rather than update
   // in place
-  inst* sel_inst = &program[inst_index];
   int sel_opcode = sel_inst->_opcode;
-  int op_to_change = sample_int(num_operands[sel_opcode]) + 1;
   int optype = OPTYPE(sel_opcode, op_to_change);
   int new_opvalue = sample_int(num_poss[optype]);
   cout << "operand " << op_to_change << " of type " <<
@@ -45,6 +44,13 @@ inst* mod_random_operand(inst* program, int inst_index, int prog_length) {
     default: cout << "Error setting new operand" << endl; return NULL;
   }
   return program;
+}
+
+inst* mod_random_operand(inst* program, int inst_index, int prog_length) {
+  inst* sel_inst = &program[inst_index];
+  int sel_opcode = sel_inst->_opcode;
+  int op_to_change = sample_int(num_operands[sel_opcode]) + 1;
+  return mod_operand(program, sel_inst, op_to_change, prog_length);
 }
 
 inst* mod_random_inst_operand(inst* program, int prog_length) {
