@@ -65,3 +65,20 @@ inst* mod_random_inst_operand(inst* program, int prog_length) {
   cout << "Changing instruction " << inst_index << " ";
   return mod_random_operand(program, inst_index, prog_length);
 }
+
+inst* mod_random_inst(inst* program, int prog_length) {
+  int inst_index = sample_int(prog_length);
+  inst* sel_inst = &program[inst_index];
+  int old_opcode = sel_inst->_opcode;
+  int new_opcode = sample_int_with_exception(NUM_INSTR, old_opcode);
+  sel_inst->_opcode = new_opcode;
+  inst* new_prog;
+  cout << "Changing instruction " << inst_index << " to new opcode " <<
+      new_opcode << " " << sel_inst->opcode_to_str(new_opcode) << " " << endl;
+  for (int i = 0; i < num_operands[new_opcode]; i++) {
+    new_prog = mod_operand(program, sel_inst, i, prog_length);
+    program = new_prog;
+    print_program(program, prog_length);
+  }
+  return program;
+}
