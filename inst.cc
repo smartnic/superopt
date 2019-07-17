@@ -61,7 +61,8 @@ int interpret(inst *program, int length, prog_state &ps) {
 #define CONT { \
       insn++; ps.print();                                               \
       if (insn < program + length) {                                    \
-        cout << "Executing insn with opcode " << insn->_opcode << endl; \
+        cout << "Executing ";                                           \
+        insn->print();                                                  \
         goto select_insn;                                               \
       } else goto out;                                                  \
   }

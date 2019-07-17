@@ -25,9 +25,16 @@ int main(int argc, char *argv[]) {
                            inst(RETX, 1),         /* ret r1 */
   };
 
+  inst instructions3[3] = {inst(MOVXC, 1, input), /* mov r1, input */
+                           inst(NOP), /* test no-op */
+                           inst(RETX, 1), /* ret r1 */
+  };
+
   cout << "Result of full interpretation: " << endl;
   cout << interpret(instructions, N, ps) << endl;
   cout << "Program 2" << endl;
   cout << interpret(instructions2, 5, ps) << endl;
+  cout << "Program 3" << endl;
+  cout << interpret(instructions3, 3, ps) << endl;
   return 0;
 }
