@@ -8,6 +8,7 @@ class prog_state {
  public:
   int regs[NUM_REGS] = {}; /* assume only registers for now */
   void print();
+  void clear();
 };
 
 class inst {
@@ -88,4 +89,4 @@ static int num_operands[256] = {
 };
 
 void print_program(inst* program, int length);
-int interpret(inst* program, int length, prog_state &ps);
+int interpret(inst* program, int length, prog_state &ps, int input);

@@ -9,6 +9,13 @@ void prog_state::print() {
   }
 }
 
+void prog_state::clear() {
+  pc = 0;
+  for (int i = 0; i < NUM_REGS; i++) {
+    regs[i] = 0;
+  }
+}
+
 string inst::opcode_to_str(int opcode) {
   switch(opcode) {
     case NOP: return "NOP";
@@ -40,8 +47,12 @@ void print_program(inst* program, int length) {
   cout << endl;
 }
 
-int interpret(inst *program, int length, prog_state &ps) {
+int interpret(inst *program, int length, prog_state &ps, int input) {
+  /* Input currently is just one integer which will be written into R1. Will
+  need to generalize this later. */
   inst *insn = program;
+  ps.clear();
+  ps.regs[0] = input;
 
   static void *jumptable[256] = {
     [NOP]   = &&INSN_NOP,
