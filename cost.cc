@@ -39,3 +39,8 @@ int error_cost(inout* examples, int num_ex, inst* orig,
   if (num_ex > 0) return total_cost / num_ex;
   else return 0;
 }
+
+int perf_cost(inout* examples, int num_ex, inst* orig,
+              int orig_length, inst* synth, int synth_length) {
+  return synth_length - orig_length;
+}
