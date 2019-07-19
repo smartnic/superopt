@@ -17,6 +17,14 @@ inst instructions2[4] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
                          inst(RETX, 1),         /* ret r1 */
 };
 
+inst instructions3[6] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                         inst(ADDXY, 1, 2),  /* add r1, r2 */
+                         inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                         inst(JMPEQ, 1, 3, 1),  /* if r1 != r3: */
+                         inst(RETX, 3),      /* ret r3 */
+                         inst(RETX, 1),      /* else ret r1 */
+};
+
 inout ex_set[2];
 
 void test1() {
@@ -38,11 +46,17 @@ void test3() {
   cout << "Error cost: " << err_cost << endl;
 }
 
+void test4() {
+  int err_cost = error_cost(ex_set, 2, instructions, 6, instructions3, 6);
+  cout << "Error cost: " << err_cost << endl;
+}
+
 int main() {
   ex_set[0].set_in_out(10, 15);
   ex_set[1].set_in_out(16, 20);
   test1();
   test2();
   test3();
+  test4();
   return 0;
 }
