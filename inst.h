@@ -23,6 +23,11 @@ class inst {
   }
   void print();
   string opcode_to_str(int);
+  bool operator==(const inst &x) const;
+};
+
+struct instHash {
+  size_t operator()(const inst &x) const;
 };
 
 // Operand types for instructions

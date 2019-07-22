@@ -32,5 +32,13 @@ int main(int argc, char *argv[]) {
   cout << interpret(instructions2, 4, ps, input) << endl;
   cout << "Program 3" << endl;
   cout << interpret(instructions3, 2, ps, input) << endl;
+
+  inst x = inst(MOVXC, 2, 4);
+  inst y = inst(MOVXC, 2, 4);
+
+  cout << (x == y) << endl;
+  cout << (inst(RETX, 3) == inst(RETC, 3)) << endl;
+  cout << (inst(RETX, 3) == inst(RETX, 2)) << endl;
+  cout << "Hashes of mov instructions: " << instHash()(x) << " " << instHash()(y) << endl;
   return 0;
 }

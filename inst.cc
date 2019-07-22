@@ -39,6 +39,20 @@ void inst::print() {
       " " << _args[2] << endl;
 }
 
+bool inst::operator==(const inst &x) const {
+  return ((_opcode  == x._opcode) &&
+          (_args[0] == x._args[0]) &&
+          (_args[1] == x._args[1]) &&
+          (_args[2] == x._args[2]));
+}
+
+size_t instHash::operator()(const inst &x) const {
+  return hash<int>()(x._opcode) ^
+      (hash<int>()(x._args[0]) << 1) ^
+      (hash<int>()(x._args[1]) << 2) ^
+      (hash<int>()(x._args[2]) << 3);
+}
+
 void print_program(inst* program, int length) {
   for (int i = 0; i < length; i++) {
     cout << i << ": ";
