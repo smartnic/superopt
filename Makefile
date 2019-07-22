@@ -1,4 +1,4 @@
-all: proposals_test.out inst_test.out cost_test.out
+all: proposals_test.out inst_test.out cost_test.out prog_test.out
 
 proposals_test.out: inst.cc inst.h proposals.cc proposals_test.cc
 	g++ -std=c++11 inst.cc proposals.cc proposals_test.cc -o proposals_test.out
@@ -6,8 +6,11 @@ proposals_test.out: inst.cc inst.h proposals.cc proposals_test.cc
 inst_test.out: inst.cc inst.h inst_test.cc
 	g++ -std=c++11 inst.cc inst_test.cc -o inst_test.out
 
-cost_test.out: cost.cc cost_test.cc cost.h inout.h inout.cc inst.cc
+cost_test.out: cost.cc cost_test.cc cost.h inout.h inout.cc inst.cc inst.h
 	g++ -std=c++11 cost.cc cost_test.cc inout.cc inst.cc -o cost_test.out
 
+prog_test.out: prog.cc inst.h inst.cc prog.h prog_test.cc
+	g++ -std=c++11 prog_test.cc prog.cc inst.cc -o prog_test.out
+
 clean:
-	rm -f proposals_test.out inst_test.out cost_test.out
+	rm -f proposals_test.out inst_test.out cost_test.out prog_test.out
