@@ -13,12 +13,12 @@ int test1(int input) {
                           inst(RETX, 1),      /* else ret r1 */
   };
   print_program(instructions, N);
-  inst* prog = instructions;
-  inst* new_prog;
-  for (int i = 0; i < 5; i++) {
-    new_prog = mod_random_inst_operand(prog, N);
-    print_program(new_prog, N);
-    prog = new_prog;
+  prog p1(instructions, 6);
+  prog p[6];
+  p[0] = p1;
+  for (int i = 1; i < 6; i++) {
+    p[i] = mod_random_inst_operand(p[i-1]);
+    print_program(p[i].inst_list, N);
   }
   return 0;
 }
@@ -34,13 +34,12 @@ int test2(int input) {
                           inst(RETX, 1),      /* else ret r1 */
   };
   print_program(instructions, N);
-  inst* prog = instructions;
-  inst* new_prog;
-  for (int i = 0; i < 5; i++) {
-    new_prog = mod_random_inst(prog, N);
+  prog p1(instructions, 6);
+  prog p[6];
+  for (int i = 1; i < 6; i++) {
+    p[i] = mod_random_inst(p[i-1]);
     cout << "Transformed program after " << i << " proposals:" << endl;
-    print_program(new_prog, N);
-    prog = new_prog;
+    print_program(p[i].inst_list, N);
   }
   return 0;
 }
