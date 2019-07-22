@@ -1,5 +1,6 @@
 #include <iostream>
 #include "proposals.h"
+#include "inst.h"
 
 int test1(int input) {
   #define N 7
