@@ -1,3 +1,5 @@
+#pragma once
+
 using namespace std;
 
 #define NUM_REGS 4
