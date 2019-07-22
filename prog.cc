@@ -32,3 +32,18 @@ void prog::print() {
   print_program(inst_list, prog_length);
 }
 
+bool prog::operator==(const prog &x) const {
+  if (prog_length != x.prog_length) return false;
+  for (int i=0; i < prog_length; i++) {
+    if (! (inst_list[i] == x.inst_list[i])) return false;
+  }
+  return true;
+}
+
+size_t progHash::operator()(const prog &x) const {
+  size_t hval = hash<int>()(x.prog_length);
+  for (int i=0; i < x.prog_length; i++) {
+    hval = hval ^ (instHash()(x.inst_list[i]) << (i % 4));
+  }
+  return hval;
+}

@@ -12,6 +12,10 @@ class prog {
   prog();
   void print();
   ~prog();
+  bool operator==(const prog &x) const;
 };
 
+struct progHash {
+  size_t operator()(const prog &x) const;
+};
 
