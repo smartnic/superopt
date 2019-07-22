@@ -35,10 +35,15 @@ int main(int argc, char *argv[]) {
 
   inst x = inst(MOVXC, 2, 4);
   inst y = inst(MOVXC, 2, 4);
+  inst z = inst(MOVXC, 2, 3);
+  inst w = inst(RETX, 3);
 
   cout << (x == y) << endl;
   cout << (inst(RETX, 3) == inst(RETC, 3)) << endl;
   cout << (inst(RETX, 3) == inst(RETX, 2)) << endl;
-  cout << "Hashes of mov instructions: " << instHash()(x) << " " << instHash()(y) << endl;
+  cout << "Hashes of mov instructions: " << instHash()(x) << " "
+       << instHash()(y) << endl;
+  cout << "Hashes of different instructions: " << instHash()(x) << " "
+       << instHash()(z) << " " << instHash()(w) << endl;
   return 0;
 }
