@@ -19,6 +19,22 @@ prog::prog(inst* instructions, int _prog_length) {
   }
 }
 
+// TODO: find canonical way to invoke such a constructor + destructor
+prog* prog::make_prog(const prog &other) {
+  prog* new_prog = (prog*)malloc(sizeof(prog));
+  new_prog->prog_length = other.prog_length;
+  new_prog->inst_list = (inst*)malloc(new_prog->prog_length * sizeof(inst));
+  for (int i=0; i < new_prog->prog_length; i++) {
+    new_prog->inst_list[i] = other.inst_list[i];
+  }
+  return new_prog;
+}
+
+void prog::clear_prog(prog* p) {
+  free(p->inst_list);
+  free(p);
+}
+
 prog::prog() {
   inst_list = NULL;
   prog_length = 0;

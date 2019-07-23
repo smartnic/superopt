@@ -13,6 +13,8 @@ class prog {
   void print();
   ~prog();
   bool operator==(const prog &x) const;
+  static prog* make_prog(const prog &x);
+  static void clear_prog(prog* p);
 };
 
 struct progHash {
