@@ -3,6 +3,7 @@
 #include "inst.h"
 
 int test1(int input) {
+  cout << "Test 1" << endl;
   #define N 7
   inst instructions[N] = {inst(MOVXC, 1, input), /* mov r1, input */
                           inst(MOVXC, 2, 4),  /* mov r2, 4  */
@@ -27,6 +28,7 @@ int test1(int input) {
 }
 
 int test2(int input) {
+  cout << "Test 2" << endl;
 #define N 7
   inst instructions[N] = {inst(MOVXC, 1, input), /* mov r1, input */
                           inst(MOVXC, 2, 4),  /* mov r2, 4  */
