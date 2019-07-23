@@ -35,8 +35,11 @@ string inst::opcode_to_str(int opcode) {
 }
 
 void inst::print() {
-  cout << opcode_to_str(_opcode) << " " << _args[0] << " " << _args[1] <<
-      " " << _args[2] << endl;
+  cout << opcode_to_str(_opcode);
+  for (int i=0; i < num_operands[_opcode]; i++) {
+    cout << " " << _args[i];
+  }
+  cout << endl;
 }
 
 bool inst::operator==(const inst &x) const {
