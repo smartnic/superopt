@@ -45,48 +45,48 @@ int get_new_operand(int opcode, int op_to_change, int old_opvalue, int prog_leng
   return new_opvalue;
 }
 
-prog mod_operand(const prog &program, int sel_inst_index, int op_to_change) {
+void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_change) {
   assert (op_to_change < 3);
-  assert(sel_inst_index < program.prog_length);
+  assert(sel_inst_index < orig.prog_length);
   // First make a fresh copy of the program.
-  prog new_prog(program);
-  inst* sel_inst = &new_prog.inst_list[sel_inst_index];
+  inst* sel_inst = &synth->inst_list[sel_inst_index];
   int sel_opcode = sel_inst->_opcode;
   int old_opvalue = sel_inst->_args[op_to_change];
-  int new_opvalue = get_new_operand(sel_opcode, op_to_change, old_opvalue, new_prog.prog_length);
+  int new_opvalue = get_new_operand(sel_opcode, op_to_change, old_opvalue, synth->prog_length);
   sel_inst->_args[op_to_change] = new_opvalue;
-  return new_prog;
 }
 
-prog mod_random_operand(const prog &program, int inst_index) {
-  inst sel_inst = program.inst_list[inst_index];
+void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
+  inst sel_inst = orig.inst_list[inst_index];
   int sel_opcode = sel_inst._opcode;
   int op_to_change = sample_int(num_operands[sel_opcode]);
-  return mod_operand(program, inst_index, op_to_change);
+  mod_operand(orig, synth, inst_index, op_to_change);
 }
 
-prog mod_random_inst_operand(const prog &program) {
-  int inst_index = sample_int(program.prog_length);
+prog* mod_random_inst_operand(const prog &orig) {
+  int inst_index = sample_int(orig.prog_length);
   cout << "Changing instruction " << inst_index << " ";
-  return mod_random_operand(program, inst_index);
+  prog* synth = prog::make_prog(orig);
+  mod_random_operand(orig, synth, inst_index);
+  return synth;
 }
 
-prog mod_random_inst(const prog& program) {
+prog* mod_random_inst(const prog& orig) {
   // First make a copy of the old program
-  prog new_prog(program);
+  prog* synth = prog::make_prog(orig);
   // Select a random instruction and a new opcode
   // TODO: is it wise to sample with exception?
-  int inst_index = sample_int(new_prog.prog_length);
-  inst* sel_inst = &new_prog.inst_list[inst_index];
+  int inst_index = sample_int(synth->prog_length);
+  inst* sel_inst = &synth->inst_list[inst_index];
   int old_opcode = sel_inst->_opcode;
   int new_opcode = sample_int_with_exception(NUM_INSTR, old_opcode);
   sel_inst->_opcode = new_opcode;
   cout << "Changing instruction " << inst_index << " to new opcode " <<
       new_opcode << " " << sel_inst->opcode_to_str(new_opcode) << " " << endl;
   for (int i = 0; i < num_operands[new_opcode]; i++) {
-    int new_opvalue = get_new_operand(new_opcode, i, -1, new_prog.prog_length);
+    int new_opvalue = get_new_operand(new_opcode, i, -1, synth->prog_length);
     sel_inst->_args[i] = new_opvalue;
-    print_program(new_prog.inst_list, new_prog.prog_length);
+    print_program(synth->inst_list, synth->prog_length);
   }
-  return new_prog;
+  return synth;
 }

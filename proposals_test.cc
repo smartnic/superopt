@@ -14,11 +14,14 @@ int test1(int input) {
   };
   print_program(instructions, N);
   prog p1(instructions, 6);
-  prog p[6];
-  p[0] = p1;
+  prog* p[6];
+  p[0] = &p1;
   for (int i = 1; i < 6; i++) {
-    p[i] = mod_random_inst_operand(p[i-1]);
-    print_program(p[i].inst_list, N);
+    p[i] = mod_random_inst_operand(*p[i-1]);
+    print_program(p[i]->inst_list, N);
+  }
+  for (int i = 1; i < 6; i++) {
+    prog::clear_prog(p[i]);
   }
   return 0;
 }
@@ -35,11 +38,15 @@ int test2(int input) {
   };
   print_program(instructions, N);
   prog p1(instructions, 6);
-  prog p[6];
+  prog* p[6];
+  p[0] = &p1;
   for (int i = 1; i < 6; i++) {
-    p[i] = mod_random_inst(p[i-1]);
+    p[i] = mod_random_inst(*p[i-1]);
     cout << "Transformed program after " << i << " proposals:" << endl;
-    print_program(p[i].inst_list, N);
+    print_program(p[i]->inst_list, N);
+  }
+  for (int i = 1; i < 6; i++) {
+    prog::clear_prog(p[i]);
   }
   return 0;
 }
