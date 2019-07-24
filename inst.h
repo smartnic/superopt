@@ -26,6 +26,7 @@ class inst {
   void print() const;
   string opcode_to_str(int) const;
   bool operator==(const inst &x) const;
+  inst& operator=(const inst &rhs);
 };
 
 struct instHash {

@@ -49,6 +49,14 @@ bool inst::operator==(const inst &x) const {
           (_args[2] == x._args[2]));
 }
 
+inst& inst::operator=(const inst &rhs) {
+  _opcode = rhs._opcode;
+  _args[0] = rhs._args[0];
+  _args[1] = rhs._args[1];
+  _args[2] = rhs._args[2];
+  return *this;
+}
+
 size_t instHash::operator()(const inst &x) const {
   return hash<int>()(x._opcode) ^
       (hash<int>()(x._args[0]) << 1) ^
