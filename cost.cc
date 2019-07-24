@@ -19,13 +19,18 @@ unsigned int pop_count_asm(unsigned int x) {
 
 /* Compute correctness error metric between two programs on outputs */
 int error_cost(inout* examples, int num_ex, inst* orig,
-               int orig_length, inst* synth, int synth_length) {
+               int orig_length, inst* synth, int synth_length,
+               bool exec_orig=false) {
   int total_cost = 0;
   prog_state ps;
   int output1, output2;
   for (int i = 0; i < num_ex; i++) {
-    cout << "*** First interpretation" << endl;
-    output1 = interpret(orig,  orig_length,  ps, examples[i].input);
+    if (exec_orig) {
+      cout << "*** First interpretation" << endl;
+      output1 = interpret(orig,  orig_length,  ps, examples[i].input);
+    } else {
+      output1 = examples[i].output;
+    }
     cout << "*** Second interpretation" << endl;
     output2 = interpret(synth, synth_length, ps, examples[i].input);
     int ex_cost = pop_count_asm(output1 ^ output2);
