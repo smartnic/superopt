@@ -88,10 +88,8 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
   };
 
 #define CONT { \
-      insn++; ps.print();                                               \
+      insn++;                                                           \
       if (insn < program + length) {                                    \
-        cout << "Executing ";                                           \
-        insn->print();                                                  \
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
@@ -99,10 +97,6 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
 #define SRC ps.regs[insn->_args[1]-1]
 #define IMM1 insn->_args[0]
 #define IMM2 insn->_args[1]
-
-  ps.print();
-  cout << "Executing ";
-  insn->print();
 
 select_insn:
   goto *jumptable[insn->_opcode];

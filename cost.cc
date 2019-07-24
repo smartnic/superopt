@@ -25,17 +25,12 @@ int error_cost(inout* examples, int num_ex, inst* orig,
   prog_state ps;
   int output1, output2;
   for (int i = 0; i < num_ex; i++) {
-    if (exec_orig) {
-      cout << "*** First interpretation" << endl;
+    if (exec_orig)
       output1 = interpret(orig,  orig_length,  ps, examples[i].input);
-    } else {
+    else
       output1 = examples[i].output;
-    }
-    cout << "*** Second interpretation" << endl;
     output2 = interpret(synth, synth_length, ps, examples[i].input);
     int ex_cost = pop_count_asm(output1 ^ output2);
-    cout << "Example " << i << " incurred error cost " << ex_cost << endl;
-    cout << "Outputs (orig, synth): "  << output1 << " " << output2 << endl;
     total_cost += ex_cost;
     if (output1 != examples[i].output)
       cout << "Error: Original program output does not match provided "

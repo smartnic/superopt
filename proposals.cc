@@ -40,8 +40,6 @@ int get_new_operand(int opcode, int op_to_change, int old_opvalue, int prog_leng
   int optype = OPTYPE(opcode, op_to_change);
   // TODO: is it wise to sample with exception?
   int new_opvalue = sample_int_with_exception(num_poss[optype], old_opvalue);
-  cout << "operand " << op_to_change << " of type " <<
-      optype << " to new value " << new_opvalue << endl;
   return new_opvalue;
 }
 
@@ -65,11 +63,8 @@ void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
 
 prog* mod_random_inst_operand(const prog &orig) {
   int inst_index = sample_int(orig.prog_length);
-  cout << "Changing instruction " << inst_index << " ";
   prog* synth = prog::make_prog(orig);
   mod_random_operand(orig, synth, inst_index);
-  cout << "Synthesized program:" << endl;
-  synth->print();
   return synth;
 }
 
