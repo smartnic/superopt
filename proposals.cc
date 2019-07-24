@@ -68,6 +68,8 @@ prog* mod_random_inst_operand(const prog &orig) {
   cout << "Changing instruction " << inst_index << " ";
   prog* synth = prog::make_prog(orig);
   mod_random_operand(orig, synth, inst_index);
+  cout << "Synthesized program:" << endl;
+  synth->print();
   return synth;
 }
 
