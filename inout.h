@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 
 /* A class representing one input-output example.  Currently, very simple and
