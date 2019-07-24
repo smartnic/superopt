@@ -41,6 +41,7 @@ prog* mh_next(prog* curr, const prog &orig, inout* ex_set, int num_ex) {
   if (uni_sample < alpha(curr, next, orig, ex_set, num_ex)) {
     return next;
   } else {
+    prog::clear_prog(next);
     return curr;
   }
 }
