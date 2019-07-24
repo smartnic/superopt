@@ -48,6 +48,10 @@ void prog::print() {
   print_program(inst_list, prog_length);
 }
 
+void prog::print(const prog &p) {
+  print_program(p.inst_list, p.prog_length);
+}
+
 bool prog::operator==(const prog &x) const {
   if (prog_length != x.prog_length) return false;
   for (int i=0; i < prog_length; i++) {

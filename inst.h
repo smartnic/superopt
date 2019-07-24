@@ -23,8 +23,8 @@ class inst {
     _args[1] = arg2;
     _args[2] = arg3;
   }
-  void print();
-  string opcode_to_str(int);
+  void print() const;
+  string opcode_to_str(int) const;
   bool operator==(const inst &x) const;
 };
 
@@ -95,5 +95,5 @@ static int num_operands[256] = {
   [NUM_INSTR ... 255] = 0,
 };
 
-void print_program(inst* program, int length);
+void print_program(const inst* program, int length);
 int interpret(inst* program, int length, prog_state &ps, int input);

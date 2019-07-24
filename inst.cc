@@ -16,7 +16,7 @@ void prog_state::clear() {
   }
 }
 
-string inst::opcode_to_str(int opcode) {
+string inst::opcode_to_str(int opcode) const {
   switch(opcode) {
     case NOP: return "NOP";
     case ADDXY: return "ADDXY";
@@ -34,7 +34,7 @@ string inst::opcode_to_str(int opcode) {
   }
 }
 
-void inst::print() {
+void inst::print() const {
   cout << opcode_to_str(_opcode);
   for (int i=0; i < num_operands[_opcode]; i++) {
     cout << " " << _args[i];
@@ -56,7 +56,7 @@ size_t instHash::operator()(const inst &x) const {
       (hash<int>()(x._args[2]) << 3);
 }
 
-void print_program(inst* program, int length) {
+void print_program(const inst* program, int length) {
   for (int i = 0; i < length; i++) {
     cout << i << ": ";
     program[i].print();

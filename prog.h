@@ -13,6 +13,7 @@ class prog {
   prog(inst* instructions, int prog_length);
   prog();
   void print();
+  static void print(const prog &p);
   ~prog();
   bool operator==(const prog &x) const;
   static prog* make_prog(const prog &x);
