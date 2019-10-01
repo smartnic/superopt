@@ -25,8 +25,8 @@ prog* next_proposal(prog* curr) {
 
 double total_prog_cost(prog* p, const prog &orig, inout* ex_set, int num_ex) {
   return error_cost(ex_set, num_ex,
-                    orig.inst_list, orig.prog_length,
-                    p->inst_list, p->prog_length);
+                    (inst*)orig.inst_list,
+                    (inst*)p->inst_list);
 }
 
 /* compute acceptance function */

@@ -4,34 +4,7 @@ using namespace std;
 
 #define NUM_REGS 4
 #define MAX_CONST 20
-
-class prog_state {
-  int pc = 0; /* Assume only straight line code execution for now */
- public:
-  int regs[NUM_REGS] = {}; /* assume only registers for now */
-  void print();
-  void clear();
-};
-
-class inst {
- public:
-  int _opcode;
-  int _args[3];
-  inst(int opcode, int arg1=0, int arg2=0, int arg3=0) {
-    _opcode  = opcode;
-    _args[0] = arg1;
-    _args[1] = arg2;
-    _args[2] = arg3;
-  }
-  void print() const;
-  string opcode_to_str(int) const;
-  bool operator==(const inst &x) const;
-  inst& operator=(const inst &rhs);
-};
-
-struct instHash {
-  size_t operator()(const inst &x) const;
-};
+#define MAX_PROG_LEN 7
 
 // Operand types for instructions
 #define OP_UNUSED 0
@@ -54,6 +27,34 @@ struct instHash {
 #define MAXX 11
 
 #define NUM_INSTR 12
+
+class prog_state {
+  int pc = 0; /* Assume only straight line code execution for now */
+ public:
+  int regs[NUM_REGS] = {}; /* assume only registers for now */
+  void print();
+  void clear();
+};
+
+class inst {
+ public:
+  int _opcode;
+  int _args[3];
+  inst(int opcode=NOP, int arg1=0, int arg2=0, int arg3=0) {
+    _opcode  = opcode;
+    _args[0] = arg1;
+    _args[1] = arg2;
+    _args[2] = arg3;
+  }
+  void print() const;
+  string opcode_to_str(int) const;
+  bool operator==(const inst &x) const;
+  inst& operator=(const inst &rhs);
+};
+
+struct instHash {
+  size_t operator()(const inst &x) const;
+};
 
 /* The definitions below assume a minimum 16-bit integer data type */
 #define FSTOP(x) (x)

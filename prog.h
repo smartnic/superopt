@@ -7,11 +7,10 @@ using namespace std;
 
 class prog {
  public:
-  inst* inst_list;
-  int prog_length;
+  inst inst_list[MAX_PROG_LEN];
   int freq_count;
   prog(const prog& other);
-  prog(inst* instructions, int prog_length);
+  prog(inst* instructions);
   prog();
   void print();
   static void print(const prog &p);

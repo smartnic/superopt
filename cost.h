@@ -4,4 +4,4 @@
 using namespace std;
 
 unsigned int pop_count_asm(unsigned int);
-int error_cost(inout*, int, inst*, int, inst*, int, bool=false);
+int error_cost(inout*, int, inst*, inst*, bool=false);

@@ -2,36 +2,44 @@
 
 using namespace std;
 
-inst instructions[6] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+inst instructions[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                         inst(ADDXY, 1, 2),  /* add r1, r2 */
                         inst(MOVXC, 3, 15),  /* mov r3, 15  */
                         inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
                         inst(RETX, 3),      /* ret r3 */
                         inst(RETX, 1),      /* else ret r1 */
+                        inst(), /* nop */
 };
 
-inst instructions2[6] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+inst instructions2[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                          inst(ADDXY, 1, 2),  /* add r1, r2 */
                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
                          inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
                          inst(RETX, 3),      /* ret r3 */
                          inst(RETX, 1),      /* else ret r1 */
+                         inst(), /* nop */
 };
 
-inst instructions3[6] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                          inst(ADDXY, 1, 2),  /* add r1, r2 */
                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
                          inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
                          inst(RETX, 3),      /* ret r3 */
                          inst(RETX, 2),      /* else ret r2 */
+                         inst(), /* nop */
 };
 
-inst instructions4[2] = {inst(NOP),
+inst instructions4[7] = {inst(NOP),
                          inst(RETC, 1),
+                         inst(), /* nop */
+                         inst(), /* nop */
+                         inst(), /* nop */
+                         inst(), /* nop */
+                         inst(), /* nop */
 };
 
 int test1() {
-  prog p(instructions, 6);
+  prog p(instructions);
   prog q(p);
   p.print();
   q.print();
@@ -40,11 +48,11 @@ int test1() {
 
 int test2() {
   cout << "Equality testing:" << endl;
-  prog p1(instructions, 6);
-  prog p2(instructions, 6);
-  prog p3(instructions2, 6);
-  prog p4(instructions3, 6);
-  prog p5(instructions4, 2);
+  prog p1(instructions);
+  prog p2(instructions);
+  prog p3(instructions2);
+  prog p4(instructions3);
+  prog p5(instructions4);
   cout << (p1 == p1) << endl;
   cout << (p1 == p2) << endl;
   cout << (p1 == p3) << endl;
@@ -62,7 +70,7 @@ int test2() {
 
 int test3() {
   cout << endl << "Test 3 " << endl;
-  prog p(instructions, 6);
+  prog p(instructions);
   prog* q = prog::make_prog(p);
   p.print();
   q->print();

@@ -19,17 +19,16 @@ unsigned int pop_count_asm(unsigned int x) {
 
 /* Compute correctness error metric between two programs on outputs */
 int error_cost(inout* examples, int num_ex, inst* orig,
-               int orig_length, inst* synth, int synth_length,
-               bool exec_orig=false) {
+               inst* synth, bool exec_orig=false) {
   int total_cost = 0;
   prog_state ps;
   int output1, output2;
   for (int i = 0; i < num_ex; i++) {
     if (exec_orig)
-      output1 = interpret(orig,  orig_length,  ps, examples[i].input);
+      output1 = interpret(orig,  MAX_PROG_LEN, ps, examples[i].input);
     else
       output1 = examples[i].output;
-    output2 = interpret(synth, synth_length, ps, examples[i].input);
+    output2 = interpret(synth, MAX_PROG_LEN, ps, examples[i].input);
     int ex_cost = pop_count_asm(output1 ^ output2);
     total_cost += ex_cost;
     if (output1 != examples[i].output)

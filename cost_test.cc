@@ -3,26 +3,31 @@
 
 using namespace std;
 
-inst instructions[6] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+inst instructions[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                         inst(ADDXY, 1, 2),  /* add r1, r2 */
                         inst(MOVXC, 3, 15),  /* mov r3, 15  */
                         inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
                         inst(RETX, 3),      /* ret r3 */
                         inst(RETX, 1),      /* else ret r1 */
+                        inst(), /* nop */
 };
 
-inst instructions2[4] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
+inst instructions2[7] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
                          inst(ADDXY, 1, 2),     /* add r1, r2 */
                          inst(MAXC, 1, 15),     /* max r1, 15 */
                          inst(RETX, 1),         /* ret r1 */
+                         inst(), /* nop */
+                         inst(), /* nop */
+                         inst(), /* nop */
 };
 
-inst instructions3[6] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                          inst(ADDXY, 1, 2),  /* add r1, r2 */
                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
                          inst(JMPEQ, 1, 3, 1),  /* if r1 != r3: */
                          inst(RETX, 3),      /* ret r3 */
                          inst(RETX, 1),      /* else ret r1 */
+                         inst(), /* nop */
 };
 
 inout ex_set[2];
@@ -37,17 +42,17 @@ void test1() {
 }
 
 void test2() {
-  int err_cost = error_cost(ex_set, 2, instructions, 6, instructions, 6);
+  int err_cost = error_cost(ex_set, 2, instructions, instructions);
   cout << "Error cost: " << err_cost << endl;
 }
 
 void test3() {
-  int err_cost = error_cost(ex_set, 2, instructions, 6, instructions2, 4);
+  int err_cost = error_cost(ex_set, 2, instructions, instructions2);
   cout << "Error cost: " << err_cost << endl;
 }
 
 void test4() {
-  int err_cost = error_cost(ex_set, 2, instructions, 6, instructions3, 6);
+  int err_cost = error_cost(ex_set, 2, instructions, instructions3);
   cout << "Error cost: " << err_cost << endl;
 }
 

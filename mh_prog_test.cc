@@ -23,7 +23,7 @@ void test1() {
   int nrolls = 10000;
   std::unordered_map<int, vector<prog> > prog_freq;
 
-  prog orig(instructions, N);
+  prog orig(instructions);
   mcmc_iter(nrolls, orig, prog_freq, ex_set, 2);
 
   // Get the best program(s)

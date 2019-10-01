@@ -14,7 +14,7 @@ int test1(int input) {
                           inst(RETX, 1),      /* else ret r1 */
   };
   print_program(instructions, N);
-  prog p1(instructions, 6);
+  prog p1(instructions);
   prog* p[6];
   p[0] = &p1;
   for (int i = 1; i < 6; i++) {
@@ -39,7 +39,7 @@ int test2(int input) {
                           inst(RETX, 1),      /* else ret r1 */
   };
   print_program(instructions, N);
-  prog p1(instructions, 6);
+  prog p1(instructions);
   prog* p[6];
   p[0] = &p1;
   for (int i = 1; i < 6; i++) {
