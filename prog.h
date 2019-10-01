@@ -9,6 +9,7 @@ class prog {
  public:
   inst* inst_list;
   int prog_length;
+  int freq_count;
   prog(const prog& other);
   prog(inst* instructions, int prog_length);
   prog();

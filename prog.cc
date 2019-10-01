@@ -5,6 +5,7 @@ using namespace std;
 // TODO: find canonical way to invoke one constructor from another
 prog::prog(const prog& other) {
   prog_length = other.prog_length;
+  freq_count = other.freq_count;
   inst_list = (inst*)malloc(prog_length * sizeof(inst));
   for (int i=0; i < other.prog_length; i++) {
     inst_list[i] = other.inst_list[i];
@@ -13,6 +14,7 @@ prog::prog(const prog& other) {
 
 prog::prog(inst* instructions, int _prog_length) {
   prog_length = _prog_length;
+  freq_count = 0;
   inst_list = (inst*)malloc(prog_length * sizeof(inst));
   for (int i=0; i < prog_length; i++) {
     inst_list[i] = instructions[i];
@@ -24,6 +26,7 @@ prog* prog::make_prog(const prog &other) {
   prog* new_prog = (prog*)malloc(sizeof(prog));
   new_prog->prog_length = other.prog_length;
   new_prog->inst_list = (inst*)malloc(new_prog->prog_length * sizeof(inst));
+  new_prog->freq_count = 0;
   for (int i=0; i < new_prog->prog_length; i++) {
     new_prog->inst_list[i] = other.inst_list[i];
   }
@@ -38,6 +41,7 @@ void prog::clear_prog(prog* p) {
 prog::prog() {
   inst_list = NULL;
   prog_length = 0;
+  freq_count = 0;
 }
 
 prog::~prog() {
