@@ -21,7 +21,7 @@ inout ex_set[2];
 
 void test1() {
   int nrolls = 10000;
-  std::unordered_map<int, vector<prog> > prog_freq;
+  std::unordered_map<int, vector<prog*> > prog_freq;
 
   prog orig(instructions);
   mcmc_iter(nrolls, orig, prog_freq, ex_set, 2);
@@ -31,15 +31,15 @@ void test1() {
   int concurrent_max = 0;
   prog *best;
   int nprogs = 0;
-  for (std::pair<int, vector <prog> > element: prog_freq) {
-    vector<prog> pl = element.second; // list of progs with the same hash
+  for (std::pair<int, vector <prog*> > element: prog_freq) {
+    vector<prog*> pl = element.second; // list of progs with the same hash
     for (auto p : pl) {
       nprogs++;
-      if (p.freq_count > max) {
+      if (p->freq_count > max) {
         concurrent_max = 0;
-        best = &p;
-        max = p.freq_count;
-      } else if (p.freq_count == max) {
+        best = p;
+        max = p->freq_count;
+      } else if (p->freq_count == max) {
         concurrent_max++;
       }
     }
