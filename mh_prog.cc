@@ -48,7 +48,7 @@ prog* mh_next(prog* curr, const prog &orig, inout* ex_set, int num_ex) {
 }
 
 void mcmc_iter(int niter, const prog &orig,
-               std::unordered_map<prog, int, progHash> &prog_freq,
+               std::unordered_map<int, vector<prog> > &prog_freq,
                inout* ex_set, int num_ex) {
   // contruct the first program by copying the original
   prog *curr, *next;
@@ -72,9 +72,26 @@ void mcmc_iter(int niter, const prog &orig,
   for (int i=0; i<niter; i++) {
     cout << "Attempting mh iteration " << i << endl;
     next = mh_next(curr, orig, ex_set, 2);
-    if (prog_freq.find(*next) == prog_freq.end()) prog_freq[*next] = 1;
-    else prog_freq[*next]++;
+    /* Insert the next program into frequency dictionary if new */
+    int ph = progHash()(*next);
+    bool found = false;
+    if (prog_freq.find(ph) == prog_freq.end()) {
+      prog_freq[ph] = std::vector<prog>();
+    } else {
+      vector<prog> chain = prog_freq[ph];
+      for (auto p: chain) {
+        if (p == *next) {
+          found = true;
+          p.freq_count++;
+          break;
+        }
+      }
+    }
+    if (! found) {
+      prog* next_copy = prog::make_prog(*next);
+      prog_freq[ph].push_back(*next_copy);
+    }
     if (curr != next) prog::clear_prog(curr);
-    else curr = next;
+    curr = next;
   }
 }

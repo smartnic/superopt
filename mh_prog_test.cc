@@ -21,7 +21,7 @@ inout ex_set[2];
 
 void test1() {
   int nrolls = 10000;
-  std::unordered_map<prog, int, progHash> prog_freq;
+  std::unordered_map<int, vector<prog> > prog_freq;
 
   prog orig(instructions, N);
   mcmc_iter(nrolls, orig, prog_freq, ex_set, 2);
@@ -30,19 +30,27 @@ void test1() {
   int max = 0;
   int concurrent_max = 0;
   prog *best;
-  for (std::pair<prog, int> element: prog_freq) {
-    if (element.second >= max) {
-      if (element.second == max) concurrent_max++;
-      else concurrent_max = 0;
-      max = element.second;
-      best = &element.first;
+  int nprogs = 0;
+  for (std::pair<int, vector <prog> > element: prog_freq) {
+    vector<prog> pl = element.second; // list of progs with the same hash
+    for (auto p : pl) {
+      nprogs++;
+      if (p.freq_count > max) {
+        concurrent_max = 0;
+        best = &p;
+        max = p.freq_count;
+      } else if (p.freq_count == max) {
+        concurrent_max++;
+      }
     }
   }
   cout << "One of the best programs: " << endl;
-  best->print();
+
   cout << "Observed frequency " << max << " out of " << nrolls << endl;
   cout << "Number of concurrently best programs:" << concurrent_max << endl;
-  cout << "number of unique programs observed: " << prog_freq.size() << endl;
+  cout << "number of unique hashes observed: " << prog_freq.size() << endl;
+  cout << "number of unique programs observed: " << nprogs << endl;
+  best->print();
 }
 
 int main() {
