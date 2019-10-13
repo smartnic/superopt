@@ -18,14 +18,14 @@ inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                         NOP,  /* control never reaches here */
 };
 
-inout ex_set[2];
+#define M 5
+inout ex_set[M];
 
-void test1() {
-  int nrolls = 10000;
+void test1(int nrolls) {
   std::unordered_map<int, vector<prog*> > prog_freq;
 
   prog orig(instructions);
-  mcmc_iter(nrolls, orig, prog_freq, ex_set, 2);
+  mcmc_iter(nrolls, orig, prog_freq, ex_set, M);
 
   // Get the best program(s)
   int max = 0;
@@ -37,7 +37,7 @@ void test1() {
     for (auto p : pl) {
       nprogs++;
       if (p->freq_count > max) {
-        concurrent_max = 0;
+        concurrent_max = 1;
         best = p;
         max = p->freq_count;
       } else if (p->freq_count == max) {
@@ -45,18 +45,24 @@ void test1() {
       }
     }
   }
-  cout << "One of the best programs: " << endl;
-
-  cout << "Observed frequency " << max << " out of " << nrolls << endl;
-  cout << "Number of concurrently best programs:" << concurrent_max << endl;
   cout << "number of unique hashes observed: " << prog_freq.size() << endl;
   cout << "number of unique programs observed: " << nprogs << endl;
+  cout << "Number of concurrently best programs:" << concurrent_max << endl;
+  cout << "One of the best programs: " << endl;
+  cout << "Observed frequency " << max << " out of " << nrolls << endl;
   best->print();
+  cout << "Total cost: " << total_prog_cost(best, orig, ex_set, M) << endl;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+  int nrolls = 10;
+  if (argc > 1)
+    nrolls = atoi(argv[1]);
   ex_set[0].set_in_out(10, 15);
   ex_set[1].set_in_out(16, 20);
-  test1();
+  ex_set[2].set_in_out(11, 15);
+  ex_set[3].set_in_out(48, 52);
+  ex_set[4].set_in_out(1, 15);
+  test1(nrolls);
   return 0;
 }

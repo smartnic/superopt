@@ -20,19 +20,27 @@ double cost_to_pi(double cost) {
 prog* next_proposal(prog* curr) {
   // TODO: use proposal generating functions to generate new programs
   // Use mod_random_inst_operand(.) and mod_random_inst(.) to do so
-  return mod_random_inst_operand(*curr);
+  // return mod_random_inst_operand(*curr);
+  return mod_random_inst(*curr);
 }
 
 double total_prog_cost(prog* p, const prog &orig, inout* ex_set, int num_ex) {
-  return error_cost(ex_set, num_ex,
-                    (inst*)orig.inst_list,
-                    (inst*)p->inst_list);
+  double err_cost = error_cost(ex_set, num_ex,
+                               (inst*)orig.inst_list,
+                               (inst*)p->inst_list);
+  cout << "Error cost: " << err_cost << endl;
+  double per_cost = perf_cost(ex_set, num_ex,
+                              (inst*)orig.inst_list,
+                              (inst*)p->inst_list);
+  cout << "Perf cost: " << per_cost << endl;
+  return err_cost + per_cost;
 }
 
 /* compute acceptance function */
 double alpha(prog* curr, prog* next, const prog &orig, inout* ex_set, int num_ex) {
   double curr_cost = total_prog_cost(curr, orig, ex_set, num_ex);
   double next_cost = total_prog_cost(next, orig, ex_set, num_ex);
+  cout << "Costs: curr " << curr_cost << " next " << next_cost << endl;
   return min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
 }
 
@@ -71,7 +79,7 @@ void mcmc_iter(int niter, const prog &orig,
   // leaks.
   for (int i=0; i<niter; i++) {
     cout << "Attempting mh iteration " << i << endl;
-    next = mh_next(curr, orig, ex_set, 2);
+    next = mh_next(curr, orig, ex_set, num_ex);
     /* Insert the next program into frequency dictionary if new */
     int ph = progHash()(*next);
     bool found = false;
@@ -89,6 +97,7 @@ void mcmc_iter(int niter, const prog &orig,
     }
     if (! found) {
       prog* next_copy = prog::make_prog(*next);
+      next_copy->freq_count++;
       prog_freq[ph].push_back(next_copy);
     }
     if (curr != next) prog::clear_prog(curr);

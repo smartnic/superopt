@@ -9,3 +9,4 @@ prog* mh_next(prog* curr, const prog &orig, inout* ex_set, int num_ex);
 void mcmc_iter(int niter, const prog &orig,
                std::unordered_map<int, vector<prog*> > &progFreq,
                inout* ex_set, int num_ex);
+double total_prog_cost(prog* curr, const prog& orig, inout* ex_set, int num_ex);
