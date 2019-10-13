@@ -3,27 +3,27 @@
 using namespace std;
 
 inst instructions[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                        inst(ADDXY, 1, 2),  /* add r1, r2 */
+                        inst(ADDXY, 0, 2),  /* add r0, r2 */
                         inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                        inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                        inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
                         inst(RETX, 3),      /* ret r3 */
-                        inst(RETX, 1),      /* else ret r1 */
+                        inst(RETX, 0),      /* else ret r1 */
                         inst(), /* nop */
 };
 
 inst instructions2[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                         inst(ADDXY, 1, 2),  /* add r1, r2 */
+                         inst(ADDXY, 0, 2),  /* add r0, r2 */
                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                         inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                         inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
                          inst(RETX, 3),      /* ret r3 */
-                         inst(RETX, 1),      /* else ret r1 */
+                         inst(RETX, 0),      /* else ret r0 */
                          inst(), /* nop */
 };
 
 inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                         inst(ADDXY, 1, 2),  /* add r1, r2 */
+                         inst(ADDXY, 0, 2),  /* add r0, r2 */
                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                         inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                         inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
                          inst(RETX, 3),      /* ret r3 */
                          inst(RETX, 2),      /* else ret r2 */
                          inst(), /* nop */
