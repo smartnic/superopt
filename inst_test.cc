@@ -42,6 +42,7 @@ int main(int argc, char *argv[]) {
   cout << (x == y) << endl;
   cout << (inst(RETX, 3) == inst(RETC, 3)) << endl;
   cout << (inst(RETX, 3) == inst(RETX, 2)) << endl;
+  cout << (inst(RETX, 3) == inst(RETX, 3)) << endl;
   cout << "Hashes of mov instructions: " << instHash()(x) << " "
        << instHash()(y) << endl;
   cout << "Hashes of different instructions: " << instHash()(x) << " "
