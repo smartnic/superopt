@@ -97,5 +97,10 @@ static int num_operands[256] = {
   [NUM_INSTR ... 255] = 0,
 };
 
+#define DSTREG(inst_var) inst_var->_args[0]
+#define SRCREG(inst_var) inst_var->_args[1]
+#define IMM1VAL(inst_var) inst_var->_args[0]
+#define IMM2VAL(inst_var) inst_var->_args[1]
+
 void print_program(const inst* program, int length);
 int interpret(inst* program, int length, prog_state &ps, int input);

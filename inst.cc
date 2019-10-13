@@ -101,10 +101,10 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
-#define DST ps.regs[insn->_args[0]]
-#define SRC ps.regs[insn->_args[1]]
-#define IMM1 insn->_args[0]
-#define IMM2 insn->_args[1]
+#define DST ps.regs[DSTREG(insn)]
+#define SRC ps.regs[SRCREG(insn)]
+#define IMM1 IMM1VAL(insn)
+#define IMM2 IMM2VAL(insn)
 
 select_insn:
   goto *jumptable[insn->_opcode];
