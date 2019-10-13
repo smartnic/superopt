@@ -65,21 +65,6 @@ void mcmc_iter(int niter, const prog &orig,
   prog *curr, *next;
   curr = prog::make_prog(orig);
 
-  // MCMC iterations
-  // IMPORTANT MEM ALLOC NOTE: The following possibilities have been tested
-  // on os x g++ version 4.2.1:
-  // - the memory of the provided key object is not used as is by storing a
-  //   pointer in the map (later `free' of the key object from the map
-  //   produced an "object not allocated" error)
-  // - the object is not shallow copied into a fixed-size key object in the
-  //   buckets of the map (`free' of enclosed allocated objects in the key
-  //   produced an "object not allocated" error)
-  // - the existing object looks to be deep-copied to form the new key.
-  // I couldn't find the documented behavior of the standard allocator used by
-  // operator[] of unordered_map. My approach right now is to assume that a
-  // deep copy does indeed happen through the new_prog(provided_prog) copy
-  // constructor.  This code needs to be investigated further for memory
-  // leaks.
   for (int i=0; i<niter; i++) {
     cout << "Attempting mh iteration " << i << endl;
     next = mh_next(curr, orig, ex_set, num_ex, w_e, w_p);
