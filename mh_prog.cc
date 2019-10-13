@@ -24,7 +24,8 @@ prog* next_proposal(prog* curr) {
   return mod_random_inst(*curr);
 }
 
-double total_prog_cost(prog* p, const prog &orig, inout* ex_set, int num_ex) {
+double total_prog_cost(prog* p, const prog &orig, inout* ex_set, int num_ex,
+                       double w_e=1.0, double w_p=1.0) {
   double err_cost = error_cost(ex_set, num_ex,
                                (inst*)orig.inst_list,
                                (inst*)p->inst_list);
@@ -33,21 +34,23 @@ double total_prog_cost(prog* p, const prog &orig, inout* ex_set, int num_ex) {
                               (inst*)orig.inst_list,
                               (inst*)p->inst_list);
   cout << "Perf cost: " << per_cost << endl;
-  return err_cost + per_cost;
+  return (w_e * err_cost) + (w_p * per_cost);
 }
 
 /* compute acceptance function */
-double alpha(prog* curr, prog* next, const prog &orig, inout* ex_set, int num_ex) {
-  double curr_cost = total_prog_cost(curr, orig, ex_set, num_ex);
-  double next_cost = total_prog_cost(next, orig, ex_set, num_ex);
+double alpha(prog* curr, prog* next, const prog &orig, inout* ex_set,
+             int num_ex, double w_e, double w_p) {
+  double curr_cost = total_prog_cost(curr, orig, ex_set, num_ex, w_e, w_p);
+  double next_cost = total_prog_cost(next, orig, ex_set, num_ex, w_e, w_p);
   cout << "Costs: curr " << curr_cost << " next " << next_cost << endl;
   return min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
 }
 
-prog* mh_next(prog* curr, const prog &orig, inout* ex_set, int num_ex) {
+prog* mh_next(prog* curr, const prog &orig, inout* ex_set, int num_ex,
+              double w_e, double w_p) {
   prog* next = next_proposal(curr);
   double uni_sample = unidist_mh(gen_mh);
-  if (uni_sample < alpha(curr, next, orig, ex_set, num_ex)) {
+  if (uni_sample < alpha(curr, next, orig, ex_set, num_ex, w_e, w_p)) {
     return next;
   } else {
     prog::clear_prog(next);
@@ -57,7 +60,7 @@ prog* mh_next(prog* curr, const prog &orig, inout* ex_set, int num_ex) {
 
 void mcmc_iter(int niter, const prog &orig,
                std::unordered_map<int, vector<prog*> > &prog_freq,
-               inout* ex_set, int num_ex) {
+               inout* ex_set, int num_ex, double w_e=1.0, double w_p=1.0) {
   // contruct the first program by copying the original
   prog *curr, *next;
   curr = prog::make_prog(orig);
@@ -79,7 +82,7 @@ void mcmc_iter(int niter, const prog &orig,
   // leaks.
   for (int i=0; i<niter; i++) {
     cout << "Attempting mh iteration " << i << endl;
-    next = mh_next(curr, orig, ex_set, num_ex);
+    next = mh_next(curr, orig, ex_set, num_ex, w_e, w_p);
     /* Insert the next program into frequency dictionary if new */
     int ph = progHash()(*next);
     bool found = false;
