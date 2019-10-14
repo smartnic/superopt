@@ -34,12 +34,7 @@ expr smtPre(smtVar* sv);
 // return the SMT for the post condition check
 expr smtPost(smtVar* svP1, smtVar* svP2);
 // return SMT for the given instruction
-expr smtInst(smtVar* sv, inst in);
-// return SMT for the instruction ADDXY
-// expr smtNOP();
-expr smtADDXY(smtVar* sv, int dst, int src);
-expr smtMOVXC(smtVar* sv, int dst, int imm2);
-expr smtMAXC(smtVar* sv, int dst, int imm2);
-expr smtMAXX(smtVar* sv, int dst, int src);
+expr smtInst(smtVar* sv, inst* in);
+
 // convert string s into expr e, the type of e is int_const
 expr stringToExpr(string s);
