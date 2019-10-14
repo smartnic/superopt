@@ -4,29 +4,29 @@
 using namespace std;
 
 inst instructions[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                        inst(ADDXY, 1, 2),  /* add r1, r2 */
+                        inst(ADDXY, 0, 2),  /* add r0, r2 */
                         inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                        inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                        inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
                         inst(RETX, 3),      /* ret r3 */
-                        inst(RETX, 1),      /* else ret r1 */
+                        inst(RETX, 0),      /* else ret r0 */
                         inst(), /* nop */
 };
 
 inst instructions2[7] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
-                         inst(ADDXY, 1, 2),     /* add r1, r2 */
-                         inst(MAXC, 1, 15),     /* max r1, 15 */
-                         inst(RETX, 1),         /* ret r1 */
+                         inst(ADDXY, 0, 2),     /* add r0, r2 */
+                         inst(MAXC, 0, 15),     /* max r0, 15 */
+                         inst(RETX, 0),         /* ret r0 */
                          inst(), /* nop */
                          inst(), /* nop */
                          inst(), /* nop */
 };
 
 inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                         inst(ADDXY, 1, 2),  /* add r1, r2 */
+                         inst(ADDXY, 0, 2),  /* add r0, r2 */
                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                         inst(JMPEQ, 1, 3, 1),  /* if r1 != r3: */
+                         inst(JMPEQ, 0, 3, 1),  /* if r0 != r3: */
                          inst(RETX, 3),      /* ret r3 */
-                         inst(RETX, 1),      /* else ret r1 */
+                         inst(RETX, 0),      /* else ret r0 */
                          inst(), /* nop */
 };
 
@@ -36,8 +36,8 @@ void test1() {
   #define NUM_INTS 6
   unsigned int ints_list[NUM_INTS] = {0, 1, 5, 7, 63, 114};
   for (int i = 0; i < NUM_INTS; i++) {
-    cout << i << ": " << endl;
-    pop_count_asm(ints_list[i]);
+    cout << i << ": ";
+    cout << pop_count_asm(ints_list[i]) << endl;
   }
 }
 

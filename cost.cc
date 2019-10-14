@@ -20,7 +20,7 @@ unsigned int pop_count_asm(unsigned int x) {
 /* Compute correctness error metric between two programs on outputs */
 int error_cost(inout* examples, int num_ex, inst* orig,
                inst* synth, bool exec_orig=false) {
-  int total_cost = 0;
+  double total_cost = 0;
   prog_state ps;
   int output1, output2;
   for (int i = 0; i < num_ex; i++) {
@@ -29,17 +29,28 @@ int error_cost(inout* examples, int num_ex, inst* orig,
     else
       output1 = examples[i].output;
     output2 = interpret(synth, MAX_PROG_LEN, ps, examples[i].input);
-    int ex_cost = pop_count_asm(output1 ^ output2);
+    cout << "Expected output: " << output1 << " Got output " << output2 << endl;
+    // int ex_cost = pop_count_asm(output1 ^ output2);
+    int ex_cost = abs(output1 - output2);
     total_cost += ex_cost;
     if (output1 != examples[i].output)
       cout << "Error: Original program output does not match provided "
           "input-output pair" << endl;
   }
-  if (num_ex > 0) return total_cost / num_ex;
+  if (num_ex > 0) return (int)(total_cost);
   else return 0;
 }
 
+int num_real_instructions(inst* program) {
+  int count = 0;
+  for (int i=0; i < MAX_PROG_LEN; i++) {
+    if (program[i]._opcode != NOP) count++;
+  }
+  return count;
+}
+
 int perf_cost(inout* examples, int num_ex, inst* orig,
-              int orig_length, inst* synth, int synth_length) {
-  return synth_length - orig_length;
+              inst* synth) {
+  return MAX_PROG_LEN - num_real_instructions(orig) +
+      num_real_instructions(synth);
 }

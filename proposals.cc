@@ -78,12 +78,9 @@ prog* mod_random_inst(const prog& orig) {
   int old_opcode = sel_inst->_opcode;
   int new_opcode = sample_int_with_exception(NUM_INSTR, old_opcode);
   sel_inst->_opcode = new_opcode;
-  cout << "Changing instruction " << inst_index << " to new opcode " <<
-      new_opcode << " " << sel_inst->opcode_to_str(new_opcode) << " " << endl;
   for (int i = 0; i < num_operands[new_opcode]; i++) {
     int new_opvalue = get_new_operand(new_opcode, i, -1);
     sel_inst->_args[i] = new_opvalue;
-    print_program(synth->inst_list, MAX_PROG_LEN);
   }
   return synth;
 }

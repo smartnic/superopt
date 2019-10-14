@@ -73,7 +73,7 @@ void print_program(const inst* program, int length) {
 }
 
 int interpret(inst *program, int length, prog_state &ps, int input) {
-  /* Input currently is just one integer which will be written into R1. Will
+  /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
   inst *insn = program;
   ps.clear();
@@ -101,10 +101,10 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
-#define DST ps.regs[insn->_args[0]-1]
-#define SRC ps.regs[insn->_args[1]-1]
-#define IMM1 insn->_args[0]
-#define IMM2 insn->_args[1]
+#define DST ps.regs[DSTREG(insn)]
+#define SRC ps.regs[SRCREG(insn)]
+#define IMM1 IMM1VAL(insn)
+#define IMM2 IMM2VAL(insn)
 
 select_insn:
   goto *jumptable[insn->_opcode];
@@ -151,7 +151,7 @@ error_label:
   return -1;
 
 out:
-  cout << "Error: program terminated without a return instruction" << endl;
-  return -2; /* Terminate without return */
+  //cout << "Error: program terminated without RET; returning R0" << endl;
+  return ps.regs[0]; /* return default R0 value */
 }
 
