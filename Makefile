@@ -1,4 +1,4 @@
-all: proposals_test.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out
+all: proposals_test.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out cfg_test.out
 
 proposals_test.out: inst.cc inst.h proposals.cc proposals_test.cc prog.cc prog.h
 	g++ -std=c++11 inst.cc proposals.cc proposals_test.cc prog.cc -o proposals_test.out
@@ -21,5 +21,8 @@ validator_test.out: validator_z3.o validator.cc inst.cc
 validator_z3.o:
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o validator_z3.o  -I../z3/src/api -I../z3/src/api/c++ ../superopt/validator_test.cc
 
+cfg_test.out: inst.h inst.cc cfg.h cfg.cc cfg_test.cc
+	g++ -std=c++11 inst.cc cfg.cc cfg_test.cc -o cfg_test.out
+
 clean:
-	rm -f proposals_test.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out validator_z3.o
+	rm -f proposals_test.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out validator_z3.o cfg_test.out
