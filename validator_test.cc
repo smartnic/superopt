@@ -14,7 +14,7 @@ inst instructions1[5] = {inst(MOVXC, 1, 4),     /* mov r1, 4  */
 
 inst instructions2[6] = {inst(MOVXC, 1, 4),     /* mov r1, 4  */
                          inst(MOVXC, 2, 10),    /* mov r2, 10 */
-                         inst(ADDXY, 0, 1),     /* add r0, r2 */
+                         inst(ADDXY, 0, 1),     /* add r0, r1 */
                          inst(MOVXC, 2, 15),    /* mov r2, 15 */
                          inst(MAXC, 0, 15),     /* max r0, 15 */
                          inst(MAXX, 0, 1),      /* max r0, r1 */
