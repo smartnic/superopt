@@ -3,22 +3,20 @@
 
 using namespace std;
 
-#define Others 0
-#define CONDJMP 1
-#define UNCONDJMP 2  // have not implemented UNCONDJMP
-#define CALLEND 3    // have not implemented CALLEND
-#define END 4        // RETC & RETX regarded as the end of program
+#define CFG_OTHERS 0
+#define CFG_CONDJMP 1
+#define CFG_END 2       // RETC & RETX regarded as the end of program
 
-int getInstType(inst* ins) {
-	switch (ins->_opcode) {
-	case RETX: return END;
-	case RETC: return END;
-	case JMPEQ: return CONDJMP;
-	case JMPGT: return CONDJMP;
-	case JMPGE: return CONDJMP;
-	case JMPLT: return CONDJMP;
-	case JMPLE: return CONDJMP;
-	default: return Others;
+int getInstType(inst& ins) {
+	switch (ins._opcode) {
+	case RETX: return CFG_END;
+	case RETC: return CFG_END;
+	case JMPEQ: return CFG_CONDJMP;
+	case JMPGT: return CFG_CONDJMP;
+	case JMPGE: return CFG_CONDJMP;
+	case JMPLT: return CFG_CONDJMP;
+	case JMPLE: return CFG_CONDJMP;
+	default: return CFG_OTHERS;
 	}
 }
 
@@ -30,106 +28,147 @@ node::node(unsigned int start, unsigned int end) {
 
 node::~node() {}
 
+string node::toStr( ) {
+	string s = "[" + to_string(_start) + ":" + to_string(_end) + "]";
+	return s;
+}
+
 ostream& operator<<(ostream& out, const node& n) {
 	out << "[" << n._start << ":" << n._end << "]";
 	return out;
 }
 
-void graph::genInstStarts(inst* insn, int length, set<size_t>& instStarts) {
-	if (getInstType(&insn[0]) != CONDJMP) {
-		instStarts.insert(0);
-	}
+void graph::genNodeStarts(inst* instLst, int length, set<size_t>& nodeStarts) {
+	nodeStarts.insert(0);
 	for (size_t i = 0; i < length; i++) {
-		int instType = getInstType(&insn[i]);
-		if (instType == END) {
-			if (i + 1 < length) {
-				instStarts.insert(i + 1);
+		if (getInstType(instLst[i]) == CFG_CONDJMP) {
+			if ((i + 1) < length) {
+				nodeStarts.insert(i + 1);
+			}
+			if ((i + 1 + instLst[i]._args[2]) < length) {
+				nodeStarts.insert(i + 1 + instLst[i]._args[2]);
 			}
 		}
-		else if (instType == CONDJMP) {
-			instStarts.insert(i + 1);
-			instStarts.insert(i + 1 + insn[i]._args[2]);
+	}
+}
+
+// return end instruction ID in [start: end]
+size_t graph::getEndInstID(inst* instLst, size_t start, size_t end) {
+	for (size_t i = start; i < end; i++) {
+		if (getInstType(instLst[i]) == CFG_END) {
+			return i;
+		}
+	}
+	return end;
+}
+
+void graph::genNodeEnds(inst* instLst, int length, set<size_t>& nodeStarts, vector<size_t>& nodeEnds) {
+	/* Traverse all starts in nodeStarts, find an end for each start
+	   The end for all starts except the last one is the CFG_END instruction OR the ${next start - 1} instruction
+	   The end for the last start is the CFG_END instruction OR the last instruction.
+	*/
+	// ends for all starts except the last start
+	set<size_t>::iterator i = nodeStarts.begin();
+	set<size_t>::iterator i2 = nodeStarts.begin();
+	for (i2++; i2 != nodeStarts.end(); i++, i2++) {
+		// Traverse all instructions in between [start_i: start_i+1)
+		size_t end = getEndInstID(instLst, *i, *i2 - 1);
+		nodeEnds.push_back(end);
+	}
+	// end for the last start
+	size_t end = getEndInstID(instLst, *i, length - 1);
+	nodeEnds.push_back(end);
+}
+
+void graph::genAllNodesGraph(vector<node>& gNodes, set<size_t>& nodeStarts, vector<size_t>& nodeEnds) {
+	set<size_t>::iterator s = nodeStarts.begin();
+	size_t e = 0;
+	for (; s != nodeStarts.end(); s++, e++) {
+		node nd(*s, nodeEnds[e]);
+		gNodes.push_back(nd);
+	}
+}
+
+// key: node._start (the start instruction ID) -> value: nodeId in gNodes
+void graph::genIdMap(unsignedMap& idMap, vector<node>& gNodes) {
+	for (size_t i = 0; i < gNodes.size(); i++) {
+		idMap[gNodes[i]._start] = i;
+	}
+}
+
+void graph::genAllEdgesGraph(vector<vector<unsigned int> >& gNodesOut, vector<node>& gNodes, inst* instLst) {
+	for (size_t i = 0; i < gNodes.size(); i++) {
+		gNodesOut.push_back(vector<unsigned int> {});
+	}
+
+	unsignedMap inId2GNdId;
+	genIdMap(inId2GNdId, gNodes);
+
+	for (size_t i = 0; i < gNodes.size(); i++) {
+		size_t endInstId = gNodes[i]._end;
+		vector <unsigned int> nextInstIds;
+		if (getInstType(instLst[endInstId]) == CFG_OTHERS) {
+			nextInstIds.push_back(endInstId + 1);
+		}
+		else if (getInstType(instLst[endInstId]) == CFG_CONDJMP) {
+			nextInstIds.push_back(endInstId + 1);
+			nextInstIds.push_back(endInstId + 1 + instLst[endInstId]._args[2]);
+		}
+
+		for (size_t j = 0; j < nextInstIds.size(); j++) {
+			unsignedMap::iterator it = inId2GNdId.find(nextInstIds[j]);
+			if (it != inId2GNdId.end()) {
+				gNodesOut[i].push_back(it->second);
+			}
 		}
 	}
 }
 
-void graph::genNodes(set<size_t>& instStarts, int length, vector<node>& nodesLst) {
-	set<size_t>::iterator it = instStarts.begin();
-	set<size_t>::iterator it2 = instStarts.begin();
-	for (it2++; it2 != instStarts.end(); it++, it2++) {
-		node nd(*it, *it2 - 1);
-		nodesLst.push_back(nd);
-	}
-	node nd(*it, length - 1);
-	nodesLst.push_back(nd);
-}
-
-// key: node._start, value: nodeId
-void graph::genIdMap(unsignedMap& idMap, vector<node>& nodesLst) {
-	for (size_t i = 0; i < nodesLst.size(); i++) {
-		idMap[nodesLst[i]._start] = i;
+// if next node has not been added into the graph, add this node
+void graph::addNode(node& nd, unsigned int& added) {
+	if (added == -1) {
+		nodes.push_back(nd);
+		nodesIn.push_back(vector<unsigned int> {});
+		nodesOut.push_back(vector<unsigned int> {});
+		added = nodes.size() - 1;
 	}
 }
 
-void graph::addNode(node nd) {
-	nodes.push_back(nd);
-	nodesIn.push_back(vector<unsigned int> {});
-	nodesOut.push_back(vector<unsigned int> {});
-}
 
-void graph::dfs(unsigned int curNodeId, inst* insn, vector<node>& nodesLst, unsignedMap& inId2NdId, \
-                vector<unsigned int>& added, vector<bool>& finished, vector<bool>& visited) {
-	if (finished[curNodeId]) {
+void graph::dfs(size_t curgNodeId, vector<node>& gNodes, vector<vector<unsigned int> >& gNodesOut, \
+                vector<unsigned int>& added, vector<bool>& visited, vector<bool>& finished) {
+	if (finished[curgNodeId]) {
 		return;
 	}
 
-	// 0 set curNodeId visited
-	visited[curNodeId] = true;
+	// 1 set curNodeId as visited
+	visited[curgNodeId] = true;
 
-	// 1 get next nodeIds of nodesLst
-	unsigned int instId = nodes[curNodeId]._end;
-	int instType = getInstType(&insn[instId]);
-	vector<unsigned int> nextNodeIds;
-	if (instType == END) {
-		finished[curNodeId] = true;
-		return;
-	}
-	else if (instType == Others) {
-		nextNodeIds.push_back(inId2NdId[instId + 1]);
-	}
-	else if (instType == CONDJMP) {
-		nextNodeIds.push_back(inId2NdId[instId + 1]);
-		nextNodeIds.push_back(inId2NdId[instId + 1 + insn[instId]._args[2]]);
-	}
-	// 2 check loop. loop exists if the visited[i] && !fininshed[i]
-	for (size_t i = 0; i < nextNodeIds.size(); i++) {
-		if (visited[nextNodeIds[i]] && (!finished[nextNodeIds[i]])) {
-			string errMsg  = "illegal input: loop from instruction " + \
-			              to_string(nodes[curNodeId]._end) + \
-			              " to instruction " + \
-			              to_string(nextNodeIds[i]);
+	// 2 for each next node, check loop. loop exists if the visited[i] && !finished[i]
+	for (size_t i = 0; i < gNodesOut[curgNodeId].size(); i++) {
+		unsigned int nextgNodeId = gNodesOut[curgNodeId][i];
+		if (visited[nextgNodeId] && (!finished[nextgNodeId])) {
+			string errMsg  = "illegal input: loop from node " + \
+			                 to_string(curgNodeId) + gNodes[curgNodeId].toStr() + \
+			                 " to node " + \
+			                 to_string(nextgNodeId) + gNodes[nextgNodeId].toStr();
 			throw (errMsg);
 		}
 	}
 
-	// 3 for each next node, update the graph
-	for (size_t i = 0; i < nextNodeIds.size(); i++) {
-		unsigned int nextNodeId;
-		// add node into the graph
-		if (added[nextNodeIds[i]] == -1) {
-			addNode(nodesLst[nextNodeIds[i]]);
-			nextNodeId = nodes.size() - 1;
-			added[nextNodeIds[i]] = nextNodeId;
-		}
-		else {
-			nextNodeId = added[nextNodeIds[i]];
-		}
+	// 3 for each next node, update the graph G'
+	unsigned int curNodeId = added[curgNodeId];
+	for (size_t i = 0; i < gNodesOut[curgNodeId].size(); i++) {
+		unsigned int nextgNodeId = gNodesOut[curgNodeId][i];
+		// if next node has not been added into the graph, add this node
+		addNode(gNodes[nextgNodeId], added[nextgNodeId]);
 		// add edge into the graph
+		unsigned int nextNodeId = added[nextgNodeId];
 		nodesIn[nextNodeId].push_back(curNodeId);
 		nodesOut[curNodeId].push_back(nextNodeId);
 		// dfs nextNode
 		try {
-			dfs(nextNodeId, insn, nodesLst, inId2NdId, added, finished, visited);
+			dfs(nextgNodeId, gNodes, gNodesOut, added, visited, finished);
 		}
 		catch (const string errMsg) {
 			throw errMsg;
@@ -137,32 +176,39 @@ void graph::dfs(unsigned int curNodeId, inst* insn, vector<node>& nodesLst, unsi
 	}
 
 	// 4 set curNodeId finished
-	finished[curNodeId] = true;
-	return;
+	finished[curgNodeId] = true;
 }
 
-graph::graph(inst* insn, int length) {
-	// 1 generate nodesLst, which contains all the nodes
-	set<size_t> instStarts;
-	genInstStarts(insn, length, instStarts);
-	vector<node> nodesLst;
-	genNodes(instStarts, length, nodesLst);
+graph::graph(inst* instLst, int length) {
+	// 1 generate node starts
+	// set: keep order and ensure no repeated items
+	set<size_t> nodeStarts;
+	genNodeStarts(instLst, length, nodeStarts);
 
-	// 2 generate nodes/edges in graph
-	// 2.1 generate the Map inId2NdId: instruction Id in insn to node id in nodeLst
-	unsignedMap inId2NdId;
-	genIdMap(inId2NdId, nodesLst);
-	// 2.2 add nodes/edges into the graph by dfs
-	// added[i] means the nodesLst[i] has been added into the graph, and nodesLst[i] = nodes[added[i]]
-	vector<unsigned int> added(nodesLst.size(), -1);
+	// 2 generate node ends for each start in nodeStarts
+	vector<size_t> nodeEnds;
+	genNodeEnds(instLst, length, nodeStarts, nodeEnds);
+
+	// 3 generate graph G containg all nodes and all edges
+	vector<node> gNodes;
+	vector<vector<unsigned int> > gNodesOut;
+	// 3.1 add all nodes in G, that is gNodes
+	genAllNodesGraph(gNodes, nodeStarts, nodeEnds);
+	// 3.2 add all edges in G, that is gNodesOut;
+	genAllEdgesGraph(gNodesOut, gNodes, instLst);
+
+	// 4. generate connected sub-graph G' containing the first instruction from G by DFS
+	// added[i] means the gNodes[i] has been added into the graph, and nodesId = added[gNodesId]
+	vector<unsigned int> added(gNodes.size(), -1);
 	// visited[i] = true means the node has been visited
 	// used to check loop. loop exists if the visited[i] && !finished[i]
-	vector<bool> visited(nodesLst.size(), 0);
-	// finished[i] = true means the node in nodesLst has finished DFS of the subtree(s) of nodesLst[i]
-	vector<bool> finished(nodesLst.size(), 0);
-	addNode(nodesLst[0]); // add the root
+	vector<bool> visited(gNodes.size(), 0);
+	// finished[i] = true means the node in nodesLst has finished DFS of gNodes[i]
+	vector<bool> finished(gNodes.size(), 0);
+	// add the root into the G'
+	addNode(gNodes[0], added[0]);
 	try {
-		dfs(0, insn, nodesLst, inId2NdId, added, finished, visited);
+		dfs(0, gNodes, gNodesOut, added, visited, finished);
 	}
 	catch (const string errMsg) {
 		throw errMsg;
@@ -172,11 +218,11 @@ graph::graph(inst* insn, int length) {
 graph::~graph() {}
 
 ostream& operator<<(ostream& out, const graph& g) {
-	cout << endl << "nodes:" << endl << " ";
+	out << endl << "nodes:" << endl << " ";
 	for (size_t i = 0; i < g.nodes.size(); i++) {
-		cout << i << g.nodes[i] << " ";
+		out << i << g.nodes[i] << " ";
 	}
-	cout << endl << "edges:" << endl;
+	out << endl << "edges:" << endl;
 	for (size_t i = 0; i < g.nodes.size(); i++) {
 		out << " " << i << " in:";
 		for (size_t j = 0; j < g.nodesIn[i].size(); j++) {
