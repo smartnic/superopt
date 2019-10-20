@@ -45,8 +45,20 @@ void graph::genNodeStarts(inst* instLst, int length, set<size_t>& nodeStarts) {
 			if ((i + 1) < length) {
 				nodeStarts.insert(i + 1);
 			}
+			else {
+				string errMsg = "illegal input: instruction " + to_string(i) + " -> "\
+				                "no jmp goes to an invalid instruction.";
+				throw (errMsg);
+			}
+			// Type of i is size_t, so (i + 1 + instLst[i]._args[2]) is always >= 0
+			// This check has included the two illegal inputs: nextInstId > length and nextInstId < 0
 			if ((i + 1 + instLst[i]._args[2]) < length) {
 				nodeStarts.insert(i + 1 + instLst[i]._args[2]);
+			}
+			else {
+				string errMsg = "illegal input: instruction " + to_string(i) + " -> "\
+				                "jmp goes to an invalid instruction.";
+				throw (errMsg);
 			}
 		}
 	}
@@ -81,8 +93,15 @@ void graph::genNodeEnds(inst* instLst, int length, set<size_t>& nodeStarts, vect
 }
 
 void graph::genAllNodesGraph(vector<node>& gNodes, set<size_t>& nodeStarts, vector<size_t>& nodeEnds) {
+	// (STL documentation) set iterators traverse the set in increasing values
+	// example: http://www.cplusplus.com/reference/set/set/begin/
+	// explanation about iterators: http://www.cplusplus.com/reference/iterator/BidirectionalIterator/
 	set<size_t>::iterator s = nodeStarts.begin();
 	size_t e = 0;
+	// Each i^th item pair (start, end) from nodeStarts and nodeEnds 
+	// contains the start and end instruction IDs for the same node.
+	// Beacuse each end is generated according to each start one by one. 
+	// More details are in function genNodeEnds.
 	for (; s != nodeStarts.end(); s++, e++) {
 		node nd(*s, nodeEnds[e]);
 		gNodes.push_back(nd);
@@ -144,7 +163,9 @@ void graph::dfs(size_t curgNodeId, vector<node>& gNodes, vector<vector<unsigned 
 	// 1 set curNodeId as visited
 	visited[curgNodeId] = true;
 
-	// 2 for each next node, check loop. loop exists if the visited[i] && !finished[i]
+	// 2 for each next node, check loop.
+	// Whenever visited[i] && !finished[i] is true, i refers to a node that is 
+	// a DFS ancestor of the current node which is also reachable from the current node.
 	for (size_t i = 0; i < gNodesOut[curgNodeId].size(); i++) {
 		unsigned int nextgNodeId = gNodesOut[curgNodeId][i];
 		if (visited[nextgNodeId] && (!finished[nextgNodeId])) {
@@ -183,7 +204,12 @@ graph::graph(inst* instLst, int length) {
 	// 1 generate node starts
 	// set: keep order and ensure no repeated items
 	set<size_t> nodeStarts;
-	genNodeStarts(instLst, length, nodeStarts);
+	try {
+		genNodeStarts(instLst, length, nodeStarts);
+	}
+	catch (const string errMsg) {
+		throw errMsg;
+	}
 
 	// 2 generate node ends for each start in nodeStarts
 	vector<size_t> nodeEnds;
