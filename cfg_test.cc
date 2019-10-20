@@ -74,5 +74,31 @@ int main () {
 	catch (const string errMsg) {
 		cerr << errMsg << endl;
 	}
+
+	// test illegal input: goes to an invalid instruction
+	cout << "graph7 is " << endl;
+	inst instructions7[5] = {inst(JMPGT, 0, 2, 2),     // 0 JMP to inst 3
+	                         inst(RETX, 2),            // 1 END
+	                         inst(RETX, 0),            // 2 END
+	                         inst(JMPGT, 0, 2, -2),    // 3 JMP to inst 2. illegal: no jump will go to 4
+	                        };
+	try {
+		graph g7(instructions7, 4);
+	}
+	catch (const string errMsg) {
+		cerr << errMsg << endl;
+	}
+
+	// test illegal input: goes to an invalid instruction
+	cout << "graph8 is " << endl;
+	inst instructions8[2] = {inst(JMPGT, 0, 2, 1),     // 0 JMP to inst 2 -> illegal
+	                         inst(RETX, 2),            // 1 END
+	                        };
+	try {
+		graph g8(instructions8, 2);
+	}
+	catch (const string errMsg) {
+		cerr << errMsg << endl;
+	}
 	return 0;
 }
