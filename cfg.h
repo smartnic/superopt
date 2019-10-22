@@ -23,9 +23,6 @@ public:
 
 class graph {
 private:
-	vector<node> nodes;
-	vector<vector<unsigned int> > nodesIn;
-	vector<vector<unsigned int> > nodesOut;
 	size_t getEndInstID(inst* instLst, size_t start, size_t end);
 	void genNodeStarts(inst* instLst, int length, set<size_t>& nodeStarts);
 	void genNodeEnds(inst* instLst, int length, set<size_t>& nodeStarts, vector<size_t>& nodeEnds);
@@ -38,7 +35,18 @@ private:
 	void dfs(size_t curgNodeId, vector<node>& gNodes, vector<vector<unsigned int> >& gNodesOut, \
 	         vector<unsigned int>& added, vector<bool>& visited, vector<bool>& finished);
 public:
+	vector<node> nodes;
+	vector<vector<unsigned int> > nodesIn;
+	vector<vector<unsigned int> > nodesOut;
+	graph();
 	graph(inst* instLst, int length);
 	~graph();
+	void genGraph(inst* instLst, int length);
 	friend ostream& operator<<(ostream& out, const graph& g);
 };
+
+#define CFG_OTHERS 0
+#define CFG_CONDJMP 1
+#define CFG_END 2       // RETC & RETX regarded as the end of program
+int getInstType(inst& ins);
+
