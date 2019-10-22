@@ -3,9 +3,9 @@
 
 using namespace std;
 
-#define CFG_OTHERS 0
-#define CFG_CONDJMP 1
-#define CFG_END 2       // RETC & RETX regarded as the end of program
+// #define CFG_OTHERS 0
+// #define CFG_CONDJMP 1
+// #define CFG_END 2       // RETC & RETX regarded as the end of program
 
 int getInstType(inst& ins) {
 	switch (ins._opcode) {
@@ -50,10 +50,11 @@ void graph::genNodeStarts(inst* instLst, int length, set<size_t>& nodeStarts) {
 				                "no jmp goes to an invalid instruction.";
 				throw (errMsg);
 			}
-			// Type of i is size_t, so (i + 1 + instLst[i]._args[2]) is always >= 0
-			// This check has included the two illegal inputs: nextInstId > length and nextInstId < 0
-			if ((i + 1 + instLst[i]._args[2]) < length) {
-				nodeStarts.insert(i + 1 + instLst[i]._args[2]);
+			size_t nextInstId = i + 1 + instLst[i]._args[2];
+			// This check has included the two illegal inputs:
+			// (i + 1 + instLst[i]._args[2]) >= length and  i + 1 < -(instLst[i]._args[2])
+			if (nextInstId < length) {
+				nodeStarts.insert(nextInstId);
 			}
 			else {
 				string errMsg = "illegal input: instruction " + to_string(i) + " -> "\
@@ -98,9 +99,9 @@ void graph::genAllNodesGraph(vector<node>& gNodes, set<size_t>& nodeStarts, vect
 	// explanation about iterators: http://www.cplusplus.com/reference/iterator/BidirectionalIterator/
 	set<size_t>::iterator s = nodeStarts.begin();
 	size_t e = 0;
-	// Each i^th item pair (start, end) from nodeStarts and nodeEnds 
+	// Each i^th item pair (start, end) from nodeStarts and nodeEnds
 	// contains the start and end instruction IDs for the same node.
-	// Beacuse each end is generated according to each start one by one. 
+	// Beacuse each end is generated according to each start one by one.
 	// More details are in function genNodeEnds.
 	for (; s != nodeStarts.end(); s++, e++) {
 		node nd(*s, nodeEnds[e]);
@@ -130,8 +131,9 @@ void graph::genAllEdgesGraph(vector<vector<unsigned int> >& gNodesOut, vector<no
 			nextInstIds.push_back(endInstId + 1);
 		}
 		else if (getInstType(instLst[endInstId]) == CFG_CONDJMP) {
-			nextInstIds.push_back(endInstId + 1);
-			nextInstIds.push_back(endInstId + 1 + instLst[endInstId]._args[2]);
+			// keep order: insert no jmp first
+			nextInstIds.push_back(endInstId + 1); //no jmp
+			nextInstIds.push_back(endInstId + 1 + instLst[endInstId]._args[2]); //jmp
 		}
 
 		for (size_t j = 0; j < nextInstIds.size(); j++) {
@@ -164,7 +166,7 @@ void graph::dfs(size_t curgNodeId, vector<node>& gNodes, vector<vector<unsigned 
 	visited[curgNodeId] = true;
 
 	// 2 for each next node, check loop.
-	// Whenever visited[i] && !finished[i] is true, i refers to a node that is 
+	// Whenever visited[i] && !finished[i] is true, i refers to a node that is
 	// a DFS ancestor of the current node which is also reachable from the current node.
 	for (size_t i = 0; i < gNodesOut[curgNodeId].size(); i++) {
 		unsigned int nextgNodeId = gNodesOut[curgNodeId][i];
@@ -200,7 +202,7 @@ void graph::dfs(size_t curgNodeId, vector<node>& gNodes, vector<vector<unsigned 
 	finished[curgNodeId] = true;
 }
 
-graph::graph(inst* instLst, int length) {
+void graph::genGraph(inst* instLst, int length) {
 	// 1 generate node starts
 	// set: keep order and ensure no repeated items
 	set<size_t> nodeStarts;
@@ -240,6 +242,17 @@ graph::graph(inst* instLst, int length) {
 		throw errMsg;
 	}
 }
+
+graph::graph(inst* instLst, int length) {
+	try {
+		genGraph(instLst, length);
+	}
+	catch (const string errMsg) {
+		throw errMsg;
+	}
+}
+
+graph::graph() {}
 
 graph::~graph() {}
 

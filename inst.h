@@ -101,6 +101,7 @@ static int num_operands[256] = {
 #define SRCREG(inst_var) inst_var->_args[1]
 #define IMM1VAL(inst_var) inst_var->_args[0]
 #define IMM2VAL(inst_var) inst_var->_args[1]
+#define IMM3VAL(inst_var) inst_var->_args[2]
 
 void print_program(const inst* program, int length);
 int interpret(inst* program, int length, prog_state &ps, int input);
