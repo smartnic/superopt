@@ -16,11 +16,10 @@ context c;
 #define IMM2 IMM2VAL(in)
 
 #define OP_DST(i, regId) postRegVal[i][regId]
-// #define OP_IMM1 IMM1VAL(instEndp)
 
 /* class smtVar start */
-smtVar::smtVar(unsigned int progId, unsigned int versId) {
-	_name = std::to_string(progId) + "_" + std::to_string(versId);
+smtVar::smtVar(unsigned int progId, unsigned int nodeId) {
+	_name = std::to_string(progId) + "_" + std::to_string(nodeId);
 	std::memset(regCurId, 0, NUM_REGS * sizeof(unsigned int));
 	std::string namePrefix = "r_" + _name + "_";
 	for (size_t i = 0; i < NUM_REGS; i++) {
@@ -44,11 +43,21 @@ expr smtVar::getCurRegVar(unsigned int regId) {
 	return regVar[regId];
 }
 
-expr smtVar::getinitRegVar(unsigned int regId) {
+expr smtVar::getInitRegVar(unsigned int regId) {
 	std::string name = "r_" + _name + "_" + std::to_string(regId) + "_0";
 	return stringToExpr(name);
 }
 /* class smtVar end */
+
+expr stringToExpr(string s) {
+	if (s == "true") {
+		return c.bool_val(true);
+	}
+	else if (s == "false") {
+		return c.bool_val(false);
+	}
+	return c.int_const(s.c_str());
+}
 
 /* class progSmt start */
 progSmt::progSmt() {}
@@ -124,16 +133,6 @@ expr progSmt::smtInst(smtVar* sv, inst* in) {
 		return stringToExpr("false");
 	}
 	}
-}
-
-expr stringToExpr(string s) {
-	if (s == "true") {
-		return c.bool_val(true);
-	}
-	else if (s == "false") {
-		return c.bool_val(false);
-	}
-	return c.int_const(s.c_str());
 }
 
 // init f, postRegVal, postPathCon
@@ -251,9 +250,9 @@ void progSmt::genPostPathCon(smtVar* sv, size_t curBId, inst& instEnd, graph& g)
 }
 
 expr progSmt::getInitVal(smtVar* sv, size_t inBId) {
-	expr e = (postRegVal[inBId][0] == sv->getinitRegVar(0));
+	expr e = (postRegVal[inBId][0] == sv->getInitRegVar(0));
 	for (size_t i = 1; i < NUM_REGS; i++) {
-		e = e && (postRegVal[inBId][i] == sv->getinitRegVar(i));
+		e = e && (postRegVal[inBId][i] == sv->getInitRegVar(i));
 	}
 	return e;
 }
