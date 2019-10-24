@@ -47,6 +47,6 @@ public:
 
 #define CFG_OTHERS 0
 #define CFG_CONDJMP 1
-#define CFG_END 2       // RETC & RETX regarded as the end of program
+#define CFG_END 2      
 int getInstType(inst& ins);
 
