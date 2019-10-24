@@ -17,14 +17,14 @@ private:
 	unsigned int regCurId[NUM_REGS];
 	std::vector<expr> regVar;
 public:
-	// 1. Convert progId and versId into _name, that is string([progId]_[versId])
+	// 1. Convert progId and nodeId into _name, that is string([progId]_[versId])
 	// 2. Initialize regVal[i] = r_[_name]_0, i = 0, ..., NUM_REGS
-	smtVar(unsigned int progId, unsigned int versId);
+	smtVar(unsigned int progId, unsigned int nodeId);
 	~smtVar();
-	// inital value for [curId] is 0, and increases when updated
+	// inital value for [versionId] is 0, and increases when updated
 	expr updateRegVar(unsigned int regId);
 	expr getCurRegVar(unsigned int regId);
-	expr getinitRegVar(unsigned int regId);
+	expr getInitRegVar(unsigned int regId);
 };
 
 // convert string s into expr e, the type of e is int_const
