@@ -5,8 +5,8 @@
 using namespace z3;
 
 void test1() {
-	std::cout << "\nno branch program equivalence check starts...\n\n";
 	validator vld;
+	std::cout << "\nno branch program equivalence check starts...\n\n";
 	// instructions1 == instructions2 == instructions3 != instructions4
 	inst instructions1[6] = {inst(MOVXC, 1, 4),     /* mov r1, 4  */
 	                         inst(ADDXY, 0, 1),     /* add r0, r1 */
@@ -63,12 +63,12 @@ void test1() {
 
 
 void test2() {
-	std::cout << "\nbranch program equivalence check starts...\n\n";
 	validator vld;
+	std::cout << "\nbranch program equivalence check starts...\n\n";
 	// instructions1 == instructions2
 	inst instructions1[3] = {inst(JMPGT, 0, 2, 1),  // if r0 <= r2:
 	                         inst(RETX, 0),         // ret r0
-	                         inst(RETX, 2),			// ret r2;
+	                         inst(RETX, 2),     // ret r2;
 	                        };
 	inst instructions2[3] = {inst(JMPLT, 0, 2, 1),  // if r0 >= r2
 	                         inst(RETX, 2),         // ret r2
@@ -137,8 +137,28 @@ void test2() {
 	std::cout << "\nbranch program equivalence check ends...\n\n";
 }
 
+//
+void test3() {
+	validator vld;
+	expr x = stringToExpr("x");
+	expr y = stringToExpr("y");
+	expr fx = implies(x > 10, y == x) && implies(x <= 10, y == 10);
+	inst pFx[4] = {inst(MOVXC, 1, 10),
+	               inst(JMPLT, 0, 1, 1),
+	               inst(RETX, 0),
+	               inst(RETX, 1),
+	              };
+	if (vld.equalCheck(pFx, 4, fx, x, y)) {
+		std::cout << "check Program_f(x) == (f(x)=max(x, 10)) SUCCESS\n";
+	}
+	else {
+		std::cout << "check Program_f(x) == (f(x)=max(x, 10)) NOT SUCCESS\n";
+	}
+}
+
 int main(int argc, char *argv[]) {
 	test1(); // no branch
 	test2(); // with branch
+	test3();
 	return 0;
 }

@@ -7,6 +7,9 @@
 
 using namespace z3;
 
+// convert string s into expr e, the type of e is int_const
+expr stringToExpr(string s);
+
 // SMT Variable format
 // [type]_[progId]_[nodeId]_[regId/memId]_[versionId]
 // [type]: r means register; m means memory
@@ -26,9 +29,6 @@ public:
 	expr getCurRegVar(unsigned int regId);
 	expr getInitRegVar(unsigned int regId);
 };
-
-// convert string s into expr e, the type of e is int_const
-expr stringToExpr(string s);
 
 class progSmt {
 private:
@@ -71,8 +71,10 @@ class validator {
 private:
 	// return the SMT for the pre condition
 	expr smtPre(unsigned int progId);// for program
+	expr smtPre(expr e);
 	// return the SMT for the post condition check
-	expr smtPost();
+	expr smtPost(unsigned int progId1, unsigned int progId2);
+	expr smtPost(unsigned int progId, expr e);
 public:
 	vector<expr> pre;
 	vector<expr> p;
@@ -82,4 +84,5 @@ public:
 	validator();
 	~validator();
 	bool equalCheck(inst* instLst1, int len1, inst* instLst2, int len2);
+	bool equalCheck(inst* instLst1, int len1, expr fx, expr input, expr output);
 };
