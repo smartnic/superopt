@@ -364,40 +364,44 @@ expr progSmt::genSmt(unsigned int progId, inst* instLst, int length) {
 }
 /* class progSmt end */
 
-// TODO: needed to be generalized
-// assgin input r0 "pre0", other registers 0
-expr smtPre(smtVar* sv) {
-	expr p = (sv->getCurRegVar(0) == stringToExpr("pre0"));
+
+validator::validator() {}
+
+validator::~validator() {}
+
+// assgin input r0 "input", other registers 0
+expr validator::smtPre(unsigned int progId) {
+	smtVar sv(progId, 0);
+	expr p = (sv.getCurRegVar(0) == stringToExpr("input"));
 	for (size_t i = 1; i < NUM_REGS; i++) {
-		// expr e = stringToExpr("pre" + std::to_string(i));
-		p = p and (sv->getCurRegVar(i) == 0);
+		p = p and (sv.getCurRegVar(i) == 0);
 	}
 	return p;
 }
 
-// TODO: needed to be generalized
-expr smtPost() {
-	return stringToExpr("output1") == stringToExpr("output2");
+expr validator::smtPost() {
+	return (stringToExpr("output1") == stringToExpr("output2"));
 }
 
-bool equalCheck(inst* instLst1, int len1, inst* instLst2, int len2) {
-	// smt = (pre1^pre2)^(p1^p2) => post
-	smtVar svP1(1, 0);
-	smtVar svP2(2, 0);
-	expr pre1 = smtPre(&svP1);
-	expr pre2 = smtPre(&svP2);
-	// std::cout << "process progam 1 .......\n";
+bool validator::equalCheck(inst* instLst1, int len1, inst* instLst2, int len2) {
+	vector<unsigned int> progId;
+	progId.push_back(1);
+	progId.push_back(2);
+	expr pre1 = smtPre(progId[0]);
+	expr pre2 = smtPre(progId[1]);
 	progSmt ps1;
-	expr p1 = ps1.genSmt(1, instLst1, len1);
-	// std::cout << "process progam 2 .......\n";
 	progSmt ps2;
-	expr p2 = ps2.genSmt(2, instLst2, len2);
-
-	// std::cout << "f1 is \n" << (p1 && pre1) << "\n";
-	// std::cout << "f2 is \n" << (p2 && pre2) << "\n";
-
-	expr post = smtPost();
-	expr smt = implies(p1 && pre1 && p2 && pre2, post);
+	expr p1 = ps1.genSmt(progId[0], instLst1, len1);
+	expr p2 = ps2.genSmt(progId[1], instLst2, len2);
+	expr pst = smtPost();
+	expr smt = implies(pre1 && pre2 && p1 && p2, pst);
+	// store
+	pre.push_back(pre1);
+	pre.push_back(pre2);
+	p.push_back(p1);
+	p.push_back(p2);
+	post = pst;
+	f = smt;
 
 	solver s(c);
 	s.add(!smt);

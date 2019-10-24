@@ -67,9 +67,19 @@ public:
 	expr genSmt(unsigned int progId, inst* instLst, int length);
 };
 
-// return the SMT for the pre condition
-expr smtPre(smtVar* sv);
-// return the SMT for the post condition check
-expr smtPost();
-bool equalCheck(inst* instLst1, int len1, inst* instLst2, int len2);
-
+class validator {
+private:
+	// return the SMT for the pre condition
+	expr smtPre(unsigned int progId);// for program
+	// return the SMT for the post condition check
+	expr smtPost();
+public:
+	vector<expr> pre;
+	vector<expr> p;
+	expr post = stringToExpr("false");
+	// f = pre1^pre2^p1^p2 -> post
+	expr f = stringToExpr("false");
+	validator();
+	~validator();
+	bool equalCheck(inst* instLst1, int len1, inst* instLst2, int len2);
+};

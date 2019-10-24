@@ -2,10 +2,11 @@
 #include "validator.h"
 #include "inst.h"
 
-using namespace std;
+using namespace z3;
 
 void test1() {
-	cout << "\nno branch program equivalence check starts...\n\n";
+	std::cout << "\nno branch program equivalence check starts...\n\n";
+	validator vld;
 	// instructions1 == instructions2 == instructions3 != instructions4
 	inst instructions1[6] = {inst(MOVXC, 1, 4),     /* mov r1, 4  */
 	                         inst(ADDXY, 0, 1),     /* add r0, r1 */
@@ -39,30 +40,31 @@ void test1() {
 	                         inst(MAXX, 0, 3),      /* max r0, r3 */
 	                         inst(RETX, 0),
 	                        };
-	if (equalCheck(instructions1, 6, instructions2, 7)) {
-		cout << "check instructions1 == instructions2 SUCCESS\n";
+	if (vld.equalCheck(instructions1, 6, instructions2, 7)) {
+		std::cout << "check instructions1 == instructions2 SUCCESS\n";
 	}
 	else {
-		cout << "check instructions1 == instructions2 NOT SUCCESS\n";
+		std::cout << "check instructions1 == instructions2 NOT SUCCESS\n";
 	}
-	if (equalCheck(instructions1, 6, instructions3, 6)) {
-		cout << "check instructions1 == instructions3 SUCCESS\n";
-	}
-	else {
-		cout << "check instructions1 == instructions3 NOT SUCCESS\n";
-	}
-	if (!equalCheck(instructions1, 6, instructions4, 6)) {
-		cout << "check instructions1 != instructions4 SUCCESS\n";
+	if (vld.equalCheck(instructions1, 6, instructions3, 6)) {
+		std::cout << "check instructions1 == instructions3 SUCCESS\n";
 	}
 	else {
-		cout << "check instructions1 != instructions4 NOT SUCCESS\n";
+		std::cout << "check instructions1 == instructions3 NOT SUCCESS\n";
 	}
-	cout << "\nno branch program equivalence check ends...\n\n";
+	if (!vld.equalCheck(instructions1, 6, instructions4, 6)) {
+		std::cout << "check instructions1 != instructions4 SUCCESS\n";
+	}
+	else {
+		std::cout << "check instructions1 != instructions4 NOT SUCCESS\n";
+	}
+	std::cout << "\nno branch program equivalence check ends...\n\n";
 }
 
 
 void test2() {
-	cout << "\nbranch program equivalence check starts...\n\n";
+	std::cout << "\nbranch program equivalence check starts...\n\n";
+	validator vld;
 	// instructions1 == instructions2
 	inst instructions1[3] = {inst(JMPGT, 0, 2, 1),  // if r0 <= r2:
 	                         inst(RETX, 0),         // ret r0
@@ -72,11 +74,11 @@ void test2() {
 	                         inst(RETX, 2),         // ret r2
 	                         inst(RETX, 0),         // ret r0
 	                        };
-	if (equalCheck(instructions1, 3, instructions2, 3)) {
-		cout << "check instructions1 == instructions2 SUCCESS\n";
+	if (vld.equalCheck(instructions1, 3, instructions2, 3)) {
+		std::cout << "check instructions1 == instructions2 SUCCESS\n";
 	}
 	else {
-		cout << "check instructions1 == instructions2 NOT SUCCESS\n";
+		std::cout << "check instructions1 == instructions2 NOT SUCCESS\n";
 	}
 
 	// instructions3 == instructions4 != instructions5
@@ -91,21 +93,21 @@ void test2() {
 	                         inst(RETX, 2),
 	                         inst(RETX, 0),
 	                        };
-	if (equalCheck(instructions3, 3, instructions4, 2)) {
-		cout << "check instructions3 == instructions4 SUCCESS\n";
+	if (vld.equalCheck(instructions3, 3, instructions4, 2)) {
+		std::cout << "check instructions3 == instructions4 SUCCESS\n";
 	}
 	else {
-		cout << "check instructions3 == instructions4 NOT SUCCESS\n";
+		std::cout << "check instructions3 == instructions4 NOT SUCCESS\n";
 	}
 
-	if (!equalCheck(instructions3, 3, instructions5, 3)) {
-		cout << "check instructions3 != instructions5 SUCCESS\n";
+	if (!vld.equalCheck(instructions3, 3, instructions5, 3)) {
+		std::cout << "check instructions3 != instructions5 SUCCESS\n";
 	}
 	else {
-		cout << "check instructions3 != instructions5 NOT SUCCESS\n";
+		std::cout << "check instructions3 != instructions5 NOT SUCCESS\n";
 	}
 
-	cout << "\ncheck f(x) = max(x, r1, r2, 10)\n";
+	// std::cout << "\ncheck f(x) = max(x, r1, r2, 10)\n";
 	// f(x) = max(x, r1, r2, 10)
 	// p11 == p12
 	inst p11[5] = {inst(MAXX, 0, 1),
@@ -126,13 +128,13 @@ void test2() {
 	                inst(ADDXY, 0, 1),
 	                inst(RETX, 0),        // ret r0
 	               };
-	if (equalCheck(p11, 5, p12, 11)) {
-		cout << "check f(x)_p1 == f(x)_p2 SUCCESS\n";
+	if (vld.equalCheck(p11, 5, p12, 11)) {
+		std::cout << "check f(x)_p1 == f(x)_p2 SUCCESS\n";
 	}
 	else {
-		cout << "check f(x)_p1 == f(x)_p2 NOT SUCCESS\n";
+		std::cout << "check f(x)_p1 == f(x)_p2 NOT SUCCESS\n";
 	}
-	cout << "\nbranch program equivalence check ends...\n\n";
+	std::cout << "\nbranch program equivalence check ends...\n\n";
 }
 
 int main(int argc, char *argv[]) {
