@@ -315,7 +315,7 @@ expr progSmt::genSmt(unsigned int progId, inst* instLst, int length) {
 	std::reverse(blocks.begin(), blocks.end());
 	// std::cout << "blocks is" << endl;
 	// for (size_t i = 0; i < blocks.size(); i++) {
-	// 	std::cout << blocks[i] << " ";
+	//  std::cout << blocks[i] << " ";
 	// }
 	// std::cout << std::endl;
 
@@ -345,7 +345,7 @@ expr progSmt::genSmt(unsigned int progId, inst* instLst, int length) {
 		storePostRegVal(&sv, b);
 		// std::cout << "postRegVal[" << b << "]: ";
 		// for (size_t i = 0; i < NUM_REGS; i++) {
-		// 	std::cout << postRegVal[b][i] << " ";
+		//  std::cout << postRegVal[b][i] << " ";
 		// }
 		// std::cout << "\n";
 
@@ -364,7 +364,7 @@ expr progSmt::genSmt(unsigned int progId, inst* instLst, int length) {
 }
 /* class progSmt end */
 
-
+/* class validator start */
 validator::validator() {}
 
 validator::~validator() {}
@@ -374,13 +374,23 @@ expr validator::smtPre(unsigned int progId) {
 	smtVar sv(progId, 0);
 	expr p = (sv.getCurRegVar(0) == stringToExpr("input"));
 	for (size_t i = 1; i < NUM_REGS; i++) {
+		// expr e = stringToExpr("pre" + std::to_string(i));
 		p = p and (sv.getCurRegVar(i) == 0);
 	}
 	return p;
 }
 
-expr validator::smtPost() {
-	return (stringToExpr("output1") == stringToExpr("output2"));
+expr validator::smtPre(expr e) {
+	return (e == stringToExpr("input"));
+}
+
+expr validator::smtPost(unsigned int progId1, unsigned int progId2) {
+	return (stringToExpr("output" + to_string(progId1)) == \
+	        stringToExpr("output" + to_string(progId2)));
+}
+
+expr validator::smtPost(unsigned int progId, expr e) {
+	return (stringToExpr("output" + to_string(progId)) == e);
 }
 
 bool validator::equalCheck(inst* instLst1, int len1, inst* instLst2, int len2) {
@@ -393,7 +403,7 @@ bool validator::equalCheck(inst* instLst1, int len1, inst* instLst2, int len2) {
 	progSmt ps2;
 	expr p1 = ps1.genSmt(progId[0], instLst1, len1);
 	expr p2 = ps2.genSmt(progId[1], instLst2, len2);
-	expr pst = smtPost();
+	expr pst = smtPost(progId[0], progId[1]);
 	expr smt = implies(pre1 && pre2 && p1 && p2, pst);
 	// store
 	pre.push_back(pre1);
@@ -412,3 +422,33 @@ bool validator::equalCheck(inst* instLst1, int len1, inst* instLst2, int len2) {
 	}
 	return false;
 }
+
+bool validator::equalCheck(inst* instLst1, int len1, expr fx, expr input, expr output) {
+	vector<unsigned int> progId;
+	progId.push_back(1);
+	progId.push_back(2);
+	expr pre1 = smtPre(progId[0]);
+	expr pre2 = smtPre(input);
+	progSmt ps1;
+	expr p1 = ps1.genSmt(progId[0], instLst1, len1);
+	expr p2 = fx;
+	expr pst = smtPost(progId[0], output);
+	expr smt = implies(pre1 && pre2 && p1 && p2, pst);
+	// store
+	pre.push_back(pre1);
+	pre.push_back(pre2);
+	p.push_back(p1);
+	p.push_back(p2);
+	post = pst;
+	f = smt;
+
+	solver s(c);
+	s.add(!smt);
+	switch (s.check()) {
+	case unsat: return true;
+	case sat: return false;
+	case unknown: return false;
+	}
+	return false;
+}
+/* class validator end */
