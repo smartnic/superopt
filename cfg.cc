@@ -3,10 +3,6 @@
 
 using namespace std;
 
-// #define CFG_OTHERS 0
-// #define CFG_CONDJMP 1
-// #define CFG_END 2       // RETC & RETX regarded as the end of program
-
 int getInstType(inst& ins) {
 	switch (ins._opcode) {
 	case RETX: return CFG_END;
