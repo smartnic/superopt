@@ -61,7 +61,6 @@ void test1() {
 	}
 }
 
-
 void test2() {
 	validator vld;
 	std::cout << "\ntest 2: branch program equivalence check starts...\n";

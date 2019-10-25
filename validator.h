@@ -89,6 +89,7 @@ private:
 	// return the SMT for the post condition check
 	expr smtPost(unsigned int progId1, unsigned int progId2);
 	expr smtPost(unsigned int progId, expr e);
+	void init();
 public:
 	// store
 	vector<expr> pre;
