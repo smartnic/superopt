@@ -15,8 +15,6 @@ context c;
 #define NEWDST sv->updateRegVar(DSTREG(in))
 #define IMM2 IMM2VAL(in)
 
-#define OUTPUT_REG(i, regId) postRegVal[i][regId]
-
 expr stringToExpr(string s) {
 	if (s == "true") {
 		return c.bool_val(true);
@@ -27,7 +25,7 @@ expr stringToExpr(string s) {
 	return c.int_const(s.c_str());
 }
 
-ostream& operator<< (ostream& out, vector<expr>& _exprVec) {
+ostream& operator<<(ostream& out, vector<expr>& _exprVec) {
 	if (_exprVec.size() > 0) {
 		out << "\n";
 	}
@@ -37,7 +35,7 @@ ostream& operator<< (ostream& out, vector<expr>& _exprVec) {
 	return out;
 }
 
-ostream& operator<< (ostream& out, vector<vector<expr> >& _exprVec) {
+ostream& operator<<(ostream& out, vector<vector<expr> >& _exprVec) {
 	if (_exprVec.size() > 0) {
 		out << "\n";
 	}
@@ -320,11 +318,11 @@ expr progSmt::getInitVal(smtVar* sv, size_t inBId) {
 expr progSmt::smtRetInst(size_t curBId, inst* instEnd, unsigned int progId) {
 	switch (instEnd->_opcode) {
 	case RETX:
-		return (OUTPUT_REG(curBId, DSTREG(instEnd)) == stringToExpr("output" + to_string(progId)));
+		return (postRegVal[curBId][DSTREG(instEnd)] == stringToExpr("output" + to_string(progId)));
 	case RETC:
 		return (IMM1VAL(instEnd) == stringToExpr("output" + to_string(progId)));
 	default: // if no RET, return r0
-		return (OUTPUT_REG(curBId, 0) == stringToExpr("output" + to_string(progId)));
+		return (postRegVal[curBId][0] == stringToExpr("output" + to_string(progId)));
 	}
 }
 
@@ -401,9 +399,6 @@ expr progSmt::genSmt(unsigned int progId, inst* instLst, int length) {
 
 /* class validator start */
 validator::validator() {
-	pre.resize(2, stringToExpr("false"));
-	p.resize(2, stringToExpr("false"));
-	ps.resize(2);
 }
 
 validator::~validator() {}
