@@ -168,6 +168,13 @@ expr progSmt::smtInst(smtVar* sv, inst* in) {
 
 // init f, postRegVal, postPathCon
 void progSmt::initVariables() {
+	f.clear();
+	postRegVal.clear();
+	pathCon.clear();
+	regIV.clear();
+	bL.clear();
+	post.clear();
+
 	size_t blockNum = g.nodes.size();
 	f.resize(blockNum, stringToExpr("true"));
 
@@ -351,7 +358,6 @@ expr progSmt::genSmt(unsigned int progId, inst* instLst, int length) {
 	catch (const string errMsg) {
 		cerr << errMsg << endl;
 	}
-
 	// init class variables
 	initVariables();
 
@@ -394,7 +400,11 @@ expr progSmt::genSmt(unsigned int progId, inst* instLst, int length) {
 /* class progSmt end */
 
 /* class validator start */
-validator::validator() {}
+validator::validator() {
+	pre.resize(2, stringToExpr("false"));
+	p.resize(2, stringToExpr("false"));
+	ps.resize(2);
+}
 
 validator::~validator() {}
 
@@ -421,14 +431,20 @@ expr validator::smtPost(unsigned int progId, expr e) {
 	return (stringToExpr("output" + to_string(progId)) == e);
 }
 
+void validator::init() {
+	pre.clear();
+	p.clear();
+	ps.clear();
+}
+
 bool validator::equalCheck(inst* instLst1, int len1, inst* instLst2, int len2) {
+	init();
 	vector<unsigned int> progId;
 	progId.push_back(1);
 	progId.push_back(2);
 	expr pre1 = smtPre(progId[0]);
 	expr pre2 = smtPre(progId[1]);
-	progSmt ps1;
-	progSmt ps2;
+	progSmt ps1, ps2;
 	expr p1 = ps1.genSmt(progId[0], instLst1, len1);
 	expr p2 = ps2.genSmt(progId[1], instLst2, len2);
 	expr pst = smtPost(progId[0], progId[1]);
@@ -436,17 +452,18 @@ bool validator::equalCheck(inst* instLst1, int len1, inst* instLst2, int len2) {
 	// store
 	pre.push_back(pre1);
 	pre.push_back(pre2);
+	ps.push_back(ps1);
+	ps.push_back(ps2);
 	p.push_back(p1);
 	p.push_back(p2);
 	post = pst;
 	f = smt;
-	ps.push_back(ps1);
-	ps.push_back(ps2);
 
 	return isSMTValid(smt);
 }
 
 bool validator::equalCheck(inst* instLst1, int len1, expr fx, expr input, expr output) {
+	init();
 	vector<unsigned int> progId;
 	progId.push_back(1);
 	progId.push_back(2);
@@ -460,11 +477,11 @@ bool validator::equalCheck(inst* instLst1, int len1, expr fx, expr input, expr o
 	// store
 	pre.push_back(pre1);
 	pre.push_back(pre2);
+	ps.push_back(ps1);
 	p.push_back(p1);
 	p.push_back(p2);
 	post = pst;
 	f = smt;
-	ps.push_back(ps1);
 
 	return isSMTValid(smt);
 }

@@ -34,6 +34,12 @@ ostream& operator<<(ostream& out, const node& n) {
 	return out;
 }
 
+void graph::init() {
+	nodes.clear();
+	nodesIn.clear();
+	nodesOut.clear();
+}
+
 void graph::genNodeStarts(inst* instLst, int length, set<size_t>& nodeStarts) {
 	nodeStarts.insert(0);
 	for (size_t i = 0; i < length; i++) {
@@ -199,6 +205,7 @@ void graph::dfs(size_t curgNodeId, vector<node>& gNodes, vector<vector<unsigned 
 }
 
 void graph::genGraph(inst* instLst, int length) {
+	init();
 	// 1 generate node starts
 	// set: keep order and ensure no repeated items
 	set<size_t> nodeStarts;
