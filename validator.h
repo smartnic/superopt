@@ -23,7 +23,7 @@ private:
 	unsigned int regCurId[NUM_REGS];
 	std::vector<expr> regVar;
 public:
-	// 1. Convert progId and nodeId into _name, that is string([progId]_[versId])
+	// 1. Convert progId and nodeId into _name, that is string([progId]_[nodeId])
 	// 2. Initialize regVal[i] = r_[_name]_0, i = 0, ..., NUM_REGS
 	smtVar(unsigned int progId, unsigned int nodeId);
 	~smtVar();
