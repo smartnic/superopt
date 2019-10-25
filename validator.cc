@@ -297,12 +297,14 @@ void progSmt::genPostPathCon(smtVar* sv, size_t curBId, inst& instEnd) {
 	// push the cInstEnd[0] and cInstEnd[1] into nextBIds' pathCon
 	// no jmp
 	unsigned int nextBId = g.nodesOut[curBId][0];
-	addPathCond(cInstEnd[0], curBId, nextBId);
-	post[curBId][0] = cInstEnd[0];
+	expr cNextBId = cIn && cInstEnd[0];
+	addPathCond(cNextBId, curBId, nextBId);
+	post[curBId][0] = cNextBId;
 	// jmp
 	nextBId = g.nodesOut[curBId][1];
-	addPathCond(cInstEnd[1], curBId, nextBId);
-	post[curBId][1] = cInstEnd[1];
+	cNextBId = cIn && cInstEnd[1];
+	addPathCond(cNextBId, curBId, nextBId);
+	post[curBId][1] = cNextBId;
 }
 
 expr progSmt::getInitVal(smtVar* sv, size_t inBId) {
