@@ -34,7 +34,7 @@ private:
 	                    vector<bool>& visited, vector<bool>& finished);
 	void dfs(size_t curgNodeId, vector<node>& gNodes, vector<vector<unsigned int> >& gNodesOut, \
 	         vector<unsigned int>& added, vector<bool>& visited, vector<bool>& finished);
-		void init();
+	void init();
 public:
 	vector<node> nodes;
 	vector<vector<unsigned int> > nodesIn;
@@ -48,6 +48,6 @@ public:
 
 #define CFG_OTHERS 0
 #define CFG_CONDJMP 1
-#define CFG_END 2      
+#define CFG_END 2
 int getInstType(inst& ins);
 
