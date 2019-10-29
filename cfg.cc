@@ -49,18 +49,17 @@ void graph::genNodeStarts(inst* instLst, int length, set<size_t>& nodeStarts) {
 			}
 			else {
 				string errMsg = "illegal input: instruction " + to_string(i) + " -> "\
-				                "no jmp goes to an invalid instruction.";
+				                "no jmp goes to an invalid instruction " + to_string(i + 1);
 				throw (errMsg);
 			}
-			size_t nextInstId = i + 1 + instLst[i]._args[2];
-			// This check has included the two illegal inputs:
-			// (i + 1 + instLst[i]._args[2]) >= length and  i + 1 < -(instLst[i]._args[2])
-			if (nextInstId < length) {
-				nodeStarts.insert(nextInstId);
+			int d = instLst[i]._args[2];
+			// Legal inputs : case1 (d >= 0): (i + 1 + d) < length; case2 (d < 0):(i + 1 >= -d)
+			if (((d >= 0) && (i + 1 + d < length)) || ((d < 0) && (i + 1 >= -d))) {
+				nodeStarts.insert(i + 1 + d);
 			}
 			else {
 				string errMsg = "illegal input: instruction " + to_string(i) + " -> "\
-				                "jmp goes to an invalid instruction.";
+				                "jmp goes to an invalid instruction " + to_string((int)(i) + 1 + d);
 				throw (errMsg);
 			}
 		}
