@@ -100,5 +100,17 @@ int main () {
 	catch (const string errMsg) {
 		cerr << errMsg << endl;
 	}
+
+	// test illegal input: goes to an invalid instruction
+	cout << "graph9 is " << endl;
+	inst instructions9[2] = {inst(JMPGT, 0, 2, -2),     // 0 JMP to inst -1 -> illegal
+	                         inst(RETX, 2),             // 1 END
+	                        };
+	try {
+		graph g9(instructions9, 2);
+	}
+	catch (const string errMsg) {
+		cerr << errMsg << endl;
+	}
 	return 0;
 }
