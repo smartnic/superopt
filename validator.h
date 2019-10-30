@@ -7,6 +7,8 @@
 
 using namespace z3;
 
+/* Validator algorithm document: https://github.com/ngsrinivas/superopt/tree/doc/doc */
+
 // convert string s into expr e, the type of e is int_const
 expr stringToExpr(string s);
 ostream& operator<< (ostream& out, vector<expr>& _exprVec);
@@ -35,18 +37,12 @@ public:
 
 class progSmt {
 private:
-	// f[i] is basic block logic FOL formula F of block logic i
-	vector<expr> f;
-	// program FOL formula; smt = f[0] && ... && f[n]
-	expr smt = stringToExpr("true");
-	// program output FOL formula; rename all output register values to the same name
-	expr smtOutput = stringToExpr("true");
 	// postRegVal[i] is post register values of basic block i,
 	// which are initial values for NEXT basic blocks
 	vector<vector<expr> > postRegVal;
-	// return the SMT for the given program
-	expr smtProg(inst* program, int length, smtVar* sv);
-	// return SMT for the given instruction
+	// return the SMT for the given program without branch and loop
+	expr smtBlock(inst* program, int length, smtVar* sv);
+	// return SMT for the given instruction, RET or JMP return "true"
 	expr smtInst(smtVar* sv, inst* in);
 	void initVariables();
 	void topoSortDFS(size_t curBId, vector<unsigned int>& blocks, vector<bool>& finished);
@@ -56,9 +52,12 @@ private:
 	void addPathCond(expr pCon, size_t curBId, size_t nextBId);
 	void genPostPathCon(smtVar* sv, size_t curBId, inst& instEnd);
 	expr getInitVal(smtVar* sv, size_t inBId);
-	expr smtRetInst(size_t curBId, inst* instEnd, unsigned int progId);
-	void processOutput(inst* instLst, unsigned int progId);
+	expr smtEndBlockInst(size_t curBId, inst* instEnd, unsigned int progId);
+	void genBlockCIn(size_t curBId, expr& cIn);
+	void processOutput(inst* instLst, unsigned int progId, expr& fPOutput);
 public:
+	// program logic
+	expr pL = stringToExpr("true");
 	// store pathCon, regIV, bL, post, g
 	// 1. pathCon[i] stores pre path condition formulas of basic block i
 	// There is a corresponding relationship between pathCon and g.nodesIn
@@ -78,29 +77,39 @@ public:
 	graph g;
 	progSmt();
 	~progSmt();
+	// Return the program logic FOL formula 'PL' including basic program logic
+	// and the formula of capturing the output of the program in the variable output[progId]
 	expr genSmt(unsigned int progId, inst* instLst, int length);
 };
 
 class validator {
 private:
-	// return the SMT for the pre condition
-	expr smtPre(unsigned int progId);// for program
+	// set register 0 in basic block 0 as input_i
+	expr smtPre(unsigned int progId);
+	// set the input variable of FOL formula as input_i
 	expr smtPre(expr e);
-	// return the SMT for the post condition check
+	// setting outputs of two programs are equal
 	expr smtPost(unsigned int progId1, unsigned int progId2);
 	expr smtPost(unsigned int progId, expr e);
 	void init();
 public:
 	// store
+	// pre[i]: input formula of program i: setting register 0 in basic block 0 as input_i
+	// or the input variable of FOL formula as input_i
 	vector<expr> pre;
-	vector<expr> p;
-	expr post = stringToExpr("false");
-	// f = pre^pre2^p1^p2 -> post
-	expr f = stringToExpr("false");
+	// ps[i]: program logic formula, including basic program logic
+	// and the formula of capturing the output of the program in the variable output[progId]
 	vector<progSmt> ps;
+	// two program's output formula of setting outputs of two programs are equal, i.e., output_progId1 == output2_progId2
+	expr post = stringToExpr("true");
+	// f = pre^pre2^p1^p2 -> post
+	expr f = stringToExpr("true");
 
 	validator();
 	~validator();
+	// check whether two programs have the same logic
 	bool equalCheck(inst* instLst1, int len1, inst* instLst2, int len2);
+	// check whether the program and the FOL formula have the same logic
+	// fx is the FOL formula, input/output is the input/output variable of fx
 	bool equalCheck(inst* instLst1, int len1, expr fx, expr input, expr output);
 };

@@ -147,7 +147,7 @@ void test4() {
 	expr bL2 = (implies(v("r_0_2_0_0") > 15, v("r_0_2_0_1") == v("r_0_2_0_0")) && \
 	            implies(v("r_0_2_0_0") <= 15, v("r_0_2_0_1") == 15)
 	           );
-	expr post2 = implies(prePC2, v("r_0_2_0_1") == v("output" + to_string(progId)));
+	expr post2 = implies(prePC2, v("output" + to_string(progId)) == v("r_0_2_0_1"));
 	printTestRes(isSMTValid(prePC2 == ps.pathCon[2][0]), "pre path condition");
 	printTestRes(isSMTValid(preIV2 == ps.regIV[2][0]), "pre register initial values");
 	printTestRes(isSMTValid(bL2 == ps.bL[2]), "basic block logic");
@@ -182,7 +182,7 @@ void test4() {
 	                 v("r_1_3_3_0") == v("r_1_2_3_0")
 	                );
 	bL2 = (v("r_1_2_0_1") == v("r_1_2_0_0") + v("r_1_2_0_0"));
-	post2 = implies(prePC2_0 || prePC2_1, v("r_1_2_0_1") == v("output" + to_string(progId)));
+	post2 = implies(prePC2_0 || prePC2_1, v("output" + to_string(progId)) == v("r_1_2_0_1"));
 	printTestRes(isSMTValid(prePC2_0 == ps.pathCon[2][0]), "pre path condition 0");
 	printTestRes(isSMTValid(prePC2_1 == ps.pathCon[2][1]), "pre path condition 1");
 	printTestRes(isSMTValid(preIV2_0 == ps.regIV[2][0]), "pre register initial values 0");
@@ -196,7 +196,7 @@ void test4() {
 	progId = 2;
 	ps.genSmt(progId, p2, 1);
 	// fmt: r_[progId]_[blockId]_[regId]_[versionId]
-	expr post0 = implies(v("true"), v("r_2_0_0_1") == v("output" + to_string(progId)));
+	expr post0 = implies(v("true"), v("output" + to_string(progId)) == v("r_2_0_0_1"));
 	printTestRes(isSMTValid(post0 == ps.post[0][0]), "post condition");
 }
 
