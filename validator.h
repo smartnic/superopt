@@ -41,20 +41,20 @@ private:
 	// which are initial values for NEXT basic blocks
 	vector<vector<expr> > postRegVal;
 	// return the SMT for the given program without branch and loop
-	expr smtBlock(inst* program, int length, smtVar* sv);
+	void smtBlock(expr& smtB, inst* program, int length, smtVar* sv);
 	// return SMT for the given instruction, RET or JMP return "true"
 	expr smtInst(smtVar* sv, inst* in);
 	void initVariables();
 	void topoSortDFS(size_t curBId, vector<unsigned int>& blocks, vector<bool>& finished);
-	expr genBlockProgLogic(smtVar* sv, size_t curBId, inst* instLst);
+	void genBlockProgLogic(expr& e, smtVar* sv, size_t curBId, inst* instLst);
 	void storePostRegVal(smtVar* sv, size_t curBId);
 	void smtJmpInst(smtVar* sv, vector<expr>& cInstEnd, inst& instEnd);
 	void addPathCond(expr pCon, size_t curBId, size_t nextBId);
 	void genPostPathCon(smtVar* sv, size_t curBId, inst& instEnd);
-	expr getInitVal(smtVar* sv, size_t inBId);
+	void getInitVal(expr& fIV, smtVar* sv, size_t inBId);
 	expr smtEndBlockInst(size_t curBId, inst* instEnd, unsigned int progId);
-	void genBlockCIn(size_t curBId, expr& cIn);
-	void processOutput(inst* instLst, unsigned int progId, expr& fPOutput);
+	void genBlockCIn(expr& cIn, size_t curBId);
+	void processOutput(expr& fPOutput, inst* instLst, unsigned int progId);
 public:
 	// program logic
 	expr pL = stringToExpr("true");
@@ -85,12 +85,12 @@ public:
 class validator {
 private:
 	// set register 0 in basic block 0 as input_i
-	expr smtPre(unsigned int progId);
+	void smtPre(expr& pre, unsigned int progId);
 	// set the input variable of FOL formula as input_i
-	expr smtPre(expr e);
+	void smtPre(expr& pre, expr e);
 	// setting outputs of two programs are equal
-	expr smtPost(unsigned int progId1, unsigned int progId2);
-	expr smtPost(unsigned int progId, expr e);
+	void smtPost(expr& pst, unsigned int progId1, unsigned int progId2);
+	void smtPost(expr& pst, unsigned int progId, expr e);
 	void init();
 public:
 	// store
