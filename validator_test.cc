@@ -189,6 +189,15 @@ void test4() {
 	printTestRes(isSMTValid(preIV2_1 == ps.regIV[2][1]), "pre register initial values 1");
 	printTestRes(isSMTValid(bL2 == ps.bL[2]), "basic block logic");
 	printTestRes(isSMTValid(post2 == ps.post[2][0]), "post condition");
+
+	std::cout << "\ntest4.3: check program-end basic block 0[0:0] without RET instructions\n";
+	inst p2[1] = {inst(ADDXY, 0, 0),
+	             };
+	progId = 2;
+	ps.genSmt(progId, p2, 1);
+	// fmt: r_[progId]_[blockId]_[regId]_[versionId]
+	expr post0 = implies(v("true"), v("r_2_0_0_1") == v("output" + to_string(progId)));
+	printTestRes(isSMTValid(post0 == ps.post[0][0]), "post condition");
 }
 
 int main(int argc, char *argv[]) {
