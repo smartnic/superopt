@@ -96,18 +96,9 @@ progSmt::~progSmt() {}
 // assume Block has no branch and is an ordered sequence of instructions
 void progSmt::smtBlock(expr& smtB, inst* program, int length, smtVar* sv) {
 	inst* instLst = program;
-	// length = 1
-	if (length == 1) {
-		smtB = smtInst(sv, &instLst[0]);
-		return;
-	}
-	int instLength = length;
-	// length > 1, end with END or JMP instruction
-	if (getInstType(instLst[length - 1]) == CFG_END) {
-		instLength = length - 1;
-	}
-	expr p = smtInst(sv, &instLst[0]);
-	for (size_t i = 1; i < instLength; i++) {
+	expr p = stringToExpr("true");
+	for (size_t i = 0; i < length; i++) {
+		if (getInstType(instLst[i]) != CFG_OTHERS) continue;
 		p = p and smtInst(sv, &instLst[i]);
 	}
 	smtB = p.simplify();
@@ -115,9 +106,6 @@ void progSmt::smtBlock(expr& smtB, inst* program, int length, smtVar* sv) {
 
 expr progSmt::smtInst(smtVar* sv, inst* in) {
 	switch (in->_opcode) {
-	case NOP: {
-		return stringToExpr("true");
-	}
 	case ADDXY: {
 		return (CURDST + CURSRC == NEWDST);
 	}
@@ -137,27 +125,6 @@ expr progSmt::smtInst(smtVar* sv, inst* in) {
 		expr cond1 = (curDst > CURSRC) and (newDst == curDst);
 		expr cond2 = (curDst <= CURSRC) and (newDst == CURSRC);
 		return (cond1 or cond2);
-	}
-	case RETX: {
-		return stringToExpr("true");
-	}
-	case RETC: {
-		return stringToExpr("true");
-	}
-	case JMPEQ: {
-		return stringToExpr("true");
-	}
-	case JMPGT: {
-		return stringToExpr("true");
-	}
-	case JMPGE: {
-		return stringToExpr("true");
-	}
-	case JMPLT: {
-		return stringToExpr("true");
-	}
-	case JMPLE: {
-		return stringToExpr("true");
 	}
 	default: {
 		return stringToExpr("false");
