@@ -49,5 +49,6 @@ public:
 #define CFG_OTHERS 0
 #define CFG_CONDJMP 1
 #define CFG_END 2
+#define CFG_NOP 3
 int getInstType(inst& ins);
 

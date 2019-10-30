@@ -12,6 +12,7 @@ int getInstType(inst& ins) {
 	case JMPGE: return CFG_CONDJMP;
 	case JMPLT: return CFG_CONDJMP;
 	case JMPLE: return CFG_CONDJMP;
+	case NOP: return CFG_NOP;
 	default: return CFG_OTHERS;
 	}
 }
