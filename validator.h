@@ -42,7 +42,7 @@ private:
 	vector<vector<expr> > postRegVal;
 	// return the SMT for the given program without branch and loop
 	void smtBlock(expr& smtB, inst* program, int length, smtVar* sv);
-	// return SMT for the given instruction, RET or JMP return "true"
+	// return SMT for the given CFG_OTHERS type instruction, other types return false
 	expr smtInst(smtVar* sv, inst* in);
 	void initVariables();
 	void topoSortDFS(size_t curBId, vector<unsigned int>& blocks, vector<bool>& finished);
