@@ -55,8 +55,8 @@ int main () {
                           };
   try {
     graph g5(instructions5, 6);
-  } catch (const string errMsg) {
-    cerr << errMsg << endl;
+  } catch (const string err_msg) {
+    cerr << err_msg << endl;
   }
 
   // test illegal input with loop
@@ -69,8 +69,8 @@ int main () {
                           };
   try {
     graph g6(instructions6, 5);
-  } catch (const string errMsg) {
-    cerr << errMsg << endl;
+  } catch (const string err_msg) {
+    cerr << err_msg << endl;
   }
 
   // test illegal input: goes to an invalid instruction
@@ -82,8 +82,8 @@ int main () {
                           };
   try {
     graph g7(instructions7, 4);
-  } catch (const string errMsg) {
-    cerr << errMsg << endl;
+  } catch (const string err_msg) {
+    cerr << err_msg << endl;
   }
 
   // test illegal input: goes to an invalid instruction
@@ -93,8 +93,8 @@ int main () {
                           };
   try {
     graph g8(instructions8, 2);
-  } catch (const string errMsg) {
-    cerr << errMsg << endl;
+  } catch (const string err_msg) {
+    cerr << err_msg << endl;
   }
 
   // test illegal input: goes to an invalid instruction
@@ -104,8 +104,8 @@ int main () {
                           };
   try {
     graph g9(instructions9, 2);
-  } catch (const string errMsg) {
-    cerr << errMsg << endl;
+  } catch (const string err_msg) {
+    cerr << err_msg << endl;
   }
   return 0;
 }

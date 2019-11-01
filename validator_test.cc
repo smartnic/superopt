@@ -4,14 +4,14 @@
 
 using namespace z3;
 
-#define v(x) stringToExpr(x)
+#define v(x) string_to_expr(x)
 
 
-void printTestRes(bool res, string testName) {
+void print_test_res(bool res, string test_name) {
   if (res) {
-    std::cout << "check " + testName + " SUCCESS\n";
+    std::cout << "check " + test_name + " SUCCESS\n";
   } else {
-    std::cout << "check " + testName + " NOT SUCCESS\n";
+    std::cout << "check " + test_name + " NOT SUCCESS\n";
   }
 }
 
@@ -50,9 +50,9 @@ void test1() {
                            inst(MAXX, 0, 3),      /* max r0, r3 */
                            inst(RETX, 0),
                           };
-  printTestRes(vld.equalCheck(instructions1, 6, instructions2, 7), "instructions1 == instructions2");
-  printTestRes(vld.equalCheck(instructions1, 6, instructions3, 5), "instructions1 == instructions3");
-  printTestRes(!vld.equalCheck(instructions1, 6, instructions4, 6), "instructions1 != instructions4");
+  print_test_res(vld.equal_check(instructions1, 6, instructions2, 7), "instructions1 == instructions2");
+  print_test_res(vld.equal_check(instructions1, 6, instructions3, 5), "instructions1 == instructions3");
+  print_test_res(!vld.equal_check(instructions1, 6, instructions4, 6), "instructions1 != instructions4");
 }
 
 void test2() {
@@ -67,7 +67,7 @@ void test2() {
                            inst(RETX, 2),         // ret r2
                            inst(RETX, 0),         // ret r0
                           };
-  printTestRes(vld.equalCheck(instructions1, 3, instructions2, 3), "instructions1 == instructions2");
+  print_test_res(vld.equal_check(instructions1, 3, instructions2, 3), "instructions1 == instructions2");
 
   // instructions3 == instructions4 != instructions5
   inst instructions3[3] = {inst(JMPGT, 0, 2, 1),  // return max(r0, r2)
@@ -81,8 +81,8 @@ void test2() {
                            inst(RETX, 2),
                            inst(RETX, 0),
                           };
-  printTestRes(vld.equalCheck(instructions3, 3, instructions4, 2), "instructions3 == instructions4");
-  printTestRes(!vld.equalCheck(instructions3, 3, instructions5, 3), "instructions3 != instructions5");
+  print_test_res(vld.equal_check(instructions3, 3, instructions4, 2), "instructions3 == instructions4");
+  print_test_res(!vld.equal_check(instructions3, 3, instructions5, 3), "instructions3 != instructions5");
 
   // f(x) = max(x, r1, r2, 10)
   // p11 == p12
@@ -104,22 +104,22 @@ void test2() {
                   inst(ADDXY, 0, 1),
                   inst(RETX, 0),        // ret r0
                  };
-  printTestRes(vld.equalCheck(p11, 5, p12, 11), "f(x)_p1 == f(x)_p2");
+  print_test_res(vld.equal_check(p11, 5, p12, 11), "f(x)_p1 == f(x)_p2");
 }
 
 // fx == program_fx test
 void test3() {
   std::cout << "\ntest 3 starts...\n";
   validator vld;
-  expr x = stringToExpr("x");
-  expr y = stringToExpr("y");
+  expr x = string_to_expr("x");
+  expr y = string_to_expr("y");
   expr fx = implies(x > 10, y == x) && implies(x <= 10, y == 10);
-  inst pFx[4] = {inst(MOVXC, 1, 10),
-                 inst(JMPLT, 0, 1, 1),
-                 inst(RETX, 0),
-                 inst(RETX, 1),
-                };
-  printTestRes(vld.equalCheck(pFx, 4, fx, x, y), "Program_f(x) == (f(x)=max(x, 10))");
+  inst p_fx[4] = {inst(MOVXC, 1, 10),
+                  inst(JMPLT, 0, 1, 1),
+                  inst(RETX, 0),
+                  inst(RETX, 1),
+                 };
+  print_test_res(vld.equal_check(p_fx, 4, fx, x, y), "Program_f(x) == (f(x)=max(x, 10))");
 }
 
 // basic block test
@@ -131,26 +131,26 @@ void test4() {
                inst(MAXC, 0, 15),    // 3
                inst(RETX, 0),        // 4
               };
-  progSmt ps;
-  unsigned int progId = 0;
-  expr pl = ps.genSmt(progId, p, 5);
+  prog_smt ps;
+  unsigned int prog_id = 0;
+  expr pl = ps.gen_smt(prog_id, p, 5);
   // test block 2[3:4]
   std::cout << "test 4.1: check basic block 2[3:4]\n";
-  // fmt: r_[progId]_[blockId]_[regId]_[versionId]
+  // fmt: r_[prog_id]_[block_id]_[reg_id]_[version_id]
   expr prePC2 = (v("r_0_0_0_0") < v("r_0_0_1_1"));
   expr preIV2 = (v("r_0_0_0_0") == v("r_0_2_0_0") && \
                  v("r_0_0_1_1") == v("r_0_2_1_0") && \
                  v("r_0_0_2_0") == v("r_0_2_2_0") && \
                  v("r_0_0_3_0") == v("r_0_2_3_0")
                 );
-  expr bL2 = (implies(v("r_0_2_0_0") > 15, v("r_0_2_0_1") == v("r_0_2_0_0")) && \
+  expr bl2 = (implies(v("r_0_2_0_0") > 15, v("r_0_2_0_1") == v("r_0_2_0_0")) && \
               implies(v("r_0_2_0_0") <= 15, v("r_0_2_0_1") == 15)
              );
-  expr post2 = implies(prePC2, v("output" + to_string(progId)) == v("r_0_2_0_1"));
-  printTestRes(isSMTValid(prePC2 == ps.pathCon[2][0]), "pre path condition");
-  printTestRes(isSMTValid(preIV2 == ps.regIV[2][0]), "pre register initial values");
-  printTestRes(isSMTValid(bL2 == ps.bL[2]), "basic block logic");
-  printTestRes(isSMTValid(post2 == ps.post[2][0]), "post condition");
+  expr post2 = implies(prePC2, v("output" + to_string(prog_id)) == v("r_0_2_0_1"));
+  print_test_res(is_smt_valid(prePC2 == ps.path_con[2][0]), "pre path condition");
+  print_test_res(is_smt_valid(preIV2 == ps.reg_iv[2][0]), "pre register initial values");
+  print_test_res(is_smt_valid(bl2 == ps.bl[2]), "basic block logic");
+  print_test_res(is_smt_valid(post2 == ps.post[2][0]), "post condition");
 
   std::cout << "\ntest4.2: check basic block 2[2:3]\n";
   inst p1[7] = {inst(JMPLT, 0, 1, 3),   // 0 [0:0]
@@ -161,42 +161,42 @@ void test4() {
                 inst(JMPLT, 0, 1, -4),  // 5
                 inst(RETX, 0),          // 6 [6:6]
                };
-  progId = 1;
-  ps.genSmt(progId, p1, 7);
+  prog_id = 1;
+  ps.gen_smt(prog_id, p1, 7);
   // blocks: 0[0:0] 1[1:1] 2[2:3] 3[4:5] 4[6:6]
   // case0: 0 -> 1 -> 2; case1: 0 -> 3 -> 2
-  // fmt: r_[progId]_[blockId]_[regId]_[versionId]
-  expr prePC2_0 = !(v("r_1_0_0_0") < v("r_1_0_1_0"));
-  expr prePC2_1 = ((v("r_1_0_0_0") < v("r_1_0_1_0")) && \
-                   (v("r_1_3_0_1") < v("r_1_3_1_0"))
-                  );
-  expr preIV2_0 = (v("r_1_1_0_1") == v("r_1_2_0_0") && \
-                   v("r_1_1_1_0") == v("r_1_2_1_0") && \
-                   v("r_1_1_2_0") == v("r_1_2_2_0") && \
-                   v("r_1_1_3_0") == v("r_1_2_3_0")
-                  );
-  expr preIV2_1 = (v("r_1_3_0_1") == v("r_1_2_0_0") && \
-                   v("r_1_3_1_0") == v("r_1_2_1_0") && \
-                   v("r_1_3_2_0") == v("r_1_2_2_0") && \
-                   v("r_1_3_3_0") == v("r_1_2_3_0")
-                  );
-  bL2 = (v("r_1_2_0_1") == v("r_1_2_0_0") + v("r_1_2_0_0"));
-  post2 = implies(prePC2_0 || prePC2_1, v("output" + to_string(progId)) == v("r_1_2_0_1"));
-  printTestRes(isSMTValid(prePC2_0 == ps.pathCon[2][0]), "pre path condition 0");
-  printTestRes(isSMTValid(prePC2_1 == ps.pathCon[2][1]), "pre path condition 1");
-  printTestRes(isSMTValid(preIV2_0 == ps.regIV[2][0]), "pre register initial values 0");
-  printTestRes(isSMTValid(preIV2_1 == ps.regIV[2][1]), "pre register initial values 1");
-  printTestRes(isSMTValid(bL2 == ps.bL[2]), "basic block logic");
-  printTestRes(isSMTValid(post2 == ps.post[2][0]), "post condition");
+  // fmt: r_[prog_id]_[block_id]_[reg_id]_[version_id]
+  expr pre_pc2_0 = !(v("r_1_0_0_0") < v("r_1_0_1_0"));
+  expr pre_pc2_1 = ((v("r_1_0_0_0") < v("r_1_0_1_0")) && \
+                    (v("r_1_3_0_1") < v("r_1_3_1_0"))
+                   );
+  expr pre_iv2_0 = (v("r_1_1_0_1") == v("r_1_2_0_0") && \
+                    v("r_1_1_1_0") == v("r_1_2_1_0") && \
+                    v("r_1_1_2_0") == v("r_1_2_2_0") && \
+                    v("r_1_1_3_0") == v("r_1_2_3_0")
+                   );
+  expr pre_iv2_1 = (v("r_1_3_0_1") == v("r_1_2_0_0") && \
+                    v("r_1_3_1_0") == v("r_1_2_1_0") && \
+                    v("r_1_3_2_0") == v("r_1_2_2_0") && \
+                    v("r_1_3_3_0") == v("r_1_2_3_0")
+                   );
+  bl2 = (v("r_1_2_0_1") == v("r_1_2_0_0") + v("r_1_2_0_0"));
+  post2 = implies(pre_pc2_0 || pre_pc2_1, v("output" + to_string(prog_id)) == v("r_1_2_0_1"));
+  print_test_res(is_smt_valid(pre_pc2_0 == ps.path_con[2][0]), "pre path condition 0");
+  print_test_res(is_smt_valid(pre_pc2_1 == ps.path_con[2][1]), "pre path condition 1");
+  print_test_res(is_smt_valid(pre_iv2_0 == ps.reg_iv[2][0]), "pre register initial values 0");
+  print_test_res(is_smt_valid(pre_iv2_1 == ps.reg_iv[2][1]), "pre register initial values 1");
+  print_test_res(is_smt_valid(bl2 == ps.bl[2]), "basic block logic");
+  print_test_res(is_smt_valid(post2 == ps.post[2][0]), "post condition");
 
   std::cout << "\ntest4.3: check program-end basic block 0[0:0] without RET instructions\n";
   inst p2[1] = {inst(ADDXY, 0, 0),
                };
-  progId = 2;
-  ps.genSmt(progId, p2, 1);
-  // fmt: r_[progId]_[blockId]_[regId]_[versionId]
-  expr post0 = implies(v("true"), v("output" + to_string(progId)) == v("r_2_0_0_1"));
-  printTestRes(isSMTValid(post0 == ps.post[0][0]), "post condition");
+  prog_id = 2;
+  ps.gen_smt(prog_id, p2, 1);
+  // fmt: r_[prog_id]_[block_id]_[reg_id]_[version_id]
+  expr post0 = implies(v("true"), v("output" + to_string(prog_id)) == v("r_2_0_0_1"));
+  print_test_res(is_smt_valid(post0 == ps.post[0][0]), "post condition");
 }
 
 int main(int argc, char *argv[]) {

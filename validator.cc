@@ -10,12 +10,12 @@ using namespace z3;
 
 context c;
 
-#define CURSRC sv->getCurRegVar(SRCREG(in))
-#define CURDST sv->getCurRegVar(DSTREG(in))
-#define NEWDST sv->updateRegVar(DSTREG(in))
+#define CURSRC sv->get_cur_reg_var(SRCREG(in))
+#define CURDST sv->get_cur_reg_var(DSTREG(in))
+#define NEWDST sv->update_reg_var(DSTREG(in))
 #define IMM2 IMM2VAL(in)
 
-expr stringToExpr(string s) {
+expr string_to_expr(string s) {
   if (s == "true") {
     return c.bool_val(true);
   } else if (s == "false") {
@@ -24,27 +24,27 @@ expr stringToExpr(string s) {
   return c.int_const(s.c_str());
 }
 
-ostream& operator<<(ostream& out, vector<expr>& _exprVec) {
-  if (_exprVec.size() > 0) {
+ostream& operator<<(ostream& out, vector<expr>& _expr_vec) {
+  if (_expr_vec.size() > 0) {
     out << "\n";
   }
-  for (size_t i = 0; i < _exprVec.size(); i++) {
-    out << i << ": " << _exprVec[i] << "\n";
+  for (size_t i = 0; i < _expr_vec.size(); i++) {
+    out << i << ": " << _expr_vec[i] << "\n";
   }
   return out;
 }
 
-ostream& operator<<(ostream& out, vector<vector<expr> >& _exprVec) {
-  if (_exprVec.size() > 0) {
+ostream& operator<<(ostream& out, vector<vector<expr> >& _expr_vec) {
+  if (_expr_vec.size() > 0) {
     out << "\n";
   }
-  for (size_t i = 0; i < _exprVec.size(); i++) {
-    out << "block" << i << ": " << _exprVec[i] << "\n";
+  for (size_t i = 0; i < _expr_vec.size(); i++) {
+    out << "block" << i << ": " << _expr_vec[i] << "\n";
   }
   return out;
 }
 
-bool isSMTValid(expr smt) {
+bool is_smt_valid(expr smt) {
   solver s(c);
   s.add(!smt);
   switch (s.check()) {
@@ -55,55 +55,55 @@ bool isSMTValid(expr smt) {
   return false;
 }
 
-/* class smtVar start */
-smtVar::smtVar(unsigned int progId, unsigned int nodeId) {
-  _name = std::to_string(progId) + "_" + std::to_string(nodeId);
-  std::memset(regCurId, 0, NUM_REGS * sizeof(unsigned int));
-  std::string namePrefix = "r_" + _name + "_";
+/* class smt_var start */
+smt_var::smt_var(unsigned int prog_id, unsigned int node_id) {
+  _name = std::to_string(prog_id) + "_" + std::to_string(node_id);
+  std::memset(reg_cur_id, 0, NUM_REGS * sizeof(unsigned int));
+  std::string name_prefix = "r_" + _name + "_";
   for (size_t i = 0; i < NUM_REGS; i++) {
-    std::string name = namePrefix + std::to_string(i) + "_0";
-    regVar.push_back(stringToExpr(name));
+    std::string name = name_prefix + std::to_string(i) + "_0";
+    reg_var.push_back(string_to_expr(name));
   }
 }
 
-smtVar::~smtVar() {
+smt_var::~smt_var() {
 }
 
-expr smtVar::updateRegVar(unsigned int regId) {
-  regCurId[regId]++;
-  std::string name = "r_" + _name + "_" + std::to_string(regId) \
-                     + "_" + std::to_string(regCurId[regId]);
-  regVar[regId] = stringToExpr(name);
-  return getCurRegVar(regId);
+expr smt_var::update_reg_var(unsigned int reg_id) {
+  reg_cur_id[reg_id]++;
+  std::string name = "r_" + _name + "_" + std::to_string(reg_id) \
+                     + "_" + std::to_string(reg_cur_id[reg_id]);
+  reg_var[reg_id] = string_to_expr(name);
+  return get_cur_reg_var(reg_id);
 }
 
-expr smtVar::getCurRegVar(unsigned int regId) {
-  return regVar[regId];
+expr smt_var::get_cur_reg_var(unsigned int reg_id) {
+  return reg_var[reg_id];
 }
 
-expr smtVar::getInitRegVar(unsigned int regId) {
-  std::string name = "r_" + _name + "_" + std::to_string(regId) + "_0";
-  return stringToExpr(name);
+expr smt_var::get_init_reg_var(unsigned int reg_id) {
+  std::string name = "r_" + _name + "_" + std::to_string(reg_id) + "_0";
+  return string_to_expr(name);
 }
-/* class smtVar end */
+/* class smt_var end */
 
-/* class progSmt start */
-progSmt::progSmt() {}
+/* class prog_smt start */
+prog_smt::prog_smt() {}
 
-progSmt::~progSmt() {}
+prog_smt::~prog_smt() {}
 
 // assume Block has no branch and is an ordered sequence of instructions
-void progSmt::smtBlock(expr& smtB, inst* program, int length, smtVar* sv) {
-  inst* instLst = program;
-  expr p = stringToExpr("true");
+void prog_smt::smt_block(expr& smt_b, inst* program, int length, smt_var* sv) {
+  inst* inst_lst = program;
+  expr p = string_to_expr("true");
   for (size_t i = 0; i < length; i++) {
-    if (getInstType(instLst[i]) != CFG_OTHERS) continue;
-    p = p and smtInst(sv, &instLst[i]);
+    if (get_inst_type(inst_lst[i]) != CFG_OTHERS) continue;
+    p = p and smt_inst(sv, &inst_lst[i]);
   }
-  smtB = p.simplify();
+  smt_b = p.simplify();
 }
 
-expr progSmt::smtInst(smtVar* sv, inst* in) {
+expr prog_smt::smt_inst(smt_var* sv, inst* in) {
   switch (in->_opcode) {
     case ADDXY: {
       return (CURDST + CURSRC == NEWDST);
@@ -126,79 +126,79 @@ expr progSmt::smtInst(smtVar* sv, inst* in) {
       return (cond1 or cond2);
     }
     default: {
-      return stringToExpr("false");
+      return string_to_expr("false");
     }
   }
 }
 
 // init variables in class
-void progSmt::initVariables() {
-  postRegVal.clear();
-  pathCon.clear();
-  regIV.clear();
-  bL.clear();
+void prog_smt::init() {
+  post_reg_val.clear();
+  path_con.clear();
+  reg_iv.clear();
+  bl.clear();
   post.clear();
 
-  size_t blockNum = g.nodes.size();
+  size_t block_num = g.nodes.size();
 
-  postRegVal.resize(blockNum);
-  for (size_t i = 0; i < blockNum; i++) {
-    postRegVal[i].resize(NUM_REGS, stringToExpr("true"));
+  post_reg_val.resize(block_num);
+  for (size_t i = 0; i < block_num; i++) {
+    post_reg_val[i].resize(NUM_REGS, string_to_expr("true"));
   }
 
-  pathCon.resize(blockNum);
-  for (size_t i = 0; i < blockNum; i++) {
-    // Because of the corresponding relationship between pathCon and g.nodesIn,
-    // the size of pathCon[i] is equal to that of g.nodesIn[i];
-    pathCon[i].resize(g.nodesIn[i].size(), stringToExpr("true"));
+  path_con.resize(block_num);
+  for (size_t i = 0; i < block_num; i++) {
+    // Because of the corresponding relationship between path_con and g.nodes_in,
+    // the size of path_con[i] is equal to that of g.nodes_in[i];
+    path_con[i].resize(g.nodes_in[i].size(), string_to_expr("true"));
   }
 
-  regIV.resize(blockNum);
-  for (size_t i = 0; i < blockNum; i++) {
-    regIV[i].resize(g.nodesIn[i].size(), stringToExpr("true"));
+  reg_iv.resize(block_num);
+  for (size_t i = 0; i < block_num; i++) {
+    reg_iv[i].resize(g.nodes_in[i].size(), string_to_expr("true"));
   }
-  bL.resize(blockNum, stringToExpr("true"));
-  post.resize(blockNum);
-  for (size_t i = 0; i < blockNum; i++) {
-    if (g.nodesOut[i].size() > 0) {
-      post[i].resize(g.nodesOut[i].size(), stringToExpr("true"));
+  bl.resize(block_num, string_to_expr("true"));
+  post.resize(block_num);
+  for (size_t i = 0; i < block_num; i++) {
+    if (g.nodes_out[i].size() > 0) {
+      post[i].resize(g.nodes_out[i].size(), string_to_expr("true"));
     } else {
-      post[i].resize(1, stringToExpr("true"));
+      post[i].resize(1, string_to_expr("true"));
     }
   }
 }
 
 // topological sorting by DFS
-void progSmt::topoSortDFS(size_t curBId, vector<unsigned int>& blocks, vector<bool>& finished) {
-  if (finished[curBId]) {
+void prog_smt::topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vector<bool>& finished) {
+  if (finished[cur_bid]) {
     return;
   }
-  for (size_t i = 0; i < g.nodesOut[curBId].size(); i++) {
-    topoSortDFS(g.nodesOut[curBId][i], blocks, finished);
+  for (size_t i = 0; i < g.nodes_out[cur_bid].size(); i++) {
+    topo_sort_dfs(g.nodes_out[cur_bid][i], blocks, finished);
   }
-  finished[curBId] = true;
-  blocks.push_back(curBId);
+  finished[cur_bid] = true;
+  blocks.push_back(cur_bid);
 }
 
-void progSmt::genBlockProgLogic(expr& e, smtVar* sv, size_t curBId, inst* instLst) {
-  inst* start = &instLst[g.nodes[curBId]._start];
-  int length = g.nodes[curBId]._end - g.nodes[curBId]._start + 1;
-  e = stringToExpr("true");
-  smtBlock(e, start, length, sv);
-  bL[curBId] = e; // store
+void prog_smt::gen_block_prog_logic(expr& e, smt_var* sv, size_t cur_bid, inst* inst_lst) {
+  inst* start = &inst_lst[g.nodes[cur_bid]._start];
+  int length = g.nodes[cur_bid]._end - g.nodes[cur_bid]._start + 1;
+  e = string_to_expr("true");
+  smt_block(e, start, length, sv);
+  bl[cur_bid] = e; // store
 }
 
-void progSmt::storePostRegVal(smtVar* sv, size_t curBId) {
+void prog_smt::store_post_reg_val(smt_var* sv, size_t cur_bid) {
   for (size_t i = 0; i < NUM_REGS; i++) {
-    postRegVal[curBId][i] = sv->getCurRegVar(i);
+    post_reg_val[cur_bid][i] = sv->get_cur_reg_var(i);
   }
 }
 
-void progSmt::smtJmpInst(smtVar* sv, vector<expr>& cInstEnd, inst& instEnd) {
-  inst* in = &instEnd;
+void prog_smt::smt_jmp_inst(smt_var* sv, vector<expr>& c_inst_end, inst& inst_end) {
+  inst* in = &inst_end;
   // e is formula for Jmp
-  expr e = stringToExpr("true");
-  switch (instEnd._opcode) {
+  expr e = string_to_expr("true");
+  switch (inst_end._opcode) {
     case JMPEQ: {e = (CURDST == CURSRC); break;}
     case JMPGT: {e = (CURDST > CURSRC); break;}
     case JMPGE: {e = (CURDST >= CURSRC); break;}
@@ -206,174 +206,174 @@ void progSmt::smtJmpInst(smtVar* sv, vector<expr>& cInstEnd, inst& instEnd) {
     case JMPLE: {e = (CURDST <= CURSRC); break;}
   }
   // keep order: insert no jmp first
-  cInstEnd.push_back(!e); // no jmp
-  cInstEnd.push_back(e);  // jmp
+  c_inst_end.push_back(!e); // no jmp
+  c_inst_end.push_back(e);  // jmp
 }
 
-// update path condition "pCon" generated by curBId into the pathCon[nextBId]
-void progSmt::addPathCond(expr pCon, size_t curBId, size_t nextBId) {
-  for (size_t j = 0; j < pathCon[nextBId].size(); j++) {
-    if (g.nodesIn[nextBId][j] == curBId) {
-      pathCon[nextBId][j] = pCon;
+// update path condition "p_con" generated by cur_bid into the path_con[next_bid]
+void prog_smt::add_path_cond(expr p_con, size_t cur_bid, size_t next_bid) {
+  for (size_t j = 0; j < path_con[next_bid].size(); j++) {
+    if (g.nodes_in[next_bid][j] == cur_bid) {
+      path_con[next_bid][j] = p_con;
     }
   }
 }
 
 // generate pre path condition formula with ALL incoming edges for basic block
-void progSmt::genBlockCIn(expr& cIn, size_t curBId) {
-  if (pathCon[curBId].size() > 0) { // calculate c_in by parents, that is, pathCon[curBId]
-    cIn = pathCon[curBId][0];
-    for (size_t i = 1; i < pathCon[curBId].size(); i++) {
-      cIn = cIn || pathCon[curBId][i];
+void prog_smt::gen_block_c_in(expr& c_in, size_t cur_bid) {
+  if (path_con[cur_bid].size() > 0) { // calculate c_in by parents, that is, path_con[cur_bid]
+    c_in = path_con[cur_bid][0];
+    for (size_t i = 1; i < path_con[cur_bid].size(); i++) {
+      c_in = c_in || path_con[cur_bid][i];
     }
   }
 }
 
 // steps: 1. calculate c_in;
-// 2. calculate post path condition "c" of current basic block curBId;
-// 3. use c to update pathCon[nextBId]
+// 2. calculate post path condition "c" of current basic block cur_bid;
+// 3. use c to update path_con[next_bid]
 // three cases: 1. no next blocks 2. one next block 3. two next blocks
-void progSmt::genPostPathCon(smtVar* sv, size_t curBId, inst& instEnd) {
+void prog_smt::gen_post_path_con(smt_var* sv, size_t cur_bid, inst& inst_end) {
   // case 1: no next blocks
-  if (g.nodesOut[curBId].size() == 0) {
+  if (g.nodes_out[cur_bid].size() == 0) {
     return;
   }
   // step 1. calculate c_in;
-  // When curBId is processed, pathCon[curBId] already has been
+  // When cur_bid is processed, path_con[cur_bid] already has been
   // updated with the correct value because of topo sort
   // if current block(i.e., block 0) has no incoming edges, set c_in = true.
-  expr cIn = stringToExpr("true");
-  genBlockCIn(cIn, curBId);
+  expr c_in = string_to_expr("true");
+  gen_block_c_in(c_in, cur_bid);
   // case 2: one next block
   // In this case, the post path condition is same as the c_in
-  if (g.nodesOut[curBId].size() == 1) {
-    unsigned int nextBId = g.nodesOut[curBId][0];
-    // update path condition to the pathCon[nextBId]
-    addPathCond(cIn.simplify(), curBId, nextBId);
-    post[curBId][0] = cIn; //store
+  if (g.nodes_out[cur_bid].size() == 1) {
+    unsigned int next_bid = g.nodes_out[cur_bid][0];
+    // update path condition to the path_con[next_bid]
+    add_path_cond(c_in.simplify(), cur_bid, next_bid);
+    post[cur_bid][0] = c_in; //store
     return;
   }
   // case 3: two next blocks
-  // If keep order: cInstEnd[0]: no jmp path condition; cInstEnd[1]: jmp path condition,
-  // then cInstEnd[i] -> g.nodesOut[curBId][i];
-  // Why: according to the process of jmp path condition in function genAllEdgesGraph in cfg.cc
-  // function smtJmpInst keep this order
+  // If keep order: c_inst_end[0]: no jmp path condition; c_inst_end[1]: jmp path condition,
+  // then c_inst_end[i] -> g.nodes_out[cur_bid][i];
+  // Why: according to the process of jmp path condition in function gen_all_edges_graph in cfg.cc
+  // function smt_jmp_inst keep this order
   // case 3 step 2
-  vector<expr> cInstEnd;
-  smtJmpInst(sv, cInstEnd, instEnd);
+  vector<expr> c_inst_end;
+  smt_jmp_inst(sv, c_inst_end, inst_end);
   // case 3 step 3
-  // push the cInstEnd[0] and cInstEnd[1] into nextBIds' pathCon
+  // push the c_inst_end[0] and c_inst_end[1] into next_bids' path_con
   // no jmp
-  unsigned int nextBId = g.nodesOut[curBId][0];
-  expr cNextBId = (cIn && cInstEnd[0]).simplify();
-  addPathCond(cNextBId, curBId, nextBId);
-  post[curBId][0] = cNextBId; // store
+  unsigned int next_bid = g.nodes_out[cur_bid][0];
+  expr c_next_bid = (c_in && c_inst_end[0]).simplify();
+  add_path_cond(c_next_bid, cur_bid, next_bid);
+  post[cur_bid][0] = c_next_bid; // store
   // jmp
-  nextBId = g.nodesOut[curBId][1];
-  cNextBId = (cIn && cInstEnd[1]).simplify();
-  addPathCond(cNextBId, curBId, nextBId);
-  post[curBId][1] = cNextBId; // store
+  next_bid = g.nodes_out[cur_bid][1];
+  c_next_bid = (c_in && c_inst_end[1]).simplify();
+  add_path_cond(c_next_bid, cur_bid, next_bid);
+  post[cur_bid][1] = c_next_bid; // store
 }
 
-void progSmt::getInitVal(expr& fIV, smtVar* sv, size_t inBId) {
-  expr e = (sv->getInitRegVar(0) == postRegVal[inBId][0]);
+void prog_smt::get_init_val(expr& f_iv, smt_var* sv, size_t in_bid) {
+  expr e = (sv->get_init_reg_var(0) == post_reg_val[in_bid][0]);
   for (size_t i = 1; i < NUM_REGS; i++) {
-    e = e && (sv->getInitRegVar(i) == postRegVal[inBId][i]);
+    e = e && (sv->get_init_reg_var(i) == post_reg_val[in_bid][i]);
   }
-  fIV = e;
+  f_iv = e;
 }
 
 // TODO: needed to be generalized
-// for each return value v, smt: v == output[progId]
-expr progSmt::smtEndBlockInst(size_t curBId, inst* instEnd, unsigned int progId) {
-  switch (instEnd->_opcode) {
+// for each return value v, smt: v == output[prog_id]
+expr prog_smt::smt_end_block_inst(size_t cur_bid, inst* inst_end, unsigned int prog_id) {
+  switch (inst_end->_opcode) {
     case RETX:
-      return (stringToExpr("output" + to_string(progId)) == postRegVal[curBId][DSTREG(instEnd)]);
+      return (string_to_expr("output" + to_string(prog_id)) == post_reg_val[cur_bid][DSTREG(inst_end)]);
     case RETC:
-      return (stringToExpr("output" + to_string(progId)) == IMM1VAL(instEnd));
+      return (string_to_expr("output" + to_string(prog_id)) == IMM1VAL(inst_end));
     default: // if no RET, return r0
-      return (stringToExpr("output" + to_string(progId)) == postRegVal[curBId][0]);
+      return (string_to_expr("output" + to_string(prog_id)) == post_reg_val[cur_bid][0]);
   }
 }
 
-// Set fPOutput to capture the output of the program (from return instructions/default register)
-// in the variable output[progId]
-void progSmt::processOutput(expr& fPOutput, inst* instLst, unsigned int progId) {
-  expr e = stringToExpr("true");
+// Set f_p_output to capture the output of the program (from return instructions/default register)
+// in the variable output[prog_id]
+void prog_smt::process_output(expr& f_p_output, inst* inst_lst, unsigned int prog_id) {
+  expr e = string_to_expr("true");
   // search all basic blocks for the basic blocks without outgoing edges
   for (size_t i = 0; i < g.nodes.size(); i++) {
-    if (g.nodesOut[i].size() != 0) continue;
+    if (g.nodes_out[i].size() != 0) continue;
     // process END instruction
-    expr cIn = stringToExpr("true");
-    genBlockCIn(cIn, i);
-    expr e1 = smtEndBlockInst(i, &instLst[g.nodes[i]._end], progId);
-    expr e2 = implies(cIn.simplify(), e1);
+    expr c_in = string_to_expr("true");
+    gen_block_c_in(c_in, i);
+    expr e1 = smt_end_block_inst(i, &inst_lst[g.nodes[i]._end], prog_id);
+    expr e2 = implies(c_in.simplify(), e1);
     e = e && e2;
     post[i][0] = e2; // store
   }
-  fPOutput = e;
+  f_p_output = e;
 }
 
-expr progSmt::genSmt(unsigned int progId, inst* instLst, int length) {
+expr prog_smt::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   try {
     // generate a cfg
     // illegal input would be detected: 1. program with loop
     // 2. program that goes to the invalid instruction
-    g.genGraph(instLst, length);
-  } catch (const string errMsg) {
-    cerr << errMsg << endl;
+    g.gen_graph(inst_lst, length);
+  } catch (const string err_msg) {
+    cerr << err_msg << endl;
   }
   // init class variables
-  initVariables();
+  init();
 
   // blocks stores the block IDs in order after topological sorting
   vector<unsigned int> blocks;
   vector<bool> finished(g.nodes.size(), false);
   // cfg here is without loop, loop detect: function dfs in class graph
-  topoSortDFS(0, blocks, finished);
+  topo_sort_dfs(0, blocks, finished);
   std::reverse(blocks.begin(), blocks.end());
 
-  // basic block FOL formula; fBlock[b] = implies(pathCon[b], fIV[b] && fPL[b])
-  vector<expr> fBlock;
-  fBlock.resize(g.nodes.size(), stringToExpr("true"));
+  // basic block FOL formula; f_block[b] = implies(path_con[b], f_iv[b] && fpl[b])
+  vector<expr> f_block;
+  f_block.resize(g.nodes.size(), string_to_expr("true"));
   // process each basic block in order
   for (size_t i = 0; i < blocks.size(); i++) {
     unsigned int b = blocks[i];
-    smtVar sv(progId, b);
+    smt_var sv(prog_id, b);
     // generate f_bl: the block program logic
-    expr fBL = stringToExpr("true");
-    genBlockProgLogic(fBL, &sv, b, instLst);
+    expr f_bl = string_to_expr("true");
+    gen_block_prog_logic(f_bl, &sv, b, inst_lst);
     if (b == 0) {
       // basic block 0 does not have pre path condition
-      // and its fIV is the whole program's pre condition which is stored in variable pre of class validator
-      fBlock[0] = fBL;
+      // and its f_iv is the whole program's pre condition which is stored in variable pre of class validator
+      f_block[0] = f_bl;
     } else {
-      for (size_t j = 0; j < g.nodesIn[b].size(); j++) {
+      for (size_t j = 0; j < g.nodes_in[b].size(); j++) {
         // generate f_iv: the logic that the initial values are fed by the last basic block
-        expr fIV = stringToExpr("true");
-        getInitVal(fIV, &sv, g.nodesIn[b][j]);
-        regIV[b][j] = fIV; // store
-        fBlock[b] = fBlock[b] && implies(pathCon[b][j], fIV && fBL);
+        expr f_iv = string_to_expr("true");
+        get_init_val(f_iv, &sv, g.nodes_in[b][j]);
+        reg_iv[b][j] = f_iv; // store
+        f_block[b] = f_block[b] && implies(path_con[b][j], f_iv && f_bl);
       }
     }
     // store post iv for current basic block b
-    storePostRegVal(&sv, b);
-    // update post path condtions "pathCon" created by current basic block b
-    genPostPathCon(&sv, b, instLst[g.nodes[b]._end]);
+    store_post_reg_val(&sv, b);
+    // update post path condtions "path_con" created by current basic block b
+    gen_post_path_con(&sv, b, inst_lst[g.nodes[b]._end]);
   }
 
-  // program FOL formula; fProg = fBlock[0] && ... && fBlock[n]
-  expr fProg = fBlock[0];
-  for (size_t i = 1; i < fBlock.size(); i++) {
-    fProg = fProg && fBlock[i];
+  // program FOL formula; f_prog = f_block[0] && ... && f_block[n]
+  expr f_prog = f_block[0];
+  for (size_t i = 1; i < f_block.size(); i++) {
+    f_prog = f_prog && f_block[i];
   }
   // program output FOL formula; rename all output register values to the same name
-  expr fPOutput = stringToExpr("true");
-  processOutput(fPOutput, instLst, progId);
-  pL = (fProg && fPOutput).simplify();
-  return pL;
+  expr f_p_output = string_to_expr("true");
+  process_output(f_p_output, inst_lst, prog_id);
+  pl = (f_prog && f_p_output).simplify();
+  return pl;
 }
-/* class progSmt end */
+/* class prog_smt end */
 
 /* class validator start */
 validator::validator() {
@@ -382,26 +382,26 @@ validator::validator() {
 validator::~validator() {}
 
 // assgin input r0 "input", other registers 0
-void validator::smtPre(expr& pre, unsigned int progId) {
-  smtVar sv(progId, 0);
-  expr p = (sv.getCurRegVar(0) == stringToExpr("input"));
+void validator::smt_pre(expr& pre, unsigned int prog_id) {
+  smt_var sv(prog_id, 0);
+  expr p = (sv.get_cur_reg_var(0) == string_to_expr("input"));
   for (size_t i = 1; i < NUM_REGS; i++) {
-    p = p and (sv.getCurRegVar(i) == 0);
+    p = p and (sv.get_cur_reg_var(i) == 0);
   }
   pre = p;
 }
 
-void validator::smtPre(expr& pre, expr e) {
-  pre = (e == stringToExpr("input"));
+void validator::smt_pre(expr& pre, expr e) {
+  pre = (e == string_to_expr("input"));
 }
 
-void validator::smtPost(expr& pst, unsigned int progId1, unsigned int progId2) {
-  pst = (stringToExpr("output" + to_string(progId1)) == \
-         stringToExpr("output" + to_string(progId2)));
+void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2) {
+  pst = (string_to_expr("output" + to_string(prog_id1)) == \
+         string_to_expr("output" + to_string(prog_id2)));
 }
 
-void validator::smtPost(expr& pst, unsigned int progId, expr e) {
-  pst = (stringToExpr("output" + to_string(progId)) == e);
+void validator::smt_post(expr& pst, unsigned int prog_id, expr e) {
+  pst = (string_to_expr("output" + to_string(prog_id)) == e);
 }
 
 void validator::init() {
@@ -409,20 +409,20 @@ void validator::init() {
   ps.clear();
 }
 
-bool validator::equalCheck(inst* instLst1, int len1, inst* instLst2, int len2) {
+bool validator::equal_check(inst* inst_lst1, int len1, inst* inst_lst2, int len2) {
   init();
-  vector<unsigned int> progId;
-  progId.push_back(1);
-  progId.push_back(2);
-  expr pre1 = stringToExpr("true");
-  expr pre2 = stringToExpr("true");
-  smtPre(pre1, progId[0]);
-  smtPre(pre2, progId[1]);
-  progSmt ps1, ps2;
-  expr p1 = ps1.genSmt(progId[0], instLst1, len1);
-  expr p2 = ps2.genSmt(progId[1], instLst2, len2);
-  expr pst = stringToExpr("true");
-  smtPost(pst, progId[0], progId[1]);
+  vector<unsigned int> prog_id;
+  prog_id.push_back(1);
+  prog_id.push_back(2);
+  expr pre1 = string_to_expr("true");
+  expr pre2 = string_to_expr("true");
+  smt_pre(pre1, prog_id[0]);
+  smt_pre(pre2, prog_id[1]);
+  prog_smt ps1, ps2;
+  expr p1 = ps1.gen_smt(prog_id[0], inst_lst1, len1);
+  expr p2 = ps2.gen_smt(prog_id[1], inst_lst2, len2);
+  expr pst = string_to_expr("true");
+  smt_post(pst, prog_id[0], prog_id[1]);
   expr smt = implies(pre1 && pre2 && p1 && p2, pst);
   // store
   pre.push_back(pre1);
@@ -432,23 +432,23 @@ bool validator::equalCheck(inst* instLst1, int len1, inst* instLst2, int len2) {
   post = pst;
   f = smt;
 
-  return isSMTValid(smt);
+  return is_smt_valid(smt);
 }
 
-bool validator::equalCheck(inst* instLst1, int len1, expr fx, expr input, expr output) {
+bool validator::equal_check(inst* inst_lst1, int len1, expr fx, expr input, expr output) {
   init();
-  vector<unsigned int> progId;
-  progId.push_back(1);
-  progId.push_back(2);
-  expr pre1 = stringToExpr("true");
-  expr pre2 = stringToExpr("true");
-  smtPre(pre1, progId[0]);
-  smtPre(pre2, input);
-  progSmt ps1;
-  expr p1 = ps1.genSmt(progId[0], instLst1, len1);
+  vector<unsigned int> prog_id;
+  prog_id.push_back(1);
+  prog_id.push_back(2);
+  expr pre1 = string_to_expr("true");
+  expr pre2 = string_to_expr("true");
+  smt_pre(pre1, prog_id[0]);
+  smt_pre(pre2, input);
+  prog_smt ps1;
+  expr p1 = ps1.gen_smt(prog_id[0], inst_lst1, len1);
   expr p2 = fx;
-  expr pst = stringToExpr("true");
-  smtPost(pst, progId[0], output);
+  expr pst = string_to_expr("true");
+  smt_post(pst, prog_id[0], output);
   expr smt = implies(pre1 && pre2 && p1 && p2, pst);
   // store
   pre.push_back(pre1);
@@ -457,6 +457,6 @@ bool validator::equalCheck(inst* instLst1, int len1, expr fx, expr input, expr o
   post = pst;
   f = smt;
 
-  return isSMTValid(smt);
+  return is_smt_valid(smt);
 }
 /* class validator end */
