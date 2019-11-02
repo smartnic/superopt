@@ -10,9 +10,6 @@ using namespace z3;
 
 /* Validator algorithm document: https://github.com/ngsrinivas/superopt/tree/doc/doc */
 
-#define VLD_ORIG_INPUT string_to_expr("input")
-#define VLD_ORIG_OUTPUT string_to_expr("output1")
-
 // convert string s into expr e, the type of e is int_const
 expr string_to_expr(string s);
 ostream& operator<< (ostream& out, vector<expr>& _expr_vec);
@@ -88,35 +85,47 @@ class prog_smt {
 
 class validator {
  private:
+  const int prog_id_orig = 0;
+  const int prog_id_synth = 1;
   void gen_counterex(model& m);
   bool is_smt_valid(expr& smt);
-  // set register 0 in basic block 0 as input_i
+  // set register 0 in basic block 0 as input[prog_id]
   void smt_pre(expr& pre, unsigned int prog_id);
-  // set the input variable of FOL formula as input_i
+  // set the input variable of FOL formula as input[prog_id]
   void smt_pre(expr& pre, expr e);
   // setting outputs of two programs are equal
   void smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2);
-  void smt_post(expr& pst, unsigned int prog_id, expr e);
-  void init();
  public:
-  // store
-  // pre[i]: input formula of program i: setting register 0 in basic block 0 as input_i
-  // or the input variable of FOL formula as input_i
-  vector<expr> pre;
-  // ps[i]: program logic formula, including basic program logic
-  // and the formula of capturing the output of the program in the variable output[prog_id]
-  vector<prog_smt> ps;
-  // two program's output formula of setting outputs of two programs are equal, i.e., output_prog_id1 == output2_prog_id2
-  expr post = string_to_expr("true");
-  // f = pre^pre2^p1^p2 -> post
-  expr f = string_to_expr("true");
+  // pre_: input formula of program: setting register 0 in basic block 0 as input[prog_id]
+  // or the input variable of FOL formula as input[prog_id]
+  expr pre_orig = string_to_expr("true");
+  expr pl_orig = string_to_expr("true");
   // counterexample
   inout counterex;
+  /* store variables start */
+  expr store_pre_synth = string_to_expr("true");
+  // ps_: program logic formula, including basic program logic
+  // and the formula of capturing the output of the program in the variable output[prog_id]
+  prog_smt store_ps_orig;
+  prog_smt store_ps_synth;
+  // two program's output formula of setting outputs of two programs are equal, 
+  // i.e., output[prog_id_orig] == output[prog_id_synth]
+  expr store_post = string_to_expr("true");
+  // f = pre^pre2^p1^p2 -> post
+  expr store_f = string_to_expr("true");
+  /* store variables end */
+  vector<expr> pre;
+  vector<prog_smt> ps;
+  expr post = string_to_expr("true");
+  expr f = string_to_expr("true");
   validator();
+  validator(inst* orig, int len);
+  validator(expr fx, expr input, expr output);
   ~validator();
-  // check whether two programs have the same logic
-  bool equal_check(inst* inst_lst1, int len1, inst* inst_lst2, int len2);
-  // check whether the program and the FOL formula have the same logic
-  // fx is the FOL formula, input/output is the input/output variable of fx
-  bool equal_check(inst* inst_lst1, int len1, expr fx, expr input, expr output);
+  // calculate and store pre_orig, ps_orign
+  void set_orig(inst* orig, int len);
+  // fx is the original FOL formula, input/output is the input/output variable of fx
+  void set_orig(expr fx, expr input, expr output);
+  // check whether synth is equal to orig
+  bool is_equal_to(inst* synth, int len);
 };

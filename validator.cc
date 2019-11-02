@@ -373,11 +373,21 @@ expr prog_smt::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
 validator::validator() {
 }
 
+validator::validator(inst* orig, int len) {
+  set_orig(orig, len);
+}
+
+validator::validator(expr fx, expr input, expr output) {
+  set_orig(fx, input, output);
+}
+
 validator::~validator() {}
 
 void validator::gen_counterex(model& m) {
-  counterex.set_in_out(m.eval(VLD_ORIG_INPUT).get_numeral_int(), \
-                       m.eval(VLD_ORIG_OUTPUT).get_numeral_int());
+  expr input_orig = string_to_expr("input");
+  expr output_orig = string_to_expr("output" + to_string(prog_id_orig));
+  counterex.set_in_out(m.eval(input_orig).get_numeral_int(), \
+                       m.eval(output_orig).get_numeral_int());
 }
 
 bool validator::is_smt_valid(expr& smt) {
@@ -414,63 +424,34 @@ void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2
          string_to_expr("output" + to_string(prog_id2)));
 }
 
-void validator::smt_post(expr& pst, unsigned int prog_id, expr e) {
-  pst = (string_to_expr("output" + to_string(prog_id)) == e);
+// calculate and store pre_orig, ps_orign
+void validator::set_orig(inst* orig, int len) {
+  smt_pre(pre_orig, prog_id_orig);
+  prog_smt ps_orig;
+  pl_orig = ps_orig.gen_smt(prog_id_orig, orig, len);
+  store_ps_orig = ps_orig; // store
 }
 
-void validator::init() {
-  pre.clear();
-  ps.clear();
+// calculate and store pre_orig, ps_orign
+void validator::set_orig(expr fx, expr input, expr output) {
+  smt_pre(pre_orig, input);
+  pl_orig = fx && (string_to_expr("output" + to_string(prog_id_orig)) == output);
+  // no storing store_ps_orig here
 }
 
-bool validator::equal_check(inst* inst_lst1, int len1, inst* inst_lst2, int len2) {
-  init();
-  vector<unsigned int> prog_id;
-  prog_id.push_back(1);
-  prog_id.push_back(2);
-  expr pre1 = string_to_expr("true");
-  expr pre2 = string_to_expr("true");
-  smt_pre(pre1, prog_id[0]);
-  smt_pre(pre2, prog_id[1]);
-  prog_smt ps1, ps2;
-  expr p1 = ps1.gen_smt(prog_id[0], inst_lst1, len1);
-  expr p2 = ps2.gen_smt(prog_id[1], inst_lst2, len2);
-  expr pst = string_to_expr("true");
-  smt_post(pst, prog_id[0], prog_id[1]);
-  expr smt = implies(pre1 && pre2 && p1 && p2, pst);
+bool validator::is_equal_to(inst* synth, int len) {
+  expr pre_synth = string_to_expr("true");
+  smt_pre(pre_synth, prog_id_synth);
+  prog_smt ps_synth;
+  expr pl_synth = ps_synth.gen_smt(prog_id_synth, synth, len);
+  expr post = string_to_expr("true");
+  smt_post(post, prog_id_orig, prog_id_synth);
+  expr smt = implies(pre_orig && pre_synth && pl_orig && pl_synth, post);
   // store
-  pre.push_back(pre1);
-  pre.push_back(pre2);
-  ps.push_back(ps1);
-  ps.push_back(ps2);
-  post = pst;
-  f = smt;
-
-  return is_smt_valid(smt);
-}
-
-bool validator::equal_check(inst* inst_lst1, int len1, expr fx, expr input, expr output) {
-  init();
-  vector<unsigned int> prog_id;
-  prog_id.push_back(1);
-  prog_id.push_back(2);
-  expr pre1 = string_to_expr("true");
-  expr pre2 = string_to_expr("true");
-  smt_pre(pre1, prog_id[0]);
-  smt_pre(pre2, input);
-  prog_smt ps1;
-  expr p1 = ps1.gen_smt(prog_id[0], inst_lst1, len1);
-  expr p2 = fx;
-  expr pst = string_to_expr("true");
-  smt_post(pst, prog_id[0], output);
-  expr smt = implies(pre1 && pre2 && p1 && p2, pst);
-  // store
-  pre.push_back(pre1);
-  pre.push_back(pre2);
-  ps.push_back(ps1);
-  post = pst;
-  f = smt;
-
+  store_pre_synth = pre_synth;
+  store_ps_synth = ps_synth;
+  store_post = post;
+  store_f = smt;
   return is_smt_valid(smt);
 }
 /* class validator end */
