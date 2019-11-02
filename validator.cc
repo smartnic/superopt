@@ -375,6 +375,26 @@ validator::validator() {
 
 validator::~validator() {}
 
+void validator::gen_counterex(model& m) {
+  counterex.set_in_out(m.eval(VLD_ORIG_INPUT).get_numeral_int(), \
+                       m.eval(VLD_ORIG_OUTPUT).get_numeral_int());
+}
+
+bool validator::is_smt_valid(expr& smt) {
+  solver s(c);
+  s.add(!smt);
+  switch (s.check()) {
+    case unsat: return true;
+    case sat: {
+      model m = s.get_model();
+      gen_counterex(m);
+      return false;
+    }
+    case unknown: return false;
+  }
+  return false;
+}
+
 // assgin input r0 "input", other registers 0
 void validator::smt_pre(expr& pre, unsigned int prog_id) {
   smt_var sv(prog_id, 0);
