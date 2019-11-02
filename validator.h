@@ -3,11 +3,15 @@
 #include <vector>
 #include "inst.h"
 #include "cfg.h"
+#include "inout.h"
 #include "z3++.h"
 
 using namespace z3;
 
 /* Validator algorithm document: https://github.com/ngsrinivas/superopt/tree/doc/doc */
+
+#define VLD_ORIG_INPUT string_to_expr("input")
+#define VLD_ORIG_OUTPUT string_to_expr("output1")
 
 // convert string s into expr e, the type of e is int_const
 expr string_to_expr(string s);
@@ -84,6 +88,8 @@ class prog_smt {
 
 class validator {
  private:
+  void gen_counterex(model& m);
+  bool is_smt_valid(expr& smt);
   // set register 0 in basic block 0 as input_i
   void smt_pre(expr& pre, unsigned int prog_id);
   // set the input variable of FOL formula as input_i
@@ -104,7 +110,8 @@ class validator {
   expr post = string_to_expr("true");
   // f = pre^pre2^p1^p2 -> post
   expr f = string_to_expr("true");
-
+  // counterexample
+  inout counterex;
   validator();
   ~validator();
   // check whether two programs have the same logic

@@ -199,10 +199,33 @@ void test4() {
   print_test_res(is_smt_valid(post0 == ps.post[0][0]), "post condition");
 }
 
+void test5() {
+  std::cout << "\ntest5: check counterexample generation\n";
+  // orig: output = max(input, 11);
+  // synth: output = max(input, 10);
+  // counterexample: input = 10, output = 11
+  inst orig[3] = {inst(MOVXC, 2, 11),    /* mov r2, 11 */
+                  inst(MAXX, 0, 2),      /* max r0, r2 */
+                  inst(RETX, 0),
+                 };
+  inst synth[3] = {inst(MOVXC, 2, 10),    /* mov r2, 10 */
+                   inst(MAXX, 0, 2),      /* max r0, r2 */
+                   inst(RETX, 0),
+                  };
+  validator vld;
+  inout counterex;
+  counterex.set_in_out(0, 0);
+  if (!vld.equal_check(orig, 3, synth, 3)) {
+    counterex = vld.counterex;
+  }
+  print_test_res((counterex.input == 10) && (counterex.output == 11), "counterexample generation");
+}
+
 int main(int argc, char *argv[]) {
   test1(); // no branch
   test2(); // with branch
   test3();
   test4();
+  test5();
   return 0;
 }
