@@ -41,17 +41,17 @@ class prog_smt {
   // which are initial values for NEXT basic blocks
   vector<vector<expr> > post_reg_val;
   // return the SMT for the given program without branch and loop
-  void smt_block(expr& smt_b, inst* program, int length, smt_var* sv);
+  void smt_block(expr& smt_b, inst* program, int length, smt_var& sv);
   // return SMT for the given CFG_OTHERS type instruction, other types return false
-  expr smt_inst(smt_var* sv, inst* in);
+  expr smt_inst(smt_var& sv, inst* in);
   void init();
   void topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vector<bool>& finished);
-  void gen_block_prog_logic(expr& e, smt_var* sv, size_t cur_bid, inst* inst_lst);
-  void store_post_reg_val(smt_var* sv, size_t cur_bid);
-  void smt_jmp_inst(smt_var* sv, vector<expr>& c_inst_end, inst& inst_end);
+  void gen_block_prog_logic(expr& e, smt_var& sv, size_t cur_bid, inst* inst_lst);
+  void store_post_reg_val(smt_var& sv, size_t cur_bid);
+  void smt_jmp_inst(smt_var& sv, vector<expr>& c_inst_end, inst& inst_end);
   void add_path_cond(expr p_con, size_t cur_bid, size_t next_bId);
-  void gen_post_path_con(smt_var* sv, size_t cur_bid, inst& inst_end);
-  void get_init_val(expr& f_iv, smt_var* sv, size_t in_bid);
+  void gen_post_path_con(smt_var& sv, size_t cur_bid, inst& inst_end);
+  void get_init_val(expr& f_iv, smt_var& sv, size_t in_bid);
   expr smt_end_block_inst(size_t cur_bid, inst* inst_end, unsigned int prog_id);
   void gen_block_c_in(expr& c_in, size_t cur_bid);
   void process_output(expr& f_p_output, inst* inst_lst, unsigned int prog_id);

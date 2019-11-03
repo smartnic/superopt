@@ -10,9 +10,9 @@ using namespace z3;
 
 context c;
 
-#define CURSRC sv->get_cur_reg_var(SRCREG(in))
-#define CURDST sv->get_cur_reg_var(DSTREG(in))
-#define NEWDST sv->update_reg_var(DSTREG(in))
+#define CURSRC sv.get_cur_reg_var(SRCREG(in))
+#define CURDST sv.get_cur_reg_var(DSTREG(in))
+#define NEWDST sv.update_reg_var(DSTREG(in))
 #define IMM2 IMM2VAL(in)
 
 expr string_to_expr(string s) {
@@ -93,7 +93,7 @@ prog_smt::prog_smt() {}
 prog_smt::~prog_smt() {}
 
 // assume Block has no branch and is an ordered sequence of instructions
-void prog_smt::smt_block(expr& smt_b, inst* program, int length, smt_var* sv) {
+void prog_smt::smt_block(expr& smt_b, inst* program, int length, smt_var& sv) {
   inst* inst_lst = program;
   expr p = string_to_expr("true");
   for (size_t i = 0; i < length; i++) {
@@ -103,7 +103,7 @@ void prog_smt::smt_block(expr& smt_b, inst* program, int length, smt_var* sv) {
   smt_b = p.simplify();
 }
 
-expr prog_smt::smt_inst(smt_var* sv, inst* in) {
+expr prog_smt::smt_inst(smt_var& sv, inst* in) {
   switch (in->_opcode) {
     case ADDXY: return (CURDST + CURSRC == NEWDST);
     case MOVXC: return (IMM2 == NEWDST);
@@ -174,7 +174,7 @@ void prog_smt::topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vecto
   blocks.push_back(cur_bid);
 }
 
-void prog_smt::gen_block_prog_logic(expr& e, smt_var* sv, size_t cur_bid, inst* inst_lst) {
+void prog_smt::gen_block_prog_logic(expr& e, smt_var& sv, size_t cur_bid, inst* inst_lst) {
   inst* start = &inst_lst[g.nodes[cur_bid]._start];
   int length = g.nodes[cur_bid]._end - g.nodes[cur_bid]._start + 1;
   e = string_to_expr("true");
@@ -182,13 +182,13 @@ void prog_smt::gen_block_prog_logic(expr& e, smt_var* sv, size_t cur_bid, inst* 
   bl[cur_bid] = e; // store
 }
 
-void prog_smt::store_post_reg_val(smt_var* sv, size_t cur_bid) {
+void prog_smt::store_post_reg_val(smt_var& sv, size_t cur_bid) {
   for (size_t i = 0; i < NUM_REGS; i++) {
-    post_reg_val[cur_bid][i] = sv->get_cur_reg_var(i);
+    post_reg_val[cur_bid][i] = sv.get_cur_reg_var(i);
   }
 }
 
-void prog_smt::smt_jmp_inst(smt_var* sv, vector<expr>& c_inst_end, inst& inst_end) {
+void prog_smt::smt_jmp_inst(smt_var& sv, vector<expr>& c_inst_end, inst& inst_end) {
   inst* in = &inst_end;
   // e is formula for Jmp
   expr e = string_to_expr("true");
@@ -227,7 +227,7 @@ void prog_smt::gen_block_c_in(expr& c_in, size_t cur_bid) {
 // 2. calculate post path condition "c" of current basic block cur_bid;
 // 3. use c to update path_con[next_bid]
 // three cases: 1. no next blocks 2. one next block 3. two next blocks
-void prog_smt::gen_post_path_con(smt_var* sv, size_t cur_bid, inst& inst_end) {
+void prog_smt::gen_post_path_con(smt_var& sv, size_t cur_bid, inst& inst_end) {
   // case 1: no next blocks
   if (g.nodes_out[cur_bid].size() == 0) {
     return;
@@ -269,10 +269,10 @@ void prog_smt::gen_post_path_con(smt_var* sv, size_t cur_bid, inst& inst_end) {
   post[cur_bid][1] = c_next_bid; // store
 }
 
-void prog_smt::get_init_val(expr& f_iv, smt_var* sv, size_t in_bid) {
-  expr e = (sv->get_init_reg_var(0) == post_reg_val[in_bid][0]);
+void prog_smt::get_init_val(expr& f_iv, smt_var& sv, size_t in_bid) {
+  expr e = (sv.get_init_reg_var(0) == post_reg_val[in_bid][0]);
   for (size_t i = 1; i < NUM_REGS; i++) {
-    e = e && (sv->get_init_reg_var(i) == post_reg_val[in_bid][i]);
+    e = e && (sv.get_init_reg_var(i) == post_reg_val[in_bid][i]);
   }
   f_iv = e;
 }
@@ -336,7 +336,7 @@ expr prog_smt::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
     smt_var sv(prog_id, b);
     // generate f_bl: the block program logic
     expr f_bl = string_to_expr("true");
-    gen_block_prog_logic(f_bl, &sv, b, inst_lst);
+    gen_block_prog_logic(f_bl, sv, b, inst_lst);
     if (b == 0) {
       // basic block 0 does not have pre path condition
       // and its f_iv is the whole program's pre condition which is stored in variable pre of class validator
@@ -345,15 +345,15 @@ expr prog_smt::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
       for (size_t j = 0; j < g.nodes_in[b].size(); j++) {
         // generate f_iv: the logic that the initial values are fed by the last basic block
         expr f_iv = string_to_expr("true");
-        get_init_val(f_iv, &sv, g.nodes_in[b][j]);
+        get_init_val(f_iv, sv, g.nodes_in[b][j]);
         reg_iv[b][j] = f_iv; // store
         f_block[b] = f_block[b] && implies(path_con[b][j], f_iv && f_bl);
       }
     }
     // store post iv for current basic block b
-    store_post_reg_val(&sv, b);
+    store_post_reg_val(sv, b);
     // update post path condtions "path_con" created by current basic block b
-    gen_post_path_con(&sv, b, inst_lst[g.nodes[b]._end]);
+    gen_post_path_con(sv, b, inst_lst[g.nodes[b]._end]);
   }
 
   // program FOL formula; f_prog = f_block[0] && ... && f_block[n]
