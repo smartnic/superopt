@@ -6,8 +6,11 @@ proposals_test.out: inst.cc inst.h proposals.cc proposals_test.cc prog.cc prog.h
 inst_test.out: inst.cc inst.h inst_test.cc
 	g++ -std=c++11 inst.cc inst_test.cc -o inst_test.out
 
-cost_test.out: cost.cc cost_test.cc cost.h inout.h inout.cc inst.cc inst.h
-	g++ -std=c++11 cost.cc cost_test.cc inout.cc inst.cc -o cost_test.out
+cost_test.out: cost.cc cost_z3.o cost.h inout.h inout.cc inst.cc inst.h ex.cc ex.h validator.cc validator.h cfg.cc cfg.h test.cc test.h
+	g++ -std=c++11 cost.cc cost_z3.o inout.cc inst.cc ex.cc validator.cc cfg.cc test.cc -o cost_test.out ../z3/build/libz3.dylib -lpthread
+
+cost_z3.o: cost_test.cc
+	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o cost_z3.o  -I../z3/src/api -I../z3/src/api/c++ cost_test.cc
 
 prog_test.out: prog.cc inst.h inst.cc prog.h prog_test.cc
 	g++ -std=c++11 prog_test.cc prog.cc inst.cc -o prog_test.out
@@ -28,4 +31,4 @@ ex_test.out: ex_test.cc ex.cc ex.h inout.cc inout.h inst.cc inst.h test.cc test.
 	g++ -std=c++11 ex_test.cc ex.cc inout.cc inst.cc test.cc -o ex_test.out
 
 clean:
-	rm -f proposals_test.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out validator_z3.o cfg_test.out ex_test.out
+	rm -f proposals_test.out inst_test.out cost_test.out cost_z3.o prog_test.out mh_prog_test.out validator_test.out validator_z3.o cfg_test.out ex_test.out

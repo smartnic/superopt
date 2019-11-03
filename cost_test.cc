@@ -1,5 +1,6 @@
 #include <iostream>
 #include "cost.h"
+#include "test.h"
 
 using namespace std;
 
@@ -10,7 +11,7 @@ inst instructions[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                         inst(RETX, 3),      /* ret r3 */
                         inst(RETX, 0),      /* else ret r0 */
                         inst(), /* nop */
-};
+                       };
 
 inst instructions2[7] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
                          inst(ADDXY, 0, 2),     /* add r0, r2 */
@@ -19,7 +20,7 @@ inst instructions2[7] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
                          inst(), /* nop */
                          inst(), /* nop */
                          inst(), /* nop */
-};
+                        };
 
 inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                          inst(ADDXY, 0, 2),  /* add r0, r2 */
@@ -28,32 +29,35 @@ inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                          inst(RETX, 3),      /* ret r3 */
                          inst(RETX, 0),      /* else ret r0 */
                          inst(), /* nop */
-};
+                        };
 
-inout ex_set[2];
+vector<inout> ex_set(2);
 
 void test1() {
-  #define NUM_INTS 6
+#define NUM_INTS 6
+  cout << "test 1: pop_count_asm starts...\n";
   unsigned int ints_list[NUM_INTS] = {0, 1, 5, 7, 63, 114};
+  int truth[NUM_INTS] = {0, 1, 2, 3, 6, 4};
   for (int i = 0; i < NUM_INTS; i++) {
-    cout << i << ": ";
-    cout << pop_count_asm(ints_list[i]) << endl;
+    print_test_res(pop_count_asm(ints_list[i]) == truth[i],
+                   to_string(i + 1));
   }
 }
 
 void test2() {
-  int err_cost = error_cost(ex_set, 2, instructions, instructions);
-  cout << "Error cost: " << err_cost << endl;
-}
-
-void test3() {
-  int err_cost = error_cost(ex_set, 2, instructions, instructions2);
-  cout << "Error cost: " << err_cost << endl;
-}
-
-void test4() {
-  int err_cost = error_cost(ex_set, 2, instructions, instructions3);
-  cout << "Error cost: " << err_cost << endl;
+  cout << "test 2: error_cost check starts...\n";
+  cost c;
+  c.set_orig(instructions, 7);
+  c._examples.clear();
+  for (size_t i = 0; i < ex_set.size(); i++) {
+    c._examples.insert(ex_set[i]);
+  }
+  int err_cost = c.error_cost(instructions, 7);
+  print_test_res(err_cost == 0, "1");
+  err_cost = c.error_cost(instructions2, 7);
+  print_test_res(err_cost == 0, "2");
+  err_cost = c.error_cost(instructions3, 7);
+  print_test_res(err_cost == 6, "3");
 }
 
 int main() {
@@ -61,7 +65,5 @@ int main() {
   ex_set[1].set_in_out(16, 20);
   test1();
   test2();
-  test3();
-  test4();
   return 0;
 }
