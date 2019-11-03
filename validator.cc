@@ -444,7 +444,7 @@ void validator::set_orig(expr fx, expr input, expr output) {
   // no storing store_ps_orig here
 }
 
-bool validator::is_equal_to(inst* synth, int len) {
+int validator::is_equal_to(inst* synth, int len) {
   expr pre_synth = string_to_expr("true");
   smt_pre(pre_synth, prog_id_synth);
   prog_smt ps_synth;
@@ -454,7 +454,7 @@ bool validator::is_equal_to(inst* synth, int len) {
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
     // cerr << err_msg << endl;
-    return false;
+    return -1;
   }
   expr post = string_to_expr("true");
   smt_post(post, prog_id_orig, prog_id_synth);
@@ -464,6 +464,6 @@ bool validator::is_equal_to(inst* synth, int len) {
   store_ps_synth = ps_synth;
   store_post = post;
   store_f = smt;
-  return is_smt_valid(smt);
+  return (int)is_smt_valid(smt);
 }
 /* class validator end */

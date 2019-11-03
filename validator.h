@@ -123,5 +123,6 @@ class validator {
   // fx is the original FOL formula, input/output is the input/output variable of fx
   void set_orig(expr fx, expr input, expr output);
   // check whether synth is equal to orig
-  bool is_equal_to(inst* synth, int len);
+  // return 0: not equal; return 1: equal; return -1: synth is illegal
+  int is_equal_to(inst* synth, int len);
 };
