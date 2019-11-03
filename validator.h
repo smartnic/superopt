@@ -114,10 +114,6 @@ class validator {
   // f = pre^pre2^p1^p2 -> post
   expr store_f = string_to_expr("true");
   /* store variables end */
-  vector<expr> pre;
-  vector<prog_smt> ps;
-  expr post = string_to_expr("true");
-  expr f = string_to_expr("true");
   validator();
   validator(inst* orig, int len);
   validator(expr fx, expr input, expr output);
