@@ -39,6 +39,7 @@ int cost::error_cost(inst* synth, int len) {
   double total_cost = 0;
   prog_state ps;
   int output1, output2;
+  vector<inout> counterexs;
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
     output2 = interpret(synth, len, ps, _examples._exs[i].input);
@@ -46,9 +47,16 @@ int cost::error_cost(inst* synth, int len) {
     // int ex_cost = pop_count_asm(output1 ^ output2);
     int ex_cost = abs(output1 - output2);
     if (!ex_cost) {
-      ex_cost = 1 - (int)_vld.is_equal_to(synth, len);
+      bool is_equal = _vld.is_equal_to(synth, len);
+      if (!is_equal) {
+        counterexs.push_back(_vld.counterex);
+      }
+      ex_cost = 1 - (int)is_equal;
     }
     total_cost += ex_cost;
+  }
+  for (size_t i = 0; i < counterexs.size(); i++) {
+    _examples.insert(counterexs[i]);
   }
   return (int)(total_cost);
 }
