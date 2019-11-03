@@ -1,18 +1,11 @@
 #include <iostream>
 #include "validator.h"
 #include "inst.h"
+#include "test.h"
 
 using namespace z3;
 
 #define v(x) string_to_expr(x)
-
-void print_test_res(bool res, string test_name) {
-  if (res) {
-    std::cout << "check " + test_name + " SUCCESS\n";
-  } else {
-    std::cout << "check " + test_name + " NOT SUCCESS\n";
-  }
-}
 
 void test1() {
   std::cout << "\ntest 1: no branch program equivalence check starts...\n";
