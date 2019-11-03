@@ -105,12 +105,8 @@ void prog_smt::smt_block(expr& smt_b, inst* program, int length, smt_var* sv) {
 
 expr prog_smt::smt_inst(smt_var* sv, inst* in) {
   switch (in->_opcode) {
-    case ADDXY: {
-      return (CURDST + CURSRC == NEWDST);
-    }
-    case MOVXC: {
-      return (IMM2 == NEWDST);
-    }
+    case ADDXY: return (CURDST + CURSRC == NEWDST);
+    case MOVXC: return (IMM2 == NEWDST);
     case MAXC: {
       expr curDst = CURDST;
       expr newDst = NEWDST;
@@ -125,9 +121,7 @@ expr prog_smt::smt_inst(smt_var* sv, inst* in) {
       expr cond2 = (curDst <= CURSRC) and (newDst == CURSRC);
       return (cond1 or cond2);
     }
-    default: {
-      return string_to_expr("false");
-    }
+    default: return string_to_expr("false");
   }
 }
 
@@ -199,11 +193,11 @@ void prog_smt::smt_jmp_inst(smt_var* sv, vector<expr>& c_inst_end, inst& inst_en
   // e is formula for Jmp
   expr e = string_to_expr("true");
   switch (inst_end._opcode) {
-    case JMPEQ: {e = (CURDST == CURSRC); break;}
-    case JMPGT: {e = (CURDST > CURSRC); break;}
-    case JMPGE: {e = (CURDST >= CURSRC); break;}
-    case JMPLT: {e = (CURDST < CURSRC); break;}
-    case JMPLE: {e = (CURDST <= CURSRC); break;}
+    case JMPEQ: e = (CURDST == CURSRC); break;
+    case JMPGT: e = (CURDST > CURSRC); break;
+    case JMPGE: e = (CURDST >= CURSRC); break;
+    case JMPLT: e = (CURDST < CURSRC); break;
+    case JMPLE: e = (CURDST <= CURSRC); break;
   }
   // keep order: insert no jmp first
   c_inst_end.push_back(!e); // no jmp
