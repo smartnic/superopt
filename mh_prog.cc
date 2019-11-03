@@ -7,50 +7,40 @@
 #include "proposals.h"
 #include "prog.h"
 #include "cost.h"
+#include "mh_prog.h"
 
 using namespace std;
 
 default_random_engine gen_mh;
 uniform_real_distribution<double> unidist_mh(0.0, 1.0);
 
-double cost_to_pi(double cost) {
-  return pow(2, -1.0 * cost);
+mh_sampler::mh_sampler() {}
+
+mh_sampler::~mh_sampler() {}
+
+double mh_sampler::cost_to_pi(double cost) {
+  return pow(_base, -1.0 * cost);
 }
 
-prog* next_proposal(prog* curr) {
+prog* mh_sampler::next_proposal(prog* curr) {
   // TODO: use proposal generating functions to generate new programs
   // Use mod_random_inst_operand(.) and mod_random_inst(.) to do so
   // return mod_random_inst_operand(*curr);
   return mod_random_inst(*curr);
 }
 
-double total_prog_cost(prog* p, const prog &orig, inout* ex_set, int num_ex,
-                       double w_e=1.0, double w_p=1.0) {
-  double err_cost = error_cost(ex_set, num_ex,
-                               (inst*)orig.inst_list,
-                               (inst*)p->inst_list);
-  cout << "Error cost: " << err_cost << endl;
-  double per_cost = perf_cost(ex_set, num_ex,
-                              (inst*)orig.inst_list,
-                              (inst*)p->inst_list);
-  cout << "Perf cost: " << per_cost << endl;
-  return (w_e * err_cost) + (w_p * per_cost);
-}
-
 /* compute acceptance function */
-double alpha(prog* curr, prog* next, const prog &orig, inout* ex_set,
-             int num_ex, double w_e, double w_p) {
-  double curr_cost = total_prog_cost(curr, orig, ex_set, num_ex, w_e, w_p);
-  double next_cost = total_prog_cost(next, orig, ex_set, num_ex, w_e, w_p);
+double mh_sampler::alpha(prog* curr, prog* next) {
+  double curr_cost = _cost.total_prog_cost((inst*)curr->inst_list, MAX_PROG_LEN);
+  double next_cost = _cost.total_prog_cost((inst*)next->inst_list, MAX_PROG_LEN);
   cout << "Costs: curr " << curr_cost << " next " << next_cost << endl;
   return min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
 }
 
-prog* mh_next(prog* curr, const prog &orig, inout* ex_set, int num_ex,
-              double w_e, double w_p) {
+prog* mh_sampler::mh_next(prog* curr) {
   prog* next = next_proposal(curr);
   double uni_sample = unidist_mh(gen_mh);
-  if (uni_sample < alpha(curr, next, orig, ex_set, num_ex, w_e, w_p)) {
+  if (uni_sample < alpha(curr, next)) {
     return next;
   } else {
     prog::clear_prog(next);
@@ -58,16 +48,15 @@ prog* mh_next(prog* curr, const prog &orig, inout* ex_set, int num_ex,
   }
 }
 
-void mcmc_iter(int niter, const prog &orig,
-               std::unordered_map<int, vector<prog*> > &prog_freq,
-               inout* ex_set, int num_ex, double w_e=1.0, double w_p=1.0) {
+void mh_sampler::mcmc_iter(int niter, const prog &orig,
+                           unordered_map<int, vector<prog*> > &prog_freq) {
   // contruct the first program by copying the original
   prog *curr, *next;
   curr = prog::make_prog(orig);
 
-  for (int i=0; i<niter; i++) {
+  for (int i = 0; i < niter; i++) {
     cout << "Attempting mh iteration " << i << endl;
-    next = mh_next(curr, orig, ex_set, num_ex, w_e, w_p);
+    next = mh_next(curr);
     /* Insert the next program into frequency dictionary if new */
     int ph = progHash()(*next);
     bool found = false;
@@ -75,7 +64,7 @@ void mcmc_iter(int niter, const prog &orig,
       prog_freq[ph] = std::vector<prog*>();
     } else {
       vector<prog*> chain = prog_freq[ph];
-      for (auto p: chain) {
+      for (auto p : chain) {
         if (*p == *next) {
           found = true;
           p->freq_count++;
