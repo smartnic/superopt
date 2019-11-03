@@ -21,6 +21,7 @@ class cost {
   double _w_p = 0.5;
   cost();
   ~cost();
+  void init(inst* orig, int len, const vector<inout> &ex_set, double w_e = 0.5, double w_p = 0.5);
   void set_orig(inst* orig, int len);
   int error_cost(inst* synth, int len);
   int perf_cost(inst* synth, int len);

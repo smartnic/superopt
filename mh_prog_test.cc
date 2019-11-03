@@ -23,22 +23,8 @@ inout ex_set[M];
 
 void test1(const vector<inout> &ex_set, int nrolls, double w_e, double w_p)  {
   mh_sampler mh;
-  // init validator
-  mh._cost.set_orig(instructions, N);
-  // cout << "mh._cost._vld.pre_orig is\n" << mh._cost._vld.pre_orig << endl;
-  // cout << "mh._cost._vld.pl_orig is\n" << mh._cost._vld.pl_orig << endl;
-  // init examples
-  mh._cost._examples.clear();
-  for (size_t i = 0; i < ex_set.size(); i++) {
-    mh._cost._examples.insert(ex_set[i]);
-  }
-  // cout << "mh._cost._ex_set._exs\n" << mh._cost._ex_set._exs << endl;
-  // set weight of error cost and perf cost
-  mh._cost._w_e = w_e;
-  mh._cost._w_p = w_p;
-
+  mh._cost.init(instructions, N, ex_set, w_e, w_p);
   std::unordered_map<int, vector<prog*> > prog_freq;
-
   prog orig(instructions);
   mh.mcmc_iter(nrolls, orig, prog_freq);
   // Get the best program(s)
