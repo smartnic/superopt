@@ -31,7 +31,12 @@ int cost::num_real_instructions(inst* program, int len) {
 }
 
 void cost::set_orig(inst* orig, int len) {
-  _vld.set_orig(orig, len);
+  try {
+    _vld.set_orig(orig, len);
+  } catch (const string err_msg) {
+    throw (err_msg);
+    return;
+  }
   _num_real_orig = num_real_instructions(orig, len);
 }
 

@@ -315,7 +315,7 @@ expr prog_smt::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
     // 2. program that goes to the invalid instruction
     g.gen_graph(inst_lst, length);
   } catch (const string err_msg) {
-    cerr << err_msg << endl;
+    throw (err_msg);
   }
   // init class variables
   init();
@@ -428,7 +428,12 @@ void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2
 void validator::set_orig(inst* orig, int len) {
   smt_pre(pre_orig, prog_id_orig);
   prog_smt ps_orig;
-  pl_orig = ps_orig.gen_smt(prog_id_orig, orig, len);
+  try {
+    pl_orig = ps_orig.gen_smt(prog_id_orig, orig, len);
+  } catch (const string err_msg) {
+    throw (err_msg);
+    return;
+  }
   store_ps_orig = ps_orig; // store
 }
 
@@ -443,7 +448,14 @@ bool validator::is_equal_to(inst* synth, int len) {
   expr pre_synth = string_to_expr("true");
   smt_pre(pre_synth, prog_id_synth);
   prog_smt ps_synth;
-  expr pl_synth = ps_synth.gen_smt(prog_id_synth, synth, len);
+  expr pl_synth = string_to_expr("true");
+  try {
+    pl_synth = ps_synth.gen_smt(prog_id_synth, synth, len);
+  } catch (const string err_msg) {
+    // TODO error program process; Now just return false
+    // cerr << err_msg << endl;
+    return false;
+  }
   expr post = string_to_expr("true");
   smt_post(post, prog_id_orig, prog_id_synth);
   expr smt = implies(pre_orig && pre_synth && pl_orig && pl_synth, post);
