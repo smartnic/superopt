@@ -22,6 +22,16 @@ cost::cost() {}
 
 cost::~cost() {}
 
+void cost::init(inst* orig, int len, const vector<inout> &ex_set, double w_e, double w_p) {
+  set_orig(orig, len);
+  _examples.clear();
+  for (size_t i = 0; i < ex_set.size(); i++) {
+    _examples.insert(ex_set[i]);
+  }
+  _w_e = w_e;
+  _w_p = w_p;
+}
+
 int cost::num_real_instructions(inst* program, int len) {
   int count = 0;
   for (int i = 0; i < len; i++) {
