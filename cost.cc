@@ -44,25 +44,32 @@ int cost::error_cost(inst* synth, int len) {
   double total_cost = 0;
   prog_state ps;
   int output1, output2;
-  vector<inout> counterexs;
+  examples counterexs;
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
     output2 = interpret(synth, len, ps, _examples._exs[i].input);
-    // cout << "Expected output: " << output1 << " Got output " << output2 << endl;
+    cout << "Expected output: " << output1 << " Got output " << output2 << endl;
     // int ex_cost = pop_count_asm(output1 ^ output2);
     int ex_cost = abs(output1 - output2);
     if (!ex_cost) {
-      bool is_equal = _vld.is_equal_to(synth, len);
-      if (!is_equal) {
-        counterexs.push_back(_vld.counterex);
+      int is_equal = _vld.is_equal_to(synth, len);
+      if (is_equal == 0) { // not equal
+        counterexs.insert(_vld.counterex);
+        ex_cost = 1;
+      } else if (is_equal == 1) { // equal
+        ex_cost = 0;
+      } else { // synth illegal
+        ex_cost = 1;
       }
-      ex_cost = 1 - (int)is_equal;
+      cout << "is_equal: " << is_equal << endl;
     }
     total_cost += ex_cost;
   }
-  for (size_t i = 0; i < counterexs.size(); i++) {
-    _examples.insert(counterexs[i]);
+  for (size_t i = 0; i < counterexs._exs.size(); i++) {
+    _examples.insert(counterexs._exs[i]);
   }
+  if (counterexs._exs.size() > 0)
+    cout << "new example set is:\n" << _examples._exs << endl;
   return (int)(total_cost);
 }
 
