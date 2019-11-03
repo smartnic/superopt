@@ -16,23 +16,37 @@ inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                         inst(RETX, 3),      /* ret r3 */
                         inst(RETX, 0),      /* else ret r0 */
                         NOP,  /* control never reaches here */
-};
+                       };
 
 #define M 5
 inout ex_set[M];
 
-void test1(int nrolls, double w_e, double w_p) {
+void test1(const vector<inout> &ex_set, int nrolls, double w_e, double w_p)  {
+  mh_sampler mh;
+  // init validator
+  mh._cost.set_orig(instructions, N);
+  // cout << "mh._cost._vld.pre_orig is\n" << mh._cost._vld.pre_orig << endl;
+  // cout << "mh._cost._vld.pl_orig is\n" << mh._cost._vld.pl_orig << endl;
+  // init examples
+  mh._cost._examples.clear();
+  for (size_t i = 0; i < ex_set.size(); i++) {
+    mh._cost._examples.insert(ex_set[i]);
+  }
+  // cout << "mh._cost._ex_set._exs\n" << mh._cost._ex_set._exs << endl;
+  // set weight of error cost and perf cost
+  mh._cost._w_e = w_e;
+  mh._cost._w_p = w_p;
+
   std::unordered_map<int, vector<prog*> > prog_freq;
 
   prog orig(instructions);
-  mcmc_iter(nrolls, orig, prog_freq, ex_set, M, w_e, w_p);
-
+  mh.mcmc_iter(nrolls, orig, prog_freq);
   // Get the best program(s)
   int max = 0;
   int concurrent_max = 0;
   prog *best;
   int nprogs = 0;
-  for (std::pair<int, vector <prog*> > element: prog_freq) {
+  for (std::pair<int, vector <prog*> > element : prog_freq) {
     vector<prog*> pl = element.second; // list of progs with the same hash
     for (auto p : pl) {
       nprogs++;
@@ -51,7 +65,7 @@ void test1(int nrolls, double w_e, double w_p) {
   cout << "One of the best programs: " << endl;
   cout << "Observed frequency " << max << " out of " << nrolls << endl;
   best->print();
-  cout << "Total cost: " << total_prog_cost(best, orig, ex_set, M, w_e, w_p) << endl;
+  cout << "Total cost: " << mh._cost.total_prog_cost((inst*)best->inst_list, 7) << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -65,11 +79,12 @@ int main(int argc, char* argv[]) {
       w_p = atof(argv[3]);
     }
   }
+  vector<inout> ex_set(5);
   ex_set[0].set_in_out(10, 15);
   ex_set[1].set_in_out(16, 20);
   ex_set[2].set_in_out(11, 15);
   ex_set[3].set_in_out(48, 52);
   ex_set[4].set_in_out(1, 15);
-  test1(nrolls, w_e, w_p);
+  test1(ex_set, nrolls, w_e, w_p);
   return 0;
 }
