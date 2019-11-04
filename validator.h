@@ -83,6 +83,9 @@ class prog_smt {
   expr gen_smt(unsigned int prog_id, inst* inst_lst, int length);
 };
 
+#define VLD_PROG_ID_ORIG 0
+#define VLD_PROG_ID_SYNTH 1
+
 class validator {
  private:
   const int prog_id_orig = 0;
