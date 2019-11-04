@@ -2,9 +2,12 @@
 #include <random>
 #include <algorithm>
 #include <string>
+#include <climits>
 #include "inst.h"
 #include "inout.h"
 #include "cost.h"
+
+#define ERROR_COST_MAX 100000
 
 /* Requires support for advanced bit manipulation (ABM) instructions on the
  * architecture where this program is run. */
@@ -69,7 +72,8 @@ int cost::error_cost(inst* synth, int len) {
       } else if (is_equal == 1) { // equal
         ex_cost = 0;
       } else { // synth illegal
-        ex_cost = 1;
+        total_cost = ERROR_COST_MAX;
+        break;
       }
       cout << "is_equal: " << is_equal << endl;
     }
