@@ -4,7 +4,6 @@
 #include "inst.h"
 #include "inout.h"
 #include "validator.h"
-#include "ex.h"
 
 using namespace std;
 
