@@ -30,8 +30,8 @@ validator_z3.o:
 cfg_test.out: inst.h inst.cc cfg.h cfg.cc cfg_test.cc
 	g++ -std=c++11 inst.cc cfg.cc cfg_test.cc -o cfg_test.out
 
-ex_test.out: ex_test.cc ex.cc ex.h inout.cc inout.h inst.cc inst.h test.cc test.h
-	g++ -std=c++11 ex_test.cc ex.cc inout.cc inst.cc test.cc -o ex_test.out
+ex_test.out: ex_test.cc ex.cc ex.h inout.cc inout.h test.cc test.h
+	g++ -std=c++11 ex_test.cc ex.cc inout.cc test.cc -o ex_test.out
 
 clean:
 	rm -f proposals_test.out inst_test.out cost_test.out cost_z3.o prog_test.out mh_prog_test.out mh_prog_z3.o validator_test.out validator_z3.o cfg_test.out ex_test.out
