@@ -211,7 +211,7 @@ void test5() {
   inout counterex;
   counterex.set_in_out(0, 0);
   if (!vld.is_equal_to(synth, 3)) {
-    counterex = vld.counterex;
+    counterex = vld._last_counterex;
   }
   print_test_res((counterex.input <= 10) && (counterex.output == 11), "counterexample generation");
 }

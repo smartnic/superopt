@@ -88,8 +88,6 @@ class prog_smt {
 
 class validator {
  private:
-  const int prog_id_orig = 0;
-  const int prog_id_synth = 1;
   void gen_counterex(model& m);
   bool is_smt_valid(expr& smt);
   // set register 0 in basic block 0 as input[prog_id]
@@ -101,21 +99,21 @@ class validator {
  public:
   // pre_: input formula of program: setting register 0 in basic block 0 as input[prog_id]
   // or the input variable of FOL formula as input[prog_id]
-  expr pre_orig = string_to_expr("true");
-  expr pl_orig = string_to_expr("true");
-  // counterexample
-  inout counterex;
+  expr _pre_orig = string_to_expr("true");
+  expr _pl_orig = string_to_expr("true");
+  // last counterexample
+  inout _last_counterex;
   /* store variables start */
-  expr store_pre_synth = string_to_expr("true");
+  expr _store_pre_synth = string_to_expr("true");
   // ps_: program logic formula, including basic program logic
   // and the formula of capturing the output of the program in the variable output[prog_id]
-  prog_smt store_ps_orig;
-  prog_smt store_ps_synth;
+  prog_smt _store_ps_orig;
+  prog_smt _store_ps_synth;
   // two program's output formula of setting outputs of two programs are equal, 
-  // i.e., output[prog_id_orig] == output[prog_id_synth]
-  expr store_post = string_to_expr("true");
+  // i.e., output[VLD_PROG_ID_ORIG] == output[VLD_PROG_ID_SYNTH]
+  expr _store_post = string_to_expr("true");
   // f = pre^pre2^p1^p2 -> post
-  expr store_f = string_to_expr("true");
+  expr _store_f = string_to_expr("true");
   /* store variables end */
   validator();
   validator(inst* orig, int len);
