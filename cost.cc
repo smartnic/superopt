@@ -67,7 +67,7 @@ int cost::error_cost(inst* synth, int len) {
     if (!ex_cost) {
       int is_equal = _vld.is_equal_to(synth, len);
       if (is_equal == 0) { // not equal
-        counterexs.insert(_vld.counterex);
+        counterexs.insert(_vld._last_counterex);
         ex_cost = 1;
       } else if (is_equal == 1) { // equal
         ex_cost = 0;
