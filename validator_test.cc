@@ -1,7 +1,7 @@
 #include <iostream>
 #include "validator.h"
 #include "inst.h"
-#include "test.h"
+#include "utils.h"
 
 using namespace z3;
 
