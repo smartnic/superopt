@@ -83,6 +83,23 @@ class prog_smt {
   expr gen_smt(unsigned int prog_id, inst* inst_lst, int length);
 };
 
+/* Class validator is used to check whether a synthesis program is equal to the original program/function.
+ * Steps to use validator
+ * step 1. set the original:
+ *   a. this step will compute and store the program-level pre-condition and program logic of the original 
+ *      into `_pre_orig` and `_pl_orig`;
+ *   b. there are two ways to set the original: set in constructors or funtion `set_orig`;
+ *   c. function paramters can be either a program or a function.
+ * step 2. call funtion `is_equal_to` to check whether a synthesis program is equal to the original one
+ *   a. this step will compute the program-level pre-condition and program logic of the synthesis program and 
+ *      the post condition of the synthesis and original program. Then generate the SMT to check equivalence.
+ *   b. return value:
+ *     1 (equal);
+ *     0 (unequal) if unequal, a counter-example will be generated and stored in `_last_counterex`;
+ *     -1 (synthesis is illegal, e.g, program with loop or goes to invalid instructions).
+ *   c. paramters: a synthesis program
+ * step 3. if the return value in step 2 is `0`, a counter-example can be extracted in `_last_counterex`
+ */
 #define VLD_PROG_ID_ORIG 0
 #define VLD_PROG_ID_SYNTH 1
 
