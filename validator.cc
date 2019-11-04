@@ -385,7 +385,7 @@ validator::~validator() {}
 
 void validator::gen_counterex(model& m) {
   expr input_orig = string_to_expr("input");
-  expr output_orig = string_to_expr("output" + to_string(prog_id_orig));
+  expr output_orig = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
   counterex.set_in_out(m.eval(input_orig).get_numeral_int(), \
                        m.eval(output_orig).get_numeral_int());
 }
@@ -426,10 +426,10 @@ void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2
 
 // calculate and store pre_orig, ps_orign
 void validator::set_orig(inst* orig, int len) {
-  smt_pre(pre_orig, prog_id_orig);
+  smt_pre(pre_orig, VLD_PROG_ID_ORIG);
   prog_smt ps_orig;
   try {
-    pl_orig = ps_orig.gen_smt(prog_id_orig, orig, len);
+    pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, len);
   } catch (const string err_msg) {
     throw (err_msg);
     return;
@@ -440,24 +440,24 @@ void validator::set_orig(inst* orig, int len) {
 // calculate and store pre_orig, ps_orign
 void validator::set_orig(expr fx, expr input, expr output) {
   smt_pre(pre_orig, input);
-  pl_orig = fx && (string_to_expr("output" + to_string(prog_id_orig)) == output);
+  pl_orig = fx && (string_to_expr("output" + to_string(VLD_PROG_ID_ORIG)) == output);
   // no storing store_ps_orig here
 }
 
 int validator::is_equal_to(inst* synth, int len) {
   expr pre_synth = string_to_expr("true");
-  smt_pre(pre_synth, prog_id_synth);
+  smt_pre(pre_synth, VLD_PROG_ID_SYNTH);
   prog_smt ps_synth;
   expr pl_synth = string_to_expr("true");
   try {
-    pl_synth = ps_synth.gen_smt(prog_id_synth, synth, len);
+    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, len);
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
     // cerr << err_msg << endl;
     return -1;
   }
   expr post = string_to_expr("true");
-  smt_post(post, prog_id_orig, prog_id_synth);
+  smt_post(post, VLD_PROG_ID_ORIG, VLD_PROG_ID_SYNTH);
   expr smt = implies(pre_orig && pre_synth && pl_orig && pl_synth, post);
   // store
   store_pre_synth = pre_synth;
