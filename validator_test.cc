@@ -137,10 +137,27 @@ void test4() {
   print_test_res((counterex.input <= 10) && (counterex.output == 11), "counterexample generation");
 }
 
+void test5() {
+  std::cout << "\ntest5: check get_orig_output\n";
+  // orig: output = max(input, 11);
+  inst orig[3] = {inst(MOVXC, 2, 11),    /* mov r2, 11 */
+                  inst(MAXX, 0, 2),      /* max r0, r2 */
+                  inst(RETX, 0),
+                 };
+  validator vld(orig, 3);
+  vector<int> ex_set = {1, 10, 11, 12, 20};
+  vector<int> expected = {11, 11, 11, 12, 20};
+  for (size_t i = 0; i < ex_set.size(); i++) {
+    int output = vld.get_orig_output(ex_set[i]);
+    print_test_res(output == expected[i], to_string(i));
+  }
+}
+
 int main(int argc, char *argv[]) {
   test1(); // no branch
   test2(); // with branch
   test3();
   test4();
+  test5();
   return 0;
 }

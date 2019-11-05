@@ -102,4 +102,16 @@ int validator::is_equal_to(inst* synth, int len) {
   _store_f = smt;
   return (int)is_smt_valid(smt);
 }
+
+int validator::get_orig_output(int input) {
+  smt_var sv(VLD_PROG_ID_ORIG, 0);
+  expr input_logic = (sv.get_init_reg_var(0) == input);
+  solver s(smt_prog_c);
+  s.add(_pl_orig && input_logic);
+  s.check();
+  model m = s.get_model();
+  expr output_expr = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
+  int output = m.eval(output_expr).get_numeral_int();
+  return output;
+}
 /* class validator end */

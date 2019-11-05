@@ -9,8 +9,9 @@ using namespace z3;
 
 /* Validator algorithm document: https://github.com/ngsrinivas/superopt/tree/master/doc */
 
-/* Class validator is used to check whether a synthesis program is equal to the original program/function.
- * Steps to use validator
+/* Class validator supports two functions now: equivalence check and output computation.
+ * Funtion 1: equivalence check: check whether a synthesis program is equal to the original program/function.
+ * Steps to use
  * step 1. set the original:
  *   a. this step will compute and store the program-level pre-condition and program logic of the original 
  *      into `_pre_orig` and `_pl_orig`;
@@ -25,6 +26,11 @@ using namespace z3;
  *     -1 (synthesis is illegal, e.g, program with loop or goes to invalid instructions).
  *   c. paramters: a synthesis program
  * step 3. if the return value in step 2 is `0`, a counter-example can be extracted in `_last_counterex`
+ *
+ * Funtion 2: output computation: given input value, compute output value for the original program/function
+ * Steps to use :
+ * step 1. set the original: the same as step 1 in the previous equivalence check function.
+ * step 2. call funtion `get_orig_output` to get the output value for the give input value in parameter
  */
 #define VLD_PROG_ID_ORIG 0
 #define VLD_PROG_ID_SYNTH 1
@@ -67,4 +73,6 @@ class validator {
   // check whether synth is equal to orig
   // return 0: not equal; return 1: equal; return -1: synth is illegal
   int is_equal_to(inst* synth, int len);
+  // given input, return the output of the original
+  int get_orig_output(int input);
 };
