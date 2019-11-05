@@ -55,6 +55,7 @@ void cost::set_orig(prog* orig, int len) {
 }
 
 int cost::error_cost(prog* synth, int len) {
+  if (synth->_error_cost_flag) return synth->_error_cost;
   double total_cost = 0;
   inst* inst_list = (inst*)synth->inst_list;
   prog_state ps;
@@ -67,7 +68,13 @@ int cost::error_cost(prog* synth, int len) {
     // int ex_cost = pop_count_asm(output1 ^ output2);
     int ex_cost = abs(output1 - output2);
     if (!ex_cost) {
-      int is_equal = _vld.is_equal_to(inst_list, len);
+      int is_equal = 0;
+      if (synth->_verfiy_res_flag) {
+        is_equal = synth->_verfiy_res;
+      } else {
+        is_equal = _vld.is_equal_to(inst_list, len);
+        synth->set_verify_res(is_equal);
+      }
       if (is_equal == 0) { // not equal
         counterexs.insert(_vld._last_counterex);
         ex_cost = 1;
@@ -75,12 +82,14 @@ int cost::error_cost(prog* synth, int len) {
         ex_cost = 0;
       } else { // synth illegal
         total_cost = ERROR_COST_MAX;
+        synth->set_error_cost((int)total_cost);
         break;
       }
       cout << "is_equal: " << is_equal << endl;
     }
     total_cost += ex_cost;
   }
+  synth->set_error_cost((int)total_cost);
   for (size_t i = 0; i < counterexs._exs.size(); i++) {
     _examples.insert(counterexs._exs[i]);
   }
@@ -90,8 +99,11 @@ int cost::error_cost(prog* synth, int len) {
 }
 
 int cost::perf_cost(prog* synth, int len) {
-  return MAX_PROG_LEN - _num_real_orig +
-         num_real_instructions((inst*)synth->inst_list, len);
+  if (synth->_perf_cost_flag) return synth->_perf_cost;
+  int total_cost =  MAX_PROG_LEN - _num_real_orig +
+                    num_real_instructions((inst*)synth->inst_list, len);
+  synth->set_perf_cost(total_cost);
+  return total_cost;
 }
 
 double cost::total_prog_cost(prog* synth, int len) {
