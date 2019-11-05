@@ -73,8 +73,15 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
       }
     }
     if (! found) {
+      // TODO: may define new prog copy API
       prog* next_copy = prog::make_prog(*next);
       next_copy->freq_count++;
+      next_copy->_verfiy_res_flag = next->_verfiy_res_flag;
+      next_copy->_verfiy_res = next->_verfiy_res;
+      next_copy->_error_cost_flag = next->_error_cost_flag;
+      next_copy->_error_cost = next->_error_cost;
+      next_copy->_perf_cost_flag = next->_perf_cost_flag;
+      next_copy->_perf_cost = next->_perf_cost;
       prog_freq[ph].push_back(next_copy);
     }
     if (curr != next) prog::clear_prog(curr);

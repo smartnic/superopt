@@ -6,8 +6,11 @@ using namespace std;
 prog::prog(const prog& other) {
   freq_count = other.freq_count;
   _verfiy_res_flag = other._verfiy_res_flag;
+  _verfiy_res = other._verfiy_res;
   _error_cost_flag = other._error_cost_flag;
+  _error_cost = other._error_cost;
   _perf_cost_flag = other._perf_cost_flag;
+  _perf_cost = other._perf_cost;
   for (int i=0; i < MAX_PROG_LEN; i++) {
     inst_list[i] = other.inst_list[i];
   }
@@ -16,8 +19,11 @@ prog::prog(const prog& other) {
 prog::prog(inst* instructions) {
   freq_count = 0;
   _verfiy_res_flag = false;
+  _verfiy_res = 0;
   _error_cost_flag = false;
+  _error_cost = 0;
   _perf_cost_flag = false;
+  _perf_cost = 0;
   for (int i=0; i < MAX_PROG_LEN; i++) {
     inst_list[i] = instructions[i];
   }
@@ -28,8 +34,11 @@ prog* prog::make_prog(const prog &other) {
   prog* new_prog = (prog*)malloc(sizeof(prog));
   new_prog->freq_count = 0;
   new_prog->_verfiy_res_flag = false;
+  new_prog->_verfiy_res = 0;
   new_prog->_error_cost_flag = false;
+  new_prog->_error_cost = 0;
   new_prog->_perf_cost_flag = false;
+  new_prog->_perf_cost = 0;
   for (int i=0; i < MAX_PROG_LEN; i++) {
     new_prog->inst_list[i] = other.inst_list[i];
   }
