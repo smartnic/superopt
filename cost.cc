@@ -25,12 +25,14 @@ cost::cost() {}
 
 cost::~cost() {}
 
-void cost::init(prog* orig, int len, const vector<inout> &ex_set,
+void cost::init(prog* orig, int len, const vector<int> &input,
                 double w_e, double w_p) {
   set_orig(orig, len);
   _examples.clear();
-  for (size_t i = 0; i < ex_set.size(); i++) {
-    _examples.insert(ex_set[i]);
+  for (size_t i = 0; i < input.size(); i++) {
+    inout example;
+    example.set_in_out(input[i], _vld.get_orig_output(input[i]));
+    _examples.insert(example);
   }
   _w_e = w_e;
   _w_p = w_p;
