@@ -21,11 +21,17 @@ mh_prog_test.out: mh_prog.cc mh_prog.h mh_prog_test.cc proposals.cc proposals.h 
 mh_prog_z3.o: mh_prog_test.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o mh_prog_z3.o  -I../z3/src/api -I../z3/src/api/c++ mh_prog_test.cc
 
-validator_test.out: validator_z3.o validator.cc inst.cc cfg.h cfg.cc inout.cc utils.cc utils.h
-	g++ -std=c++11 validator_z3.o validator.cc inst.cc cfg.cc inout.cc utils.cc -o validator_test.out ../z3/build/libz3.dylib -lpthread
+validator_test.out: validator_z3.o validator.cc validator.h inst.cc inst.h cfg.cc cfg.h inout.cc inout.h utils.cc utils.h smt_prog.cc smt_prog.h
+	g++ -std=c++11 validator_z3.o validator.cc inst.cc cfg.cc inout.cc utils.cc smt_prog.cc -o validator_test.out ../z3/build/libz3.dylib -lpthread
 
-validator_z3.o:
-	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o validator_z3.o  -I../z3/src/api -I../z3/src/api/c++ ../superopt/validator_test.cc
+validator_z3.o: validator_test.cc
+	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o validator_z3.o  -I../z3/src/api -I../z3/src/api/c++ validator_test.cc
+
+smt_prog_test.out: smt_prog_z3.o smt_prog.cc smt_prog.h inst.cc inst.h cfg.cc cfg.h utils.cc utils.h
+	g++ -std=c++11 smt_prog_z3.o smt_prog.cc inst.cc cfg.cc utils.cc -o smt_prog_test.out ../z3/build/libz3.dylib -lpthread
+
+smt_prog_z3.o: smt_prog_test.cc
+	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o smt_prog_z3.o  -I../z3/src/api -I../z3/src/api/c++ smt_prog_test.cc
 
 cfg_test.out: inst.h inst.cc cfg.h cfg.cc cfg_test.cc
 	g++ -std=c++11 inst.cc cfg.cc cfg_test.cc -o cfg_test.out
@@ -34,4 +40,4 @@ inout_test.out: inout_test.cc inout.cc inout.h utils.cc utils.h
 	g++ -std=c++11 inout_test.cc inout.cc utils.cc -o inout_test.out
 
 clean:
-	rm -f proposals_test.out inst_test.out cost_test.out cost_z3.o prog_test.out mh_prog_test.out mh_prog_z3.o validator_test.out validator_z3.o cfg_test.out inout_test.out
+	rm -f proposals_test.out inst_test.out cost_test.out cost_z3.o prog_test.out mh_prog_test.out mh_prog_z3.o validator_test.out validator_z3.o cfg_test.out inout_test.out smt_prog_test.out smt_prog_z3.o
