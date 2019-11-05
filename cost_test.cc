@@ -1,6 +1,7 @@
 #include <iostream>
 #include "cost.h"
 #include "utils.h"
+#include "prog.h"
 
 using namespace std;
 
@@ -46,17 +47,20 @@ void test1() {
 
 void test2() {
   cout << "test 2: error_cost check starts...\n";
+  prog orig(instructions);
   cost c;
-  c.set_orig(instructions, 7);
+  c.set_orig(&orig, 7);
   c._examples.clear();
   for (size_t i = 0; i < ex_set.size(); i++) {
     c._examples.insert(ex_set[i]);
   }
-  int err_cost = c.error_cost(instructions, 7);
+  int err_cost = c.error_cost(&orig, 7);
   print_test_res(err_cost == 0, "1");
-  err_cost = c.error_cost(instructions2, 7);
+  prog synth1(instructions2);
+  err_cost = c.error_cost(&synth1, 7);
   print_test_res(err_cost == 0, "2");
-  err_cost = c.error_cost(instructions3, 7);
+  prog synth2(instructions3);
+  err_cost = c.error_cost(&synth2, 7);
   print_test_res(err_cost == 6, "3");
 }
 
