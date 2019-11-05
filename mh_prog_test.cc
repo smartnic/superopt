@@ -23,9 +23,9 @@ inout ex_set[M];
 
 void test1(const vector<inout> &ex_set, int nrolls, double w_e, double w_p)  {
   mh_sampler mh;
-  mh._cost.init(instructions, N, ex_set, w_e, w_p);
   std::unordered_map<int, vector<prog*> > prog_freq;
   prog orig(instructions);
+  mh._cost.init(&orig, N, ex_set, w_e, w_p);
   mh.mcmc_iter(nrolls, orig, prog_freq);
   // Get the best program(s)
   int max = 0;
@@ -51,7 +51,7 @@ void test1(const vector<inout> &ex_set, int nrolls, double w_e, double w_p)  {
   cout << "One of the best programs: " << endl;
   cout << "Observed frequency " << max << " out of " << nrolls << endl;
   best->print();
-  cout << "Total cost: " << mh._cost.total_prog_cost((inst*)best->inst_list, 7) << endl;
+  cout << "Total cost: " << mh._cost.total_prog_cost(best, 7) << endl;
 }
 
 int main(int argc, char* argv[]) {

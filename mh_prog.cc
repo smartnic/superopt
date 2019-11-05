@@ -31,8 +31,8 @@ prog* mh_sampler::next_proposal(prog* curr) {
 
 /* compute acceptance function */
 double mh_sampler::alpha(prog* curr, prog* next) {
-  double curr_cost = _cost.total_prog_cost((inst*)curr->inst_list, MAX_PROG_LEN);
-  double next_cost = _cost.total_prog_cost((inst*)next->inst_list, MAX_PROG_LEN);
+  double curr_cost = _cost.total_prog_cost(curr, MAX_PROG_LEN);
+  double next_cost = _cost.total_prog_cost(next, MAX_PROG_LEN);
   cout << "Costs: curr " << curr_cost << " next " << next_cost << endl;
   return min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
 }

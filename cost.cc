@@ -25,7 +25,8 @@ cost::cost() {}
 
 cost::~cost() {}
 
-void cost::init(inst* orig, int len, const vector<inout> &ex_set, double w_e, double w_p) {
+void cost::init(prog* orig, int len, const vector<inout> &ex_set,
+                double w_e, double w_p) {
   set_orig(orig, len);
   _examples.clear();
   for (size_t i = 0; i < ex_set.size(); i++) {
@@ -43,29 +44,30 @@ int cost::num_real_instructions(inst* program, int len) {
   return count;
 }
 
-void cost::set_orig(inst* orig, int len) {
+void cost::set_orig(prog* orig, int len) {
   try {
-    _vld.set_orig(orig, len);
+    _vld.set_orig((inst*)orig->inst_list, len);
   } catch (const string err_msg) {
     throw (err_msg);
     return;
   }
-  _num_real_orig = num_real_instructions(orig, len);
+  _num_real_orig = num_real_instructions((inst*)orig->inst_list, len);
 }
 
-int cost::error_cost(inst* synth, int len) {
+int cost::error_cost(prog* synth, int len) {
   double total_cost = 0;
+  inst* inst_list = (inst*)synth->inst_list;
   prog_state ps;
   int output1, output2;
   examples counterexs;
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
-    output2 = interpret(synth, len, ps, _examples._exs[i].input);
+    output2 = interpret(inst_list, len, ps, _examples._exs[i].input);
     cout << "Expected output: " << output1 << " Got output " << output2 << endl;
     // int ex_cost = pop_count_asm(output1 ^ output2);
     int ex_cost = abs(output1 - output2);
     if (!ex_cost) {
-      int is_equal = _vld.is_equal_to(synth, len);
+      int is_equal = _vld.is_equal_to(inst_list, len);
       if (is_equal == 0) { // not equal
         counterexs.insert(_vld._last_counterex);
         ex_cost = 1;
@@ -87,11 +89,12 @@ int cost::error_cost(inst* synth, int len) {
   return (int)(total_cost);
 }
 
-int cost::perf_cost(inst* synth, int len) {
-  return MAX_PROG_LEN - _num_real_orig + num_real_instructions(synth, len);
+int cost::perf_cost(prog* synth, int len) {
+  return MAX_PROG_LEN - _num_real_orig +
+         num_real_instructions((inst*)synth->inst_list, len);
 }
 
-double cost::total_prog_cost(inst* synth, int len) {
+double cost::total_prog_cost(prog* synth, int len) {
   double err_cost = error_cost(synth, len);
   cout << "Error cost: " << err_cost << endl;
   double per_cost = perf_cost(synth, len);
