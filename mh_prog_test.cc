@@ -18,14 +18,13 @@ inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                         NOP,  /* control never reaches here */
                        };
 
-#define M 5
-inout ex_set[M];
+vector<int> input(5);
 
-void test1(const vector<inout> &ex_set, int nrolls, double w_e, double w_p)  {
+void test1(int nrolls, double w_e, double w_p)  {
   mh_sampler mh;
   std::unordered_map<int, vector<prog*> > prog_freq;
   prog orig(instructions);
-  mh._cost.init(&orig, N, ex_set, w_e, w_p);
+  mh._cost.init(&orig, N, input, w_e, w_p);
   mh.mcmc_iter(nrolls, orig, prog_freq);
   // Get the best program(s)
   int max = 0;
@@ -65,12 +64,11 @@ int main(int argc, char* argv[]) {
       w_p = atof(argv[3]);
     }
   }
-  vector<inout> ex_set(5);
-  ex_set[0].set_in_out(10, 15);
-  ex_set[1].set_in_out(16, 20);
-  ex_set[2].set_in_out(11, 15);
-  ex_set[3].set_in_out(48, 52);
-  ex_set[4].set_in_out(1, 15);
-  test1(ex_set, nrolls, w_e, w_p);
+  input[0] = 10;
+  input[1] = 16;
+  input[2] = 11;
+  input[3] = 48;
+  input[4] = 1;
+  test1(nrolls, w_e, w_p);
   return 0;
 }
