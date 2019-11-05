@@ -40,7 +40,7 @@ class smt_var {
   expr get_init_reg_var(unsigned int reg_id);
 };
 
-class prog_smt {
+class smt_prog {
  private:
   // post_reg_val[i] is post register values of basic block i,
   // which are initial values for NEXT basic blocks
@@ -80,8 +80,8 @@ class prog_smt {
   vector<vector<expr> > post;
   // control flow graph
   graph g;
-  prog_smt();
-  ~prog_smt();
+  smt_prog();
+  ~smt_prog();
   // Return the program logic FOL formula 'PL' including basic program logic
   // and the formula of capturing the output of the program in the variable output[prog_id]
   expr gen_smt(unsigned int prog_id, inst* inst_lst, int length);

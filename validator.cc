@@ -65,7 +65,7 @@ void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2
 // calculate and store pre_orig, ps_orign
 void validator::set_orig(inst* orig, int len) {
   smt_pre(_pre_orig, VLD_PROG_ID_ORIG);
-  prog_smt ps_orig;
+  smt_prog ps_orig;
   try {
     _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, len);
   } catch (const string err_msg) {
@@ -85,7 +85,7 @@ void validator::set_orig(expr fx, expr input, expr output) {
 int validator::is_equal_to(inst* synth, int len) {
   expr pre_synth = string_to_expr("true");
   smt_pre(pre_synth, VLD_PROG_ID_SYNTH);
-  prog_smt ps_synth;
+  smt_prog ps_synth;
   expr pl_synth = string_to_expr("true");
   try {
     pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, len);
