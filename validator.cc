@@ -98,8 +98,6 @@ int validator::is_equal_to(inst* synth, int len) {
   smt_post(post, VLD_PROG_ID_ORIG, VLD_PROG_ID_SYNTH);
   expr smt = implies(_pre_orig && pre_synth && _pl_orig && pl_synth, post);
   // store
-  _store_pre_synth = pre_synth;
-  _store_ps_synth = ps_synth;
   _store_post = post;
   _store_f = smt;
   return (int)is_smt_valid(smt);
