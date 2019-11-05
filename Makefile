@@ -1,4 +1,4 @@
-all: proposals_test.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out cfg_test.out inout_test.out
+all: proposals_test.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out cfg_test.out inout_test.out smt_prog_test.out
 
 proposals_test.out: inst.cc inst.h proposals.cc proposals_test.cc prog.cc prog.h
 	g++ -std=c++11 inst.cc proposals.cc proposals_test.cc prog.cc -o proposals_test.out
