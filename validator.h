@@ -50,8 +50,8 @@ class validator {
   expr _store_pre_synth = string_to_expr("true");
   // ps_: program logic formula, including basic program logic
   // and the formula of capturing the output of the program in the variable output[prog_id]
-  prog_smt _store_ps_orig;
-  prog_smt _store_ps_synth;
+  smt_prog _store_ps_orig;
+  smt_prog _store_ps_synth;
   // two program's output formula of setting outputs of two programs are equal, 
   // i.e., output[VLD_PROG_ID_ORIG] == output[VLD_PROG_ID_SYNTH]
   expr _store_post = string_to_expr("true");

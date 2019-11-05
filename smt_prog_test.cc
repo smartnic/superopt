@@ -16,7 +16,7 @@ void test1() {
                inst(MAXC, 0, 15),    // 3
                inst(RETX, 0),        // 4
               };
-  prog_smt ps;
+  smt_prog ps;
   unsigned int prog_id = 0;
   expr pl = ps.gen_smt(prog_id, p, 5);
   // test block 2[3:4]
