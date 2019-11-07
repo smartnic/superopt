@@ -9,11 +9,8 @@ class prog {
  public:
   inst inst_list[MAX_PROG_LEN];
   int freq_count;
-  bool _verfiy_res_flag;
-  int  _verfiy_res;
-  bool _error_cost_flag;
+  int  _verify_res;
   int  _error_cost;
-  bool _perf_cost_flag;
   int  _perf_cost;
   prog(const prog& other);
   prog(inst* instructions);

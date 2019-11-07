@@ -57,7 +57,7 @@ void cost::set_orig(prog* orig, int len) {
 }
 
 int cost::error_cost(prog* synth, int len) {
-  if (synth->_error_cost_flag) return synth->_error_cost;
+  if (synth->_error_cost != -1) return synth->_error_cost;
   double total_cost = 0;
   inst* inst_list = (inst*)synth->inst_list;
   prog_state ps;
@@ -76,8 +76,8 @@ int cost::error_cost(prog* synth, int len) {
   // if verifying is needed, process total_cost with verify result
   int is_equal = 0;
   if (verify_times > 0) {
-    if (synth->_verfiy_res_flag) {
-      is_equal = synth->_verfiy_res;
+    if (synth->_verify_res != -1) {
+      is_equal = synth->_verify_res;
     } else {
       is_equal = _vld.is_equal_to(inst_list, len);
       synth->set_verify_res(is_equal);
@@ -112,7 +112,7 @@ int cost::error_cost(prog* synth, int len) {
 }
 
 int cost::perf_cost(prog* synth, int len) {
-  if (synth->_perf_cost_flag) return synth->_perf_cost;
+  if (synth->_perf_cost != -1) return synth->_perf_cost;
   int total_cost =  MAX_PROG_LEN - _num_real_orig +
                     num_real_instructions((inst*)synth->inst_list, len);
   synth->set_perf_cost(total_cost);
