@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <random>
 #include <algorithm>
+#include <unordered_set>
 #include "prog.h"
 #include "inout.h"
 #include "mh_prog.h"
@@ -24,8 +25,14 @@ inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
 vector<int> inputs;
 
 void gen_random_input(vector<int>& inputs, int min, int max) {
-  for (size_t i = 0; i < inputs.size(); i++) {
-    inputs[i] = min + (max - min) * unidist_mh_test(gen_mh_test);
+  unordered_set<int> input_set;
+  for (size_t i = 0; i < inputs.size();) {
+    int input = min + (max - min) * unidist_mh_test(gen_mh_test);
+    if (input_set.find(input) == input_set.end()) {
+      input_set.insert(input);
+      inputs[i] = input;
+      i++;
+    }
   }
 }
 
