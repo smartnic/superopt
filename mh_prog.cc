@@ -76,7 +76,6 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
       // TODO: may define new prog copy API
       prog* next_copy = prog::make_prog(*next);
       next_copy->freq_count++;
-      next_copy->_verify_res = next->_verify_res;
       next_copy->_error_cost = next->_error_cost;
       next_copy->_perf_cost = next->_perf_cost;
       prog_freq[ph].push_back(next_copy);
