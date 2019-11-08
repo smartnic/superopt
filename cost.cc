@@ -77,10 +77,6 @@ int cost::error_cost(prog* synth, int len) {
   int is_equal = 0;
   if (num_successful_ex > 0) {
     // compute is_equal
-    // read is_equal from cache, the logic now wont read from cache
-    // if (synth->_verify_res != -1) {
-    //   is_equal = synth->_verify_res;
-    // }
     if (num_successful_ex < _examples._exs.size()) {
       is_equal = 0;
       cout << "is_equal from num_successful_ex: " << is_equal << endl;
@@ -88,7 +84,6 @@ int cost::error_cost(prog* synth, int len) {
       is_equal = _vld.is_equal_to(inst_list, len);
       cout << "is_equal from validator: " << is_equal << endl;
     }
-    synth->set_verify_res(is_equal);
     // equal: total_cost += 0
     // not equal: total_cost += num_successful_ex * 1
     // synth illegal: total_cost = ERROR_COST_MAX
@@ -129,6 +124,5 @@ double cost::total_prog_cost(prog* synth, int len) {
   cout << "Error cost: " << err_cost << endl;
   double per_cost = perf_cost(synth, len);
   cout << "Perf cost: " << per_cost << endl;
-  if (! err_cost) synth->print();
   return (_w_e * err_cost) + (_w_p * per_cost);
 }

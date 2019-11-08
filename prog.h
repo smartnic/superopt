@@ -9,7 +9,6 @@ class prog {
  public:
   inst inst_list[MAX_PROG_LEN];
   int freq_count;
-  int  _verify_res;
   int  _error_cost;
   int  _perf_cost;
   prog(const prog& other);
@@ -21,7 +20,6 @@ class prog {
   bool operator==(const prog &x) const;
   static prog* make_prog(const prog &x);
   static void clear_prog(prog* p);
-  void set_verify_res(int res);
   void set_error_cost(int cost);
   void set_perf_cost(int cost);
 };
@@ -29,4 +27,3 @@ class prog {
 struct progHash {
   size_t operator()(const prog &x) const;
 };
-
