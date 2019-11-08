@@ -17,5 +17,6 @@ class mh_sampler {
   double alpha(prog* curr, prog* next);
   prog* mh_next(prog* curr);
   void mcmc_iter(int niter, const prog &orig,
-                 unordered_map<int, vector<prog*> > &prog_freq);
+                 unordered_map<int, vector<prog*> > &prog_freq,
+                 vector<prog*>& progs);
 };
