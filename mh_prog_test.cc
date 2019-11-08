@@ -8,6 +8,9 @@
 
 using namespace std;
 
+default_random_engine gen_mh_test;
+uniform_real_distribution<double> unidist_mh_test(0.0, 1.0);
+
 #define N 7
 inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                         inst(ADDXY, 0, 2),  /* add r0, r2 */
@@ -18,13 +21,19 @@ inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                         NOP,  /* control never reaches here */
                        };
 
-vector<int> input(5);
+vector<int> inputs;
+
+void gen_random_input(vector<int>& inputs, int min, int max) {
+  for (size_t i = 0; i < inputs.size(); i++) {
+    inputs[i] = min + (max - min) * unidist_mh_test(gen_mh_test);
+  }
+}
 
 void test1(int nrolls, double w_e, double w_p)  {
   mh_sampler mh;
   std::unordered_map<int, vector<prog*> > prog_freq;
   prog orig(instructions);
-  mh._cost.init(&orig, N, input, w_e, w_p);
+  mh._cost.init(&orig, N, inputs, w_e, w_p);
   mh.mcmc_iter(nrolls, orig, prog_freq);
   // Get the best program(s)
   int max = 0;
@@ -64,11 +73,8 @@ int main(int argc, char* argv[]) {
       w_p = atof(argv[3]);
     }
   }
-  input[0] = 10;
-  input[1] = 16;
-  input[2] = 11;
-  input[3] = 48;
-  input[4] = 1;
+  inputs.resize(30);
+  gen_random_input(inputs, 0, 50);
   test1(nrolls, w_e, w_p);
   return 0;
 }
