@@ -41,3 +41,15 @@ inout_test.out: inout_test.cc inout.cc inout.h utils.cc utils.h
 
 clean:
 	rm -f proposals_test.out inst_test.out cost_test.out cost_z3.o prog_test.out mh_prog_test.out mh_prog_z3.o validator_test.out validator_z3.o cfg_test.out inout_test.out smt_prog_test.out smt_prog_z3.o
+
+time_measure_test.log: time_measure_test.out
+	./time_measure_test.out > time_measure_test.log
+
+time_measure_test.out: time_measure_test.cc mh_prog.cc mh_prog.h time_measure_z3.o proposals.cc proposals.h prog.cc prog.h cost.cc cost.h inout.cc inout.h inst.cc inst.h validator.cc validator.h cfg.cc cfg.h smt_prog.cc smt_prog.h
+	g++ -std=c++11 inst.cc mh_prog.cc proposals.cc prog.cc cost.cc inout.cc validator.cc cfg.cc time_measure_z3.o smt_prog.cc -o time_measure_test.out ../z3/build/libz3.dylib -lpthread
+
+time_measure_z3.o: time_measure_test.cc
+	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o time_measure_z3.o  -I../z3/src/api -I../z3/src/api/c++ time_measure_test.cc
+
+clean_measure:
+	rm -f  time_measure_test.log time_measure_test.out time_measure_z3.o

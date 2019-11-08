@@ -69,7 +69,7 @@ int cost::error_cost(prog* synth, int len) {
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
     output2 = interpret(inst_list, len, ps, _examples._exs[i].input);
-    cout << "Expected output: " << output1 << " Got output " << output2 << endl;
+    // cout << "Expected output: " << output1 << " Got output " << output2 << endl;
     // int ex_cost = pop_count_asm(output1 ^ output2);
     int ex_cost = abs(output1 - output2);
     if (! ex_cost) num_successful_ex++;
@@ -81,10 +81,10 @@ int cost::error_cost(prog* synth, int len) {
     // compute is_equal
     if (num_successful_ex < _examples._exs.size()) {
       is_equal = 0;
-      cout << "is_equal from num_successful_ex: " << is_equal << endl;
+      // cout << "is_equal from num_successful_ex: " << is_equal << endl;
     } else {
       is_equal = _vld.is_equal_to(inst_list, len);
-      cout << "is_equal from validator: " << is_equal << endl;
+      // cout << "is_equal from validator: " << is_equal << endl;
     }
     // equal: total_cost += 0
     // not equal: total_cost += num_successful_ex * 1
@@ -108,7 +108,7 @@ int cost::error_cost(prog* synth, int len) {
   // case 2: gen_counterex_flag = (! is_equal) && (num_successful_ex == (int)_examples._exs.size());
   if ((! is_equal) && (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
-    cout << "new example set is:\n" << _examples._exs << endl;
+    // cout << "new example set is:\n" << _examples._exs << endl;
   }
   return (int)(total_cost);
 }
@@ -123,8 +123,8 @@ int cost::perf_cost(prog* synth, int len) {
 
 double cost::total_prog_cost(prog* synth, int len) {
   double err_cost = error_cost(synth, len);
-  cout << "Error cost: " << err_cost << endl;
+  // cout << "Error cost: " << err_cost << endl;
   double per_cost = perf_cost(synth, len);
-  cout << "Perf cost: " << per_cost << endl;
+  // cout << "Perf cost: " << per_cost << endl;
   return (_w_e * err_cost) + (_w_p * per_cost);
 }
