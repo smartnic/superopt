@@ -26,7 +26,7 @@ void test1() {
   } else {
     assert_res = false;
   }
-  print_test_res(assert_res, "examples::insert existent value");
+  print_test_res(!assert_res, "examples::insert existent value");
 }
 
 int main() {

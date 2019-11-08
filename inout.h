@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <vector>
-#include <unordered_set>
 
 using namespace std;
 
@@ -19,8 +18,6 @@ class inout {
 
 /* Class examples is a set of inouts with different input values. */
 class examples {
- private:
-  unordered_set<int> _inputs;
  public:
   vector<inout> _exs;
   examples();
