@@ -31,9 +31,11 @@ prog* mh_sampler::next_proposal(prog* curr) {
 
 /* compute acceptance function */
 double mh_sampler::alpha(prog* curr, prog* next) {
+  // cout << "cal curr" << endl;
   double curr_cost = _cost.total_prog_cost(curr, MAX_PROG_LEN);
+  // cout << "cal next" << endl;
   double next_cost = _cost.total_prog_cost(next, MAX_PROG_LEN);
-  cout << "Costs: curr " << curr_cost << " next " << next_cost << endl;
+  // cout << "Costs: curr " << curr_cost << " next " << next_cost << endl;
   return min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
 }
 
@@ -55,7 +57,7 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
   curr = prog::make_prog(orig);
 
   for (int i = 0; i < niter; i++) {
-    cout << "Attempting mh iteration " << i << endl;
+    // cout << "Attempting mh iteration " << i << endl;
     next = mh_next(curr);
     /* Insert the next program into frequency dictionary if new */
     int ph = progHash()(*next);
