@@ -62,7 +62,7 @@ int cost::error_cost(prog* synth, int len) {
   inst* inst_list = (inst*)synth->inst_list;
   prog_state ps;
   int output1, output2;
-  int verify_times = 0;
+  int num_successful_ex = 0;
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
@@ -70,44 +70,49 @@ int cost::error_cost(prog* synth, int len) {
     cout << "Expected output: " << output1 << " Got output " << output2 << endl;
     // int ex_cost = pop_count_asm(output1 ^ output2);
     int ex_cost = abs(output1 - output2);
-    if (! ex_cost) verify_times++;
+    if (! ex_cost) num_successful_ex++;
     total_cost += ex_cost;
   }
-  // if verifying is needed, process total_cost with verify result
+  // if verify result is needed, update total_cost by it
   int is_equal = 0;
-  if (verify_times > 0) {
-    if (synth->_verify_res != -1) {
-      is_equal = synth->_verify_res;
+  if (num_successful_ex > 0) {
+    // compute is_equal
+    // read is_equal from cache, the logic now wont read from cache
+    // if (synth->_verify_res != -1) {
+    //   is_equal = synth->_verify_res;
+    // }
+    if (num_successful_ex < _examples._exs.size()) {
+      is_equal = 0;
+      cout << "is_equal from num_successful_ex: " << is_equal << endl;
     } else {
       is_equal = _vld.is_equal_to(inst_list, len);
-      synth->set_verify_res(is_equal);
+      cout << "is_equal from validator: " << is_equal << endl;
     }
+    synth->set_verify_res(is_equal);
     // equal: total_cost += 0
-    // not equal: total_cost += verify_times * 1
+    // not equal: total_cost += num_successful_ex * 1
     // synth illegal: total_cost = ERROR_COST_MAX
-    if (is_equal == 0) { // not equal
-      total_cost += verify_times;
+    if (! is_equal) { // not equal
+      total_cost += num_successful_ex;
     } else if (is_equal == -1) { // synth illegal
       total_cost = ERROR_COST_MAX;
     }
   }
   synth->set_error_cost((int)total_cost);
 
-  bool gen_counterex_flag = (is_equal == 0);
-  // If verify_times < (int)_examples._exs.size(),
+  // process counterexamples
+  // If num_successful_ex < (int)_examples._exs.size(),
   // it shows the example that synth fails in the example set is a counterexample.
   // The counterexample generated from this synth may have already been in the examples set.
-  // Thus, only when verify_times == (int)_examples._exs.size(),
+  // Thus, only when num_successful_ex == (int)_examples._exs.size(),
   // the counterexample generated from this synth must can be added into the example set.
-  // But it should ensure that the number of initial example set is big enough. 
-  // bool gen_counterex_flag = (is_equal == 0) && (verify_times == (int)_examples._exs.size());
-
-  // process counterexamples
-  if (gen_counterex_flag) {
+  // But it should ensure that the number of initial example set is big enough.
+  // case 1: gen_counterex_flag = (! is_equal);
+  // case 2: gen_counterex_flag = (! is_equal) && (num_successful_ex == (int)_examples._exs.size());
+  if ((! is_equal) && (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
-  }
-  if (gen_counterex_flag)
     cout << "new example set is:\n" << _examples._exs << endl;
+  }
   return (int)(total_cost);
 }
 
@@ -124,5 +129,6 @@ double cost::total_prog_cost(prog* synth, int len) {
   cout << "Error cost: " << err_cost << endl;
   double per_cost = perf_cost(synth, len);
   cout << "Perf cost: " << per_cost << endl;
+  if (! err_cost) synth->print();
   return (_w_e * err_cost) + (_w_p * per_cost);
 }
