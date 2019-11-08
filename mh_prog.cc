@@ -42,7 +42,9 @@ double mh_sampler::alpha(prog* curr, prog* next) {
 prog* mh_sampler::mh_next(prog* curr) {
   prog* next = next_proposal(curr);
   double uni_sample = unidist_mh(gen_mh);
+  // cout << "uni_sample: " << uni_sample << " ";
   if (uni_sample < alpha(curr, next)) {
+    // cout << "move to next prog " << to_string(iter) << endl;
     return next;
   } else {
     prog::clear_prog(next);
@@ -51,7 +53,8 @@ prog* mh_sampler::mh_next(prog* curr) {
 }
 
 void mh_sampler::mcmc_iter(int niter, const prog &orig,
-                           unordered_map<int, vector<prog*> > &prog_freq) {
+                           unordered_map<int, vector<prog*> > &prog_freq,
+                           vector<prog*>& progs) {
   // contruct the first program by copying the original
   prog *curr, *next;
   curr = prog::make_prog(orig);
@@ -70,6 +73,7 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
         if (*p == *next) {
           found = true;
           p->freq_count++;
+          progs[i] = p; // insert into progs
           break;
         }
       }
@@ -81,6 +85,7 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
       next_copy->_error_cost = next->_error_cost;
       next_copy->_perf_cost = next->_perf_cost;
       prog_freq[ph].push_back(next_copy);
+      progs[i] = next_copy; // insert into progs
     }
     if (curr != next) prog::clear_prog(curr);
     curr = next;

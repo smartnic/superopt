@@ -182,7 +182,7 @@ void time_cost_perf_cost() {
 }
 
 void time_mh_sampler() {
-  int loop_times = 1;
+  int loop_times = 2;
   auto start = NOW;
   for (int i = 0; i < loop_times; i++) {
     int nrolls = 1000;
