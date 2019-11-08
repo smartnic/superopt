@@ -72,7 +72,7 @@ int cost::error_cost(prog* synth, int len) {
     cout << "Expected output: " << output1 << " Got output " << output2 << endl;
     // int ex_cost = pop_count_asm(output1 ^ output2);
     int ex_cost = abs(output1 - output2);
-    if (! ex_cost) num_successful_ex++;
+    if (ex_cost == 0) num_successful_ex++;
     total_cost += ex_cost;
   }
   // if verify result is needed, update total_cost by it
