@@ -87,7 +87,7 @@ int cost::error_cost(prog* synth, int len) {
   // equal: total_cost += 0
   // not equal: total_cost += num_successful_ex * 1
   // synth illegal: total_cost = ERROR_COST_MAX
-  if (! is_equal) { // not equal
+  if (is_equal == 0) { // not equal
     total_cost += ex_set_size - num_successful_ex;
   } else if (is_equal == -1) { // synth illegal
     total_cost = ERROR_COST_MAX;
@@ -103,7 +103,7 @@ int cost::error_cost(prog* synth, int len) {
   // But it should ensure that the number of initial example set is big enough.
   // case 1: gen_counterex_flag = (! is_equal);
   // case 2: gen_counterex_flag = (! is_equal) && (num_successful_ex == (int)_examples._exs.size());
-  if ((! is_equal) && (num_successful_ex == (int)_examples._exs.size())) {
+  if ((is_equal == 0) && (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
     cout << "new example set is:\n" << _examples._exs << endl;
   }
