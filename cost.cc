@@ -84,14 +84,14 @@ int cost::error_cost(prog* synth, int len) {
   } else {
     cout << "is_equal from num_successful_ex: " << is_equal << endl;
   }
-    // equal: total_cost += 0
-    // not equal: total_cost += num_successful_ex * 1
-    // synth illegal: total_cost = ERROR_COST_MAX
-    if (! is_equal) { // not equal
-      total_cost += ex_set_size - num_successful_ex;
-    } else if (is_equal == -1) { // synth illegal
-      total_cost = ERROR_COST_MAX;
-    }
+  // equal: total_cost += 0
+  // not equal: total_cost += num_successful_ex * 1
+  // synth illegal: total_cost = ERROR_COST_MAX
+  if (! is_equal) { // not equal
+    total_cost += ex_set_size - num_successful_ex;
+  } else if (is_equal == -1) { // synth illegal
+    total_cost = ERROR_COST_MAX;
+  }
   synth->set_error_cost((int)total_cost);
 
   // process counterexamples
