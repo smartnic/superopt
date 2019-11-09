@@ -77,24 +77,21 @@ int cost::error_cost(prog* synth, int len) {
   }
   // if verify result is needed, update total_cost by it
   int is_equal = 0;
-  if (num_successful_ex > 0) {
-    // compute is_equal
-    if (num_successful_ex < _examples._exs.size()) {
-      is_equal = 0;
-      cout << "is_equal from num_successful_ex: " << is_equal << endl;
-    } else {
-      is_equal = _vld.is_equal_to(inst_list, len);
-      cout << "is_equal from validator: " << is_equal << endl;
-    }
+  int ex_set_size = _examples._exs.size();
+  if (num_successful_ex == ex_set_size) {
+    is_equal = _vld.is_equal_to(inst_list, len);
+    cout << "is_equal from validator: " << is_equal << endl;
+  } else {
+    cout << "is_equal from num_successful_ex: " << is_equal << endl;
+  }
     // equal: total_cost += 0
     // not equal: total_cost += num_successful_ex * 1
     // synth illegal: total_cost = ERROR_COST_MAX
     if (! is_equal) { // not equal
-      total_cost += num_successful_ex;
+      total_cost += ex_set_size - num_successful_ex;
     } else if (is_equal == -1) { // synth illegal
       total_cost = ERROR_COST_MAX;
     }
-  }
   synth->set_error_cost((int)total_cost);
 
   // process counterexamples
