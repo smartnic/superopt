@@ -9,8 +9,8 @@ class prog {
  public:
   inst inst_list[MAX_PROG_LEN];
   int freq_count;
-  int  _error_cost;
-  int  _perf_cost;
+  double  _error_cost;
+  double  _perf_cost;
   prog(const prog& other);
   prog(inst* instructions);
   prog();
@@ -20,8 +20,8 @@ class prog {
   bool operator==(const prog &x) const;
   static prog* make_prog(const prog &x);
   static void clear_prog(prog* p);
-  void set_error_cost(int cost);
-  void set_perf_cost(int cost);
+  void set_error_cost(double cost);
+  void set_perf_cost(double cost);
 };
 
 struct progHash {

@@ -11,7 +11,7 @@ class mh_sampler {
   prog* next_proposal(prog* curr);
  public:
   cost _cost;
-  double _base = 2.0;
+  double _base = 2;
   mh_sampler();
   ~mh_sampler();
   double alpha(prog* curr, prog* next);

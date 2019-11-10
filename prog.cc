@@ -59,11 +59,11 @@ bool prog::operator==(const prog &x) const {
   return true;
 }
 
-void prog::set_error_cost(int cost) {
+void prog::set_error_cost(double cost) {
   _error_cost = cost;
 }
 
-void prog::set_perf_cost(int cost) {
+void prog::set_perf_cost(double cost) {
   _perf_cost = cost;
 }
 
