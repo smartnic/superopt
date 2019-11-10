@@ -61,5 +61,5 @@ measure_mh_z3.o: measure_mh_test.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o measure_mh_z3.o  -I../z3/src/api -I../z3/src/api/c++ measure_mh_test.cc
 
 clean_measure:
-	rm -f measure_time_test.log measure_time_test.out measure_time_z3.o 
-	rm -f measure_mh_test.log measure_mh_test.out measure_mh_z3.o
+	rm -f measure_time_test.log measure_time_test.out measure_time_z3.o *.txt
+	rm -f measure_mh_test.log measure_mh_test.out measure_mh_z3.o *.dat

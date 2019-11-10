@@ -7,8 +7,6 @@
 #include "inout.h"
 #include "cost.h"
 
-#define ERROR_COST_MAX 100000
-
 /* Requires support for advanced bit manipulation (ABM) instructions on the
  * architecture where this program is run. */
 unsigned int pop_count_asm(unsigned int x) {
@@ -38,6 +36,7 @@ void cost::init(prog* orig, int len, const vector<int> &input,
   }
   _w_e = w_e;
   _w_p = w_p;
+  cout << "set w_e, w_p: " << _w_e << "," << _w_p << endl;
 }
 
 int cost::num_real_instructions(inst* program, int len) {
@@ -52,13 +51,16 @@ void cost::set_orig(prog* orig, int len) {
   try {
     _vld.set_orig((inst*)orig->inst_list, len);
   } catch (const string err_msg) {
+    cout << "ERROR: the original program is illegal. ";
+    cerr << err_msg << endl;
     throw (err_msg);
     return;
   }
   _num_real_orig = num_real_instructions((inst*)orig->inst_list, len);
+  cout << "_num_real_orig: " << _num_real_orig << endl;
 }
 
-int cost::error_cost(prog* synth, int len) {
+double cost::error_cost(prog* synth, int len) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   double total_cost = 0;
   inst* inst_list = (inst*)synth->inst_list;
@@ -95,8 +97,13 @@ int cost::error_cost(prog* synth, int len) {
       total_cost = ERROR_COST_MAX;
     }
   }
-  synth->set_error_cost((int)total_cost);
-
+  synth->set_error_cost(total_cost / (double)ERROR_COST_NORMAL);
+  // cout << "error_cost: " << total_cost
+  //      << " normalize: " << total_cost / (double)ERROR_COST_NORMAL << endl;
+  // if (total_cost == 0) {
+  //   cout << total_cost << endl;
+  //   synth->print();
+  // }
   // process counterexamples
   // If num_successful_ex < (int)_examples._exs.size(),
   // it shows the example that synth fails in the example set is a counterexample.
@@ -110,21 +117,25 @@ int cost::error_cost(prog* synth, int len) {
     _examples.insert(_vld._last_counterex);
     // cout << "new example set is:\n" << _examples._exs << endl;
   }
-  return (int)(total_cost);
+  return (total_cost / (double)ERROR_COST_NORMAL);
 }
 
-int cost::perf_cost(prog* synth, int len) {
+double cost::perf_cost(prog* synth, int len) {
   if (synth->_perf_cost != -1) return synth->_perf_cost;
   int total_cost =  MAX_PROG_LEN - _num_real_orig +
                     num_real_instructions((inst*)synth->inst_list, len);
-  synth->set_perf_cost(total_cost);
-  return total_cost;
+  synth->set_perf_cost(total_cost / double(PERF_COST_NORMAL));
+  return (total_cost / double(PERF_COST_NORMAL));
 }
 
 double cost::total_prog_cost(prog* synth, int len) {
   double err_cost = error_cost(synth, len);
-  // cout << "Error cost: " << err_cost << endl;
+  cout << "Error cost: " << err_cost << " ";
   double per_cost = perf_cost(synth, len);
-  // cout << "Perf cost: " << per_cost << endl;
+  cout << "Perf cost: " << per_cost << endl;
+  cout << "w_e, w_p: " << _w_e << "," << _w_p << " ";
+  cout << "Total cost: " << ((_w_e * err_cost) + (_w_p * per_cost)) << endl;
+  // if ((err_cost == 0) && (per_cost < 4))
+  //   synth->print();
   return (_w_e * err_cost) + (_w_p * per_cost);
 }

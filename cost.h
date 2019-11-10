@@ -8,6 +8,10 @@
 
 using namespace std;
 
+#define ERROR_COST_MAX 100000
+#define ERROR_COST_NORMAL 1
+#define PERF_COST_NORMAL 1
+
 unsigned int pop_count_asm(unsigned int);
 
 class cost {
@@ -24,7 +28,7 @@ class cost {
   void init(prog* orig, int len, const vector<int> &input,
             double w_e = 0.5, double w_p = 0.5);
   void set_orig(prog* orig, int len);
-  int error_cost(prog* synth, int len);
-  int perf_cost(prog* synth, int len);
+  double error_cost(prog* synth, int len);
+  double perf_cost(prog* synth, int len);
   double total_prog_cost(prog* synth, int len);
 };
