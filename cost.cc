@@ -89,6 +89,7 @@ int cost::error_cost(prog* synth, int len) {
   // synth illegal: total_cost = ERROR_COST_MAX
   if (is_equal == 0) { // not equal
     total_cost += ex_set_size - num_successful_ex;
+    total_cost += 1;
   } else if (is_equal == -1) { // synth illegal
     total_cost = ERROR_COST_MAX;
   }
