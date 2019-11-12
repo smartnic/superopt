@@ -18,6 +18,10 @@ string file_cost_sample = "cost_sample";
 string file_top_iternum = "top_iternum";
 string file_raw_data_1 = "raw_data_progs";
 string file_raw_data_2 = "raw_data_prog_dic";
+string file_raw_data_ex = "raw_data_ex";
+string file_raw_data_prog = "raw_data_prog";
+string file_raw_data_error_perf = "raw_data_error_perf";
+string file_raw_data_error_ex = "raw_data_error_ex";
 int file_cost_sample_start = 0;
 int file_top_iternum_k = 1;
 vector<inst*> origs;
@@ -65,47 +69,20 @@ inst orig2[MAX_PROG_LEN] = {inst(ADDXY, 1, 0),
                             inst(RETX, 1),
                             NOP,
                            };
-// f(x) = 5*x
-// ADDXY 1 0  r1 = r0
+// f(x) = 6*x
 // ADDXY 0 0  r0 = 2*r0
-// ADDXY 0 0  r0 = 2*r0
-// ADDXY 0 1  r0 += r1
+// ADDXY 1 0  r1 = 2*r0
+// ADDXY 0 1  r0 = 4*r0
+// ADDXY 0 1  r0 = 6*r0
 // perf_cost = 4+0 = 4
 inst orig3[MAX_PROG_LEN] = {inst(MOVXC, 1, 0),
-                            inst(ADDXY, 1, 0), // r1 = r0
+                            inst(ADDXY, 1, 0), // r1 = 2*r0
                             inst(ADDXY, 0, 1),
                             inst(ADDXY, 0, 1),
                             inst(ADDXY, 0, 1),
                             inst(ADDXY, 0, 1),
                             inst(ADDXY, 0, 1),
                            };
-
-// // perf_cost = 4+1=5
-// inst orig3[MAX_PROG_LEN] = {inst(MOVXC, 1, 0),
-//                             inst(ADDXY, 1, 0), // r1 = r0
-//                             inst(ADDXY, 0, 0), // r0 = 2*r0
-//                             inst(ADDXY, 0, 1), // r0 = 3*r0
-//                             inst(ADDXY, 0, 1), // r0 = 4*r0
-//                             inst(ADDXY, 0, 1), // r0 = 5*r0
-//                             NOP,
-//                            };
-// inst orig3[MAX_PROG_LEN] = {inst(NOP),
-//                             inst(ADDXY, 1, 0), // r1 = r0
-//                             inst(ADDXY, 1, 0), // r0 = 2*r0
-//                             inst(ADDXY, 0, 0), // r0 = 3*r0
-//                             inst(ADDXY, 1, 1), // r0 = 4*r0
-//                             inst(ADDXY, 0, 1), // r0 = 5*r0
-//                             NOP,
-//                            };
-// 4+2 = 6
-// inst orig3[MAX_PROG_LEN] = {inst(ADDXY, 0, 0), // r1 = r0
-//                             inst(ADDXY, 3, 0), // r0 = 2*r0
-//                             inst(ADDXY, 0, 3), // r0 = 3*r0
-//                             inst(ADDXY, 0, 3), // r0 = 4*r0
-//                             inst(NOP),
-//                             inst(NOP),
-//                             inst(ADDXY, 1, 0),
-//                            };
 
 void init_origs() {
   origs.push_back(orig0);
@@ -134,11 +111,14 @@ void running_sampler(inst* orig_inst, int len,
                      int nrolls, double w_e, double w_p) {
   progs.resize(nrolls);
   mh_sampler mh;
+  mh.init(file_raw_data_ex, file_raw_data_prog,
+          file_raw_data_error_perf, file_raw_data_error_ex);
   prog orig(orig_inst);
   // cout << " running_sampler 1...." << endl;
   mh._cost.init(&orig, len, inputs, w_e, w_p);
   // cout << " running_sampler 2...." << endl;
   mh.mcmc_iter(nrolls, orig, prog_dic, progs);
+  mh.close();
 }
 
 void relationship_cost_and_num_samples(double w_e, double w_p) {
@@ -241,6 +221,10 @@ void file_rename(string path, double w_e, double w_p, int orig_id) {
   file_top_iternum = path + file_top_iternum;
   file_raw_data_1 = path + file_raw_data_1;
   file_raw_data_2 = path + file_raw_data_2;
+  file_raw_data_ex = path + file_raw_data_ex;
+  file_raw_data_prog = path + file_raw_data_prog;
+  file_raw_data_error_perf = path + file_raw_data_error_perf;
+  file_raw_data_error_ex = path + file_raw_data_error_ex;
   string str_w_e = to_string(w_e);
   string str_w_p = to_string(w_p);
   str_w_e.erase(str_w_e.find_last_not_of('0') + 1, string::npos);
@@ -256,6 +240,10 @@ void file_rename(string path, double w_e, double w_p, int orig_id) {
   file_top_iternum += suffix;
   file_raw_data_1 += suffix;
   file_raw_data_2 += suffix;
+  file_raw_data_ex += suffix;
+  file_raw_data_prog += suffix;
+  file_raw_data_error_perf += suffix;
+  file_raw_data_error_ex += suffix;
 }
 
 void store_raw_data(double w_e, double w_p, int orig_id) {
@@ -274,6 +262,11 @@ void store_raw_data(double w_e, double w_p, int orig_id) {
     }
   }
   fout.close();
+
+  // file_raw_data_ex += suffix;
+  // file_raw_data_prog += suffix;
+  // file_raw_data_error_perf += suffix;
+  // file_raw_data_error_ex += suffix;
 }
 
 int main(int argc, char* argv[]) {
