@@ -8,6 +8,12 @@ using namespace std;
 
 class mh_sampler {
  private:
+  // when open_measure_file is called, set _measure_mode as true;
+  // when close_measure_file is called, set _measure_mode as false;
+  bool _measure_mode = false;
+  int _measure_count = 0;
+  ofstream _f_proposal;
+  ofstream _f_examples;
   double cost_to_pi(double cost);
   prog* next_proposal(prog* curr);
  public:
@@ -20,7 +26,6 @@ class mh_sampler {
   void mcmc_iter(int niter, const prog &orig,
                  unordered_map<int, vector<prog*> > &prog_freq,
                  vector<prog*>& progs);
-  ofstream fout1, fout2, fout3, fout4;
-  void init(string f1, string f2, string f3, string f4);
-  void close();
+  void open_measure_file(string file_raw_data_proposal, string file_raw_data_ex);
+  void close_measure_file();
 };

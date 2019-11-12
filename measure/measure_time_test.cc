@@ -4,9 +4,9 @@
 #include <random>
 #include <algorithm>
 #include <chrono>
-#include "prog.h"
-#include "inout.h"
-#include "mh_prog.h"
+#include "../prog.h"
+#include "../inout.h"
+#include "../mh_prog.h"
 #include "z3++.h"
 
 using namespace std;
@@ -192,9 +192,10 @@ void time_mh_sampler() {
     gen_random_input(inputs, 0, 50);
     mh_sampler mh;
     unordered_map<int, vector<prog*> > prog_freq;
+    vector<prog*> progs(nrolls);
     prog orig(instructions);
     mh._cost.init(&orig, N, inputs, w_e, w_p);
-    mh.mcmc_iter(nrolls, orig, prog_freq);
+    mh.mcmc_iter(nrolls, orig, prog_freq, progs);
   }
   auto end = NOW;
   cout << "cost::mh_sampler: " << DUR / loop_times << " us" << endl;
@@ -213,4 +214,4 @@ int main() {
   time_cost_perf_cost();
   time_mh_sampler();
   return 0;
-}
+}   
