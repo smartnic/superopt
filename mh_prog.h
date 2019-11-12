@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "prog.h"
 #include "inout.h"
 #include "cost.h"
@@ -19,4 +20,7 @@ class mh_sampler {
   void mcmc_iter(int niter, const prog &orig,
                  unordered_map<int, vector<prog*> > &prog_freq,
                  vector<prog*>& progs);
+  ofstream fout1, fout2, fout3, fout4;
+  void init(string f1, string f2, string f3, string f4);
+  void close();
 };

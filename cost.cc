@@ -36,7 +36,7 @@ void cost::init(prog* orig, int len, const vector<int> &input,
   }
   _w_e = w_e;
   _w_p = w_p;
-  cout << "set w_e, w_p: " << _w_e << "," << _w_p << endl;
+  // cout << "set w_e, w_p: " << _w_e << "," << _w_p << endl;
 }
 
 int cost::num_real_instructions(inst* program, int len) {
@@ -77,25 +77,22 @@ double cost::error_cost(prog* synth, int len) {
     if (! ex_cost) num_successful_ex++;
     total_cost += ex_cost;
   }
-  // if verify result is needed, update total_cost by it
   int is_equal = 0;
-  if (num_successful_ex > 0) {
-    // compute is_equal
-    if (num_successful_ex < _examples._exs.size()) {
-      is_equal = 0;
-      // cout << "is_equal from num_successful_ex: " << is_equal << endl;
-    } else {
-      is_equal = _vld.is_equal_to(inst_list, len);
-      // cout << "is_equal from validator: " << is_equal << endl;
-    }
-    // equal: total_cost += 0
-    // not equal: total_cost += num_successful_ex * 1
-    // synth illegal: total_cost = ERROR_COST_MAX
-    if (! is_equal) { // not equal
-      total_cost += num_successful_ex;
-    } else if (is_equal == -1) { // synth illegal
-      total_cost = ERROR_COST_MAX;
-    }
+  int ex_set_size = _examples._exs.size();
+  if (num_successful_ex == ex_set_size) {
+    is_equal = _vld.is_equal_to(inst_list, len);
+    // cout << "is_equal from validator: " << is_equal << endl;
+  } else {
+    // cout << "is_equal from num_successful_ex: " << is_equal << endl;
+  }
+  // equal: total_cost += 0
+  // not equal: total_cost += num_successful_ex * 1
+  // synth illegal: total_cost = ERROR_COST_MAX
+  if (is_equal == 0) { // not equal
+    total_cost += ex_set_size - num_successful_ex;
+    total_cost += 1;
+  } else if (is_equal == -1) { // synth illegal
+    total_cost = ERROR_COST_MAX;
   }
   synth->set_error_cost(total_cost / (double)ERROR_COST_NORMAL);
   // cout << "error_cost: " << total_cost
@@ -113,7 +110,7 @@ double cost::error_cost(prog* synth, int len) {
   // But it should ensure that the number of initial example set is big enough.
   // case 1: gen_counterex_flag = (! is_equal);
   // case 2: gen_counterex_flag = (! is_equal) && (num_successful_ex == (int)_examples._exs.size());
-  if ((! is_equal) && (num_successful_ex == (int)_examples._exs.size())) {
+  if ((is_equal == 0) && (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
     // cout << "new example set is:\n" << _examples._exs << endl;
   }
@@ -130,11 +127,11 @@ double cost::perf_cost(prog* synth, int len) {
 
 double cost::total_prog_cost(prog* synth, int len) {
   double err_cost = error_cost(synth, len);
-  cout << "Error cost: " << err_cost << " ";
+  // cout << "Error cost: " << err_cost << " ";
   double per_cost = perf_cost(synth, len);
-  cout << "Perf cost: " << per_cost << endl;
-  cout << "w_e, w_p: " << _w_e << "," << _w_p << " ";
-  cout << "Total cost: " << ((_w_e * err_cost) + (_w_p * per_cost)) << endl;
+  // cout << "Perf cost: " << per_cost << endl;
+  // cout << "w_e, w_p: " << _w_e << "," << _w_p << " ";
+  // cout << "Total cost: " << ((_w_e * err_cost) + (_w_p * per_cost)) << endl;
   // if ((err_cost == 0) && (per_cost < 4))
   //   synth->print();
   return (_w_e * err_cost) + (_w_p * per_cost);
