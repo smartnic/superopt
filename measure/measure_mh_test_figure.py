@@ -242,7 +242,6 @@ def cost_sample_xy(file_name, i, steady_start):
     # print("cost_list:", cost_list)
     cost_list = np.sort(cost_list)
     cost_list = cost_list.tolist()
-    # print(len(cost_list), cost_list)
     i = 0
     x_axis = [cost_list[0]]
     y_axis = [1]
@@ -279,7 +278,7 @@ def draw_cost_value_of_generated_progs(fin_path, fout_path, parameters,
             # print(x_axis)
             plt.plot(x_axis, y_axis, linestyle='-.', linewidth=1.5, label=curve_name, marker='x')
         graph_title = "Total cost value CDF"
-        graph_title_suffix = "\nprogram id=" + str(id)
+        graph_title_suffix = "\nprogram id=" + str(id) + " file=" + str(fin_path)
         plt.title(graph_title + graph_title_suffix)
         plt.xlabel('Cost value / Best cost value')
         plt.ylabel('Number of samples CDF')
@@ -293,6 +292,44 @@ def draw_cost_value_of_generated_progs(fin_path, fout_path, parameters,
         print("draw_cost_value_of_generated_progs::fout:", fout_path + figurename)
         plt.close(f)
 
+# draw number of unique programs over iterations
+def draw_num_unique_progs(fin_path, fout_path, parameters, prog_ids):
+    for i_id, id in enumerate(prog_ids):
+        f = plt.figure()
+        for para in parameters:
+            file_name = fin_path + "raw_data_prog_" + str(id) + "_" + \
+                        str(para[0]).rstrip('0').rstrip('.') + "_" + \
+                        str(para[1]).rstrip('0').rstrip('.') + ".txt"
+            print("  processing", file_name)
+            data, _ = get_all_data_from_file(file_name)
+            y_axis = []
+            sum = 0
+            for freq in np.array(data[3]).astype(int):
+                if freq == 1:
+                    sum += 1
+                y_axis.append(sum)
+            x_axis = [x for x in range(len(y_axis))]
+            for i, y in enumerate(y_axis):
+                y_axis[i] = y / sum
+            curve_name = "w_e=" + str(para[0]) + " w_p=" + str(para[1]) + \
+                         " #total unique programs=" + str(sum)
+            plt.plot(x_axis, y_axis, linestyle='-', linewidth=1.5, label=curve_name)
+        graph_title = "Number of unique programs"
+        graph_title_suffix = "\nprogram id=" + str(id) + " file=" + str(fin_path)
+        plt.title(graph_title + graph_title_suffix)
+        plt.xlabel('Iteration number')
+        plt.ylabel('CDF')
+        plt.ylim(ymin=0)
+        plt.xlim(xmin=1)
+        # plt.show()
+        figurename = graph_title + "_" + str(id) + ".pdf"
+        plt.legend()
+        plt.grid()
+        f.savefig(fout_path + figurename, bbox_inches='tight')
+        print("draw_num_unique_progs::fout:", fout_path + figurename)
+        plt.close(f)
+
+
 if __name__=="__main__":
     fin_path, fout_path, parameters, prog_ids, best_perf_costs, steady_start = parse_input(sys.argv[1:])
     print(fin_path, fout_path, parameters, prog_ids, best_perf_costs, steady_start)
@@ -301,3 +338,4 @@ if __name__=="__main__":
     draw_perf_cost_funtion(fin_path, fout_path, parameters, prog_ids)
     draw_smallest_perf_cost(fin_path, fout_path, parameters, prog_ids, best_perf_costs)
     draw_cost_value_of_generated_progs(fin_path, fout_path, parameters, prog_ids, best_perf_costs, steady_start)
+    draw_num_unique_progs(fin_path, fout_path, parameters, prog_ids)
