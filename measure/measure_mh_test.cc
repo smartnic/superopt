@@ -24,7 +24,6 @@ int origs_len = MAX_PROG_LEN;
 vector<int> origs_best_perf_cost;
 vector<int> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
-vector<prog*> progs;
 
 default_random_engine gen_mh_test;
 uniform_real_distribution<double> unidist_mh_test(0.0, 1.0);
@@ -105,13 +104,12 @@ void gen_random_input(vector<int>& inputs, int min, int max) {
 void running_sampler(inst* orig_inst, int len,
                      int nrolls, double w_e, double w_p,
                      int strategy_ex, int strategy_eq, int strategy_avg) {
-  progs.resize(nrolls);
   mh_sampler mh;
-  mh.open_measure_file(file_raw_data_proposal, file_raw_data_ex);
+  mh.open_measure_file(file_raw_data_prog, file_raw_data_proposal, file_raw_data_ex);
   prog orig(orig_inst);
   mh._cost.init(&orig, len, inputs, w_e, w_p,
                 strategy_ex, strategy_eq, strategy_avg);
-  mh.mcmc_iter(nrolls, orig, prog_dic, progs);
+  mh.mcmc_iter(nrolls, orig, prog_dic);
   mh.close_measure_file();
 }
 
@@ -138,16 +136,8 @@ void file_rename(string path, double w_e, double w_p, int orig_id) {
   file_raw_data_ex += suffix;
 }
 
-void store_raw_data(double w_e, double w_p, int orig_id) {
+void store_raw_data(double w_e, double w_p) {
   ofstream fout;
-  fout.open(file_raw_data_prog, ios::out | ios::trunc);
-  for (size_t i = 0; i < progs.size(); i++) {
-    fout << progs[i]->_error_cost << " "
-         << progs[i]->_perf_cost << " "
-         << w_e * (double)progs[i]->_error_cost + w_p * (double)progs[i]->_perf_cost
-         << endl;
-  }
-  fout.close();
   fout.open(file_raw_data_prog_dic, ios::out | ios::trunc);
   for (std::pair<int, vector <prog*> > element : prog_dic) {
     vector<prog*> pl = element.second;
@@ -196,6 +186,6 @@ int main(int argc, char* argv[]) {
   gen_random_input(inputs, -50, 50);
   running_sampler(origs[orig_id], origs_len, nrolls, w_e, w_p,
                   strategy_ex, strategy_eq, strategy_avg);
-  store_raw_data(w_e, w_p, orig_id);
+  store_raw_data(w_e, w_p);
   return 0;
 }

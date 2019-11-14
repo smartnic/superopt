@@ -192,10 +192,9 @@ void time_mh_sampler() {
     gen_random_input(inputs, 0, 50);
     mh_sampler mh;
     unordered_map<int, vector<prog*> > prog_freq;
-    vector<prog*> progs(nrolls);
     prog orig(instructions);
     mh._cost.init(&orig, N, inputs, w_e, w_p);
-    mh.mcmc_iter(nrolls, orig, prog_freq, progs);
+    mh.mcmc_iter(nrolls, orig, prog_freq);
   }
   auto end = NOW;
   cout << "cost::mh_sampler: " << DUR / loop_times << " us" << endl;

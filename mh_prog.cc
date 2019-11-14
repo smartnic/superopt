@@ -21,7 +21,10 @@ mh_sampler::mh_sampler() {
 
 mh_sampler::~mh_sampler() {}
 
-void mh_sampler::open_measure_file(string file_raw_data_proposal, string file_raw_data_ex) {
+void mh_sampler::open_measure_file(string file_raw_data_prog,
+                                   string file_raw_data_proposal,
+                                   string file_raw_data_ex) {
+  _f_program.open(file_raw_data_prog, ios::out | ios::trunc);
   _f_proposal.open(file_raw_data_proposal, ios::out | ios::trunc);
   _f_examples.open(file_raw_data_ex, ios::out | ios::trunc);
   _measure_mode = true;
@@ -29,6 +32,7 @@ void mh_sampler::open_measure_file(string file_raw_data_proposal, string file_ra
 }
 
 void mh_sampler::close_measure_file() {
+  _f_program.close();
   _f_proposal.close();
   _f_examples.close();
   _measure_mode = false;
@@ -84,8 +88,7 @@ prog* mh_sampler::mh_next(prog* curr) {
 }
 
 void mh_sampler::mcmc_iter(int niter, const prog &orig,
-                           unordered_map<int, vector<prog*> > &prog_freq,
-                           vector<prog*>& progs) {
+                           unordered_map<int, vector<prog*> > &prog_freq) {
   // contruct the first program by copying the original
   prog *curr, *next;
   curr = prog::make_prog(orig);
@@ -94,6 +97,7 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
     next = mh_next(curr);
     /* Insert the next program into frequency dictionary if new */
     int ph = progHash()(*next);
+    prog* meas_p;
     bool found = false;
     if (prog_freq.find(ph) == prog_freq.end()) {
       prog_freq[ph] = std::vector<prog*>();
@@ -103,7 +107,7 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
         if (*p == *next) {
           found = true;
           p->freq_count++;
-          progs[i] = p; // insert into progs
+          meas_p = p;
           break;
         }
       }
@@ -115,7 +119,14 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
       next_copy->_error_cost = next->_error_cost;
       next_copy->_perf_cost = next->_perf_cost;
       prog_freq[ph].push_back(next_copy);
-      progs[i] = next_copy; // insert into progs
+      meas_p = next_copy;
+    }
+    if (_measure_mode) {
+      _f_program << meas_p->_error_cost << " "
+                 << meas_p->_perf_cost << " "
+                 << (_cost._w_e * (double)meas_p->_error_cost +
+                     _cost._w_p * (double)meas_p->_perf_cost) << " "
+                 << meas_p->freq_count << endl;
     }
     if (curr != next) prog::clear_prog(curr);
     curr = next;
