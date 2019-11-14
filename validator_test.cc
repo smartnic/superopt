@@ -153,33 +153,11 @@ void test5() {
   }
 }
 
-void test6() {
-  inst orig[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                  inst(ADDXY, 0, 2),  /* add r0, r2 */
-                  inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                  inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                  inst(RETX, 3),      /* ret r3 */
-                  inst(RETX, 0),      /* else ret r0 */
-                  NOP,  /* control never reaches here */
-                 };
-  inst synth[7] = {inst(MAXX, 3, 3),
-                   inst(MAXC, 3, 9),
-                   inst(MAXX, 1, 0),
-                   inst(NOP),
-                   inst(NOP),
-                   inst(MAXX, 0, 2),
-                   inst(NOP),
-                  };
-  validator vld(orig, 7);
-  cout << vld.is_equal_to(synth, 7) << endl;
-}
-
 int main(int argc, char *argv[]) {
   test1(); // no branch
   test2(); // with branch
   test3();
   test4();
   test5();
-  test6();
   return 0;
 }
