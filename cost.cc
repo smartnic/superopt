@@ -69,7 +69,7 @@ int cost::get_ex_error_cost(int output1, int output2) {
     case ERROR_COST_STRATEGY_ABS: return abs(output1 - output2);
     case ERROR_COST_STRATEGY_POP: return pop_count_asm(output1 ^ output2);
     default:
-      cout << "ERROR: no error cost example strategy matches.";
+      cout << "ERROR: no error cost example strategy matches." << endl;
       return ERROR_COST_MAX;
   }
 }
@@ -79,7 +79,7 @@ int cost::get_avg_value(int ex_set_size) {
     case ERROR_COST_STRATEGY_AVG: return ex_set_size;
     case ERROR_COST_STRATEGY_NAVG: return 1;
     default:
-      cout << "ERROR: no error cost average strategy matches.";
+      cout << "ERROR: no error cost average strategy matches." << endl;
       return 1;
   }
 }
@@ -98,7 +98,7 @@ double cost::get_final_error_cost(int exs_cost, int is_equal,
       else if (is_equal == -1) return ERROR_COST_MAX;
       else return exs_cost;
     default:
-      cout << "ERROR: no error cost equation strategy matches.";
+      cout << "ERROR: no error cost equation strategy matches." << endl;
       return ERROR_COST_MAX;
   }
 }
