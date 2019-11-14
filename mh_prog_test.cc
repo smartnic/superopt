@@ -39,10 +39,9 @@ void gen_random_input(vector<int>& inputs, int min, int max) {
 void test1(int nrolls, double w_e, double w_p)  {
   mh_sampler mh;
   std::unordered_map<int, vector<prog*> > prog_freq;
-  vector<prog*> progs(nrolls);
   prog orig(instructions);
   mh._cost.init(&orig, N, inputs, w_e, w_p);
-  mh.mcmc_iter(nrolls, orig, prog_freq, progs);
+  mh.mcmc_iter(nrolls, orig, prog_freq);
   // Get the best program(s)
   int max = 0;
   int concurrent_max = 0;
