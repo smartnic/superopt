@@ -34,6 +34,15 @@ string inst::opcode_to_str(int opcode) const {
   }
 }
 
+abs_bv_inst inst::inst_to_abs_bv() const {
+  int v = (_opcode << (OP_ABS_BIT_LEN * 3)) +
+          (_args[0] << (OP_ABS_BIT_LEN * 2)) +
+          (_args[1] << (OP_ABS_BIT_LEN * 1)) +
+          (_args[2]);
+  abs_bv_inst bv(v);
+  return bv;
+}
+
 void inst::print() const {
   cout << opcode_to_str(_opcode);
   for (int i=0; i < num_operands[_opcode]; i++) {
@@ -55,6 +64,12 @@ inst& inst::operator=(const inst &rhs) {
   _args[1] = rhs._args[1];
   _args[2] = rhs._args[2];
   return *this;
+}
+
+ostream& operator<<(ostream& out, abs_bv_inst& bv) {
+  for (size_t i = 0; i < bv.size(); i++)
+    out << bv[i];
+  return out;
 }
 
 size_t instHash::operator()(const inst &x) const {
