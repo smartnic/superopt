@@ -104,3 +104,4 @@ static int num_operands[256] = {
 
 void print_program(const inst* program, int length);
 int interpret(inst* program, int length, prog_state &ps, int input);
+int num_real_instructions(inst* program, int len);

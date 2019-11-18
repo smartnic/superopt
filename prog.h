@@ -1,9 +1,13 @@
 #pragma once
 
 #include <iostream>
+#include <bitset>
+#include <vector>
 #include "inst.h"
 
 using namespace std;
+
+typedef bitset<MAX_PROG_LEN> bv_prog;
 
 class prog {
  public:
@@ -22,6 +26,8 @@ class prog {
   static void clear_prog(prog* p);
   void set_error_cost(double cost);
   void set_perf_cost(double cost);
+  bv_prog prog_bit_vec(const prog &p);
+  bv_prog prog_best_bit_vec(const vector<prog> &ps);
 };
 
 struct progHash {

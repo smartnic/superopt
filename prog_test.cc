@@ -1,4 +1,5 @@
 #include "prog.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -78,9 +79,32 @@ int test3() {
   return 0;
 }
 
+void test4() {
+  cout << endl << "Test 4 " << endl;
+  prog p1(instructions);
+  prog p2(instructions2);
+  prog p3(instructions3);
+  prog p4(instructions4);
+  print_test_res(p1.prog_bit_vec(p2) == bv_prog("1111111"), "prog bit vector 1");
+  print_test_res(p1.prog_bit_vec(p3) == bv_prog("1111101"), "prog bit vector 2");
+  print_test_res(p1.prog_bit_vec(p4) == bv_prog("0000001"), "prog bit vector 3");
+
+  vector<prog> progs;
+  progs.push_back(p4);
+  print_test_res(p1.prog_best_bit_vec(progs) == bv_prog("0000001"),
+                 "prog_best_bit_vec 1");
+  progs.push_back(p3);
+  print_test_res(p1.prog_best_bit_vec(progs) == bv_prog("1111101"),
+                 "prog_best_bit_vec 2");
+  progs.push_back(p2);
+  print_test_res(p1.prog_best_bit_vec(progs) == bv_prog("1111111"),
+                 "prog_best_bit_vec 3");
+}
+
 int main() {
   test1();
   test2();
   test3();
+  test4();
   return 0;
 }
