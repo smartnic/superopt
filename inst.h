@@ -1,5 +1,8 @@
 #pragma once
 
+#include <bitset>
+#include <vector>
+
 using namespace std;
 
 #define NUM_REGS 4
@@ -30,6 +33,11 @@ using namespace std;
 
 #define NUM_INSTR 12
 
+#define OP_ABS_BIT_LEN 8
+#define INST_ABS_BIT_LEN 32
+// For absolute coding of each instruction
+typedef bitset<INST_ABS_BIT_LEN> abs_bv_inst;
+
 class prog_state {
   int pc = 0; /* Assume only straight line code execution for now */
  public:
@@ -50,6 +58,7 @@ class inst {
   }
   void print() const;
   string opcode_to_str(int) const;
+  abs_bv_inst inst_to_abs_bv() const;
   bool operator==(const inst &x) const;
   inst& operator=(const inst &rhs);
 };
@@ -107,3 +116,4 @@ static int num_operands[256] = {
 void print_program(const inst* program, int length);
 int interpret(inst* program, int length, prog_state &ps, int input);
 int num_real_instructions(inst* program, int len);
+string to_string(const abs_bv_inst &bv);

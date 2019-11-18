@@ -3,8 +3,8 @@ all: proposals_test.out inst_test.out cost_test.out prog_test.out mh_prog_test.o
 proposals_test.out: inst.cc inst.h proposals.cc proposals_test.cc prog.cc prog.h utils.cc utils.h
 	g++ -std=c++11 inst.cc proposals.cc proposals_test.cc prog.cc utils.cc -o proposals_test.out
 
-inst_test.out: inst.cc inst.h inst_test.cc
-	g++ -std=c++11 inst.cc inst_test.cc -o inst_test.out
+inst_test.out: inst.cc inst.h inst_test.cc utils.cc utils.h
+	g++ -std=c++11 inst.cc inst_test.cc utils.cc -o inst_test.out
 
 cost_test.out: cost.cc cost_z3.o cost.h inout.h inout.cc inst.cc inst.h validator.cc validator.h cfg.cc cfg.h utils.cc utils.h smt_prog.cc smt_prog.h prog.cc prog.h
 	g++ -std=c++11 cost.cc cost_z3.o inout.cc inst.cc validator.cc cfg.cc utils.cc smt_prog.cc prog.cc -o cost_test.out ../z3/build/libz3.dylib -lpthread

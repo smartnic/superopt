@@ -1,5 +1,6 @@
 #include <iostream>
 #include "inst.h"
+#include "utils.h"
 
 int main(int argc, char *argv[]) {
   /* Add the notion of program input */
@@ -47,5 +48,18 @@ int main(int argc, char *argv[]) {
        << instHash()(y) << endl;
   cout << "Hashes of different instructions: " << instHash()(x) << " "
        << instHash()(z) << " " << instHash()(w) << endl;
+
+  string expected_bv_str = string("00000010000000100000010000000000") +
+                           string("00000001000000000000001000000000") +
+                           string("00000010000000110000111100000000") +
+                           string("00000110000000000000001100000001") +
+                           string("00000011000000110000000000000000") +
+                           string("00000011000000000000000000000000");
+  string bv_str = "";
+  for (int i = 0; i < 6; i++) {
+    inst x = instructions[i];
+    bv_str += x.inst_to_abs_bv().to_string();
+  }
+  print_test_res(bv_str == expected_bv_str, "inst_to_abs_bv");
   return 0;
 }
