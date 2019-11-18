@@ -5,6 +5,8 @@ using namespace std;
 #define NUM_REGS 4
 #define MAX_CONST 20
 #define MAX_PROG_LEN 7
+// Max number of operands in one instruction
+#define MAX_OP_LEN 3
 
 // Operand types for instructions
 #define OP_UNUSED 0

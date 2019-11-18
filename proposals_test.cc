@@ -1,6 +1,7 @@
 #include <iostream>
 #include "proposals.h"
 #include "inst.h"
+#include "utils.h"
 
 int test1(int input) {
   cout << "Test 1" << endl;
@@ -47,6 +48,24 @@ int test2(int input) {
     cout << "Transformed program after " << i << " proposals:" << endl;
     print_program(p[i]->inst_list, N);
   }
+  bool assert_res = true;
+  for (int i = 1; i < 6; i++) {
+    for (int j = 0; j < N; j++) {
+      inst ins = p[i]->inst_list[j];
+      int opcode = ins._opcode;
+      for (int k = num_operands[opcode]; k < MAX_OP_LEN; k++) {
+        bool res = (ins._args[k] == 0);
+        if (! res) {
+          assert_res = false;
+          cout << "unused operands _arg[" << k << "] in ";
+          ins.print();
+          cout << "are not 0, but " << ins._args[k] << endl;
+        }
+      }
+    }
+  }
+  print_test_res(assert_res, "set unused operands as 0");
+
   for (int i = 1; i < 6; i++) {
     prog::clear_prog(p[i]);
   }

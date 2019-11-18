@@ -82,5 +82,8 @@ prog* mod_random_inst(const prog& orig) {
     int new_opvalue = get_new_operand(new_opcode, i, -1);
     sel_inst->_args[i] = new_opvalue;
   }
+  for (int i = num_operands[new_opcode]; i < MAX_OP_LEN; i++) {
+    sel_inst->_args[i] = 0;
+  }
   return synth;
 }
