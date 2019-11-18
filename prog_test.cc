@@ -101,10 +101,24 @@ void test4() {
                  "prog_best_bit_vec 3");
 }
 
+void test5() {
+  cout << endl << "Test 5 " << endl;
+  prog p1(instructions);
+  string expected_bv_str = string("00000010000000100000010000000000") +
+                           string("00000001000000000000001000000000") +
+                           string("00000010000000110000111100000000") +
+                           string("00000110000000000000001100000001") +
+                           string("00000011000000110000000000000000") +
+                           string("00000011000000000000000000000000") +
+                           string("00000000000000000000000000000000");
+  print_test_res(p1.prog_abs_bit_vec().to_string() == expected_bv_str, "prog_abs_bit_vec");
+}
+
 int main() {
   test1();
   test2();
   test3();
   test4();
+  test5();
   return 0;
 }
