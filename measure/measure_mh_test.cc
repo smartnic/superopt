@@ -183,7 +183,31 @@ inst opti34[MAX_PROG_LEN] = {inst(ADDXY, 2, 0),
                              inst(),
                              inst(),
                             };
-inst opti35[MAX_PROG_LEN] = {inst(ADDXY, 3, 0),
+inst opti35[MAX_PROG_LEN] = {inst(ADDXY, 1, 0),
+                             inst(ADDXY, 0, 1),
+                             inst(ADDXY, 0, 1),
+                             inst(ADDXY, 0, 0),
+                             inst(),
+                             inst(),
+                             inst(),
+                            };
+inst opti36[MAX_PROG_LEN] = {inst(ADDXY, 2, 0),
+                             inst(ADDXY, 0, 2),
+                             inst(ADDXY, 0, 2),
+                             inst(ADDXY, 0, 0),
+                             inst(),
+                             inst(),
+                             inst(),
+                            };
+inst opti37[MAX_PROG_LEN] = {inst(ADDXY, 3, 0),
+                             inst(ADDXY, 0, 3),
+                             inst(ADDXY, 0, 3),
+                             inst(ADDXY, 0, 0),
+                             inst(),
+                             inst(),
+                             inst(),
+                            };
+inst opti38[MAX_PROG_LEN] = {inst(ADDXY, 3, 0),
                              inst(ADDXY, 3, 3),
                              inst(ADDXY, 0, 3),
                              inst(ADDXY, 0, 0),
@@ -228,6 +252,9 @@ void init_origs() {
   optis[3].push_back(opti33);
   optis[3].push_back(opti34);
   optis[3].push_back(opti35);
+  optis[3].push_back(opti36);
+  optis[3].push_back(opti37);
+  optis[3].push_back(opti38);
   origs_best_perf_cost.push_back(4);
 }
 
