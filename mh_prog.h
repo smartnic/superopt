@@ -12,6 +12,7 @@ class mh_sampler {
   // when close_measure_file is called, set _measure_mode as false;
   bool _measure_mode = false;
   int _measure_count = 0;
+  vector<prog> _measure_opti;
   ofstream _f_program;
   ofstream _f_proposal;
   ofstream _f_examples;
@@ -26,8 +27,9 @@ class mh_sampler {
   prog* mh_next(prog* curr);
   void mcmc_iter(int niter, const prog &orig,
                  unordered_map<int, vector<prog*> > &prog_freq);
-  void open_measure_file(string file_raw_data_prog,
-                         string file_raw_data_proposal,
-                         string file_raw_data_ex);
-  void close_measure_file();
+  void measure_start(const vector<prog> &opti_progs,
+                     string file_raw_data_prog,
+                     string file_raw_data_proposal,
+                     string file_raw_data_ex);
+  void measure_stop();
 };

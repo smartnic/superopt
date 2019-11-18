@@ -21,9 +21,13 @@ mh_sampler::mh_sampler() {
 
 mh_sampler::~mh_sampler() {}
 
-void mh_sampler::open_measure_file(string file_raw_data_prog,
-                                   string file_raw_data_proposal,
-                                   string file_raw_data_ex) {
+void mh_sampler::measure_start(const vector<prog> &opti_progs,
+                               string file_raw_data_prog,
+                               string file_raw_data_proposal,
+                               string file_raw_data_ex) {
+  for (int i = 0; i < opti_progs.size(); i++) {
+    _measure_opti.push_back(prog((inst*)opti_progs[i].inst_list));
+  }
   _f_program.open(file_raw_data_prog, ios::out | ios::trunc);
   _f_proposal.open(file_raw_data_proposal, ios::out | ios::trunc);
   _f_examples.open(file_raw_data_ex, ios::out | ios::trunc);
@@ -31,12 +35,13 @@ void mh_sampler::open_measure_file(string file_raw_data_prog,
   _measure_count = 0;
 }
 
-void mh_sampler::close_measure_file() {
+void mh_sampler::measure_stop() {
   _f_program.close();
   _f_proposal.close();
   _f_examples.close();
   _measure_mode = false;
   _measure_count = 0;
+  _measure_opti.clear();
 }
 
 double mh_sampler::cost_to_pi(double cost) {
@@ -73,11 +78,13 @@ prog* mh_sampler::mh_next(prog* curr) {
     cout << "iteration " << _measure_count << ": ";
     if (uni_sample < a) cout << "accepted" << endl;
     else cout << "rejected" << endl;
+    cout << next->prog_best_bit_vec(_measure_opti).to_string() << endl;
     next->print();
     _measure_count++;
     _f_proposal << uni_sample << " " << a << " ";
-    if (uni_sample < a) _f_proposal << "1" << endl;
-    else _f_proposal << "0" << endl;
+    if (uni_sample < a) _f_proposal << "1" << " ";
+    else _f_proposal << "0" << " ";
+    _f_proposal << next->prog_best_bit_vec(_measure_opti).to_string() << endl;
   }
   if (uni_sample < a) {
     return next;
@@ -126,7 +133,8 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
                  << meas_p->_perf_cost << " "
                  << (_cost._w_e * (double)meas_p->_error_cost +
                      _cost._w_p * (double)meas_p->_perf_cost) << " "
-                 << meas_p->freq_count << endl;
+                 << meas_p->freq_count << " "
+                 << meas_p->prog_best_bit_vec(_measure_opti).to_string() << endl;
     }
     if (curr != next) prog::clear_prog(curr);
     curr = next;

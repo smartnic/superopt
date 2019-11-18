@@ -44,14 +44,6 @@ void cost::init(prog* orig, int len, const vector<int> &input,
   _strategy_avg = strategy_avg;
 }
 
-int cost::num_real_instructions(inst* program, int len) {
-  int count = 0;
-  for (int i = 0; i < len; i++) {
-    if (program[i]._opcode != NOP) count++;
-  }
-  return count;
-}
-
 void cost::set_orig(prog* orig, int len) {
   try {
     _vld.set_orig((inst*)orig->inst_list, len);
@@ -123,7 +115,7 @@ double cost::error_cost(prog* synth, int len) {
   if (num_successful_ex == ex_set_size) {
     is_equal = _vld.is_equal_to(inst_list, len);
   }
-  
+
   int avg_value = get_avg_value(ex_set_size);
   total_cost = get_final_error_cost(total_cost, is_equal,
                                     ex_set_size, num_successful_ex,

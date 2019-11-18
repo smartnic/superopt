@@ -20,7 +20,6 @@ unsigned int pop_count_asm(unsigned int);
 class cost {
  private:
   int _num_real_orig;
-  int num_real_instructions(inst* program, int len);
   int get_ex_error_cost(int output1, int output2);
   int get_avg_value(int ex_set_size);
   double get_final_error_cost(int exs_cost, int is_equal,

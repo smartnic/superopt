@@ -155,3 +155,10 @@ out:
   return ps.regs[0]; /* return default R0 value */
 }
 
+int num_real_instructions(inst* program, int len) {
+  int count = 0;
+  for (int i = 0; i < len; i++) {
+    if (program[i]._opcode != NOP) count++;
+  }
+  return count;
+}
