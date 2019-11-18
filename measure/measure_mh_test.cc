@@ -41,14 +41,30 @@ inst orig0[MAX_PROG_LEN] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                             inst(RETX, 0),      /* else ret r0 */
                             NOP,  /* control never reaches here */
                            };
-inst opti0[MAX_PROG_LEN] = {inst(MOVXC, 2, 4),
-                            inst(ADDXY, 0, 2),
-                            inst(MAXC, 0, 15),
-                            inst(),
-                            inst(),
-                            inst(),
-                            inst(),
-                           };
+inst opti00[MAX_PROG_LEN] = {inst(MOVXC, 1, 4),
+                             inst(ADDXY, 0, 1),
+                             inst(MAXC, 0, 15),
+                             inst(),
+                             inst(),
+                             inst(),
+                             inst(),
+                            };
+inst opti01[MAX_PROG_LEN] = {inst(MOVXC, 2, 4),
+                             inst(ADDXY, 0, 2),
+                             inst(MAXC, 0, 15),
+                             inst(),
+                             inst(),
+                             inst(),
+                             inst(),
+                            };
+inst opti02[MAX_PROG_LEN] = {inst(MOVXC, 3, 4),
+                             inst(ADDXY, 0, 3),
+                             inst(MAXC, 0, 15),
+                             inst(),
+                             inst(),
+                             inst(),
+                             inst(),
+                            };
 // f(x) = min(x, r1, 10) = min(x, 0)
 // min_len: 2
 // perf_cost = 2
@@ -193,7 +209,9 @@ void init_origs() {
   for (int i = 0; i < 4; i++)
     optis.push_back(vector<inst*> {});
   origs.push_back(orig0);
-  optis[0].push_back(opti0);
+  optis[0].push_back(opti00);
+  optis[0].push_back(opti01);
+  optis[0].push_back(opti02);
   origs_best_perf_cost.push_back(4);
   origs.push_back(orig1);
   // optis.push_back(opti1);
