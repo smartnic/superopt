@@ -104,13 +104,13 @@ void test4() {
 void test5() {
   cout << endl << "Test 5 " << endl;
   prog p1(instructions);
-  string expected_bv_str = string("00000010000000100000010000000000") +
-                           string("00000001000000000000001000000000") +
-                           string("00000010000000110000111100000000") +
-                           string("00000110000000000000001100000001") +
-                           string("00000011000000110000000000000000") +
-                           string("00000011000000000000000000000000") +
-                           string("00000000000000000000000000000000");
+  string expected_bv_str = string("00010000100010000000") +
+                           string("00001000000001000000") +
+                           string("00010000110111100000") +
+                           string("00110000000001100001") +
+                           string("00011000110000000000") +
+                           string("00011000000000000000") +
+                           string("00000000000000000000");
   print_test_res(p1.prog_abs_bit_vec().to_string() == expected_bv_str, "prog_abs_bit_vec");
 }
 
