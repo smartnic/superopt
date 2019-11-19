@@ -601,6 +601,83 @@ def draw_transfer_graph_prog(fin_path, fout_path, parameters, prog_ids):
         for para in parameters:
             draw_transfer_graph(fin_path, fout_path, para, id, "prog")
 
+def get_opcodes_operands_from_abs_coding_progs(bv_list):
+    opcode_list = []
+    operand_list = []
+    gap = 5
+    for prog_bv in bv_list:
+        inst_bv_list = [prog_bv[i: i + gap * 4] for i in range(0, len(prog_bv), gap * 4)]
+        prog_opcode_bv = ""
+        prog_operand_bv = ""
+        for inst_bv in inst_bv_list:
+            prog_opcode_bv += inst_bv[:gap]
+            prog_operand_bv += inst_bv[gap:]
+        opcode_list.append(prog_opcode_bv)
+        operand_list.append(prog_operand_bv)
+    opcode_list = [int(i, 2) for i in opcode_list]
+    operand_list = [int(i, 2) for i in operand_list]
+    return opcode_list, operand_list
+
+
+def draw_abs_transfer_graph(fin_path, fout_path, para, id, type):
+    line = 0
+    file_name_key = ""
+    if type == "proposal":
+        file_name_key = "proposal"
+        line = 8
+    elif type == "prog":
+        file_name_key = "prog"
+        line = 5
+    file_name = fin_path + "raw_data_" + file_name_key + "_" + str(id) + "_" + \
+                str(para[0]).rstrip('0').rstrip('.') + "_" + \
+                str(para[1]).rstrip('0').rstrip('.') + ".txt"
+    fout_name = fout_path + "transfer_abs_graph_" + file_name_key + "_" + str(id) + "_" + \
+                str(para[0]).rstrip('0').rstrip('.') + "_" + \
+                str(para[1]).rstrip('0').rstrip('.') + ".pdf"
+    file_name_optimal = fin_path + "raw_data_" + "optimal" + "_" + str(id) + ".txt"
+    graph_title = file_name_key + " transfer graph (absolute coding)\n" + \
+                 "file=" + fin_path + "\nprogramID=" + str(id) + "\n" + \
+                 "w_e=" + str(para[0]).rstrip('0').rstrip('.') + " " + \
+                 "w_p=" + str(para[1]).rstrip('0').rstrip('.')
+    print("  processing", file_name)
+    data, _ = get_all_data_from_file(file_name)
+    bv_list = data[line]
+    opcode_list, operand_list = get_opcodes_operands_from_abs_coding_progs(bv_list)
+    # compute frequency count for each point (opcode, operand)
+    freq_dic = {}
+    for x, y in zip(operand_list, opcode_list):
+        if (x, y) in freq_dic:
+            freq_dic[(x, y)] += 1
+        else:
+            freq_dic[(x, y)] = 1
+    point_color_weight = [freq_dic[(x, y)] for x, y in zip(operand_list, opcode_list)]
+    f = plt.figure()
+    plt.scatter(operand_list, opcode_list, marker='o',
+                c=point_color_weight, cmap=plt.cm.Reds, alpha=0.01)
+    # compute the optimal program points and add them into the figure
+    data, _ = get_all_data_from_file(file_name_optimal)
+    bv_list = data[0]
+    opcode_list, operand_list = get_opcodes_operands_from_abs_coding_progs(bv_list)
+    plt.scatter(operand_list, opcode_list, marker='*',
+                c="tab:red", alpha=0.1)
+    plt.title(graph_title)
+    plt.xlabel('Operand bit vector')
+    plt.ylabel('Opcode bit vector')
+    plt.grid()
+    f.savefig(fout_name, bbox_inches='tight')
+    print("fout:", fout_name)
+    plt.close(f)
+
+def draw_abs_transfer_graph_prog(fin_path, fout_path, parameters, prog_ids):
+    for id in prog_ids:
+        for para in parameters:
+            draw_abs_transfer_graph(fin_path, fout_path, para, id, "prog")
+
+def draw_abs_transfer_graph_proposal(fin_path, fout_path, parameters, prog_ids):
+    for id in prog_ids:
+        for para in parameters:
+            draw_abs_transfer_graph(fin_path, fout_path, para, id, "proposal")
+
 if __name__ == "__main__":
     fin_path, fout_path, parameters, prog_ids, best_perf_costs, steady_start = parse_input(sys.argv[1:])
     print(fin_path, fout_path, parameters, prog_ids, best_perf_costs, steady_start)
@@ -612,3 +689,5 @@ if __name__ == "__main__":
     draw_num_unique_progs(fin_path, fout_path, parameters, prog_ids)
     draw_transfer_graph_proposal(fin_path, fout_path, parameters, prog_ids)
     draw_transfer_graph_prog(fin_path, fout_path, parameters, prog_ids)
+    draw_abs_transfer_graph_prog(fin_path, fout_path, parameters, prog_ids)
+    draw_abs_transfer_graph_proposal(fin_path, fout_path, parameters, prog_ids)
