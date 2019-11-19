@@ -410,18 +410,16 @@ def add_unique_program_count(nodes_info, data):
             nodes_info[k].append(0)
     return nodes_info
 
-
 # [node name]:[frequency count,
 #              x pos, y pos,
 #              avg legal error_cost, avg legal perf_cost, avg legal total_cost]
 # if type is `prog`, add #unique programs into nodes_info
-def gen_nodes_info(raw_nodes, nodes, data, type):
+def gen_nodes_info(raw_nodes, nodes, data, type, max_err_cost):
     nodes_info = gen_node_freq_map(raw_nodes)
     # print("nodes_info: ", nodes_info)
     # compute (x,y) pos for nodes and store it into node_info
     nodes_info = gen_node_pos(nodes_info, nodes)
     # print("nodes_info: ", nodes_info)
-    max_err_cost = 100000
     # compute avg error cost (rounded) and store it into node_info
     err_cost = np.array(data[0]).astype(float).tolist()
     # print("err_cost: ", err_cost)
@@ -507,17 +505,57 @@ def gen_edges_real(nodes_info, node_transfer_list, type):
     return edges, edge_color
 
 
-# each item in `freq_text_nodes` is [text x pos, text y_pos, frequency count]
-def gen_freq_text_nodes(nodes, nodes_info):
-    freq_text_nodes = []
+def avg_legal_value_for_diff_layers(cost, max_cost, raw_nodes, nodes):
+    dic = {}
+    for i, c in enumerate(cost):
+        if c >= max_cost:
+            continue
+        if raw_nodes[i] in dic:
+            dic[raw_nodes[i]][0] += c
+            dic[raw_nodes[i]][1] += 1
+        else:
+            dic[raw_nodes[i]] = [c, 1]
+    value_list = []
+    for i, ns in enumerate(nodes):
+        value = 0
+        count = 0
+        for n in ns:
+            if n in dic:
+                value += dic[n][0]
+                count += dic[n][1]
+            else:
+                print("only illegal value in this node")
+        if count == 0:
+            print("only illegal value in layer ", i)
+            value_list.append(max_cost)
+        else:
+            value_list.append(round(value / count))
+    return value_list
+
+
+# each item in `text_nodes` is
+# [text x pos, text y_pos, frequency count,
+# avg legal error_cost, avg legal perf_cost, avg legal total_cost]
+def gen_text_nodes(nodes, nodes_info, max_cost, raw_nodes, data):
+    text_nodes = []
     x_pos = min([x[1] for _, x in nodes_info.items()]) - 2
     for ns in nodes:
         count = 0
         for n in ns:
             count += nodes_info[n][0]
-        freq_text_nodes.append([x_pos, ns[0].count('0'), count])
-    # print("freq_text_nodes: ", freq_text_nodes)
-    return freq_text_nodes
+        text_nodes.append([x_pos, ns[0].count('0'), count])
+
+    err_cost = np.array(data[0]).astype(float).tolist()
+    perf_cost = np.array(data[1]).astype(float).tolist()
+    total_cost = np.array(data[2]).astype(float).tolist()
+    error_cost = avg_legal_value_for_diff_layers(err_cost, max_cost, raw_nodes, nodes)
+    perf_cost = avg_legal_value_for_diff_layers(perf_cost, max_cost, raw_nodes, nodes)
+    total_cost = avg_legal_value_for_diff_layers(total_cost, max_cost, raw_nodes, nodes)
+    for i, ns in enumerate(nodes):
+        text_nodes[i].append(error_cost[i])
+        text_nodes[i].append(perf_cost[i])
+        text_nodes[i].append(total_cost[i])
+    return text_nodes
 
 def draw_transfer_graph(fin_path, fout_path, para, id, type):
     line = 0
@@ -556,7 +594,8 @@ def draw_transfer_graph(fin_path, fout_path, para, id, type):
     #              avg legal error_cost, avg legal perf_cost, avg legal total_cost]
     # if type is `prog`, add #unique programs into nodes_info
     # compute frequency count and store it into node_info
-    nodes_info = gen_nodes_info(raw_nodes, nodes, data, type)
+    max_err_cost = 100000
+    nodes_info = gen_nodes_info(raw_nodes, nodes, data, type, max_err_cost)
     node_color = gen_node_color(nodes_info)
     # edges = gen_edges_theoretical(nodes, nodes_info)
     edges, edge_color = gen_edges_real(nodes_info, data[line], type)
@@ -583,10 +622,15 @@ def draw_transfer_graph(fin_path, fout_path, para, id, type):
             edge_color='black', width=0.2, arrowstyle='->')
             # edge_color=edge_color, edge_cmap=plt.cm.Blues, width=1)
 
-    # each item in `freq_text_nodes` is [text x pos, text y_pos, frequency count]
-    freq_text_nodes = gen_freq_text_nodes(nodes, nodes_info)
-    for i, n in enumerate(freq_text_nodes):
-        plt.text(n[0], n[1], str(n[2]), fontsize='small')
+    # each item in `text_nodes` is
+    # [text x pos, text y_pos, frequency count,
+    # avg legal error_cost, avg legal perf_cost, avg legal total_cost]
+    text_nodes = gen_text_nodes(nodes, nodes_info, max_err_cost, raw_nodes, data)
+    for i, n in enumerate(text_nodes):
+        text = str(n[2]) + "\n" + \
+               str(n[5]) + "\n" + \
+               str(n[3]) + " " + str(n[4])
+        plt.text(n[0], n[1], text, fontsize='small')
     plt.title(graph_title)
     f.savefig(fout_name, bbox_inches='tight')
     print("fout: ", fout_name)
