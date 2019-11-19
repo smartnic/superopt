@@ -20,6 +20,7 @@ string file_raw_data_prog_dic = "raw_data_prog_dic";
 string file_raw_data_proposal = "raw_data_proposal";
 string file_raw_data_proposal_prog = "raw_data_proposal_prog";
 string file_raw_data_ex = "raw_data_ex";
+string file_raw_data_optimal = "raw_data_optimal";
 vector<inst*> origs;
 vector<vector<inst*> > optis;
 int origs_len = MAX_PROG_LEN;
@@ -58,6 +59,30 @@ inst opti01[MAX_PROG_LEN] = {inst(MOVXC, 2, 4),
                              inst(),
                             };
 inst opti02[MAX_PROG_LEN] = {inst(MOVXC, 3, 4),
+                             inst(ADDXY, 0, 3),
+                             inst(MAXC, 0, 15),
+                             inst(),
+                             inst(),
+                             inst(),
+                             inst(),
+                            };
+inst opti03[MAX_PROG_LEN] = {inst(MAXC, 1, 4),
+                             inst(ADDXY, 0, 1),
+                             inst(MAXC, 0, 15),
+                             inst(),
+                             inst(),
+                             inst(),
+                             inst(),
+                            };
+inst opti04[MAX_PROG_LEN] = {inst(MAXC, 2, 4),
+                             inst(ADDXY, 0, 2),
+                             inst(MAXC, 0, 15),
+                             inst(),
+                             inst(),
+                             inst(),
+                             inst(),
+                            };
+inst opti05[MAX_PROG_LEN] = {inst(MAXC, 3, 4),
                              inst(ADDXY, 0, 3),
                              inst(MAXC, 0, 15),
                              inst(),
@@ -236,6 +261,9 @@ void init_origs() {
   optis[0].push_back(opti00);
   optis[0].push_back(opti01);
   optis[0].push_back(opti02);
+  optis[0].push_back(opti03);
+  optis[0].push_back(opti04);
+  optis[0].push_back(opti05);
   origs_best_perf_cost.push_back(4);
   origs.push_back(orig1);
   // optis.push_back(opti1);
@@ -317,11 +345,7 @@ void gen_opti_set(const prog& p, const int& len, vector<prog>& opti_set) {
   }
 }
 
-void running_sampler(int orig_id, int len,
-                     int nrolls, double w_e, double w_p,
-                     int strategy_ex, int strategy_eq, int strategy_avg) {
-  mh_sampler mh;
-  vector<prog> opti_set;
+void gen_opti_progs(vector<prog> &opti_set, int orig_id) {
   for (size_t i = 0; i < optis[orig_id].size(); i++) {
     vector<prog> op_set;
     prog op(optis[orig_id][i]);
@@ -333,7 +357,13 @@ void running_sampler(int orig_id, int len,
   for (size_t i = 0; i < opti_set.size(); i++) {
     opti_set[i].print();
   }
-  cout << "file_raw_data_prog: " << file_raw_data_prog << endl;
+}
+
+void running_sampler(int orig_id, int len,
+                     int nrolls, double w_e, double w_p,
+                     int strategy_ex, int strategy_eq, int strategy_avg,
+                     vector<prog> &opti_set) {
+  mh_sampler mh;
   mh.measure_start(opti_set, file_raw_data_prog,
                    file_raw_data_proposal, file_raw_data_ex);
   prog orig(origs[orig_id]);
@@ -349,6 +379,7 @@ void file_rename(string path, double w_e, double w_p, int orig_id) {
   file_raw_data_proposal_prog = path + file_raw_data_proposal_prog;
   file_raw_data_proposal = path + file_raw_data_proposal;
   file_raw_data_ex = path + file_raw_data_ex;
+  file_raw_data_optimal = path + file_raw_data_optimal;
   string str_w_e = to_string(w_e);
   string str_w_p = to_string(w_p);
   str_w_e.erase(str_w_e.find_last_not_of('0') + 1, string::npos);
@@ -364,9 +395,10 @@ void file_rename(string path, double w_e, double w_p, int orig_id) {
   file_raw_data_proposal_prog += suffix;
   file_raw_data_proposal += suffix;
   file_raw_data_ex += suffix;
+  file_raw_data_optimal += "_" + to_string(orig_id) + ".txt";
 }
 
-void store_raw_data(double w_e, double w_p) {
+void store_raw_data(double w_e, double w_p, vector<prog> opti_set) {
   ofstream fout;
   fout.open(file_raw_data_prog_dic, ios::out | ios::trunc);
   for (std::pair<int, vector <prog*> > element : prog_dic) {
@@ -376,6 +408,11 @@ void store_raw_data(double w_e, double w_p) {
            << p->_perf_cost << " "
            << p->freq_count << endl;
     }
+  }
+  fout.close();
+  fout.open(file_raw_data_optimal, ios::out | ios::trunc);
+  for (size_t i = 0; i < opti_set.size(); i++) {
+    fout << opti_set[i].prog_abs_bit_vec() << endl;
   }
   fout.close();
 }
@@ -414,8 +451,11 @@ int main(int argc, char* argv[]) {
   init_origs();
   inputs.resize(30);
   gen_random_input(inputs, -50, 50);
+  vector<prog> opti_set;
+  gen_opti_progs(opti_set, orig_id);
   running_sampler(orig_id, origs_len, nrolls, w_e, w_p,
-                  strategy_ex, strategy_eq, strategy_avg);
-  store_raw_data(w_e, w_p);
+                  strategy_ex, strategy_eq, strategy_avg,
+                  opti_set);
+  store_raw_data(w_e, w_p, opti_set);
   return 0;
 }
