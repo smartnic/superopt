@@ -33,8 +33,8 @@ using namespace std;
 
 #define NUM_INSTR 12
 
-#define OP_ABS_BIT_LEN 8
-#define INST_ABS_BIT_LEN 32
+#define OP_ABS_BIT_LEN 5
+#define INST_ABS_BIT_LEN 20
 // For absolute coding of each instruction
 typedef bitset<INST_ABS_BIT_LEN> abs_bv_inst;
 
