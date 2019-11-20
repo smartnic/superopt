@@ -19,6 +19,15 @@ int sample_int(int limit) {
   return val;
 }
 
+/* Return a uniformly random integer from start to end - 1 inclusive */
+int sample_int(int start, int end) {
+  int val;
+  do {
+    val = (int)(start + unidist(gen) * (double)(end - start));
+  } while (val == end && end > start);
+  return val;
+}
+
 /* Return a uniformly random integer from 0 to limit - 1 inclusive, with the
  * exception of  `except`. */
 int sample_int_with_exception(int limit, int except) {
@@ -103,4 +112,9 @@ prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
     mod_select_inst(synth, i);
   }
   return synth;
+}
+
+prog* mod_random_cont_insts(const prog &orig) {
+  int k = sample_int(2, MAX_PROG_LEN + 1);
+  return mod_random_k_cont_insts(orig, k);
 }
