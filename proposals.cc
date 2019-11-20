@@ -68,13 +68,10 @@ prog* mod_random_inst_operand(const prog &orig) {
   return synth;
 }
 
-prog* mod_random_inst(const prog& orig) {
-  // First make a copy of the old program
-  prog* synth = prog::make_prog(orig);
-  // Select a random instruction and a new opcode
+void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
+  assert(sel_inst_index < MAX_PROG_LEN);
   // TODO: is it wise to sample with exception?
-  int inst_index = sample_int(MAX_PROG_LEN);
-  inst* sel_inst = &synth->inst_list[inst_index];
+  inst* sel_inst = &orig->inst_list[sel_inst_index];
   int old_opcode = sel_inst->_opcode;
   int new_opcode = sample_int_with_exception(NUM_INSTR, old_opcode);
   sel_inst->_opcode = new_opcode;
@@ -84,6 +81,26 @@ prog* mod_random_inst(const prog& orig) {
   }
   for (int i = num_operands[new_opcode]; i < MAX_OP_LEN; i++) {
     sel_inst->_args[i] = 0;
+  }
+}
+
+prog* mod_random_inst(const prog &orig) {
+  // First make a copy of the old program
+  prog* synth = prog::make_prog(orig);
+  int inst_index = sample_int(MAX_PROG_LEN);
+  mod_select_inst(synth, inst_index);
+  return synth;
+}
+
+prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
+  // If k is too big, modify all instructions of the original program
+  if (k > MAX_PROG_LEN) k = MAX_PROG_LEN;
+  // First make a copy of the old program
+  prog* synth = prog::make_prog(orig);
+  // Select a random start instruction
+  int start_inst_index = sample_int(MAX_PROG_LEN - k + 1);
+  for (int i = start_inst_index; i < start_inst_index + k; i++) {
+    mod_select_inst(synth, i);
   }
   return synth;
 }
