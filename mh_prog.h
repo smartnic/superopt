@@ -21,9 +21,11 @@ using namespace std;
  *   mh.turn_off_measure();// [optional] if turn on measure mode, should turn off
  */
 class mh_sampler {
- private:
+ protected:
   double cost_to_pi(double cost);
   prog* next_proposal(prog* curr);
+  void insert_into_prog_dic(const prog *next,
+                            unordered_map<int, vector<prog*> > &prog_freq);
  public:
   meas_mh_data _meas_data;
   cost _cost;
@@ -32,8 +34,27 @@ class mh_sampler {
   ~mh_sampler();
   double alpha(prog* curr, prog* next);
   prog* mh_next(prog* curr);
-  void mcmc_iter(int niter, const prog &start,
-                 unordered_map<int, vector<prog*> > &prog_freq);
   void turn_on_measure();
   void turn_off_measure();
+  virtual void mcmc_iter(int niter, const prog &orig,
+                         unordered_map<int, vector<prog*> > &prog_freq);
+};
+
+class mh_sampler_restart: public mh_sampler {
+ protected:
+  virtual prog* next_restart_proposal(prog* curr);
+ public:
+  unsigned int _max_iteration;
+  mh_sampler_restart(int max_iteration);
+  ~mh_sampler_restart();
+  void mcmc_iter(int niter, const prog &orig,
+                 unordered_map<int, vector<prog*> > &prog_freq);
+};
+
+class mh_sampler_k_restart: public mh_sampler_restart {
+ private:
+  prog* next_restart_proposal(prog *curr);
+ public:
+  mh_sampler_k_restart(int max_iteration);
+  ~mh_sampler_k_restart();
 };

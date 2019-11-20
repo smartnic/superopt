@@ -58,7 +58,7 @@ prog* mh_sampler::mh_next(prog* curr) {
   }
 }
 
-void mh_sampler::mcmc_iter(int niter, const prog &start,
+void mh_sampler::mcmc_iter(int niter, const prog &orig,
                            unordered_map<int, vector<prog*> > &prog_freq) {
   // contruct the first program by copying the original
   prog *curr, *next;
@@ -101,8 +101,8 @@ void mh_sampler::mcmc_iter(int niter, const prog &start,
     }
     curr = next;
   }
+  prog::clear_prog(curr);
 }
-
 
 void mh_sampler::turn_on_measure() {
   _meas_data._mode = true;
@@ -111,3 +111,48 @@ void mh_sampler::turn_on_measure() {
 void mh_sampler::turn_off_measure() {
   _meas_data._mode = false;
 }
+/* class mh_sampler_restart end */
+
+/* class mh_sampler_restart start */
+mh_sampler_restart::mh_sampler_restart(int max_iteration) {
+  _max_iteration = max_iteration;
+}
+
+mh_sampler_restart::~mh_sampler_restart() {}
+
+prog* mh_sampler_restart::next_restart_proposal(prog *curr) {
+  return mod_random_k_cont_insts(*curr, MAX_PROG_LEN);
+}
+
+void mh_sampler_restart::mcmc_iter(int niter, const prog &orig,
+                                   unordered_map<int, vector<prog*> > &prog_freq) {
+  prog *curr, *next;
+  curr = prog::make_prog(orig);
+  int num_max_iter = niter / _max_iteration;
+  int num_remain_iter = niter % _max_iteration;
+  prog *start;
+  start = prog::make_prog(orig);
+  for (int i = 0; i < num_max_iter; i++) {
+    mh_sampler::mcmc_iter(_max_iteration, *start, prog_freq);
+    prog *restart = next_restart_proposal(start);
+    prog::clear_prog(start);
+    start = restart;
+    // cout << "restart:\n";
+    // start->print();
+  }
+  mh_sampler::mcmc_iter(num_remain_iter, *start, prog_freq);
+  prog::clear_prog(start);
+}
+/* class mh_sampler_restart end */
+
+/* class mh_sampler_k_restart start */
+mh_sampler_k_restart::mh_sampler_k_restart(int max_iteration) {
+  _max_iteration = max_iteration;
+}
+
+mh_sampler_k_restart::~mh_sampler_k_restart() {}
+
+prog* mh_sampler_k_restart::next_restart_proposal(prog *curr) {
+  return mod_random_cont_insts(*curr);
+}
+/* class mh_sampler_k_restart end */
