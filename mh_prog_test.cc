@@ -52,7 +52,33 @@ void test1(int nrolls, double w_e, double w_p)  {
   cout << "One of the best programs: " << endl;
   cout << "Observed frequency " << max << " out of " << nrolls << endl;
   best->print();
-  cout << "Total cost: " << mh._cost.total_prog_cost(best, 7) << endl;
+}
+
+void test1(int nrolls, double w_e, double w_p)  {
+  mh_sampler mh;
+  std::unordered_map<int, vector<prog*> > prog_freq;
+  prog orig(instructions);
+  mh._cost.init(&orig, N, inputs, w_e, w_p);
+  mh.mcmc_iter(nrolls, orig, prog_freq);
+  mh_sampler_res_print(nrolls, prog_freq);
+}
+
+void test2(int nrolls, double w_e, double w_p) {
+  mh_sampler_restart mh(6);
+  std::unordered_map<int, vector<prog*> > prog_freq;
+  prog orig(instructions);
+  mh._cost.init(&orig, N, inputs, w_e, w_p);
+  mh.mcmc_iter(nrolls, orig, prog_freq);
+  mh_sampler_res_print(nrolls, prog_freq);
+}
+
+void test3(int nrolls, double w_e, double w_p) {
+  mh_sampler_k_restart mh(6);
+  std::unordered_map<int, vector<prog*> > prog_freq;
+  prog orig(instructions);
+  mh._cost.init(&orig, N, inputs, w_e, w_p);
+  mh.mcmc_iter(nrolls, orig, prog_freq);
+  mh_sampler_res_print(nrolls, prog_freq);
 }
 
 int main(int argc, char* argv[]) {
@@ -69,5 +95,7 @@ int main(int argc, char* argv[]) {
   inputs.resize(30);
   gen_random_input(inputs, 0, 50);
   test1(nrolls, w_e, w_p);
+  test2(nrolls, w_e, w_p);
+  test3(nrolls, w_e, w_p);
   return 0;
 }
