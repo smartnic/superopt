@@ -677,7 +677,7 @@ def draw_abs_transfer_graph(fin_path, fout_path, para, id, type):
                 str(para[1]).rstrip('0').rstrip('.') + ".txt"
     fout_name = fout_path + "transfer_abs_graph_" + file_name_key + "_" + str(id) + "_" + \
                 str(para[0]).rstrip('0').rstrip('.') + "_" + \
-                str(para[1]).rstrip('0').rstrip('.') + ".pdf"
+                str(para[1]).rstrip('0').rstrip('.') + "_log.pdf"
     file_name_optimal = fin_path + "raw_data_" + "optimal" + "_" + str(id) + ".txt"
     graph_title = file_name_key + " transfer graph (absolute coding)\n" + \
                  "file=" + fin_path + "\nprogramID=" + str(id) + "\n" + \
@@ -694,19 +694,39 @@ def draw_abs_transfer_graph(fin_path, fout_path, para, id, type):
             freq_dic[(x, y)] += 1
         else:
             freq_dic[(x, y)] = 1
-    point_color_weight = [freq_dic[(x, y)] for x, y in zip(operand_list, opcode_list)]
-    f = plt.figure()
+    point_color_weight = [freq_dic[(x, y)] + 20 for x, y in zip(operand_list, opcode_list)]
+    figsize_x = 16
+    figsize_y = 8
+    f = plt.figure(figsize=(figsize_x, figsize_y))
+    plt.subplot(121)
     plt.scatter(operand_list, opcode_list, marker='o',
-                c=point_color_weight, cmap=plt.cm.Reds, alpha=0.01)
+                c="blue", alpha=1)
+                # c=point_color_weight, cmap=plt.cm.Reds, alpha=0.01)
     # compute the optimal program points and add them into the figure
     data, _ = get_all_data_from_file(file_name_optimal)
     bv_list = data[0]
-    opcode_list, operand_list = get_opcodes_operands_from_abs_coding_progs(bv_list)
-    plt.scatter(operand_list, opcode_list, marker='*',
+    optimal_opcode_list, optimal_operand_list = get_opcodes_operands_from_abs_coding_progs(bv_list)
+    plt.scatter(optimal_operand_list, optimal_opcode_list, marker='*',
                 c="tab:red", alpha=0.1)
     plt.title(graph_title)
     plt.xlabel('Operand bit vector')
     plt.ylabel('Opcode bit vector')
+    plt.yscale('log')
+    plt.xscale('log')
+    plt.ylim(ymin=1)
+    plt.xlim(xmin=1)
+    plt.grid()
+    plt.subplot(122)
+    plt.scatter(operand_list, opcode_list, marker='o',
+                c="blue", alpha=1)
+    plt.scatter(optimal_operand_list, optimal_opcode_list, marker='*',
+                c="tab:red", alpha=0.1)
+    plt.title(graph_title)
+    plt.xlabel('Operand bit vector')
+    plt.ylabel('Opcode bit vector')
+    plt.yscale('log')
+    plt.xscale('log')
+    plt.ylim(ymin=pow(10, 7))
     plt.grid()
     f.savefig(fout_name, bbox_inches='tight')
     print("fout:", fout_name)
