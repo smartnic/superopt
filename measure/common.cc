@@ -1,0 +1,208 @@
+#include <unordered_set>
+#include <random>
+#include "common.h"
+
+using namespace std;
+
+default_random_engine gen_common_test;
+uniform_real_distribution<double> unidist_common_test(0.0, 1.0);
+
+void gen_random_input(vector<int>& inputs, int min, int max) {
+  unordered_set<int> input_set;
+  for (size_t i = 0; i < inputs.size();) {
+    int input = min + (max - min) * unidist_common_test(gen_common_test);
+    if (input_set.find(input) == input_set.end()) {
+      input_set.insert(input);
+      inputs[i] = input;
+      i++;
+    }
+  }
+}
+
+ostream& operator<<(ostream& out, vector<int>& v) {
+  for (size_t i = 0; i < v.size(); i++) {
+    out << v[i] << " ";
+  }
+  return out;
+}
+
+ostream& operator<<(ostream& out, vector<vector<int> >& v) {
+  for (size_t i = 0; i < v.size(); i++) {
+    out << i << ": " << v[i] << endl;
+  }
+  return out;
+}
+// output = max(input+4, 15)
+// perf_cost = 3 + 1 = 4
+inst orig0[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                 inst(ADDXY, 0, 2),  /* add r0, r2 */
+                 inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                 inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                 inst(RETX, 3),      /* ret r3 */
+                 inst(RETX, 0),      /* else ret r0 */
+                 NOP,  /* control never reaches here */
+                };
+// f(x) = max(2*x, x+4)
+// perf_cost = 3 + 1 = 4
+inst orig2[N] = {inst(ADDXY, 1, 0),
+                 inst(MOVXC, 2, 4),
+                 inst(ADDXY, 1, 2), // r1 = r0+4
+                 inst(ADDXY, 0, 0), // r0 += r0
+                 inst(MAXX, 1, 0),  // r1 = max(r1, r0)
+                 inst(RETX, 1),
+                 NOP,
+                };
+// f(x) = 6*x
+// perf_cost = 4 + 0 = 4
+inst orig3[N] = {inst(MOVXC, 1, 0),
+                 inst(ADDXY, 1, 0), // r1 = 2*r0
+                 inst(ADDXY, 0, 1),
+                 inst(ADDXY, 0, 1),
+                 inst(ADDXY, 0, 1),
+                 inst(ADDXY, 0, 1),
+                 inst(ADDXY, 0, 1),
+                };
+inst opti00[N] = {inst(MOVXC, 1, 4),
+                  inst(ADDXY, 0, 1),
+                  inst(MAXC, 0, 15),
+                  inst(),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti01[N] = {inst(MOVXC, 2, 4),
+                  inst(ADDXY, 0, 2),
+                  inst(MAXC, 0, 15),
+                  inst(),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti02[N] = {inst(MOVXC, 3, 4),
+                  inst(ADDXY, 0, 3),
+                  inst(MAXC, 0, 15),
+                  inst(),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti03[N] = {inst(MAXC, 1, 4),
+                  inst(ADDXY, 0, 1),
+                  inst(MAXC, 0, 15),
+                  inst(),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti04[N] = {inst(MAXC, 2, 4),
+                  inst(ADDXY, 0, 2),
+                  inst(MAXC, 0, 15),
+                  inst(),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti05[N] = {inst(MAXC, 3, 4),
+                  inst(ADDXY, 0, 3),
+                  inst(MAXC, 0, 15),
+                  inst(),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti20[N] = {inst(MOVXC, 1, 4),
+                  inst(MAXX, 1, 0),
+                  inst(ADDXY, 0, 1),
+                  inst(),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti21[N] = {inst(MOVXC, 2, 4),
+                  inst(MAXX, 2, 0),
+                  inst(ADDXY, 0, 2),
+                  inst(),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti22[N] = {inst(MOVXC, 3, 4),
+                  inst(MAXX, 3, 0),
+                  inst(ADDXY, 0, 3),
+                  inst(),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti30[N] = {inst(ADDXY, 0, 0),
+                  inst(ADDXY, 1, 0),
+                  inst(ADDXY, 0, 1),
+                  inst(ADDXY, 0, 1),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti31[N] = {inst(ADDXY, 0, 0),
+                  inst(ADDXY, 2, 0),
+                  inst(ADDXY, 0, 2),
+                  inst(ADDXY, 0, 2),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti32[N] = {inst(ADDXY, 0, 0),
+                  inst(ADDXY, 3, 0),
+                  inst(ADDXY, 0, 3),
+                  inst(ADDXY, 0, 3),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti33[N] = {inst(ADDXY, 1, 0),
+                  inst(ADDXY, 1, 1),
+                  inst(ADDXY, 0, 1),
+                  inst(ADDXY, 0, 0),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti34[N] = {inst(ADDXY, 2, 0),
+                  inst(ADDXY, 2, 2),
+                  inst(ADDXY, 0, 2),
+                  inst(ADDXY, 0, 0),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti35[N] = {inst(ADDXY, 1, 0),
+                  inst(ADDXY, 0, 1),
+                  inst(ADDXY, 0, 1),
+                  inst(ADDXY, 0, 0),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti36[N] = {inst(ADDXY, 2, 0),
+                  inst(ADDXY, 0, 2),
+                  inst(ADDXY, 0, 2),
+                  inst(ADDXY, 0, 0),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti37[N] = {inst(ADDXY, 3, 0),
+                  inst(ADDXY, 0, 3),
+                  inst(ADDXY, 0, 3),
+                  inst(ADDXY, 0, 0),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };
+inst opti38[N] = {inst(ADDXY, 3, 0),
+                  inst(ADDXY, 3, 3),
+                  inst(ADDXY, 0, 3),
+                  inst(ADDXY, 0, 0),
+                  inst(),
+                  inst(),
+                  inst(),
+                 };

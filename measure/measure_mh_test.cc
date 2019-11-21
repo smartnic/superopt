@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
-#include <random>
 #include <algorithm>
 #include <unordered_set>
 #include <map>
@@ -11,6 +10,7 @@
 #include "../inout.h"
 #include "../mh_prog.h"
 #include "../inst.h"
+#include "common.h"
 
 using namespace std;
 
@@ -28,232 +28,6 @@ vector<int> origs_best_perf_cost;
 vector<int> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
 
-default_random_engine gen_mh_test;
-uniform_real_distribution<double> unidist_mh_test(0.0, 1.0);
-
-// output = max(input+4, 15)
-// min_len: 3
-// perf_cost = 3 + 1 = 4
-inst orig0[MAX_PROG_LEN] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                            inst(ADDXY, 0, 2),  /* add r0, r2 */
-                            inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                            inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                            inst(RETX, 3),      /* ret r3 */
-                            inst(RETX, 0),      /* else ret r0 */
-                            NOP,  /* control never reaches here */
-                           };
-inst opti00[MAX_PROG_LEN] = {inst(MOVXC, 1, 4),
-                             inst(ADDXY, 0, 1),
-                             inst(MAXC, 0, 15),
-                             inst(),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti01[MAX_PROG_LEN] = {inst(MOVXC, 2, 4),
-                             inst(ADDXY, 0, 2),
-                             inst(MAXC, 0, 15),
-                             inst(),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti02[MAX_PROG_LEN] = {inst(MOVXC, 3, 4),
-                             inst(ADDXY, 0, 3),
-                             inst(MAXC, 0, 15),
-                             inst(),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti03[MAX_PROG_LEN] = {inst(MAXC, 1, 4),
-                             inst(ADDXY, 0, 1),
-                             inst(MAXC, 0, 15),
-                             inst(),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti04[MAX_PROG_LEN] = {inst(MAXC, 2, 4),
-                             inst(ADDXY, 0, 2),
-                             inst(MAXC, 0, 15),
-                             inst(),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti05[MAX_PROG_LEN] = {inst(MAXC, 3, 4),
-                             inst(ADDXY, 0, 3),
-                             inst(MAXC, 0, 15),
-                             inst(),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-// f(x) = min(x, r1, 10) = min(x, 0)
-// min_len: 2
-// perf_cost = 2
-inst orig1[MAX_PROG_LEN] = {inst(JMPLE, 0, 1, 2), // skip r0 <- r1, if r0 <= r1
-                            inst(MOVXC, 0, 0),
-                            inst(ADDXY, 0, 1),
-                            inst(MOVXC, 1, 10),   // r1 <- 10
-                            inst(JMPLE, 0, 1, 1), // if r0 <= r1, return r0, else r1
-                            inst(RETX, 1),
-                            inst(RETX, 0),
-                           };
-// inst opti10[MAX_PROG_LEN] = {inst(JMPLE, 0, 1, 1),
-//                              inst(RETX, 1),
-//                              inst(),
-//                              inst(),
-//                              inst(),
-//                              inst(),
-//                              inst(),
-//                             };
-// inst opti11[MAX_PROG_LEN] = {inst(JMPLT, 0, 1, 1),
-//                              inst(RETX, 1),
-//                              inst(),
-//                              inst(),
-//                              inst(),
-//                              inst(),
-//                              inst(),
-//                             };
-// f(x) = max(2*x, x+4)
-// MOVC 1 4
-// MAXX 1 0
-// ADDXY 0 1
-// perf_cost = 3+1=4
-inst orig2[MAX_PROG_LEN] = {inst(ADDXY, 1, 0),
-                            inst(MOVXC, 2, 4),
-                            inst(ADDXY, 1, 2), // r1 = r0+4
-                            inst(ADDXY, 0, 0), // r0 += r0
-                            inst(MAXX, 1, 0),  // r1 = max(r1, r0)
-                            inst(RETX, 1),
-                            NOP,
-                           };
-inst opti20[MAX_PROG_LEN] = {inst(MOVXC, 1, 4),
-                             inst(MAXX, 1, 0),
-                             inst(ADDXY, 0, 1),
-                             inst(),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti21[MAX_PROG_LEN] = {inst(MOVXC, 2, 4),
-                             inst(MAXX, 2, 0),
-                             inst(ADDXY, 0, 2),
-                             inst(),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti22[MAX_PROG_LEN] = {inst(MOVXC, 3, 4),
-                             inst(MAXX, 3, 0),
-                             inst(ADDXY, 0, 3),
-                             inst(),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-// f(x) = 6*x
-// ADDXY 0 0  r0 = 2*r0
-// ADDXY 1 0  r1 = 2*r0
-// ADDXY 0 1  r0 = 4*r0
-// ADDXY 0 1  r0 = 6*r0
-// perf_cost = 4+0 = 4
-inst orig3[MAX_PROG_LEN] = {inst(MOVXC, 1, 0),
-                            inst(ADDXY, 1, 0), // r1 = 2*r0
-                            inst(ADDXY, 0, 1),
-                            inst(ADDXY, 0, 1),
-                            inst(ADDXY, 0, 1),
-                            inst(ADDXY, 0, 1),
-                            inst(ADDXY, 0, 1),
-                           };
-inst opti30[MAX_PROG_LEN] = {inst(ADDXY, 0, 0),
-                             inst(ADDXY, 1, 0),
-                             inst(ADDXY, 0, 1),
-                             inst(ADDXY, 0, 1),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti31[MAX_PROG_LEN] = {inst(ADDXY, 0, 0),
-                             inst(ADDXY, 2, 0),
-                             inst(ADDXY, 0, 2),
-                             inst(ADDXY, 0, 2),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti32[MAX_PROG_LEN] = {inst(ADDXY, 0, 0),
-                             inst(ADDXY, 3, 0),
-                             inst(ADDXY, 0, 3),
-                             inst(ADDXY, 0, 3),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti33[MAX_PROG_LEN] = {inst(ADDXY, 1, 0),
-                             inst(ADDXY, 1, 1),
-                             inst(ADDXY, 0, 1),
-                             inst(ADDXY, 0, 0),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti34[MAX_PROG_LEN] = {inst(ADDXY, 2, 0),
-                             inst(ADDXY, 2, 2),
-                             inst(ADDXY, 0, 2),
-                             inst(ADDXY, 0, 0),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti35[MAX_PROG_LEN] = {inst(ADDXY, 1, 0),
-                             inst(ADDXY, 0, 1),
-                             inst(ADDXY, 0, 1),
-                             inst(ADDXY, 0, 0),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti36[MAX_PROG_LEN] = {inst(ADDXY, 2, 0),
-                             inst(ADDXY, 0, 2),
-                             inst(ADDXY, 0, 2),
-                             inst(ADDXY, 0, 0),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti37[MAX_PROG_LEN] = {inst(ADDXY, 3, 0),
-                             inst(ADDXY, 0, 3),
-                             inst(ADDXY, 0, 3),
-                             inst(ADDXY, 0, 0),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-inst opti38[MAX_PROG_LEN] = {inst(ADDXY, 3, 0),
-                             inst(ADDXY, 3, 3),
-                             inst(ADDXY, 0, 3),
-                             inst(ADDXY, 0, 0),
-                             inst(),
-                             inst(),
-                             inst(),
-                            };
-ostream& operator<<(ostream& out, vector<int>& v) {
-  for (size_t i = 0; i < v.size(); i++) {
-    out << v[i] << " ";
-  }
-  return out;
-}
-
-ostream& operator<<(ostream& out, vector<vector<int> >& v) {
-  for (size_t i = 0; i < v.size(); i++) {
-    out << i << ": " << v[i] << endl;
-  }
-  return out;
-}
-
 void init_origs() {
   for (int i = 0; i < 4; i++)
     optis.push_back(vector<inst*> {});
@@ -265,7 +39,6 @@ void init_origs() {
   optis[0].push_back(opti04);
   optis[0].push_back(opti05);
   origs_best_perf_cost.push_back(4);
-  origs.push_back(orig1);
   // optis.push_back(opti1);
   origs_best_perf_cost.push_back(2);
   origs.push_back(orig2);
@@ -284,18 +57,6 @@ void init_origs() {
   optis[3].push_back(opti37);
   optis[3].push_back(opti38);
   origs_best_perf_cost.push_back(4);
-}
-
-void gen_random_input(vector<int>& inputs, int min, int max) {
-  unordered_set<int> input_set;
-  for (size_t i = 0; i < inputs.size();) {
-    int input = min + (max - min) * unidist_mh_test(gen_mh_test);
-    if (input_set.find(input) == input_set.end()) {
-      input_set.insert(input);
-      inputs[i] = input;
-      i++;
-    }
-  }
 }
 
 // return C_n^m
