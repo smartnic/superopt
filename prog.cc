@@ -67,7 +67,7 @@ void prog::set_perf_cost(double cost) {
   _perf_cost = cost;
 }
 
-bv_prog prog::prog_bit_vec(const prog &p) {
+bv_prog prog::prog_rel_bit_vec(const prog &p) {
   bv_prog bv;
   bv.reset(0);
   for (int i = 0; i < MAX_PROG_LEN; i++) {
@@ -78,11 +78,11 @@ bv_prog prog::prog_bit_vec(const prog &p) {
   return bv;
 }
 
-bv_prog prog::prog_best_bit_vec(const vector<prog> &ps) {
+bv_prog prog::prog_rel_bit_vec(const vector<prog> &ps) {
   bv_prog best;
   int count = 0;
   for (int i = 0; i < ps.size(); i++) {
-    bv_prog bv = prog_bit_vec(ps[i]);
+    bv_prog bv = prog_rel_bit_vec(ps[i]);
     int bv_count = bv.count();
     if (bv_count > count) {
       count = bv_count;

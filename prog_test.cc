@@ -85,20 +85,23 @@ void test4() {
   prog p2(instructions2);
   prog p3(instructions3);
   prog p4(instructions4);
-  print_test_res(p1.prog_bit_vec(p2) == bv_prog("1111111"), "prog bit vector 1");
-  print_test_res(p1.prog_bit_vec(p3) == bv_prog("1111101"), "prog bit vector 2");
-  print_test_res(p1.prog_bit_vec(p4) == bv_prog("0000001"), "prog bit vector 3");
+  print_test_res(p1.prog_rel_bit_vec(p2) == bv_prog("1111111"),
+                 "prog_rel_bit_vec(prog) 1");
+  print_test_res(p1.prog_rel_bit_vec(p3) == bv_prog("1111101"),
+                 "prog_rel_bit_vec(prog) 2");
+  print_test_res(p1.prog_rel_bit_vec(p4) == bv_prog("0000001"),
+                 "prog_rel_bit_vec(prog) 3");
 
   vector<prog> progs;
   progs.push_back(p4);
-  print_test_res(p1.prog_best_bit_vec(progs) == bv_prog("0000001"),
-                 "prog_best_bit_vec 1");
+  print_test_res(p1.prog_rel_bit_vec(progs) == bv_prog("0000001"),
+                 "prog_rel_bit_vec(progs) 1");
   progs.push_back(p3);
-  print_test_res(p1.prog_best_bit_vec(progs) == bv_prog("1111101"),
-                 "prog_best_bit_vec 2");
+  print_test_res(p1.prog_rel_bit_vec(progs) == bv_prog("1111101"),
+                 "prog_rel_bit_vec(progs) 2");
   progs.push_back(p2);
-  print_test_res(p1.prog_best_bit_vec(progs) == bv_prog("1111111"),
-                 "prog_best_bit_vec 3");
+  print_test_res(p1.prog_rel_bit_vec(progs) == bv_prog("1111111"),
+                 "prog_rel_bit_vec(progs) 3");
 }
 
 void test5() {
