@@ -16,49 +16,41 @@
 
 using namespace std;
 
-string file_config_store = "config";
-string file_raw_data_prog = "raw_data_prog";
-string file_raw_data_prog_dic = "raw_data_prog_dic";
-string file_raw_data_proposal = "raw_data_proposal";
-string file_raw_data_proposal_prog = "raw_data_proposal_prog";
-string file_raw_data_ex = "raw_data_ex";
-string file_raw_data_optimal = "raw_data_optimal";
-vector<inst*> origs;
-vector<vector<inst*> > optis;
-int origs_len = MAX_PROG_LEN;
-vector<int> origs_best_perf_cost;
+string file_raw_data_programs = "raw_data_programs";
+string file_raw_data_proposals = "raw_data_proposals";
+string file_raw_data_examples = "raw_data_examples";
+string file_raw_data_optimals = "raw_data_optimals";
+vector<inst*> bms;
+int bms_len = MAX_PROG_LEN;
+vector<prog> bm_optimals;
+vector<int> bms_best_perf_cost;
 vector<int> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
 
-void init_origs() {
-  for (int i = 0; i < 4; i++)
-    optis.push_back(vector<inst*> {});
-  origs.push_back(orig0);
-  optis[0].push_back(opti00);
-  optis[0].push_back(opti01);
-  optis[0].push_back(opti02);
-  optis[0].push_back(opti03);
-  optis[0].push_back(opti04);
-  optis[0].push_back(opti05);
-  origs_best_perf_cost.push_back(4);
-  // optis.push_back(opti1);
-  origs_best_perf_cost.push_back(2);
-  origs.push_back(orig2);
-  optis[2].push_back(opti20);
-  optis[2].push_back(opti21);
-  optis[2].push_back(opti22);
-  origs_best_perf_cost.push_back(4);
-  origs.push_back(orig3);
-  optis[3].push_back(opti30);
-  optis[3].push_back(opti31);
-  optis[3].push_back(opti32);
-  optis[3].push_back(opti33);
-  optis[3].push_back(opti34);
-  optis[3].push_back(opti35);
-  optis[3].push_back(opti36);
-  optis[3].push_back(opti37);
-  optis[3].push_back(opti38);
-  origs_best_perf_cost.push_back(4);
+void init_benchmarks(vector<vector<inst*> > &bm_optis_orig) {
+  bms.push_back(bm0);
+  bms.push_back(bm1);
+  bms.push_back(bm2);
+  for (int i = 0; i < NUM_ORIG; i++)
+    bm_optis_orig.push_back(vector<inst*> {});
+  bm_optis_orig[0].push_back(bm_opti00);
+  bm_optis_orig[0].push_back(bm_opti01);
+  bm_optis_orig[0].push_back(bm_opti02);
+  bm_optis_orig[0].push_back(bm_opti03);
+  bm_optis_orig[0].push_back(bm_opti04);
+  bm_optis_orig[0].push_back(bm_opti05);
+  bm_optis_orig[1].push_back(bm_opti10);
+  bm_optis_orig[1].push_back(bm_opti11);
+  bm_optis_orig[1].push_back(bm_opti12);
+  bm_optis_orig[2].push_back(bm_opti20);
+  bm_optis_orig[2].push_back(bm_opti21);
+  bm_optis_orig[2].push_back(bm_opti22);
+  bm_optis_orig[2].push_back(bm_opti23);
+  bm_optis_orig[2].push_back(bm_opti24);
+  bm_optis_orig[2].push_back(bm_opti25);
+  bm_optis_orig[2].push_back(bm_opti26);
+  bm_optis_orig[2].push_back(bm_opti27);
+  bm_optis_orig[2].push_back(bm_opti28);
 }
 
 // return C_n^m
@@ -91,7 +83,8 @@ void gen_n_numbers(int n, int s, int e,
 
 // should ensure the first real_length instructions in program p are not NOP,
 // the remainings are NOP.
-void gen_opti_set(const prog& p, const int& len, vector<prog>& opti_set) {
+void gen_optis_for_prog(const prog& p, const int& len,
+                        vector<prog>& opti_set) {
   int n = num_real_instructions((inst*)p.inst_list, len);
   // C_len^n
   int num_opti = combination(len, n);
@@ -108,73 +101,81 @@ void gen_opti_set(const prog& p, const int& len, vector<prog>& opti_set) {
   }
 }
 
-void gen_opti_progs(vector<prog> &opti_set, int orig_id) {
-  for (size_t i = 0; i < optis[orig_id].size(); i++) {
+void gen_optis_for_progs(vector<inst*> &bm_optis_orig) {
+  for (size_t i = 0; i < bm_optis_orig.size(); i++) {
+    prog bm_opti(bm_optis_orig[i]);
+    // op_set: temporarily store optimals for one bm optimal program
     vector<prog> op_set;
-    prog op(optis[orig_id][i]);
-    gen_opti_set(op, MAX_PROG_LEN, op_set);
+    gen_optis_for_prog(bm_opti, MAX_PROG_LEN, op_set);
     for (size_t j = 0; j < op_set.size(); j++)
-      opti_set.push_back(op_set[j]);
+      bm_optimals.push_back(op_set[j]);
   }
 }
 
-void store_raw_data(meas_mh_data &d, vector<prog> &optimals) {
-  store_proposals_to_file(file_raw_data_proposal, d, optimals);
-  store_programs_to_file(file_raw_data_prog, d, optimals);
-  store_examples_to_file(file_raw_data_ex, d);
-  store_optimals_to_file(file_raw_data_optimal, optimals);
+void store_raw_data(meas_mh_data &d) {
+  store_proposals_to_file(file_raw_data_proposals, d, bm_optimals);
+  store_programs_to_file(file_raw_data_programs, d, bm_optimals);
+  store_examples_to_file(file_raw_data_examples, d);
+  store_optimals_to_file(file_raw_data_optimals, bm_optimals);
 }
 
-void running_sampler(int orig_id, int len,
-                     int nrolls, double w_e, double w_p,
-                     int strategy_ex, int strategy_eq, int strategy_avg,
-                     vector<prog> &opti_set) {
+void run_mh_sampler_and_store_data(int bm_id, int len,
+                                   int nrolls, double w_e, double w_p,
+                                   int strategy_ex, int strategy_eq,
+                                   int strategy_avg) {
   mh_sampler mh;
   mh.turn_on_measure();
-  prog orig(origs[orig_id]);
+  prog orig(bms[bm_id]);
   mh._cost.init(&orig, len, inputs, w_e, w_p,
                 strategy_ex, strategy_eq, strategy_avg);
   mh.mcmc_iter(nrolls, orig, prog_dic);
   mh.turn_off_measure();
-  store_raw_data(mh._meas_data, opti_set);
+  store_raw_data(mh._meas_data);
 }
 
-void file_rename(string path, double w_e, double w_p, int orig_id) {
-  file_raw_data_prog = path + file_raw_data_prog;
-  file_raw_data_prog_dic = path + file_raw_data_prog_dic;
-  file_raw_data_proposal_prog = path + file_raw_data_proposal_prog;
-  file_raw_data_proposal = path + file_raw_data_proposal;
-  file_raw_data_ex = path + file_raw_data_ex;
-  file_raw_data_optimal = path + file_raw_data_optimal;
-  string str_w_e = to_string(w_e);
-  string str_w_p = to_string(w_p);
-  str_w_e.erase(str_w_e.find_last_not_of('0') + 1, string::npos);
-  str_w_e.erase(str_w_e.find_last_not_of('.') + 1, string::npos);
-  str_w_p.erase(str_w_p.find_last_not_of('0') + 1, string::npos);
-  str_w_p.erase(str_w_p.find_last_not_of('.') + 1, string::npos);
-  string suffix = "_" + to_string(orig_id) +
+// eg. "1.1100" -> "1.11"; "1.000" -> "1"
+string rm_useless_zero_digits_from_str(string s) {
+  // rm useless zero digits
+  s.erase(s.find_last_not_of('0') + 1, string::npos);
+  // rm useless `.`
+  s.erase(s.find_last_not_of('.') + 1, string::npos);
+  return s;
+}
+
+void gen_file_name_from_input(string path, int bm_id,
+                              double w_e, double w_p,
+                              int strategy_ex, int strategy_eq,
+                              int strategy_avg) {
+  file_raw_data_programs = path + file_raw_data_programs;
+  file_raw_data_proposals = path + file_raw_data_proposals;
+  file_raw_data_examples = path + file_raw_data_examples;
+  file_raw_data_optimals = path + file_raw_data_optimals;
+  string str_w_e = rm_useless_zero_digits_from_str(to_string(w_e));
+  string str_w_p = rm_useless_zero_digits_from_str(to_string(w_p));
+  string suffix = "_" + to_string(bm_id) +
+                  "_" + to_string(strategy_ex) +
+                  to_string(strategy_eq) +
+                  to_string(strategy_avg) +
                   "_" + str_w_e +
                   "_" + str_w_p +
                   ".txt";
-  file_raw_data_prog += suffix;
-  file_raw_data_prog_dic += suffix;
-  file_raw_data_proposal_prog += suffix;
-  file_raw_data_proposal += suffix;
-  file_raw_data_ex += suffix;
-  file_raw_data_optimal += "_" + to_string(orig_id) + ".txt";
+  file_raw_data_programs += suffix;
+  file_raw_data_proposals += suffix;
+  file_raw_data_examples += suffix;
+  file_raw_data_optimals += "_" + to_string(bm_id) + ".txt";
 }
 
 int main(int argc, char* argv[]) {
   int nrolls = 10;
   double w_e = 1.0;
   double w_p = 0.0;
-  int orig_id = 0;
-  string path = "";
-  int strategy_ex = 0;
-  int strategy_eq = 0;
-  int strategy_avg = 0;
+  int bm_id = 0;
+  string path = "measure/";
+  int strategy_ex = ERROR_COST_STRATEGY_ABS;
+  int strategy_eq = ERROR_COST_STRATEGY_EQ1;
+  int strategy_avg = ERROR_COST_STRATEGY_NAVG;
   if (argc > 1)
-    orig_id = atoi(argv[1]);
+    bm_id = atoi(argv[1]);
   if (argc > 2)
     nrolls = atoi(argv[2]);
   if (argc > 4) {
@@ -193,15 +194,15 @@ int main(int argc, char* argv[]) {
   if (argc > 8) {
     strategy_avg = atoi(argv[8]);
   }
-  // cout << "start measuring" << endl;
-  file_rename(path, w_e, w_p, orig_id);
-  init_origs();
+  gen_file_name_from_input(path, bm_id, w_e, w_p,
+                           strategy_ex, strategy_eq, strategy_avg);
+  vector<vector<inst*> > bm_optis_orig;
+  init_benchmarks(bm_optis_orig);
+  // get all optimal programs from the original ones
+  gen_optis_for_progs(bm_optis_orig[bm_id]);
   inputs.resize(30);
   gen_random_input(inputs, -50, 50);
-  vector<prog> opti_set;
-  gen_opti_progs(opti_set, orig_id);
-  running_sampler(orig_id, origs_len, nrolls, w_e, w_p,
-                  strategy_ex, strategy_eq, strategy_avg,
-                  opti_set);
+  run_mh_sampler_and_store_data(bm_id, bms_len, nrolls, w_e, w_p,
+                                strategy_ex, strategy_eq, strategy_avg);
   return 0;
 }

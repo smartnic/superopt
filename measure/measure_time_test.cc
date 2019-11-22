@@ -24,7 +24,7 @@ void time_smt_prog() {
   smt_prog ps;
   auto start = NOW;
   for (int i = 0; i < loop_times; i++) {
-    ps.gen_smt(i, orig0, N);
+    ps.gen_smt(i, bm0, N);
   }
   auto end = NOW;
   cout << "smt prog::gen_smt: " << DUR / loop_times << " us" << endl;
@@ -35,7 +35,7 @@ void time_validator_set_orig() {
   validator vld;
   auto start = NOW;
   for (int i = 0; i < loop_times; i++) {
-    vld.set_orig(orig0, N);
+    vld.set_orig(bm0, N);
   }
   auto end = NOW;
   cout << "validator::set_orig: " << DUR / loop_times << " us" << endl;
@@ -44,10 +44,10 @@ void time_validator_set_orig() {
 void time_validator_is_equal_to() {
   int loop_times = 100;
   validator vld;
-  vld.set_orig(orig0, N);
+  vld.set_orig(bm0, N);
   auto start = NOW;
   for (int i = 0; i < loop_times; i++) {
-    vld.is_equal_to(orig0, N);
+    vld.is_equal_to(bm0, N);
   }
   auto end = NOW;
   cout << "validator::is_equal_to: " << DUR / loop_times << " us" << endl;
@@ -56,7 +56,7 @@ void time_validator_is_equal_to() {
 void time_validator_is_smt_valid() {
   int loop_times = 100;
   validator vld;
-  vld.is_equal_to(orig0, N);
+  vld.is_equal_to(bm0, N);
   z3::expr smt = vld._store_f;
   auto start = NOW;
   for (int i = 0; i < loop_times; i++) {
@@ -70,7 +70,7 @@ void time_validator_get_orig_output() {
   int loop_times = 100;
   auto start = NOW;
   validator vld;
-  vld.set_orig(orig0, N);
+  vld.set_orig(bm0, N);
   for (int i = 0; i < loop_times; i++) {
     vld.get_orig_output(i);
   }
@@ -83,7 +83,7 @@ void time_interpret() {
   prog_state ps;
   auto start = NOW;
   for (int i = 0; i < loop_times; i++) {
-    interpret(orig0, N, ps, i);
+    interpret(bm0, N, ps, i);
   }
   auto end = NOW;
   cout << "interpret: " << DUR / loop_times << " us" << endl;
@@ -100,7 +100,7 @@ void time_examples_insert() {
   }
   for (int i = 0; i < num_ex; i++) {
     prog_state ps;
-    int output = interpret(orig0, N, ps, inputs[i]);
+    int output = interpret(bm0, N, ps, inputs[i]);
     inouts[i].set_in_out(inputs[i], output);
   }
   examples ex_set;
@@ -118,7 +118,7 @@ void time_cost_init() {
   double w_p = 0.0;
   vector<int> input = {10, 16, 11, 48, 1};
   cost c;
-  prog orig(orig0);
+  prog orig(bm0);
   auto start = NOW;
   for (int i = 0; i < loop_times; i++) {
     c.init(&orig, N, input, w_e, w_p);
@@ -133,7 +133,7 @@ void time_cost_error_cost() {
   double w_p = 0.0;
   vector<int> input = {10, 16, 11, 48, 1};
   cost c;
-  prog orig(orig0);
+  prog orig(bm0);
   c.init(&orig, N, input, w_e, w_p);
   auto start = NOW;
   for (int i = 0; i < loop_times; i++) {
@@ -151,7 +151,7 @@ void time_cost_perf_cost() {
   double w_p = 0.0;
   vector<int> input = {10, 16, 11, 48, 1};
   cost c;
-  prog orig(orig0);
+  prog orig(bm0);
   c.init(&orig, N, input, w_e, w_p);
   auto start = NOW;
   for (int i = 0; i < loop_times; i++) {
@@ -172,7 +172,7 @@ void time_mh_sampler() {
     gen_random_input(inputs, 0, 50);
     mh_sampler mh;
     unordered_map<int, vector<prog*> > prog_freq;
-    prog orig(orig0);
+    prog orig(bm0);
     mh._cost.init(&orig, N, inputs, w_e, w_p);
     mh.mcmc_iter(nrolls, orig, prog_freq);
   }

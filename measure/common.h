@@ -11,24 +11,29 @@ ostream& operator<<(ostream& out, vector<vector<int> >& v);
 
 // instruction_list set
 #define N MAX_PROG_LEN
-extern inst orig0[N];
-extern inst orig2[N];
-extern inst orig3[N];
-extern inst opti00[N];
-extern inst opti01[N];
-extern inst opti02[N];
-extern inst opti03[N];
-extern inst opti04[N];
-extern inst opti05[N];
-extern inst opti20[N];
-extern inst opti21[N];
-extern inst opti22[N];
-extern inst opti30[N];
-extern inst opti31[N];
-extern inst opti32[N];
-extern inst opti33[N];
-extern inst opti34[N];
-extern inst opti35[N];
-extern inst opti36[N];
-extern inst opti37[N];
-extern inst opti38[N];
+
+#define NUM_ORIG 3
+extern inst bm0[N];
+extern inst bm1[N];
+extern inst bm2[N];
+
+extern inst bm_opti00[N];
+extern inst bm_opti01[N];
+extern inst bm_opti02[N];
+extern inst bm_opti03[N];
+extern inst bm_opti04[N];
+extern inst bm_opti05[N];
+
+extern inst bm_opti10[N];
+extern inst bm_opti11[N];
+extern inst bm_opti12[N];
+
+extern inst bm_opti20[N];
+extern inst bm_opti21[N];
+extern inst bm_opti22[N];
+extern inst bm_opti23[N];
+extern inst bm_opti24[N];
+extern inst bm_opti25[N];
+extern inst bm_opti26[N];
+extern inst bm_opti27[N];
+extern inst bm_opti28[N];
