@@ -78,13 +78,13 @@ prog* mh_sampler::mh_next(prog* curr) {
     cout << "iteration " << _measure_count << ": ";
     if (uni_sample < a) cout << "accepted" << endl;
     else cout << "rejected" << endl;
-    cout << next->prog_best_bit_vec(_measure_opti).to_string() << endl;
+    cout << next->prog_rel_bit_vec(_measure_opti).to_string() << endl;
     next->print();
     _measure_count++;
     _f_proposal << uni_sample << " " << a << " ";
     if (uni_sample < a) _f_proposal << "1" << " ";
     else _f_proposal << "0" << " ";
-    _f_proposal << next->prog_best_bit_vec(_measure_opti).to_string() << " "
+    _f_proposal << next->prog_rel_bit_vec(_measure_opti).to_string() << " "
                 << next->prog_abs_bit_vec() << endl;
   }
   if (uni_sample < a) {
@@ -135,7 +135,7 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
                  << (_cost._w_e * (double)meas_p->_error_cost +
                      _cost._w_p * (double)meas_p->_perf_cost) << " "
                  << meas_p->freq_count << " "
-                 << meas_p->prog_best_bit_vec(_measure_opti).to_string() << " "
+                 << meas_p->prog_rel_bit_vec(_measure_opti).to_string() << " "
                  << meas_p->prog_abs_bit_vec() << endl;
     }
     if (curr != next) prog::clear_prog(curr);
