@@ -45,6 +45,7 @@ void store_proposals_to_file(string file_name,
                              const vector<prog> &optimals) {
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
+  fout << "<accepted?> <error cost> <perf cost> <relative coding> <absolute coding>" << endl;
   for (size_t i = 0; i < d._proposals.size(); i++) {
     prog p(d._proposals[i].first);
     fout << d._proposals[i].second << " "
@@ -62,6 +63,7 @@ void store_programs_to_file(string file_name,
                             const vector<prog> &optimals) {
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
+  fout << "<iter num> <error cost> <perf cost> <relative coding> <absolute coding>" << endl;
   for (size_t i = 0; i < d._programs.size(); i++) {
     prog p(d._programs[i].second);
     fout << d._programs[i].first << " "
@@ -78,6 +80,7 @@ void store_examples_to_file(string file_name,
                             const meas_mh_data &d) {
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
+  fout << "<iter_num> <new examples>" << endl;
   for (size_t i = 0; i < d._examples.size(); i++) {
     fout << d._examples[i].first << " "
          << d._examples[i].second._exs << endl;
@@ -89,6 +92,7 @@ void store_optimals_to_file(string file_name,
                             const vector<prog> &optimals) {
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
+  fout << "<absolute coding>" << endl;
   for (size_t i = 0; i < optimals.size(); i++)
     fout << optimals[i].prog_abs_bit_vec() << endl;
   fout.close();
