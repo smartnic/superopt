@@ -22,6 +22,7 @@ class meas_mh_data {
   void insert_proposal(const prog &proposal, bool accepted);
   void insert_program(unsigned int iter_num, const prog &program);
   void insert_examples(unsigned int iter_num, const examples &exs);
+  void insert_examples(unsigned int iter_num, const inout &exs);
 };
 
 // proposal raw data to a file

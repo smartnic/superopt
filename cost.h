@@ -28,6 +28,7 @@ class cost {
  public:
   validator _vld;
   examples _examples;
+  bool _meas_new_ex_gened;
   double _w_e = 0.5;
   double _w_p = 0.5;
   int _strategy_ex = 0;

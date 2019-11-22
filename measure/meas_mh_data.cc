@@ -20,21 +20,17 @@ void meas_mh_data::insert_program(unsigned int iter_num, const prog &program) {
   }
 }
 
-// only store the new examples for each iteration
 void meas_mh_data::insert_examples(unsigned int iter_num, const examples &exs) {
   if (_mode) {
-    if (_examples.size() == 0) {
-      this->_examples.push_back(make_pair(iter_num, exs));
-    } else {
-      // check whether the last one in input `exs` is a new example
-      inout new_example = exs._exs[exs._exs.size() - 1];
-      vector<inout> last_inouts = this->_examples[_examples.size() - 1].second._exs;
-      inout last_example = last_inouts[last_inouts.size() - 1];
-      if (new_example.input == last_example.input) return;
-      examples exs_new;
-      exs_new.insert(new_example);
-      this->_examples.push_back(make_pair(iter_num, exs_new));
-    }
+    _examples.push_back(make_pair(iter_num, exs));
+  }
+}
+
+void meas_mh_data::insert_examples(unsigned int iter_num, const inout &exs) {
+  if (_mode) {
+    examples exs_new;
+    exs_new.insert(exs);
+    this->_examples.push_back(make_pair(iter_num, exs_new));
   }
 }
 /* class meas_mh_data end */

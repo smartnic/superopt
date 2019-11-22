@@ -43,8 +43,13 @@ prog* mh_sampler::mh_next(prog* curr) {
   double uni_sample = unidist_mh(gen_mh);
   double a = alpha(curr, next);
   _meas_data.insert_proposal(*next, uni_sample < a);
-  // iter_num = proposals.size() - 1
-  _meas_data.insert_examples(_meas_data._proposals.size() - 1, _cost._examples);
+  int iter_num = _meas_data._proposals.size() - 1;
+  if (iter_num == 0){
+    _meas_data.insert_examples(iter_num, _cost._examples);
+  } else if (_cost._meas_new_ex_gened) {
+    _meas_data.insert_examples(iter_num, _cost._vld._last_counterex);
+    _cost._meas_new_ex_gened = false;
+  };
   if (uni_sample < a) {
     return next;
   } else {
