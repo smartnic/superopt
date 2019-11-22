@@ -29,12 +29,12 @@ void test1() {
   meas_mh_data d;
   d._mode = true;
   d.insert_proposal(prog(orig0), 1);
-  d.insert_proposal(prog(orig2), 0);
+  d.insert_proposal(prog(orig1), 0);
   store_proposals_to_file(file_name, d, optimals);
   read_data_from_file(file_name, "Proposals:");
 
   d.insert_program(0, prog(orig0));
-  d.insert_program(5, prog(orig2));
+  d.insert_program(5, prog(orig1));
   store_programs_to_file(file_name, d, optimals);
   read_data_from_file(file_name, "Programs:");
 
