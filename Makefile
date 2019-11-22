@@ -15,8 +15,8 @@ cost_z3.o: cost_test.cc
 prog_test.out: prog.cc inst.h inst.cc prog.h prog_test.cc utils.h utils.cc
 	g++ -std=c++11 prog_test.cc prog.cc inst.cc utils.cc -o prog_test.out
 
-mh_prog_test.out: mh_prog.cc mh_prog.h mh_prog_z3.o proposals.cc proposals.h prog.cc prog.h cost.cc cost.h inout.cc inout.h inst.cc inst.h validator.cc validator.h cfg.cc cfg.h smt_prog.cc smt_prog.h
-	g++ -std=c++11 inst.cc mh_prog.cc proposals.cc prog.cc cost.cc inout.cc validator.cc cfg.cc mh_prog_z3.o smt_prog.cc -o mh_prog_test.out ../z3/build/libz3.dylib -lpthread
+mh_prog_test.out: mh_prog.cc mh_prog.h mh_prog_z3.o proposals.cc proposals.h prog.cc prog.h cost.cc cost.h inout.cc inout.h inst.cc inst.h validator.cc validator.h cfg.cc cfg.h smt_prog.cc smt_prog.h utils.cc utils.h measure/meas_mh_data.h measure/meas_mh_data.cc
+	g++ -std=c++11 inst.cc mh_prog.cc proposals.cc prog.cc cost.cc inout.cc validator.cc cfg.cc mh_prog_z3.o smt_prog.cc utils.cc measure/meas_mh_data.cc -o mh_prog_test.out ../z3/build/libz3.dylib -lpthread
 
 mh_prog_z3.o: mh_prog_test.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o mh_prog_z3.o  -I../z3/src/api -I../z3/src/api/c++ mh_prog_test.cc
@@ -42,20 +42,23 @@ inout_test.out: inout_test.cc inout.cc inout.h utils.cc utils.h
 clean:
 	rm -f proposals_test.out inst_test.out cost_test.out cost_z3.o prog_test.out mh_prog_test.out mh_prog_z3.o validator_test.out validator_z3.o cfg_test.out inout_test.out smt_prog_test.out smt_prog_z3.o
 
-all_measure: measure_time_test.out measure_mh_test.out
+all_measure: measure_time_test.out measure_mh_test.out meas_mh_data_test.out
 
-measure_time_test.out: measure/measure_time_test.cc measure/common.cc measure/common.h measure_time_z3.o mh_prog.cc mh_prog.h proposals.cc proposals.h prog.cc prog.h cost.cc cost.h inout.cc inout.h inst.cc inst.h validator.cc validator.h cfg.cc cfg.h smt_prog.cc smt_prog.h
-	g++ -std=c++11 measure/measure_time_z3.o measure/common.cc inst.cc mh_prog.cc proposals.cc prog.cc cost.cc inout.cc validator.cc cfg.cc smt_prog.cc -o measure/measure_time_test.out ../z3/build/libz3.dylib -lpthread
+measure_time_test.out: measure/measure_time_test.cc measure/common.cc measure/common.h measure_time_z3.o mh_prog.cc mh_prog.h proposals.cc proposals.h prog.cc prog.h cost.cc cost.h inout.cc inout.h inst.cc inst.h validator.cc validator.h cfg.cc cfg.h smt_prog.cc smt_prog.h utils.cc utils.h
+	g++ -std=c++11 measure/measure_time_z3.o measure/common.cc inst.cc mh_prog.cc proposals.cc prog.cc cost.cc inout.cc validator.cc cfg.cc smt_prog.cc utils.cc -o measure/measure_time_test.out ../z3/build/libz3.dylib -lpthread
 
 measure_time_z3.o: measure/measure_time_test.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o measure/measure_time_z3.o  -I../z3/src/api -I../z3/src/api/c++ measure/measure_time_test.cc
 
-measure_mh_test.out: measure/measure_mh_test.cc measure/common.cc measure/common.h measure_mh_z3.o mh_prog.cc mh_prog.h proposals.cc proposals.h prog.cc prog.h cost.cc cost.h inout.cc inout.h inst.cc inst.h validator.cc validator.h cfg.cc cfg.h smt_prog.cc smt_prog.h
-	g++ -std=c++11 measure/measure_mh_z3.o measure/common.cc inst.cc mh_prog.cc proposals.cc prog.cc cost.cc inout.cc validator.cc cfg.cc smt_prog.cc -o measure/measure_mh_test.out ../z3/build/libz3.dylib -lpthread
+measure_mh_test.out: measure/measure_mh_test.cc measure/common.cc measure/common.h measure_mh_z3.o measure/meas_mh_data.h measure/meas_mh_data.cc mh_prog.cc mh_prog.h proposals.cc proposals.h prog.cc prog.h cost.cc cost.h inout.cc inout.h inst.cc inst.h validator.cc validator.h cfg.cc cfg.h smt_prog.cc smt_prog.h utils.cc utils.h
+	g++ -std=c++11 measure/measure_mh_z3.o measure/common.cc measure/meas_mh_data.cc inst.cc mh_prog.cc proposals.cc prog.cc cost.cc inout.cc validator.cc cfg.cc smt_prog.cc utils.cc -o measure/measure_mh_test.out ../z3/build/libz3.dylib -lpthread
 
 measure_mh_z3.o: measure/measure_mh_test.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o measure/measure_mh_z3.o  -I../z3/src/api -I../z3/src/api/c++ measure/measure_mh_test.cc
 
+meas_mh_data_test.out: measure/meas_mh_data_test.cc measure/meas_mh_data.h measure/meas_mh_data.cc measure/common.h measure/common.cc prog.h prog.cc inout.h inout.cc inst.h inst.cc
+	g++ -std=c++11 measure/meas_mh_data_test.cc measure/meas_mh_data.cc measure/common.cc prog.cc inout.cc inst.cc -o measure/meas_mh_data_test.out
+
 path_measure=measure/
 clean_measure:
-	rm -f ${path_measure}measure_time_test.out ${path_measure}measure_time_z3.o ${path_measure}measure_mh_test.out ${path_measure}measure_mh_z3.o
+	rm -f ${path_measure}measure_time_test.out ${path_measure}measure_time_z3.o ${path_measure}measure_mh_test.out ${path_measure}measure_mh_z3.o ${path_measure}meas_mh_data_test.out

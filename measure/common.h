@@ -6,10 +6,8 @@
 
 using namespace std;
 
-void gen_random_input(vector<int>& inputs, int min, int max);
 ostream& operator<<(ostream& out, vector<int>& v);
 ostream& operator<<(ostream& out, vector<vector<int> >& v);
-
 
 // instruction_list set
 #define N MAX_PROG_LEN

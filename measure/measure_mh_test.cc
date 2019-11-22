@@ -10,7 +10,9 @@
 #include "../inout.h"
 #include "../mh_prog.h"
 #include "../inst.h"
+#include "../utils.h"
 #include "common.h"
+#include "meas_mh_data.h"
 
 using namespace std;
 
@@ -114,10 +116,13 @@ void gen_opti_progs(vector<prog> &opti_set, int orig_id) {
     for (size_t j = 0; j < op_set.size(); j++)
       opti_set.push_back(op_set[j]);
   }
-  cout << "opti_set is\n";
-  for (size_t i = 0; i < opti_set.size(); i++) {
-    opti_set[i].print();
-  }
+}
+
+void store_raw_data(meas_mh_data &d, vector<prog> &optimals) {
+  store_proposals_to_file(file_raw_data_proposal, d, optimals);
+  store_programs_to_file(file_raw_data_prog, d, optimals);
+  store_examples_to_file(file_raw_data_ex, d);
+  store_optimals_to_file(file_raw_data_optimal, optimals);
 }
 
 void running_sampler(int orig_id, int len,
@@ -125,13 +130,13 @@ void running_sampler(int orig_id, int len,
                      int strategy_ex, int strategy_eq, int strategy_avg,
                      vector<prog> &opti_set) {
   mh_sampler mh;
-  mh.measure_start(opti_set, file_raw_data_prog,
-                   file_raw_data_proposal, file_raw_data_ex);
+  mh.turn_on_measure();
   prog orig(origs[orig_id]);
   mh._cost.init(&orig, len, inputs, w_e, w_p,
                 strategy_ex, strategy_eq, strategy_avg);
   mh.mcmc_iter(nrolls, orig, prog_dic);
-  mh.measure_stop();
+  mh.turn_off_measure();
+  store_raw_data(mh._meas_data, opti_set);
 }
 
 void file_rename(string path, double w_e, double w_p, int orig_id) {
@@ -157,25 +162,6 @@ void file_rename(string path, double w_e, double w_p, int orig_id) {
   file_raw_data_proposal += suffix;
   file_raw_data_ex += suffix;
   file_raw_data_optimal += "_" + to_string(orig_id) + ".txt";
-}
-
-void store_raw_data(double w_e, double w_p, vector<prog> opti_set) {
-  ofstream fout;
-  fout.open(file_raw_data_prog_dic, ios::out | ios::trunc);
-  for (std::pair<int, vector <prog*> > element : prog_dic) {
-    vector<prog*> pl = element.second;
-    for (auto p : pl) {
-      fout << p->_error_cost << " "
-           << p->_perf_cost << " "
-           << p->freq_count << endl;
-    }
-  }
-  fout.close();
-  fout.open(file_raw_data_optimal, ios::out | ios::trunc);
-  for (size_t i = 0; i < opti_set.size(); i++) {
-    fout << opti_set[i].prog_abs_bit_vec() << endl;
-  }
-  fout.close();
 }
 
 int main(int argc, char* argv[]) {
@@ -217,6 +203,5 @@ int main(int argc, char* argv[]) {
   running_sampler(orig_id, origs_len, nrolls, w_e, w_p,
                   strategy_ex, strategy_eq, strategy_avg,
                   opti_set);
-  store_raw_data(w_e, w_p, opti_set);
   return 0;
 }
