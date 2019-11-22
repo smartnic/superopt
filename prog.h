@@ -27,8 +27,8 @@ class prog {
   static void clear_prog(prog* p);
   void set_error_cost(double cost);
   void set_perf_cost(double cost);
-  bv_prog prog_bit_vec(const prog &p);
-  bv_prog prog_best_bit_vec(const vector<prog> &ps);
+  bv_prog prog_rel_bit_vec(const prog &p);
+  bv_prog prog_rel_bit_vec(const vector<prog> &ps);
   abs_bv_prog prog_abs_bit_vec();
 };
 
