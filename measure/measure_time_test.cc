@@ -7,6 +7,7 @@
 #include "../prog.h"
 #include "../inout.h"
 #include "../mh_prog.h"
+#include "../utils.h"
 #include "common.h"
 #include "z3++.h"
 

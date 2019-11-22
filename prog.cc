@@ -92,7 +92,7 @@ bv_prog prog::prog_rel_bit_vec(const vector<prog> &ps) {
   return best;
 }
 
-abs_bv_prog prog::prog_abs_bit_vec() {
+abs_bv_prog prog::prog_abs_bit_vec() const {
   string s = "";
   for (int i = 0; i < MAX_PROG_LEN; i++) {
     s += inst_list[i].inst_to_abs_bv().to_string();

@@ -2,6 +2,13 @@
 
 using namespace std;
 
+inout::inout() {}
+
+inout::inout(int in, int out) {
+  input = in;
+  output = out;
+}
+
 void inout::set_in_out(int _input, int _output) {
   input = _input;
   output = _output;
