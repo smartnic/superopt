@@ -42,6 +42,7 @@ void cost::init(prog* orig, int len, const vector<int> &input,
   _strategy_ex = strategy_ex;
   _strategy_eq = strategy_eq;
   _strategy_avg = strategy_avg;
+  _meas_new_ex_gened = false;
 }
 
 void cost::set_orig(prog* orig, int len) {
@@ -132,6 +133,7 @@ double cost::error_cost(prog* synth, int len) {
   // case 2: gen_counterex_flag = (is_equal == 0) && (num_successful_ex == (int)_examples._exs.size());
   if ((is_equal == 0) && (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
+    _meas_new_ex_gened = true;
   }
   return total_cost;
 }

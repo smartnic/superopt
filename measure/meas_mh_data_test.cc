@@ -19,8 +19,8 @@ void read_data_from_file(string file_name, string str_to_print) {
 
 void test1() {
   vector<prog> optimals;
-  optimals.push_back(prog(opti00));
-  optimals.push_back(prog(opti01));
+  optimals.push_back(prog(bm_opti00));
+  optimals.push_back(prog(bm_opti01));
   string file_name = "measure/test.txt";
 
   store_optimals_to_file(file_name, optimals);
@@ -28,22 +28,21 @@ void test1() {
 
   meas_mh_data d;
   d._mode = true;
-  d.insert_proposal(prog(orig0), 1);
-  d.insert_proposal(prog(orig1), 0);
+  d.insert_proposal(prog(bm0), 1);
+  d.insert_proposal(prog(bm1), 0);
   store_proposals_to_file(file_name, d, optimals);
   read_data_from_file(file_name, "Proposals:");
 
-  d.insert_program(0, prog(orig0));
-  d.insert_program(5, prog(orig1));
+  d.insert_program(0, prog(bm0));
+  d.insert_program(5, prog(bm1));
   store_programs_to_file(file_name, d, optimals);
   read_data_from_file(file_name, "Programs:");
 
   examples exs;
   exs.insert(inout(5, 10));
   d.insert_examples(0, exs);
-  exs.insert(inout(3, 6));
-  d.insert_examples(1, exs);
-  d.insert_examples(2, exs);
+  d.insert_examples(1, inout(3, 6));
+  d.insert_examples(2, inout(4, 8));
   store_examples_to_file(file_name, d);
   read_data_from_file(file_name, "Examples:");
 
