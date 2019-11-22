@@ -6,11 +6,9 @@
 #include "prog.h"
 #include "inout.h"
 #include "mh_prog.h"
+#include "utils.h"
 
 using namespace std;
-
-default_random_engine gen_mh_test;
-uniform_real_distribution<double> unidist_mh_test(0.0, 1.0);
 
 #define N 7
 inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
@@ -23,18 +21,6 @@ inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                        };
 
 vector<int> inputs;
-
-void gen_random_input(vector<int>& inputs, int min, int max) {
-  unordered_set<int> input_set;
-  for (size_t i = 0; i < inputs.size();) {
-    int input = min + (max - min) * unidist_mh_test(gen_mh_test);
-    if (input_set.find(input) == input_set.end()) {
-      input_set.insert(input);
-      inputs[i] = input;
-      i++;
-    }
-  }
-}
 
 void test1(int nrolls, double w_e, double w_p)  {
   mh_sampler mh;

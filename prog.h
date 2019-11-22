@@ -29,7 +29,7 @@ class prog {
   void set_perf_cost(double cost);
   bv_prog prog_rel_bit_vec(const prog &p);
   bv_prog prog_rel_bit_vec(const vector<prog> &ps);
-  abs_bv_prog prog_abs_bit_vec();
+  abs_bv_prog prog_abs_bit_vec() const;
 };
 
 struct progHash {

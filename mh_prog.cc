@@ -15,34 +15,10 @@ default_random_engine gen_mh;
 uniform_real_distribution<double> unidist_mh(0.0, 1.0);
 
 mh_sampler::mh_sampler() {
-  _measure_mode = false;
-  _measure_count = 0;
+  _meas_data._mode = false;
 }
 
 mh_sampler::~mh_sampler() {}
-
-void mh_sampler::measure_start(const vector<prog> &opti_progs,
-                               string file_raw_data_prog,
-                               string file_raw_data_proposal,
-                               string file_raw_data_ex) {
-  for (int i = 0; i < opti_progs.size(); i++) {
-    _measure_opti.push_back(prog((inst*)opti_progs[i].inst_list));
-  }
-  _f_program.open(file_raw_data_prog, ios::out | ios::trunc);
-  _f_proposal.open(file_raw_data_proposal, ios::out | ios::trunc);
-  _f_examples.open(file_raw_data_ex, ios::out | ios::trunc);
-  _measure_mode = true;
-  _measure_count = 0;
-}
-
-void mh_sampler::measure_stop() {
-  _f_program.close();
-  _f_proposal.close();
-  _f_examples.close();
-  _measure_mode = false;
-  _measure_count = 0;
-  _measure_opti.clear();
-}
 
 double mh_sampler::cost_to_pi(double cost) {
   return pow(_base, -1.0 * cost);
@@ -59,13 +35,6 @@ prog* mh_sampler::next_proposal(prog* curr) {
 double mh_sampler::alpha(prog* curr, prog* next) {
   double curr_cost = _cost.total_prog_cost(curr, MAX_PROG_LEN);
   double next_cost = _cost.total_prog_cost(next, MAX_PROG_LEN);
-  if (_measure_mode) {
-    _f_proposal << _cost.error_cost(next, MAX_PROG_LEN) << " "
-                << _cost.perf_cost(next, MAX_PROG_LEN) << " "
-                << _cost.total_prog_cost(next, MAX_PROG_LEN) << " "
-                << _cost._examples._exs.size() << " ";
-    _f_examples << _cost._examples._exs.size() << ":" << _cost._examples._exs << endl;
-  }
   return min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
 }
 
@@ -73,21 +42,11 @@ prog* mh_sampler::mh_next(prog* curr) {
   prog* next = next_proposal(curr);
   double uni_sample = unidist_mh(gen_mh);
   double a = alpha(curr, next);
-  if (_measure_mode) {
-    // use command line to redirect to file
-    cout << "iteration " << _measure_count << ": ";
-    if (uni_sample < a) cout << "accepted" << endl;
-    else cout << "rejected" << endl;
-    cout << next->prog_rel_bit_vec(_measure_opti).to_string() << endl;
-    next->print();
-    _measure_count++;
-    _f_proposal << uni_sample << " " << a << " ";
-    if (uni_sample < a) _f_proposal << "1" << " ";
-    else _f_proposal << "0" << " ";
-    _f_proposal << next->prog_rel_bit_vec(_measure_opti).to_string() << " "
-                << next->prog_abs_bit_vec() << endl;
-  }
+  _meas_data.insert_proposal(*next, uni_sample < a);
+  // iter_num = proposals.size() - 1
+  _meas_data.insert_examples(_meas_data._proposals.size() - 1, _cost._examples);
   if (uni_sample < a) {
+    _meas_data.insert_program(_meas_data._proposals.size() - 1, *next);
     return next;
   } else {
     prog::clear_prog(next);
@@ -129,16 +88,16 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
       prog_freq[ph].push_back(next_copy);
       meas_p = next_copy;
     }
-    if (_measure_mode) {
-      _f_program << meas_p->_error_cost << " "
-                 << meas_p->_perf_cost << " "
-                 << (_cost._w_e * (double)meas_p->_error_cost +
-                     _cost._w_p * (double)meas_p->_perf_cost) << " "
-                 << meas_p->freq_count << " "
-                 << meas_p->prog_rel_bit_vec(_measure_opti).to_string() << " "
-                 << meas_p->prog_abs_bit_vec() << endl;
-    }
     if (curr != next) prog::clear_prog(curr);
     curr = next;
   }
+}
+
+
+void mh_sampler::turn_on_measure() {
+  _meas_data._mode = true;
+}
+
+void mh_sampler::turn_off_measure() {
+  _meas_data._mode = false;
 }

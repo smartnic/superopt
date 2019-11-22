@@ -1,23 +1,6 @@
-#include <unordered_set>
-#include <random>
 #include "common.h"
 
 using namespace std;
-
-default_random_engine gen_common_test;
-uniform_real_distribution<double> unidist_common_test(0.0, 1.0);
-
-void gen_random_input(vector<int>& inputs, int min, int max) {
-  unordered_set<int> input_set;
-  for (size_t i = 0; i < inputs.size();) {
-    int input = min + (max - min) * unidist_common_test(gen_common_test);
-    if (input_set.find(input) == input_set.end()) {
-      input_set.insert(input);
-      inputs[i] = input;
-      i++;
-    }
-  }
-}
 
 ostream& operator<<(ostream& out, vector<int>& v) {
   for (size_t i = 0; i < v.size(); i++) {
