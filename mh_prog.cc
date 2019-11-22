@@ -88,11 +88,11 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
       meas_p = next_copy;
     }
     if (i == 0) {
-      _meas_data.insert_program(niter, *curr);
+      _meas_data.insert_program(i, *curr);
     }
     if (curr != next) {
       prog::clear_prog(curr);
-      _meas_data.insert_program(niter, *next);
+      _meas_data.insert_program(i, *next);
     }
     curr = next;
   }
