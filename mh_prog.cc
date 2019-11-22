@@ -46,7 +46,6 @@ prog* mh_sampler::mh_next(prog* curr) {
   // iter_num = proposals.size() - 1
   _meas_data.insert_examples(_meas_data._proposals.size() - 1, _cost._examples);
   if (uni_sample < a) {
-    _meas_data.insert_program(_meas_data._proposals.size() - 1, *next);
     return next;
   } else {
     prog::clear_prog(next);
@@ -88,7 +87,13 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
       prog_freq[ph].push_back(next_copy);
       meas_p = next_copy;
     }
-    if (curr != next) prog::clear_prog(curr);
+    if (i == 0) {
+      _meas_data.insert_program(niter, *curr);
+    }
+    if (curr != next) {
+      prog::clear_prog(curr);
+      _meas_data.insert_program(niter, *next);
+    }
     curr = next;
   }
 }
