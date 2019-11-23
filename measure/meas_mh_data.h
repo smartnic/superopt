@@ -35,4 +35,5 @@ void store_programs_to_file(string file_name,
 void store_examples_to_file(string file_name,
                             const meas_mh_data &d);
 void store_optimals_to_file(string file_name,
-                            const vector<prog> &optimals);
+                            const vector<prog> &optimals,
+                            bool measure_mode);

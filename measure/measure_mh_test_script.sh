@@ -1,4 +1,1 @@
-path="measure/"
-path_exe="measure/"
-iteration=20000
-./${path_exe}measure_mh_test.out 0 ${iteration} 0.5 1.5 ${path} 0 0 1 > ${path}progs_0_0.5_1.5.txt
+measure/measure_mh_test.out -n 10 --path_out "measure/" --bm 2 --we 1.0 --wp 0.5 --st_ex 0 --st_eq 1 --st_avg 0

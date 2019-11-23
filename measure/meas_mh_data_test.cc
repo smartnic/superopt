@@ -22,12 +22,12 @@ void test1() {
   optimals.push_back(prog(bm_opti00));
   optimals.push_back(prog(bm_opti01));
   string file_name = "measure/test.txt";
-
-  store_optimals_to_file(file_name, optimals);
-  read_data_from_file(file_name, "Optimals:");
-
   meas_mh_data d;
   d._mode = true;
+
+  store_optimals_to_file(file_name, optimals, d._mode);
+  read_data_from_file(file_name, "Optimals:");
+
   d.insert_proposal(prog(bm0), 1);
   d.insert_proposal(prog(bm1), 0);
   store_proposals_to_file(file_name, d, optimals);
