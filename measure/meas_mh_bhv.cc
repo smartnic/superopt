@@ -7,13 +7,13 @@
 #include <set>
 #include <utility>
 #include <getopt.h>
+#include "common.h"
+#include "meas_mh_data.h"
 #include "../prog.h"
 #include "../inout.h"
 #include "../mh_prog.h"
 #include "../inst.h"
 #include "../utils.h"
-#include "common.h"
-#include "meas_mh_data.h"
 
 using namespace std;
 
@@ -80,15 +80,15 @@ unsigned int combination(unsigned int n, unsigned m) {
 
 // generate all combinations that picks n unrepeated numbers from s to e
 // row_s is the staring row in `res` that store the combinations
-// e.g. s=0, e=3, n=2, row_s=0, res=[[1,2], [1,3], [2,3]]
-void gen_n_numbers(int n, int s, int e,
-                   int row_s, vector<vector<int> >& res) {
+// e.g. s=1, e=3, n=2, row_s=0, res=[[1,2], [1,3], [2,3]]
+void gen_n_combinations(int n, int s, int e,
+                        int row_s, vector<vector<int> >& res) {
   if (n == 0) return;
   for (int i = s; i <= e - n + 1; i++) {
     int num_comb = combination(e - i, n - 1);
     for (int j = row_s; j < row_s + num_comb; j++)
       res[j].push_back(i);
-    gen_n_numbers(n - 1, i + 1, e, row_s, res);
+    gen_n_combinations(n - 1, i + 1, e, row_s, res);
     row_s += num_comb;
   }
 }
@@ -101,7 +101,7 @@ void gen_optis_for_prog(const prog& p, const int& len,
   // C_len^n
   int num_opti = combination(len, n);
   vector<vector<int> > comb_set(num_opti);
-  gen_n_numbers(n, 0, len - 1, 0, comb_set);
+  gen_n_combinations(n, 0, len - 1, 0, comb_set);
   opti_set.resize(num_opti);
   for (size_t i = 0; i < comb_set.size(); i++) {
     for (size_t j = 0; j < len; j++)
