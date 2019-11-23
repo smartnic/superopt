@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <utility>
+#include <getopt.h>
 #include "../prog.h"
 #include "../inout.h"
 #include "../mh_prog.h"
@@ -21,11 +22,22 @@ string file_raw_data_proposals = "raw_data_proposals";
 string file_raw_data_examples = "raw_data_examples";
 string file_raw_data_optimals = "raw_data_optimals";
 vector<inst*> bms;
-int bms_len = MAX_PROG_LEN;
+int bm_len = MAX_PROG_LEN;
 vector<prog> bm_optimals;
 vector<int> bms_best_perf_cost;
 vector<int> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
+
+struct input_paras {
+  int nrolls;
+  double w_e;
+  double w_p;
+  int bm_id;
+  string path;
+  int st_ex;
+  int st_eq;
+  int st_avg;
+};
 
 void init_benchmarks(vector<vector<inst*> > &bm_optis_orig) {
   bms.push_back(bm0);
@@ -116,93 +128,102 @@ void store_raw_data(meas_mh_data &d) {
   store_proposals_to_file(file_raw_data_proposals, d, bm_optimals);
   store_programs_to_file(file_raw_data_programs, d, bm_optimals);
   store_examples_to_file(file_raw_data_examples, d);
-  store_optimals_to_file(file_raw_data_optimals, bm_optimals);
+  store_optimals_to_file(file_raw_data_optimals, bm_optimals, d._mode);
 }
 
-void run_mh_sampler_and_store_data(int bm_id, int len,
-                                   int nrolls, double w_e, double w_p,
-                                   int strategy_ex, int strategy_eq,
-                                   int strategy_avg) {
+void run_mh_sampler_and_store_data(const input_paras &in_para) {
   mh_sampler mh;
   mh.turn_on_measure();
-  prog orig(bms[bm_id]);
-  mh._cost.init(&orig, len, inputs, w_e, w_p,
-                strategy_ex, strategy_eq, strategy_avg);
-  mh.mcmc_iter(nrolls, orig, prog_dic);
-  mh.turn_off_measure();
+  prog orig(bms[in_para.bm_id]);
+  mh._cost.init(&orig, bm_len, inputs,
+                in_para.w_e, in_para.w_p,
+                in_para.st_ex, in_para.st_eq,
+                in_para.st_avg);
+  mh.mcmc_iter(in_para.nrolls, orig, prog_dic);
   store_raw_data(mh._meas_data);
+  mh.turn_off_measure();
 }
 
 // eg. "1.1100" -> "1.11"; "1.000" -> "1"
 string rm_useless_zero_digits_from_str(string s) {
   // rm useless zero digits
   s.erase(s.find_last_not_of('0') + 1, string::npos);
-  // rm useless `.`
+  // rm useless decimal point
   s.erase(s.find_last_not_of('.') + 1, string::npos);
   return s;
 }
 
-void gen_file_name_from_input(string path, int bm_id,
-                              double w_e, double w_p,
-                              int strategy_ex, int strategy_eq,
-                              int strategy_avg) {
-  file_raw_data_programs = path + file_raw_data_programs;
-  file_raw_data_proposals = path + file_raw_data_proposals;
-  file_raw_data_examples = path + file_raw_data_examples;
-  file_raw_data_optimals = path + file_raw_data_optimals;
-  string str_w_e = rm_useless_zero_digits_from_str(to_string(w_e));
-  string str_w_p = rm_useless_zero_digits_from_str(to_string(w_p));
-  string suffix = "_" + to_string(bm_id) +
-                  "_" + to_string(strategy_ex) +
-                  to_string(strategy_eq) +
-                  to_string(strategy_avg) +
+void gen_file_name_from_input(const input_paras &in_para) {
+  file_raw_data_programs = in_para.path + file_raw_data_programs;
+  file_raw_data_proposals = in_para.path + file_raw_data_proposals;
+  file_raw_data_examples = in_para.path + file_raw_data_examples;
+  file_raw_data_optimals = in_para.path + file_raw_data_optimals;
+  string str_w_e = rm_useless_zero_digits_from_str(to_string(in_para.w_e));
+  string str_w_p = rm_useless_zero_digits_from_str(to_string(in_para.w_p));
+  string suffix = "_" + to_string(in_para.bm_id) +
+                  "_" + to_string(in_para.nrolls) +
+                  "_" + to_string(in_para.st_ex) +
+                  to_string(in_para.st_eq) +
+                  to_string(in_para.st_avg) +
                   "_" + str_w_e +
                   "_" + str_w_p +
                   ".txt";
   file_raw_data_programs += suffix;
   file_raw_data_proposals += suffix;
   file_raw_data_examples += suffix;
-  file_raw_data_optimals += "_" + to_string(bm_id) + ".txt";
+  file_raw_data_optimals += "_" + to_string(in_para.bm_id) + ".txt";
+}
+
+void parse_input(int argc, char* argv[], input_paras &in_para) {
+  const char* const short_opts = "n:";
+  static struct option long_opts[] = {
+    {"path_out", required_argument, nullptr, 0},
+    {"bm", required_argument, nullptr, 1},
+    {"we", required_argument, nullptr, 2},
+    {"wp", required_argument, nullptr, 3},
+    {"st_ex", required_argument, nullptr, 4},
+    {"st_eq", required_argument, nullptr, 5},
+    {"st_avg", required_argument, nullptr, 6},
+    {nullptr, no_argument, nullptr, 0}
+  };
+  int opt;
+  while ((opt = getopt_long(argc, argv, short_opts,
+                            long_opts, nullptr)) != -1) {
+    switch (opt) {
+      case 'n': in_para.nrolls = stoi(optarg); break;
+      case 0: in_para.path = optarg; break;
+      case 1: in_para.bm_id = stoi(optarg); break;
+      case 2: in_para.w_e = stod(optarg); break;
+      case 3: in_para.w_p = stod(optarg); break;
+      case 4: in_para.st_ex = stoi(optarg); break;
+      case 5: in_para.st_eq = stoi(optarg); break;
+      case 6: in_para.st_avg = stoi(optarg); break;
+    }
+  }
+}
+
+void set_default_para_vals(input_paras &in_para) {
+  in_para.nrolls = 10;
+  in_para.w_e = 1.0;
+  in_para.w_p = 0.0;
+  in_para.bm_id = 0;
+  in_para.path = "measure/";
+  in_para.st_ex = ERROR_COST_STRATEGY_ABS;
+  in_para.st_eq = ERROR_COST_STRATEGY_EQ1;
+  in_para.st_avg = ERROR_COST_STRATEGY_NAVG;
 }
 
 int main(int argc, char* argv[]) {
-  int nrolls = 10;
-  double w_e = 1.0;
-  double w_p = 0.0;
-  int bm_id = 0;
-  string path = "measure/";
-  int strategy_ex = ERROR_COST_STRATEGY_ABS;
-  int strategy_eq = ERROR_COST_STRATEGY_EQ1;
-  int strategy_avg = ERROR_COST_STRATEGY_NAVG;
-  if (argc > 1)
-    bm_id = atoi(argv[1]);
-  if (argc > 2)
-    nrolls = atoi(argv[2]);
-  if (argc > 4) {
-    w_e = atof(argv[3]);
-    w_p = atof(argv[4]);
-  }
-  if (argc > 5) {
-    path = argv[5];
-  }
-  if (argc > 6) {
-    strategy_ex = atoi(argv[6]);
-  }
-  if (argc > 7) {
-    strategy_eq = atoi(argv[7]);
-  }
-  if (argc > 8) {
-    strategy_avg = atoi(argv[8]);
-  }
-  gen_file_name_from_input(path, bm_id, w_e, w_p,
-                           strategy_ex, strategy_eq, strategy_avg);
+  input_paras in_para;
+  set_default_para_vals(in_para);
+  parse_input(argc, argv, in_para);
+  gen_file_name_from_input(in_para);
   vector<vector<inst*> > bm_optis_orig;
   init_benchmarks(bm_optis_orig);
   // get all optimal programs from the original ones
-  gen_optis_for_progs(bm_optis_orig[bm_id]);
+  gen_optis_for_progs(bm_optis_orig[in_para.bm_id]);
   inputs.resize(30);
   gen_random_input(inputs, -50, 50);
-  run_mh_sampler_and_store_data(bm_id, bms_len, nrolls, w_e, w_p,
-                                strategy_ex, strategy_eq, strategy_avg);
+  run_mh_sampler_and_store_data(in_para);
   return 0;
 }

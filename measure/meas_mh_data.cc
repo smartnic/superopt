@@ -39,6 +39,7 @@ void meas_mh_data::insert_examples(unsigned int iter_num, const inout &exs) {
 void store_proposals_to_file(string file_name,
                              const meas_mh_data &d,
                              const vector<prog> &optimals) {
+  if (! d._mode) return;
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
   fout << "<accepted?> <error cost> <perf cost> <relative coding> <absolute coding>" << endl;
@@ -57,6 +58,7 @@ void store_proposals_to_file(string file_name,
 void store_programs_to_file(string file_name,
                             const meas_mh_data &d,
                             const vector<prog> &optimals) {
+  if (! d._mode) return;
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
   fout << "<iter num> <error cost> <perf cost> <relative coding> <absolute coding>" << endl;
@@ -74,6 +76,7 @@ void store_programs_to_file(string file_name,
 // fmt: <iter_num> <new examples>
 void store_examples_to_file(string file_name,
                             const meas_mh_data &d) {
+  if (! d._mode) return;
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
   fout << "<iter_num> <new examples>" << endl;
@@ -85,7 +88,9 @@ void store_examples_to_file(string file_name,
 }
 
 void store_optimals_to_file(string file_name,
-                            const vector<prog> &optimals) {
+                            const vector<prog> &optimals,
+                            bool measure_mode) {
+  if (! measure_mode) return;
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
   fout << "<absolute coding>" << endl;
