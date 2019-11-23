@@ -78,9 +78,12 @@ unsigned int combination(unsigned int n, unsigned m) {
   return (a / b);
 }
 
-// generate all combinations that picks n unrepeated numbers from s to e
+// Generate all combinations that picks n unrepeated numbers from s to e
 // row_s is the staring row in `res` that store the combinations
 // e.g. s=1, e=3, n=2, row_s=0, res=[[1,2], [1,3], [2,3]]
+// steps: compute it recursively ranging from large to small,
+// while the real computation is from small to large,
+// that is, compute combinations in range [s:e] first, then [s-1:e]
 void gen_n_combinations(int n, int s, int e,
                         int row_s, vector<vector<int> >& res) {
   if (n == 0) return;
@@ -93,8 +96,13 @@ void gen_n_combinations(int n, int s, int e,
   }
 }
 
-// should ensure the first real_length instructions in program p are not NOP,
+// Premise: should ensure the first real_length instructions in program p are not NOP,
 // the remainings are NOP.
+// steps: 1. Set all instructions of this optimal program as NOP;
+// 2. Compute combinations for real instruction positions;
+// 3. replace NOP instructions with real instructions according to combinations.
+// e.g. if optimal program has 5 NOPs, one combination is [2,3],
+// then the second and third instructions are replaced with real instructions
 void gen_optis_for_prog(const prog& p, const int& len,
                         vector<prog>& opti_set) {
   int n = num_real_instructions((inst*)p.inst_list, len);
@@ -104,8 +112,11 @@ void gen_optis_for_prog(const prog& p, const int& len,
   gen_n_combinations(n, 0, len - 1, 0, comb_set);
   opti_set.resize(num_opti);
   for (size_t i = 0; i < comb_set.size(); i++) {
+    // set all instructions of this optimal program as NOP
     for (size_t j = 0; j < len; j++)
       opti_set[i].inst_list[j] = inst(NOP);
+    // replace some NOP instructions with real instructions
+    // according to the combination value
     for (size_t j = 0; j < comb_set[i].size(); j++) {
       size_t pos = comb_set[i][j];
       opti_set[i].inst_list[pos] = p.inst_list[j];
