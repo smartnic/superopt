@@ -72,7 +72,7 @@ void time_cost_init() {
   vector<int> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
-  time_measure(c.init(&orig, N, input, w_e, w_p), 30,
+  time_measure(c.init(&orig, N, input, w_e, w_p), 100,
                "cost::init: ");
 }
 
@@ -103,7 +103,7 @@ void time_cost_perf_cost() {
 }
 
 void time_mh_sampler() {
-  int loop_times = 2;
+  int loop_times = 50;
   auto start = NOW;
   for (int i = 0; i < loop_times; i++) {
     int nrolls = 1000;
