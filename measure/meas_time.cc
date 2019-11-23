@@ -1,8 +1,6 @@
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
-#include <random>
-#include <algorithm>
 #include <chrono>
 #include "../prog.h"
 #include "../inout.h"
@@ -15,9 +13,6 @@ using namespace std;
 
 #define NOW chrono::steady_clock::now()
 #define DUR chrono::duration <double, micro> (end - start).count()
-
-default_random_engine time_msr_gen;
-uniform_real_distribution<double> time_msr_unidist(0.0, 1.0);
 
 void time_smt_prog() {
   int loop_times = 1000;
@@ -87,29 +82,6 @@ void time_interpret() {
   }
   auto end = NOW;
   cout << "interpret: " << DUR / loop_times << " us" << endl;
-}
-
-void time_examples_insert() {
-  int loop_times = 10000;
-  int num_ex = 1000;
-  int max_input = 1000;
-  vector<int> inputs(num_ex);
-  vector<inout> inouts(num_ex);
-  for (int i = 0; i < num_ex; i++) {
-    inputs[i] = time_msr_unidist(time_msr_gen) * max_input;
-  }
-  for (int i = 0; i < num_ex; i++) {
-    prog_state ps;
-    int output = interpret(bm0, N, ps, inputs[i]);
-    inouts[i].set_in_out(inputs[i], output);
-  }
-  examples ex_set;
-  auto start = NOW;
-  for (int i = 0; i < loop_times; i++) {
-    ex_set.insert(inouts[i]);
-  }
-  auto end = NOW;
-  cout << "examples::insert: " << DUR / loop_times << " us" << endl;
 }
 
 void time_cost_init() {
@@ -187,7 +159,6 @@ int main() {
   time_validator_is_smt_valid();
   time_validator_get_orig_output();
   time_interpret();
-  time_examples_insert();
   time_cost_init();
   time_cost_error_cost();
   time_cost_perf_cost();
