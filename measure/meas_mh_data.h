@@ -7,6 +7,11 @@
 
 using namespace std;
 
+/* Class meas_mh_data is used to store measurement data when mh_sampler is sampling.
+ * It ONLY stored data when `_mode` is set as `true`. Now, it is supported to store
+ * three kinds of data, that is, proposals, programs and example, the details are in
+ * class commments.
+ */
 class meas_mh_data {
  public:
   // true: measure; false: do not measure
@@ -25,7 +30,9 @@ class meas_mh_data {
   void insert_examples(unsigned int iter_num, const inout &exs);
 };
 
-// proposal raw data to a file
+/* The following `store_[]_to_file` functions store raw data of various objects
+ * into files. It ONLY works when `_mode` in class `meas_mh_data` is set as `true`
+ */
 void store_proposals_to_file(string file_name,
                              const meas_mh_data &d,
                              const vector<prog> &optimals);
