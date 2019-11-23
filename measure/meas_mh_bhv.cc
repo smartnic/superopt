@@ -83,7 +83,7 @@ unsigned int combination(unsigned int n, unsigned m) {
 // e.g. s=1, e=3, n=2, row_s=0, res=[[1,2], [1,3], [2,3]]
 // steps: compute it recursively ranging from large to small,
 // while the real computation is from small to large,
-// that is, compute combinations in range [s:e] first, then [s-1:e]
+// that is, compute combinations in range [s+1:e] first, then [s:e]
 void gen_n_combinations(int n, int s, int e,
                         int row_s, vector<vector<int> >& res) {
   if (n == 0) return;
