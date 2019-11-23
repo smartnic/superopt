@@ -13,124 +13,93 @@ using namespace std;
 
 #define NOW chrono::steady_clock::now()
 #define DUR chrono::duration <double, micro> (end - start).count()
+#define measure_print(print, loop_times) \
+cout << print << DUR / loop_times << " us" << endl;
+
+#define time_measure(func_called, times, print) \
+int loop_times = times;                         \
+auto start = NOW;                               \
+for (int i = 0; i < loop_times; i++) {          \
+  func_called;                                  \
+}                                               \
+auto end = NOW;                                 \
+measure_print(print, times);
+
 
 void time_smt_prog() {
-  int loop_times = 1000;
   smt_prog ps;
-  auto start = NOW;
-  for (int i = 0; i < loop_times; i++) {
-    ps.gen_smt(i, bm0, N);
-  }
-  auto end = NOW;
-  cout << "smt prog::gen_smt: " << DUR / loop_times << " us" << endl;
+  time_measure(ps.gen_smt(i, bm0, N), 1000,
+               "smt prog::gen_smt: ");
 }
 
 void time_validator_set_orig() {
-  int loop_times = 1000;
   validator vld;
-  auto start = NOW;
-  for (int i = 0; i < loop_times; i++) {
-    vld.set_orig(bm0, N);
-  }
-  auto end = NOW;
-  cout << "validator::set_orig: " << DUR / loop_times << " us" << endl;
+  time_measure(vld.set_orig(bm0, N), 1000,
+               "validator::set_orig: ");
 }
 
 void time_validator_is_equal_to() {
-  int loop_times = 100;
   validator vld;
   vld.set_orig(bm0, N);
-  auto start = NOW;
-  for (int i = 0; i < loop_times; i++) {
-    vld.is_equal_to(bm0, N);
-  }
-  auto end = NOW;
-  cout << "validator::is_equal_to: " << DUR / loop_times << " us" << endl;
+  time_measure(vld.is_equal_to(bm0, N), 100,
+               "validator::is_equal_to: ");
 }
 
 void time_validator_is_smt_valid() {
-  int loop_times = 100;
   validator vld;
   vld.is_equal_to(bm0, N);
   z3::expr smt = vld._store_f;
-  auto start = NOW;
-  for (int i = 0; i < loop_times; i++) {
-    vld.is_smt_valid(smt);
-  }
-  auto end = NOW;
-  cout << "validator::is_smt_valid: " << DUR / loop_times << " us" << endl;
+  time_measure(vld.is_smt_valid(smt), 100,
+               "validator::is_smt_valid: ");
 }
 
 void time_validator_get_orig_output() {
-  int loop_times = 100;
-  auto start = NOW;
   validator vld;
   vld.set_orig(bm0, N);
-  for (int i = 0; i < loop_times; i++) {
-    vld.get_orig_output(i);
-  }
-  auto end = NOW;
-  cout << "validator::get_orig_output: " << DUR / loop_times << " us" << endl;
+  time_measure(vld.get_orig_output(i), 100,
+               "validator::get_orig_output: ");
 }
 
 void time_interpret() {
-  int loop_times = 10000;
   prog_state ps;
-  auto start = NOW;
-  for (int i = 0; i < loop_times; i++) {
-    interpret(bm0, N, ps, i);
-  }
-  auto end = NOW;
-  cout << "interpret: " << DUR / loop_times << " us" << endl;
+  time_measure(interpret(bm0, N, ps, i), 10000,
+               "interpret: ");
 }
 
 void time_cost_init() {
-  int loop_times = 30;
   double w_e = 1.0;
   double w_p = 0.0;
   vector<int> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
-  auto start = NOW;
-  for (int i = 0; i < loop_times; i++) {
-    c.init(&orig, N, input, w_e, w_p);
-  }
-  auto end = NOW;
-  cout << "cost::init: " << DUR / loop_times << " us" << endl;
+  time_measure(c.init(&orig, N, input, w_e, w_p), 30,
+               "cost::init: ");
 }
 
 void time_cost_error_cost() {
-  int loop_times = 200;
   double w_e = 1.0;
   double w_p = 0.0;
   vector<int> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
   c.init(&orig, N, input, w_e, w_p);
-  auto start = NOW;
-  for (int i = 0; i < loop_times; i++) {
-    c.error_cost(&orig, N);
-    orig._error_cost = -1;
-    orig._perf_cost = -1;
-  }
-  auto end = NOW;
-  cout << "cost::error_cost: " << DUR / loop_times << " us" << endl;
+  time_measure(c.error_cost(&orig, N);
+               orig._error_cost = -1;
+               orig._perf_cost = -1,
+               200,
+               "cost::error_cost: "
+              );
 }
 
 void time_cost_perf_cost() {
-  int loop_times = 1000;
   double w_e = 1.0;
   double w_p = 0.0;
   vector<int> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
   c.init(&orig, N, input, w_e, w_p);
-  auto start = NOW;
-  for (int i = 0; i < loop_times; i++) {
-    c.perf_cost(&orig, N);
-  }
-  auto end = NOW;
-  cout << "cost::perf_cost: " << DUR / loop_times << " us" << endl;
+  time_measure(c.perf_cost(&orig, N), 1000,
+               "cost::perf_cost: ");
 }
 
 void time_mh_sampler() {
@@ -149,7 +118,7 @@ void time_mh_sampler() {
     mh.mcmc_iter(nrolls, orig, prog_freq);
   }
   auto end = NOW;
-  cout << "cost::mh_sampler: " << DUR / loop_times << " us" << endl;
+  measure_print("cost::mh_sampler: ", loop_times);
 }
 
 int main() {
@@ -164,4 +133,4 @@ int main() {
   time_cost_perf_cost();
   time_mh_sampler();
   return 0;
-}   
+}
