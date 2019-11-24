@@ -29,7 +29,7 @@ vector<int> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
 
 struct input_paras {
-  int nrolls;
+  int niter;
   double w_e;
   double w_p;
   int bm_id;
@@ -79,9 +79,9 @@ unsigned int combination(unsigned int n, unsigned m) {
 }
 
 // Generate all combinations that picks n unrepeated numbers from s to e
-// row_s is the staring row in `res` that store the combinations
+// row_s is the starting row in `res` that stores the combinations
 // e.g. s=1, e=3, n=2, row_s=0, res=[[1,2], [1,3], [2,3]]
-// steps: compute it recursively ranging from large to small,
+// steps: compute combinations recursively ranging from large to small,
 // while the real computation is from small to large,
 // that is, compute combinations in range [s+1:e] first, then [s:e]
 void gen_n_combinations(int n, int s, int e,
@@ -96,12 +96,12 @@ void gen_n_combinations(int n, int s, int e,
   }
 }
 
-// Premise: should ensure the first real_length instructions in program p are not NOP,
-// the remainings are NOP.
+// Premise: should ensure the first real_length instructions in program p
+// are not NOP, while the remainings are NOP.
 // steps: 1. Set all instructions of this optimal program as NOP;
 // 2. Compute combinations for real instruction positions;
 // 3. replace NOP instructions with real instructions according to combinations.
-// e.g. if optimal program has 5 NOPs, one combination is [2,3],
+// e.g. if optimal program has 2 real instuctions, one combination is [2,3],
 // then the second and third instructions are replaced with real instructions
 void gen_optis_for_prog(const prog& p, const int& len,
                         vector<prog>& opti_set) {
@@ -150,7 +150,7 @@ void run_mh_sampler_and_store_data(const input_paras &in_para) {
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
                 in_para.st_avg);
-  mh.mcmc_iter(in_para.nrolls, orig, prog_dic);
+  mh.mcmc_iter(in_para.niter, orig, prog_dic);
   store_raw_data(mh._meas_data);
   mh.turn_off_measure();
 }
@@ -172,7 +172,7 @@ void gen_file_name_from_input(const input_paras &in_para) {
   string str_w_e = rm_useless_zero_digits_from_str(to_string(in_para.w_e));
   string str_w_p = rm_useless_zero_digits_from_str(to_string(in_para.w_p));
   string suffix = "_" + to_string(in_para.bm_id) +
-                  "_" + to_string(in_para.nrolls) +
+                  "_" + to_string(in_para.niter) +
                   "_" + to_string(in_para.st_ex) +
                   to_string(in_para.st_eq) +
                   to_string(in_para.st_avg) +
@@ -201,7 +201,7 @@ void parse_input(int argc, char* argv[], input_paras &in_para) {
   while ((opt = getopt_long(argc, argv, short_opts,
                             long_opts, nullptr)) != -1) {
     switch (opt) {
-      case 'n': in_para.nrolls = stoi(optarg); break;
+      case 'n': in_para.niter = stoi(optarg); break;
       case 0: in_para.path = optarg; break;
       case 1: in_para.bm_id = stoi(optarg); break;
       case 2: in_para.w_e = stod(optarg); break;
@@ -214,7 +214,7 @@ void parse_input(int argc, char* argv[], input_paras &in_para) {
 }
 
 void set_default_para_vals(input_paras &in_para) {
-  in_para.nrolls = 10;
+  in_para.niter = 10;
   in_para.w_e = 1.0;
   in_para.w_p = 0.0;
   in_para.bm_id = 0;
