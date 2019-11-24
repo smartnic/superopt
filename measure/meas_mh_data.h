@@ -8,8 +8,8 @@
 using namespace std;
 
 /* Class meas_mh_data is used to store measurement data when mh_sampler is sampling.
- * It ONLY stored data when `_mode` is set as `true`. Now, it is supported to store
- * three kinds of data, that is, proposals, programs and example, the details are in
+ * It ONLY stores data when `_mode` is set as `true`. Now, it is supported to store
+ * three kinds of data, that is, proposals, programs and examples, the details are in
  * class commments.
  */
 class meas_mh_data {

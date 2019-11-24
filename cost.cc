@@ -42,7 +42,7 @@ void cost::init(prog* orig, int len, const vector<int> &input,
   _strategy_ex = strategy_ex;
   _strategy_eq = strategy_eq;
   _strategy_avg = strategy_avg;
-  _meas_new_ex_gened = false;
+  _meas_new_counterex_gened = false;
 }
 
 void cost::set_orig(prog* orig, int len) {
@@ -96,6 +96,25 @@ double cost::get_final_error_cost(int exs_cost, int is_equal,
   }
 }
 
+/*
+ * Steps for error cost computation:
+ * 1. Compute c_ex, the error cost from EACH example
+ *   Two strategy for c_ex:
+ *     a. ERROR_COST_STRATEGY_ABS: c_ex = abs(output_orig - output_synth)
+ *     b. ERROR_COST_STRATEGY_POP: c_ex = pop_count(output_orig XOR output_synth)
+ * 2. Get average value `avg_v` according to the choice from following two strategies
+ *     a.ERROR_COST_STRATEGY_NAVG: avg_v = 1, which means no averaging process
+ *     b.ERROR_COST_STRATEGY_AVG: avg_v = #examples
+ * 3. Compute total error cost:
+ *     For valid synthesis:
+ *       a. ERROR_COST_STRATEGY_EQ1:
+ *         error_cost = [unequal*(#succ_ex) + sum(c_ex list)]/avg_v
+ *       b. ERROR_COST_STRATEGY_EQ2:
+ *         error_cost = unequal + [unequal*(#fail_ex) + sum(c_ex list)]/avg_v
+ *       where unequal = 1 if synthesis is unequal to the original.
+ *     For invalid synthesis:
+ *       error_cost = ERROR_COST_MAX
+ */
 double cost::error_cost(prog* synth, int len) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   double total_cost = 0;
@@ -133,7 +152,7 @@ double cost::error_cost(prog* synth, int len) {
   // case 2: gen_counterex_flag = (is_equal == 0) && (num_successful_ex == (int)_examples._exs.size());
   if ((is_equal == 0) && (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
-    _meas_new_ex_gened = true;
+    _meas_new_counterex_gened = true;
   }
   return total_cost;
 }
