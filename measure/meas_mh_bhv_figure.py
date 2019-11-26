@@ -203,12 +203,19 @@ def cdf_xy(lst, max_cost_in_figure):
         if x >= max_cost_in_figure:
             max_x_index = i
             break
-    x_axis = val_list[:max_x_index]
-    y_axis = [val_number_dic[x_axis[0]]]
-    for i, x in enumerate(x_axis[1:]):
-        y_axis.append(y_axis[i] + val_number_dic[x])
+    value_list = val_list[:max_x_index]
+    number_list = [val_number_dic[value_list[0]]]
+    for i, x in enumerate(value_list[1:]):
+        number_list.append(number_list[i] + val_number_dic[x])
     total_number = len(lst)
-    y_axis = [float(y) / float(total_number) for y in y_axis]
+    cdf_list = [float(n) / float(total_number) for n in number_list]
+    x_axis = [val_list[0]]
+    y_axis = [cdf_list[0]]
+    for x, y in zip(val_list, cdf_list):
+        x_axis.append(x)
+        y_axis.append(y_axis[-1])
+        x_axis.append(x)
+        y_axis.append(y)
     return x_axis, y_axis
 
 
@@ -235,14 +242,24 @@ def total_cost_function_cdf_xy(error_cost_list, perf_cost_list, w_e, w_p):
     return x_axis, y_axis
 
 
-def cost_function_for_different_types(c_type, file_type, fin_path, bm_id, niter, st, w_e, w_p):
+def cost_function_for_different_types_when_steady(c_type, file_type, fin_path, steady_start,
+                                                  bm_id, niter, st, w_e, w_p):
     file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st, w_e, w_p)
+    steady_start_index = 0
+    if file_type == file_name_type.programs:
+        for i, iter in enumerate(file_data.iter_num_list):
+            if int(iter) >= int(steady_start):
+                steady_start_index = i
+                break
+    elif file_type == file_name_type.proposals:
+        steady_start_index = int(steady_start)
     if c_type == cost_type.error_cost:
-        x_axis, y_axis = error_cost_function_cdf_xy(file_data.error_cost_list)
+        x_axis, y_axis = error_cost_function_cdf_xy(file_data.error_cost_list[steady_start_index:])
     elif c_type == cost_type.perf_cost:
-        x_axis, y_axis = perf_cost_function_cdf_xy(file_data.perf_cost_list)
+        x_axis, y_axis = perf_cost_function_cdf_xy(file_data.perf_cost_list[steady_start_index:])
     elif c_type == cost_type.total_cost:
-        x_axis, y_axis = total_cost_function_cdf_xy(file_data.error_cost_list, file_data.perf_cost_list,
+        x_axis, y_axis = total_cost_function_cdf_xy(file_data.error_cost_list[steady_start_index:],
+                                                    file_data.perf_cost_list[steady_start_index:],
                                                     w_e, w_p)
     return x_axis, y_axis
 
@@ -279,9 +296,41 @@ def best_perf_cost_with_zero_cost_for_proposals(file_data):
 def best_perf_cost_with_zero_cost_for_different_types(file_type, fin_path, bm_id, niter, st, w_e, w_p):
     file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st, w_e, w_p)
     if file_type == file_name_type.programs:
-        x_axis, y_axis = best_perf_cost_with_zero_cost_for_programs(file_data)
+        iter_num_list = [int(i) for i in file_data.iter_num_list]
     elif file_type == file_name_type.proposals:
-        x_axis, y_axis = best_perf_cost_with_zero_cost_for_proposals(file_data)
+        iter_num_list = range(int(niter))
+    MAX_PERF_COST = 14
+    best_perf = MAX_PERF_COST
+    for e, p in zip(file_data.error_cost_list, file_data.perf_cost_list):
+        if float(e) == 0 and best_perf > float(p):
+            best_perf = float(p)
+    e = float(file_data.error_cost_list[0])
+    p = float(file_data.perf_cost_list[0])
+    if e == 0:
+        min_perf = p
+    else:
+        min_perf = MAX_PERF_COST
+    y_axis = []  # best_perf_cost
+    x_axis = []  # iteration number
+    index = 1
+    next_iter = int(iter_num_list[index])
+    for i in range(int(niter)):
+        x_axis.append(i)
+        if next_iter == i:
+            e = float(file_data.error_cost_list[index])
+            p = float(file_data.perf_cost_list[index])
+            index += 1
+            if index >= len(iter_num_list):
+                next_iter = len(x_axis)  # set as num_iter
+            else:
+                next_iter = int(iter_num_list[index])
+            if e == 0 and p < min_perf:
+                min_perf = p
+            y_axis.append(min_perf)
+            if min_perf == best_perf:
+                break
+        else:
+            y_axis.append(min_perf)
     return x_axis, y_axis
 
 
@@ -330,13 +379,15 @@ def get_abs_opcodes_operands_for_different_types(file_type, fin_path, bm_id, nit
 
 
 #################### figure plotting ####################
-def figure_cost_function_cdf(file_type, c_type, fin_path, fout_path, niter, bm_id, best_perf_cost, st, w_e_list, w_p_list):
+def figure_cost_function_cdf_when_steady(file_type, c_type, fin_path, fout_path, niter,
+                                         steady_start, bm_id, best_perf_cost, st, w_e_list, w_p_list):
     f = plt.figure()
     for w_e, w_p in zip(w_e_list, w_p_list):
-        x_axis, y_axis = cost_function_for_different_types(c_type, file_type, fin_path,
-                                                           bm_id, niter, st, w_e, w_p)
+        x_axis, y_axis = cost_function_for_different_types_when_steady(c_type, file_type,
+                                                                       fin_path, steady_start,
+                                                                       bm_id, niter, st, w_e, w_p)
         curve_name = " w_e:" + w_e + " w_p:" + w_p
-        plt.plot(x_axis, y_axis, linestyle='-', linewidth=1.5, label=curve_name, marker='x')
+        plt.plot(x_axis, y_axis, linestyle='-.', linewidth=1.5, label=curve_name, marker='x')
     graph_title = file_type + " " + c_type + " function CDF"
     graph_title_suffix = "\nbm:" + bm_id + " niter:" + niter + " strategy:" + \
                          st + " best perf cost:" + best_perf_cost
@@ -356,9 +407,9 @@ def figure_best_perf_cost_with_zero_error_cost(file_type, fin_path, fout_path, n
     f = plt.figure()
     for w_e, w_p in zip(w_e_list, w_p_list):
         x_axis, y_axis = best_perf_cost_with_zero_cost_for_different_types(file_type, fin_path, bm_id,
-                                                                        niter, st, w_e, w_p)
+                                                                           niter, st, w_e, w_p)
         curve_name = " w_e:" + w_e + " w_p:" + w_p
-        plt.plot(x_axis, y_axis, linestyle='-', linewidth=1.5, label=curve_name, marker='x')
+        plt.plot(x_axis, y_axis, linestyle='-.', linewidth=1.5, label=curve_name, marker='x')
     graph_title = file_type + " best perf cost with zero error cost over iterations"
     graph_title_suffix = "\nbm:" + bm_id + " niter:" + niter + " strategy:" + \
                          st + " best perf cost:" + best_perf_cost
@@ -387,12 +438,9 @@ def figure_num_unique_programs(file_type, fin_path, fout_path, niter, bm_id, st,
     plt.legend()
     plt.grid()
     figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st])
-    print("1 figure output : " + figure_name)
     f.savefig(figure_name, bbox_inches='tight')
     print("figure output : " + figure_name)
     plt.close(f)
-
-# def figure_relative_coding_transfer_graph(file_type, fin_path, fout_path, niter, bm_id, st, w_e_list, w_p_list):
 
 
 def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, niter, bm_id, st, w_e, w_p):
@@ -401,15 +449,14 @@ def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, niter,
     figsize_x = 16
     figsize_y = 8
     f = plt.figure(figsize=(figsize_x, figsize_y))
-    plt.subplot(1,2,1)
+    plt.subplot(1, 2, 1)
     plt.scatter(operand_list, opcode_list, marker='o',
                 c="blue", alpha=1)
     # compute the optimal program points and add them into the figure
     opti_opcode_list, opti_operand_list = get_abs_opcodes_operands_for_different_types(file_name_type.optimals,
                                                                                        fin_path, bm_id,
                                                                                        niter, st, w_e, w_p)
-    plt.scatter(opti_operand_list, opti_opcode_list, marker='*',
-                c="tab:red", alpha=0.1)
+    plt.scatter(opti_operand_list, opti_opcode_list, marker='*', c="tab:red", alpha=0.1)
     graph_title = file_type + " absolute coding transfer graph"
     graph_title_suffix = "\nbm:" + bm_id + " niter:" + niter + " strategy:" + \
                          st + "\nbest perf cost:" + best_perf_cost + " w_e:" + w_e + " w_p:" + w_p
@@ -422,10 +469,8 @@ def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, niter,
     plt.xlim(xmin=1)
     plt.grid()
     plt.subplot(1, 2, 2)
-    plt.scatter(operand_list, opcode_list, marker='o',
-                c="blue", alpha=1)
-    plt.scatter(opti_operand_list, opti_opcode_list, marker='*',
-                c="tab:red", alpha=0.1)
+    plt.scatter(operand_list, opcode_list, marker='o', c="blue", alpha=1)
+    plt.scatter(opti_operand_list, opti_opcode_list, marker='*', c="tab:red", alpha=0.1)
     plt.title(graph_title + graph_title_suffix)
     plt.xlabel('Operand bit vector')
     plt.ylabel('Opcode bit vector')
@@ -435,7 +480,7 @@ def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, niter,
     plt.grid()
     figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st, w_e, w_p])
     f.savefig(figure_name, bbox_inches='tight')
-    print("fout:", figure_name)
+    print("figure output : " + figure_name)
     plt.close(f)
 
 ########################## relative coding transfer graph #####################################
@@ -460,25 +505,23 @@ def rm_empty_node_list_in(nodes):
     return new_nodes
 
 
-def get_rel_coding_list_and_freq_count(file_data, file_type, niter):
-    if file_type in [file_name_type.programs, file_name_type.proposals]:
-        rel_coding_list = file_data.rel_coding_list
+def get_freq_count_list(file_data, file_type, niter):
     if file_type == file_name_type.proposals:
-        freq_count = list([1] * len(rel_coding_list))
+        freq_count_list = list([1] * len(file_data.rel_coding_list))
     elif file_type == file_name_type.programs:
-        freq_count = []
+        freq_count_list = []
         for i, v in enumerate(file_data.iter_num_list[:-1]):
-            freq_count.append(int(file_data.iter_num_list[i + 1]) - int(v))
+            freq_count_list.append(int(file_data.iter_num_list[i + 1]) - int(v))
         if file_data.iter_num_list[-1] == niter:
-            freq_count.append(1)
+            freq_count_list.append(1)
         else:
-            freq_count.append(int(niter) - int(file_data.iter_num_list[-1]))
-    return rel_coding_list, freq_count
+            freq_count_list.append(int(niter) - int(file_data.iter_num_list[-1]))
+    return freq_count_list
 
 
 def add_freq_count_in_nodes_info(file_data, file_type, niter, nodes_info):
-    rel_coding_list, freq_count = get_rel_coding_list_and_freq_count(file_data, file_type, niter)
-    for a, b in zip(rel_coding_list, freq_count):
+    freq_count_list = get_freq_count_list(file_data, file_type, niter)
+    for a, b in zip(file_data.rel_coding_list, freq_count_list):
         nodes_info[a].freq_count += b
     return nodes_info
 
@@ -496,49 +539,53 @@ def add_node_pos_in_nodes_info(nodes_info, nodes):
     return nodes_info
 
 
-def get_nodes_cost_dic_for_nodes_info(cost, max_cost, file_data, niter):
-    rel_coding_list, freq_count = get_rel_coding_list_and_freq_count(file_data, file_type, niter)
-    # key: node_name(rel_coding); value:[total cost for this node, frequency count of this node]
+def get_nodes_cost_dic_for_nodes_info(cost, max_cost, file_data, file_type, niter):
+    freq_count_list = get_freq_count_list(file_data, file_type, niter)
+    # key: node_name(rel_coding); total cost for this node, frequency count of this node
     node_cost_dic = {}
-    for i, c in enumerate(cost):
+    for c, rel_coding, freq_count in zip(cost, file_data.rel_coding_list, freq_count_list):
         if c >= max_cost:
             continue
-        if rel_coding_list[i] in node_cost_dic:
-            node_cost_dic[rel_coding_list[i]][0] += c * freq_count[i]
-            node_cost_dic[rel_coding_list[i]][1] += freq_count[i]
+        if rel_coding in node_cost_dic:
+            node_cost_dic[rel_coding]["total_cost"] += c * freq_count
+            node_cost_dic[rel_coding]["freq_count"] += freq_count
         else:
-            node_cost_dic[rel_coding_list[i]] = [c, freq_count[i]]
+            node_cost_dic[rel_coding] = {"total_cost": c * freq_count,
+                                         "freq_count": freq_count}
     return node_cost_dic
 
 
-def add_nodes_error_cost_in_nodes_info(max_cost, file_data, niter, nodes_info):
+def add_nodes_error_cost_in_nodes_info(max_cost, file_data, file_type, niter, nodes_info):
     err_cost_list = [float(e) for e in file_data.error_cost_list]
-    node_error_cost_dic = get_nodes_cost_dic_for_nodes_info(err_cost_list, max_cost, file_data, niter)
+    node_error_cost_dic = get_nodes_cost_dic_for_nodes_info(err_cost_list, max_cost, file_data, file_type, niter)
     for k in nodes_info.keys():
         if k in node_error_cost_dic:
-            nodes_info[k].avg_legal_error_cost = round(node_error_cost_dic[k][0] / node_error_cost_dic[k][1])
+            nodes_info[k].avg_legal_error_cost = round(node_error_cost_dic[k]["total_cost"]
+                                                       / node_error_cost_dic[k]["freq_count"])
         else:
             nodes_info[k].avg_legal_error_cost = max_cost
     return nodes_info
 
 
-def add_nodes_perf_cost_in_nodes_info(max_cost, file_data, niter, nodes_info):
+def add_nodes_perf_cost_in_nodes_info(max_cost, file_data, file_type, niter, nodes_info):
     perf_cost_list = [float(e) for e in file_data.perf_cost_list]
-    node_perf_cost_dic = get_nodes_cost_dic_for_nodes_info(perf_cost_list, max_cost, file_data, niter)
+    node_perf_cost_dic = get_nodes_cost_dic_for_nodes_info(perf_cost_list, max_cost, file_data, file_type, niter)
     for k in nodes_info.keys():
         if k in node_perf_cost_dic:
-            nodes_info[k].avg_legal_perf_cost = round(node_perf_cost_dic[k][0] / node_perf_cost_dic[k][1])
+            nodes_info[k].avg_legal_perf_cost = round(node_perf_cost_dic[k]["total_cost"]
+                                                      / node_perf_cost_dic[k]["freq_count"])
         else:
             nodes_info[k].avg_legal_perf_cost = max_cost
     return nodes_info
 
 
-def add_nodes_total_cost_in_nodes_info(max_cost, file_data, niter, nodes_info, w_e, w_p):
+def add_nodes_total_cost_in_nodes_info(max_cost, file_data, file_type, niter, nodes_info, w_e, w_p):
     total_cost_list = get_total_cost_list(w_e, w_p, file_data.error_cost_list, file_data.perf_cost_list)
-    node_total_cost_dic = get_nodes_cost_dic_for_nodes_info(total_cost_list, max_cost, file_data, niter)
+    node_total_cost_dic = get_nodes_cost_dic_for_nodes_info(total_cost_list, max_cost, file_data, file_type, niter)
     for k in nodes_info.keys():
         if k in node_total_cost_dic:
-            nodes_info[k].avg_legal_total_cost = round(node_total_cost_dic[k][0] / node_total_cost_dic[k][1])
+            nodes_info[k].avg_legal_total_cost = round(node_total_cost_dic[k]["total_cost"]
+                                                       / node_total_cost_dic[k]["freq_count"])
         else:
             nodes_info[k].avg_legal_total_cost = max_cost
     return nodes_info
@@ -569,12 +616,12 @@ def gen_nodes_info_for_rel_coding_transfer_graph(nodes, file_data, file_type, ma
     nodes_info = add_freq_count_in_nodes_info(file_data, file_type, niter, nodes_info)
     # compute (x,y) pos for nodes and store it into node_info
     nodes_info = add_node_pos_in_nodes_info(nodes_info, nodes)
-    # compute avg error cost (rounded) and store it into node_info
-    nodes_info = add_nodes_error_cost_in_nodes_info(max_err_cost, file_data, niter, nodes_info)
-    # compute avg perf cost (rounded) and store it into node_info
-    nodes_info = add_nodes_perf_cost_in_nodes_info(max_err_cost, file_data, niter, nodes_info)
-    # compute avg total cost (rounded) and store it into node_info
-    nodes_info = add_nodes_total_cost_in_nodes_info(max_err_cost, file_data, niter, nodes_info, w_e, w_p)
+    # compute avg error cost (VALID PROGRAM, ROUNDED) and store it into node_info
+    nodes_info = add_nodes_error_cost_in_nodes_info(max_err_cost, file_data, file_type, niter, nodes_info)
+    # compute avg perf cost (VALID PROGRAM, ROUNDED) and store it into node_info
+    nodes_info = add_nodes_perf_cost_in_nodes_info(max_err_cost, file_data, file_type, niter, nodes_info)
+    # compute avg total cost (VALID PROGRAM, ROUNDED) and store it into node_info
+    nodes_info = add_nodes_total_cost_in_nodes_info(max_err_cost, file_data, file_type, niter, nodes_info, w_e, w_p)
     # compute #unique program and store it into node_info
     nodes_info = add_unique_program_count_in_nodes_info(nodes_info, file_data)
     return nodes_info
@@ -614,33 +661,19 @@ def gen_edges_for_rel_coding_transfer_graph(nodes_info, nodes_list):
 
 
 def add_avg_legal_cost_for_diff_layers_in_text_nodes(text_nodes, max_cost, file_type, file_data, nodes, niter, w_e, w_p):
-    rel_coding_list, freq_count = get_rel_coding_list_and_freq_count(file_data, file_type, niter)
     error_cost_list = [float(c) for c in file_data.error_cost_list]
+    error_cost_dic = get_nodes_cost_dic_for_nodes_info(error_cost_list, max_cost, file_data, file_type, niter)
     perf_cost_list = [float(c) for c in file_data.perf_cost_list]
-    total_cost_list = get_total_cost_list(w_e, w_p, error_cost_list, perf_cost_list)
-    dic = {}
-    for (i, ec), pc, tc, freq in zip(enumerate(error_cost_list), perf_cost_list, total_cost_list, freq_count):
-        if ec >= max_cost:
-            continue
-        if rel_coding_list[i] in dic:
-            dic[rel_coding_list[i]][0] += ec * freq
-            dic[rel_coding_list[i]][1] += pc * freq
-            dic[rel_coding_list[i]][2] += tc * freq
-            dic[rel_coding_list[i]][3] += freq
-        else:
-            dic[rel_coding_list[i]] = [ec, pc, tc, freq]
-
+    perf_cost_dic = get_nodes_cost_dic_for_nodes_info(perf_cost_list, max_cost, file_data, file_type, niter)
     for i, ns in enumerate(nodes):
         err_value = 0
         perf_value = 0
-        total_value = 0
         count = 0
         for n in ns:
-            if n in dic:
-                err_value += dic[n][0]
-                perf_value += dic[n][1]
-                total_value += dic[n][2]
-                count += dic[n][3]
+            if n in error_cost_dic:
+                err_value += error_cost_dic[n]["total_cost"]
+                perf_value += perf_cost_dic[n]["total_cost"]
+                count += error_cost_dic[n]["freq_count"]
             else:
                 print("only illegal value in this node")
         if count == 0:
@@ -651,16 +684,14 @@ def add_avg_legal_cost_for_diff_layers_in_text_nodes(text_nodes, max_cost, file_
         else:
             text_nodes[i].avg_legal_error_cost = round(err_value / count)
             text_nodes[i].avg_legal_perf_cost = round(perf_value / count)
-            text_nodes[i].avg_legal_total_cost = round(total_value / count)
+            text_nodes[i].avg_legal_total_cost = round((float(w_e) * err_value + float(w_p) * perf_value) / count)
     return text_nodes
 
 
 def gen_text_node_in_rel_transfer_graph(nodes, nodes_info, max_cost, file_type, file_data, niter, w_e, w_p):
-    text_nodes = []
-    for _ in nodes:
-        text_nodes.append(NodeInfo())
-    max_x_pos = max([x.x_pos for _, x in nodes_info.items()])
-    min_x_pos = min([x.x_pos for _, x in nodes_info.items()])
+    text_nodes = [NodeInfo() for _ in range(len(nodes))]
+    max_x_pos = max([x.x_pos for x in nodes_info.values()])
+    min_x_pos = min([x.x_pos for x in nodes_info.values()])
     x_pos_gap = (max_x_pos - min_x_pos) / len(nodes_info)
     NUM_X_POS_GAP = 8
     x_pos = min_x_pos - NUM_X_POS_GAP * x_pos_gap
@@ -722,7 +753,7 @@ def figure_relative_coding_transfer_graph(file_type, fin_path, fout_path, niter,
     plt.title(graph_title + graph_title_suffix)
     figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st, w_e, w_p])
     f.savefig(figure_name, bbox_inches='tight')
-    print("fout: " + figure_name)
+    print("figure output : " + figure_name)
     plt.close(f)
 
 
@@ -735,9 +766,9 @@ if __name__ == "__main__":
             for file_type in [file_name_type.proposals, file_name_type.programs]:
                 # figure 1: cost function CDF
                 for c_type in [cost_type.error_cost, cost_type.perf_cost, cost_type.total_cost]:
-                    figure_cost_function_cdf(file_type, c_type, in_para.fin_path, in_para.fout_path, in_para.niter,
-                                            bm_id, best_perf_cost,
-                                            st, in_para.w_e_list, in_para.w_p_list)
+                    figure_cost_function_cdf_when_steady(file_type, c_type, in_para.fin_path, in_para.fout_path,
+                                                         in_para.niter, in_para.steady_start, bm_id, best_perf_cost,
+                                                         st, in_para.w_e_list, in_para.w_p_list)
                 # figure 2: best performance cost with zero error cost over iterations
                 figure_best_perf_cost_with_zero_error_cost(file_type, in_para.fin_path, in_para.fout_path,
                                                            in_para.niter, bm_id, best_perf_cost, st,
@@ -752,4 +783,3 @@ if __name__ == "__main__":
                     # figure 5: absolute coding transfer graph
                     figure_absolute_coding_transfer_graph(file_type, in_para.fin_path, in_para.fout_path,
                                                           in_para.niter, bm_id, st, w_e, w_p)
-
