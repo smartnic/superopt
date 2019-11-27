@@ -13,8 +13,8 @@ class InputParas:
     def __init__(self):
         self.fin_path = ""
         self.fout_path = ""
-        self.niter = 0
-        self.steady_start = 0
+        self.niter = ""
+        self.steady_start = ""
         self.bm_ids = []
         self.best_perf_costs = []
         self.w_e_list = []
@@ -759,6 +759,7 @@ def figure_relative_coding_transfer_graph(file_type, fin_path, fout_path, niter,
 
 if __name__ == "__main__":
     in_para = parse_input()
+    in_para.print_out()
     create_fout_path(in_para.fout_path)
 
     for bm_id, best_perf_cost in zip(in_para.bm_ids, in_para.best_perf_costs):
