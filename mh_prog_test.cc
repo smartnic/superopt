@@ -22,12 +22,8 @@ inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
 
 vector<int> inputs;
 
-void test1(int nrolls, double w_e, double w_p)  {
-  mh_sampler mh;
-  std::unordered_map<int, vector<prog*> > prog_freq;
-  prog orig(instructions);
-  mh._cost.init(&orig, N, inputs, w_e, w_p);
-  mh.mcmc_iter(nrolls, orig, prog_freq);
+void mh_sampler_res_print(int nrolls,
+                          unordered_map<int, vector<prog*> > prog_freq)  {
   // Get the best program(s)
   int max = 0;
   int concurrent_max = 0;
@@ -56,24 +52,8 @@ void test1(int nrolls, double w_e, double w_p)  {
 
 void test1(int nrolls, double w_e, double w_p)  {
   mh_sampler mh;
-  std::unordered_map<int, vector<prog*> > prog_freq;
-  prog orig(instructions);
-  mh._cost.init(&orig, N, inputs, w_e, w_p);
-  mh.mcmc_iter(nrolls, orig, prog_freq);
-  mh_sampler_res_print(nrolls, prog_freq);
-}
-
-void test2(int nrolls, double w_e, double w_p) {
-  mh_sampler_restart mh(6);
-  std::unordered_map<int, vector<prog*> > prog_freq;
-  prog orig(instructions);
-  mh._cost.init(&orig, N, inputs, w_e, w_p);
-  mh.mcmc_iter(nrolls, orig, prog_freq);
-  mh_sampler_res_print(nrolls, prog_freq);
-}
-
-void test3(int nrolls, double w_e, double w_p) {
-  mh_sampler_k_restart mh(6);
+  mh._when_to_restart.set_st_max_iter(5);
+  mh._start_prog.set_st_k_cont_insts();
   std::unordered_map<int, vector<prog*> > prog_freq;
   prog orig(instructions);
   mh._cost.init(&orig, N, inputs, w_e, w_p);
@@ -95,7 +75,5 @@ int main(int argc, char* argv[]) {
   inputs.resize(30);
   gen_random_input(inputs, 0, 50);
   test1(nrolls, w_e, w_p);
-  test2(nrolls, w_e, w_p);
-  test3(nrolls, w_e, w_p);
   return 0;
 }
