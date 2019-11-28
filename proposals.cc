@@ -115,6 +115,7 @@ prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
 }
 
 prog* mod_random_cont_insts(const prog &orig) {
-  int k = sample_int(2, MAX_PROG_LEN + 1);
+  int start_k_value = 2; // at least change two instructions
+  int k = sample_int(start_k_value, MAX_PROG_LEN + 1);
   return mod_random_k_cont_insts(orig, k);
 }
