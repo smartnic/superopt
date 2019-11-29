@@ -37,6 +37,11 @@ struct input_paras {
   int st_ex;
   int st_eq;
   int st_avg;
+  int st_when_to_restart;
+  int st_when_to_restart_niter;
+  int st_start_prog;
+  double p_inst_operand;
+  double p_inst;
 };
 
 void init_benchmarks(vector<vector<inst*> > &bm_optis_orig) {
@@ -144,6 +149,11 @@ void store_raw_data(meas_mh_data &d) {
 
 void run_mh_sampler_and_store_data(const input_paras &in_para) {
   mh_sampler mh;
+  mh._when_to_restart.set_st(in_para.st_when_to_restart,
+                             in_para.st_when_to_restart_niter);
+  mh._start_prog.set_st(in_para.st_start_prog);
+  mh._next_proposal.set_probability(in_para.p_inst_operand,
+                                    in_para.p_inst);
   mh.turn_on_measure();
   prog orig(bms[in_para.bm_id]);
   mh._cost.init(&orig, bm_len, inputs,
@@ -171,6 +181,8 @@ void gen_file_name_from_input(const input_paras &in_para) {
   file_raw_data_optimals = in_para.path + file_raw_data_optimals;
   string str_w_e = rm_useless_zero_digits_from_str(to_string(in_para.w_e));
   string str_w_p = rm_useless_zero_digits_from_str(to_string(in_para.w_p));
+  string str_p_inst_operand = rm_useless_zero_digits_from_str(to_string(in_para.p_inst_operand));
+  string str_p_inst = rm_useless_zero_digits_from_str(to_string(in_para.p_inst));
   string suffix = "_" + to_string(in_para.bm_id) +
                   "_" + to_string(in_para.niter) +
                   "_" + to_string(in_para.st_ex) +
@@ -178,6 +190,11 @@ void gen_file_name_from_input(const input_paras &in_para) {
                   to_string(in_para.st_avg) +
                   "_" + str_w_e +
                   "_" + str_w_p +
+                  "_" + to_string(in_para.st_when_to_restart) +
+                  "_" + to_string(in_para.st_when_to_restart_niter) +
+                  "_" + to_string(in_para.st_start_prog) +
+                  "_" + str_p_inst_operand +
+                  "_" + str_p_inst +
                   ".txt";
   file_raw_data_programs += suffix;
   file_raw_data_proposals += suffix;
@@ -195,6 +212,11 @@ void parse_input(int argc, char* argv[], input_paras &in_para) {
     {"st_ex", required_argument, nullptr, 4},
     {"st_eq", required_argument, nullptr, 5},
     {"st_avg", required_argument, nullptr, 6},
+    {"st_when_to_restart", required_argument, nullptr, 7},
+    {"st_when_to_restart_niter", required_argument, nullptr, 8},
+    {"st_start_prog", required_argument, nullptr, 9},
+    {"p_inst_operand", required_argument, nullptr, 10},
+    {"p_inst", required_argument, nullptr, 11},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -209,6 +231,11 @@ void parse_input(int argc, char* argv[], input_paras &in_para) {
       case 4: in_para.st_ex = stoi(optarg); break;
       case 5: in_para.st_eq = stoi(optarg); break;
       case 6: in_para.st_avg = stoi(optarg); break;
+      case 7: in_para.st_when_to_restart = stoi(optarg); break;
+      case 8: in_para.st_when_to_restart_niter = stoi(optarg); break;
+      case 9: in_para.st_start_prog = stoi(optarg); break;
+      case 10: in_para.p_inst_operand = stod(optarg); break;
+      case 11: in_para.p_inst = stod(optarg); break;
     }
   }
 }
@@ -222,6 +249,11 @@ void set_default_para_vals(input_paras &in_para) {
   in_para.st_ex = ERROR_COST_STRATEGY_ABS;
   in_para.st_eq = ERROR_COST_STRATEGY_EQ1;
   in_para.st_avg = ERROR_COST_STRATEGY_NAVG;
+  in_para.st_when_to_restart = MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART;
+  in_para.st_when_to_restart_niter = 1000;
+  in_para.st_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ORIG;
+  in_para.p_inst_operand = 1.0 / 3.0;
+  in_para.p_inst = 2.0 / 3.0;
 }
 
 int main(int argc, char* argv[]) {
