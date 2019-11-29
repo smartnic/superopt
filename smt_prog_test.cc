@@ -84,7 +84,26 @@ void test1() {
   print_test_res(is_smt_valid(post0 == ps.post[0][0]), "post condition");
 }
 
+void test2() {
+  std::cout << "\ntest2.1: check single instruction logic\n";
+  // check instrcution MAXX logic
+  // case1: inst(MAXX, 0, 0); case2: inst(MAXX, 0, 1)
+  inst p[1] = {inst(MAXX, 0, 0)};
+  smt_prog ps;
+  unsigned int prog_id = 0;
+  ps.gen_smt(prog_id, p, 1);
+  expr bl_expected = v("r_0_0_0_1") == v("r_0_0_0_0");
+  bool assert_res = is_smt_valid(bl_expected == ps.bl[0]);
+  inst p1[1] = {inst(MAXX, 0, 1)};
+  ps.gen_smt(prog_id, p1, 1);
+  bl_expected = (v("r_0_0_0_0") >= v("r_0_0_1_0") && (v("r_0_0_0_1") == v("r_0_0_0_0"))) ||
+                (v("r_0_0_0_0") < v("r_0_0_1_0") && (v("r_0_0_0_1") == v("r_0_0_1_0")));
+  assert_res = assert_res && is_smt_valid(bl_expected == ps.bl[0]);
+  print_test_res(assert_res, "instrcution MAXX logic");
+}
+
 int main() {
-  test1(); 
+  test1();
+  test2();
   return 0;
 }
