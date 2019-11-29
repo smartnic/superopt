@@ -127,7 +127,7 @@ double cost::error_cost(prog* synth, int len) {
     output1 = _examples._exs[i].output;
     output2 = interpret(inst_list, len, ps, _examples._exs[i].input);
     int ex_cost = get_ex_error_cost(output1, output2);
-    if (! ex_cost) num_successful_ex++;
+    if (ex_cost == 0) num_successful_ex++;
     total_cost += ex_cost;
   }
   int is_equal = 0;
