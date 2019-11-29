@@ -54,6 +54,7 @@ void test1(int nrolls, double w_e, double w_p)  {
   mh_sampler mh;
   mh._when_to_restart.set_st_max_iter(5);
   mh._start_prog.set_st_k_cont_insts();
+  mh._next_proposal.set_probability(0.3, 0.5);
   std::unordered_map<int, vector<prog*> > prog_freq;
   prog orig(instructions);
   mh._cost.init(&orig, N, inputs, w_e, w_p);
