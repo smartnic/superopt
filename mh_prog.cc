@@ -86,23 +86,35 @@ prog* mh_sampler_next_start_prog::next_start_prog(prog* curr) {
 
 /* class mh_sampler_next_proposal start */
 mh_sampler_next_proposal::mh_sampler_next_proposal() {
-  set_st_inst();
+  _thr_mod_random_inst_operand = 1.0 / 3.0;
+  _thr_mod_random_inst = 2.0 / 3.0;
+  cout << "Propabilities of mod_random_inst_operand, mod_random_inst, "
+       << "mod_random_k_cont_insts are all set as "
+       << 1.0 / 3.0 << endl;
 }
 
 mh_sampler_next_proposal::~mh_sampler_next_proposal() {}
 
-void mh_sampler_next_proposal::set_st_inst() {
-  cout << "set strategy MH_SAMPLER_ST_NEXT_PROPOSAL_INST" << endl;
-  _st = MH_SAMPLER_ST_NEXT_PROPOSAL_INST;
+void mh_sampler_next_proposal::set_probability(
+  double p_mod_random_inst_operand,
+  double p_mod_random_inst) {
+  _thr_mod_random_inst_operand = p_mod_random_inst_operand;
+  _thr_mod_random_inst = _thr_mod_random_inst_operand + p_mod_random_inst;
+  cout << "Propabilities of mod_random_inst_operand, mod_random_inst, "
+       << "mod_random_k_cont_insts are set as "
+       <<  _thr_mod_random_inst_operand << ", "
+       << _thr_mod_random_inst - _thr_mod_random_inst_operand << ", "
+       << 1.0 - _thr_mod_random_inst << endl;
 }
 
 prog* mh_sampler_next_proposal::next_proposal(prog* curr) {
-  switch (_st) {
-    case MH_SAMPLER_ST_NEXT_PROPOSAL_INST:
-      return mod_random_inst(*curr);
-    default:
-      cout << "ERROR: no next_proposal strategy matches." << endl;
-      return mod_random_inst(*curr);
+  double uni_sample = unidist_mh(gen_mh);
+  if (uni_sample <= _thr_mod_random_inst_operand) {
+    return mod_random_inst_operand(*curr);
+  } else if (uni_sample <= _thr_mod_random_inst) {
+    return mod_random_inst(*curr);
+  } else {
+    return mod_random_k_cont_insts(*curr, 2);
   }
 }
 /* class mh_sampler_next_proposal end */

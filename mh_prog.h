@@ -14,8 +14,6 @@ using namespace std;
 #define MH_SAMPLER_ST_NEXT_START_PROG_ORIG 0
 #define MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS 1
 #define MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS 2
-// 3. next proposal during sampling strategy
-#define MH_SAMPLER_ST_NEXT_PROPOSAL_INST 0
 
 class mh_sampler_when_to_restart {
  public:
@@ -40,12 +38,30 @@ class mh_sampler_next_start_prog {
   prog* next_start_prog(prog* curr);
 };
 
+/* The main function of class mh_sampler_next_proposal is to
+ * generate next proposal program according to the probability of different methods.
+ *
+ * Next proposal program can be generate by function next_proposal(.), noting that
+ * when generate next proposal program, the sum of all probabilities is assumed as 1.
+ *
+ * Three methods are supported now, that is,
+ * modify random instrution operand, instruction and two continuous instructions.
+ *
+ * The probabilities three methods can be set by set_probability(.).
+ */
 class mh_sampler_next_proposal {
  public:
-  unsigned int _st;
+  // `_thr_*` variables are used as thresholds when using uniform sample to
+  // randomly choose different proposal generating methods. View more details in next_proposal(.)
+  // 1. threshold mod_random_inst_operand is the probablity of mod_random_inst_operand
+  // 2. threshold mod_random_inst is sum of the probablities of mod_random_inst_operand
+  // and mod_random_inst
+  double _thr_mod_random_inst_operand;
+  double _thr_mod_random_inst;
   mh_sampler_next_proposal();
   ~mh_sampler_next_proposal();
-  void set_st_inst();
+  void set_probability(double p_mod_random_inst_operand,
+                       double p_mod_random_inst);
   prog* next_proposal(prog* curr);
 };
 
