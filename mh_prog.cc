@@ -34,7 +34,7 @@ void mh_sampler_when_to_restart::set_st_max_iter(unsigned int max_num_iter) {
 }
 
 void mh_sampler_when_to_restart::set_st(unsigned int st, unsigned int max_num_iter) {
-  switch (_st) {
+  switch (st) {
     case MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART: set_st_no_restart(); return;
     case MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER: set_st_max_iter(max_num_iter); return;
     default:
@@ -82,7 +82,7 @@ void mh_sampler_next_start_prog::set_st_k_cont_insts() {
 }
 
 void mh_sampler_next_start_prog::set_st(unsigned int st) {
-  switch (_st) {
+  switch (st) {
     case MH_SAMPLER_ST_NEXT_START_PROG_ORIG: set_st_orig(); return;
     case MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS: set_st_all_insts(); return;
     case MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS: set_st_k_cont_insts(); return;
