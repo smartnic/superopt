@@ -130,9 +130,10 @@ void graph::gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vecto
   for (size_t i = 0; i < gnodes.size(); i++) {
     size_t end_inst_id = gnodes[i]._end;
     vector <unsigned int> next_inst_ids;
-    if (get_inst_type(inst_lst[end_inst_id]) == CFG_OTHERS) {
+    int inst_type = get_inst_type(inst_lst[end_inst_id]);
+    if (inst_type == CFG_OTHERS || inst_type == CFG_NOP) {
       next_inst_ids.push_back(end_inst_id + 1);
-    } else if (get_inst_type(inst_lst[end_inst_id]) == CFG_CONDJMP) {
+    } else if (inst_type == CFG_CONDJMP) {
       // keep order: insert no jmp first
       next_inst_ids.push_back(end_inst_id + 1); //no jmp
       next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id]._args[2]); //jmp
