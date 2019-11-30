@@ -23,10 +23,19 @@ extern inst bm_opti02[N];
 extern inst bm_opti03[N];
 extern inst bm_opti04[N];
 extern inst bm_opti05[N];
+extern inst bm_opti06[N];
+extern inst bm_opti07[N];
+extern inst bm_opti08[N];
+extern inst bm_opti09[N];
+extern inst bm_opti010[N];
+extern inst bm_opti011[N];
 
 extern inst bm_opti10[N];
 extern inst bm_opti11[N];
 extern inst bm_opti12[N];
+extern inst bm_opti13[N];
+extern inst bm_opti14[N];
+extern inst bm_opti15[N];
 
 extern inst bm_opti20[N];
 extern inst bm_opti21[N];

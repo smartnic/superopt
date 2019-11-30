@@ -21,7 +21,7 @@ string file_raw_data_programs = "raw_data_programs";
 string file_raw_data_proposals = "raw_data_proposals";
 string file_raw_data_examples = "raw_data_examples";
 string file_raw_data_optimals = "raw_data_optimals";
-vector<inst*> bms;
+inst* bm;
 int bm_len = MAX_PROG_LEN;
 vector<prog> bm_optimals;
 vector<int> bms_best_perf_cost;
@@ -44,30 +44,48 @@ struct input_paras {
   double p_inst;
 };
 
-void init_benchmarks(vector<vector<inst*> > &bm_optis_orig) {
-  bms.push_back(bm0);
-  bms.push_back(bm1);
-  bms.push_back(bm2);
-  for (int i = 0; i < NUM_ORIG; i++)
-    bm_optis_orig.push_back(vector<inst*> {});
-  bm_optis_orig[0].push_back(bm_opti00);
-  bm_optis_orig[0].push_back(bm_opti01);
-  bm_optis_orig[0].push_back(bm_opti02);
-  bm_optis_orig[0].push_back(bm_opti03);
-  bm_optis_orig[0].push_back(bm_opti04);
-  bm_optis_orig[0].push_back(bm_opti05);
-  bm_optis_orig[1].push_back(bm_opti10);
-  bm_optis_orig[1].push_back(bm_opti11);
-  bm_optis_orig[1].push_back(bm_opti12);
-  bm_optis_orig[2].push_back(bm_opti20);
-  bm_optis_orig[2].push_back(bm_opti21);
-  bm_optis_orig[2].push_back(bm_opti22);
-  bm_optis_orig[2].push_back(bm_opti23);
-  bm_optis_orig[2].push_back(bm_opti24);
-  bm_optis_orig[2].push_back(bm_opti25);
-  bm_optis_orig[2].push_back(bm_opti26);
-  bm_optis_orig[2].push_back(bm_opti27);
-  bm_optis_orig[2].push_back(bm_opti28);
+void init_benchmarks(vector<inst*> &bm_optis_orig, int bm_id) {
+  switch (bm_id) {
+    case 0:
+      bm = bm0;
+      bm_optis_orig.push_back(bm_opti00);
+      bm_optis_orig.push_back(bm_opti01);
+      bm_optis_orig.push_back(bm_opti02);
+      bm_optis_orig.push_back(bm_opti03);
+      bm_optis_orig.push_back(bm_opti04);
+      bm_optis_orig.push_back(bm_opti05);
+      bm_optis_orig.push_back(bm_opti06);
+      bm_optis_orig.push_back(bm_opti07);
+      bm_optis_orig.push_back(bm_opti08);
+      bm_optis_orig.push_back(bm_opti09);
+      bm_optis_orig.push_back(bm_opti010);
+      bm_optis_orig.push_back(bm_opti011);
+      return;
+    case 1:
+      bm = bm1;
+      bm_optis_orig.push_back(bm_opti10);
+      bm_optis_orig.push_back(bm_opti11);
+      bm_optis_orig.push_back(bm_opti12);
+      bm_optis_orig.push_back(bm_opti13);
+      bm_optis_orig.push_back(bm_opti14);
+      bm_optis_orig.push_back(bm_opti15);
+      return;
+    case 2:
+      bm = bm2;
+      bm_optis_orig.push_back(bm_opti20);
+      bm_optis_orig.push_back(bm_opti21);
+      bm_optis_orig.push_back(bm_opti22);
+      bm_optis_orig.push_back(bm_opti23);
+      bm_optis_orig.push_back(bm_opti24);
+      bm_optis_orig.push_back(bm_opti25);
+      bm_optis_orig.push_back(bm_opti26);
+      bm_optis_orig.push_back(bm_opti27);
+      bm_optis_orig.push_back(bm_opti28);
+      return;
+    default:
+      cout << "bm_id" + to_string(bm_id) + "is out of range {0, 1, 2}" << endl;
+      return;
+  }
 }
 
 // return C_n^m
@@ -155,7 +173,8 @@ void run_mh_sampler_and_store_data(const input_paras &in_para) {
   mh._next_proposal.set_probability(in_para.p_inst_operand,
                                     in_para.p_inst);
   mh.turn_on_measure();
-  prog orig(bms[in_para.bm_id]);
+  prog orig(bm);
+  orig.print();
   mh._cost.init(&orig, bm_len, inputs,
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
@@ -261,10 +280,10 @@ int main(int argc, char* argv[]) {
   set_default_para_vals(in_para);
   parse_input(argc, argv, in_para);
   gen_file_name_from_input(in_para);
-  vector<vector<inst*> > bm_optis_orig;
-  init_benchmarks(bm_optis_orig);
+  vector<inst*> bm_optis_orig;
+  init_benchmarks(bm_optis_orig, in_para.bm_id);
   // get all optimal programs from the original ones
-  gen_optis_for_progs(bm_optis_orig[in_para.bm_id]);
+  gen_optis_for_progs(bm_optis_orig);
   inputs.resize(30);
   gen_random_input(inputs, -50, 50);
   run_mh_sampler_and_store_data(in_para);
