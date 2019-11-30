@@ -33,8 +33,8 @@ smt_prog_test.out: smt_prog_z3.o smt_prog.cc smt_prog.h inst.cc inst.h cfg.cc cf
 smt_prog_z3.o: smt_prog_test.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o smt_prog_z3.o  -I../z3/src/api -I../z3/src/api/c++ smt_prog_test.cc
 
-cfg_test.out: inst.h inst.cc cfg.h cfg.cc cfg_test.cc
-	g++ -std=c++11 inst.cc cfg.cc cfg_test.cc -o cfg_test.out
+cfg_test.out: inst.h inst.cc cfg.h cfg.cc cfg_test.cc utils.cc utils.h
+	g++ -std=c++11 inst.cc cfg.cc cfg_test.cc utils.cc -o cfg_test.out
 
 inout_test.out: inout_test.cc inout.cc inout.h utils.cc utils.h
 	g++ -std=c++11 inout_test.cc inout.cc utils.cc -o inout_test.out
