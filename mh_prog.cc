@@ -236,12 +236,11 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
     // insert the next program into frequency dictionary of programs
     insert_into_prog_freq_dic(*next, prog_freq);
     // update measurement data and update current program with the next program
-    if (i == 0) {
-      _meas_data.insert_program(i, *curr);
-    }
     if (curr != next) {
       prog::clear_prog(curr);
       _meas_data.insert_program(i, *next);
+    } else if (i == 0) {
+      _meas_data.insert_program(i, *curr);
     }
     curr = next;
   }
