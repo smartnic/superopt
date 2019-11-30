@@ -116,10 +116,10 @@ expr smt_prog::smt_inst(smt_var& sv, inst* in) {
     }
     case MAXX: {
       expr curDst = CURDST;
-      expr curSRC = CURSRC;
+      expr curSrc = CURSRC;
       expr newDst = NEWDST;
-      expr cond1 = (curDst > curSRC) and (newDst == curDst);
-      expr cond2 = (curDst <= curSRC) and (newDst == curSRC);
+      expr cond1 = (curDst > curSrc) and (newDst == curDst);
+      expr cond2 = (curDst <= curSrc) and (newDst == curSrc);
       return (cond1 or cond2);
     }
     default: return string_to_expr("false");
