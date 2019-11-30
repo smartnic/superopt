@@ -186,7 +186,6 @@ prog* mh_sampler::mh_next(prog* curr) {
 void insert_into_prog_freq_dic(const prog &next,
                                unordered_map<int, vector<prog*> > &prog_freq) {
   int ph = progHash()(next);
-  prog* meas_p;
   bool found = false;
   if (prog_freq.find(ph) == prog_freq.end()) {
     prog_freq[ph] = std::vector<prog*>();
@@ -196,7 +195,6 @@ void insert_into_prog_freq_dic(const prog &next,
       if (*p == next) {
         found = true;
         p->freq_count++;
-        meas_p = p;
         break;
       }
     }
@@ -208,7 +206,6 @@ void insert_into_prog_freq_dic(const prog &next,
     next_copy->_error_cost = next._error_cost;
     next_copy->_perf_cost = next._perf_cost;
     prog_freq[ph].push_back(next_copy);
-    meas_p = next_copy;
   }
 }
 
