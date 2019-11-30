@@ -99,8 +99,6 @@ class mh_sampler {
   prog* mh_next(prog* curr);
   void turn_on_measure();
   void turn_off_measure();
-  void mcmc_iter_without_restart(int niter, const prog &start,
-                                 unordered_map<int, vector<prog*> > &prog_freq);
   void mcmc_iter(int niter, const prog &orig,
                  unordered_map<int, vector<prog*> > &prog_freq);
 };
