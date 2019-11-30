@@ -113,7 +113,7 @@ prog* mh_sampler_next_start_prog::next_start_prog(prog* curr) {
 mh_sampler_next_proposal::mh_sampler_next_proposal() {
   _thr_mod_random_inst_operand = 1.0 / 3.0;
   _thr_mod_random_inst = 2.0 / 3.0;
-  cout << "Propabilities of mod_random_inst_operand, mod_random_inst, "
+  cout << "probabilities of mod_random_inst_operand, mod_random_inst, "
        << "mod_random_k_cont_insts are all set as "
        << 1.0 / 3.0 << endl;
 }
@@ -125,7 +125,7 @@ void mh_sampler_next_proposal::set_probability(
   double p_mod_random_inst) {
   _thr_mod_random_inst_operand = p_mod_random_inst_operand;
   _thr_mod_random_inst = _thr_mod_random_inst_operand + p_mod_random_inst;
-  cout << "Propabilities of mod_random_inst_operand, mod_random_inst, "
+  cout << "probabilities of mod_random_inst_operand, mod_random_inst, "
        << "mod_random_k_cont_insts are set as "
        <<  _thr_mod_random_inst_operand << ", "
        << _thr_mod_random_inst - _thr_mod_random_inst_operand << ", "
