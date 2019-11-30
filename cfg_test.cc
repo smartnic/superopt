@@ -1,6 +1,7 @@
 #include <iostream>
 #include "cfg.h"
 #include "inst.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -107,5 +108,18 @@ int main () {
   } catch (const string err_msg) {
     cerr << err_msg << endl;
   }
+
+  inst instructions10[7] = {inst(MOVXC, 2, 4),
+                            inst(ADDXY, 0, 2),
+                            inst(MOVXC, 3, 15),
+                            inst(JMPLE, 2, 0, 0), // expect: this JMPLE will not cause other blocks
+                            inst(),
+                            inst(MAXX, 0, 3),
+                            inst(),
+                           };
+  graph g10(instructions10, 7);
+  int expected_num_blocks = 1;
+  print_test_res(expected_num_blocks == int(g10.nodes.size()),
+                 "instrcution JMP logic when jmp distance is 0");
   return 0;
 }

@@ -7,11 +7,14 @@ int get_inst_type(inst& ins) {
   switch (ins._opcode) {
     case RETX: return CFG_END;
     case RETC: return CFG_END;
-    case JMPEQ: return CFG_CONDJMP;
-    case JMPGT: return CFG_CONDJMP;
-    case JMPGE: return CFG_CONDJMP;
-    case JMPLT: return CFG_CONDJMP;
-    case JMPLE: return CFG_CONDJMP;
+    case JMPEQ:
+    case JMPGT:
+    case JMPGE:
+    case JMPLT:
+    case JMPLE:
+      // if jmp distance is 0, regard this intruction as NOP
+      if (ins._args[2] == 0) return CFG_NOP;
+      else return CFG_CONDJMP;
     case NOP: return CFG_NOP;
     default: return CFG_OTHERS;
   }
