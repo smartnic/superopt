@@ -12,7 +12,7 @@ int get_inst_type(inst& ins) {
     case JMPGE:
     case JMPLT:
     case JMPLE:
-      // if jmp distance is 0, regard this intruction as NOP
+      // if jmp distance is 0, regard this instruction as NOP
       if (ins._args[2] == 0) return CFG_NOP;
       else return CFG_CONDJMP;
     case NOP: return CFG_NOP;

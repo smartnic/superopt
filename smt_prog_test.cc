@@ -99,13 +99,13 @@ void test2() {
   bl_expected = (v("r_0_0_0_0") >= v("r_0_0_1_0") && (v("r_0_0_0_1") == v("r_0_0_0_0"))) ||
                 (v("r_0_0_0_0") < v("r_0_0_1_0") && (v("r_0_0_0_1") == v("r_0_0_1_0")));
   assert_res = assert_res && is_smt_valid(bl_expected == ps.bl[0]);
-  print_test_res(assert_res, "instrcution MAXX logic");
+  print_test_res(assert_res, "instruction MAXX logic");
 
   // check instruction JMP logic when jmp distance is 0
   inst p2[1] = {inst(JMPEQ, 2, 0, 0)};
   ps.gen_smt(prog_id, p2, 1);
   bl_expected = v("true");
-  print_test_res(is_smt_valid(bl_expected == ps.bl[0]), "instrcution JMP logic when jmp distance is 0");
+  print_test_res(is_smt_valid(bl_expected == ps.bl[0]), "instruction JMP logic when jmp distance is 0");
 }
 
 int main() {
