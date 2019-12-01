@@ -10,15 +10,6 @@ using namespace std;
 default_random_engine gen;
 uniform_real_distribution<double> unidist(0.0, 1.0);
 
-/* Return a uniformly random integer from 0 to limit - 1 inclusive */
-int sample_int(int limit) {
-  int val;
-  do {
-    val = (int)(unidist(gen) * (double)limit);
-  } while (val == limit && limit > 0);
-  return val;
-}
-
 /* Return a uniformly random integer from start to end - 1 inclusive */
 int sample_int(int start, int end) {
   int val;
@@ -26,6 +17,11 @@ int sample_int(int start, int end) {
     val = (int)(start + unidist(gen) * (double)(end - start));
   } while (val == end && end > start);
   return val;
+}
+
+/* Return a uniformly random integer from 0 to limit - 1 inclusive */
+int sample_int(int limit) {
+  return sample_int(0, limit);
 }
 
 /* Return a uniformly random integer from 0 to limit - 1 inclusive, with the
