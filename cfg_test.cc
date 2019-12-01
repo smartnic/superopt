@@ -120,7 +120,7 @@ int main () {
   graph g10(instructions10, 7);
   int expected_num_blocks = 1;
   print_test_res(expected_num_blocks == int(g10.nodes.size()),
-                 "instrcution JMP logic when jmp distance is 0");
+                 "instruction JMP logic when jmp distance is 0");
 
   inst instructions11[4] = {inst(JMPEQ, 1, 3, 1),
                             inst(),
@@ -133,6 +133,6 @@ int main () {
                     ((g11.nodes_in[2][0] == 0 && g11.nodes_in[2][1] == 1) ||
                      (g11.nodes_in[2][0] == 1 && g11.nodes_in[2][1] == 0));
   print_test_res(assert_res, "block ending up with NOP will connect to " \
-                 "block starting from the instrution following NOP");
+                 "block starting from the instruction following NOP");
   return 0;
 }
