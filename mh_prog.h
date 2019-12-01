@@ -22,8 +22,6 @@ class mh_sampler_when_to_restart {
   unsigned int _max_num_iter;
   mh_sampler_when_to_restart();
   ~mh_sampler_when_to_restart();
-  void set_st_no_restart();
-  void set_st_max_iter(unsigned int max_num_iter);
   void set_st(unsigned int st, unsigned int max_num_iter = 1000);
   bool whether_to_restart(unsigned int iter_num);
 };
@@ -33,9 +31,6 @@ class mh_sampler_next_start_prog {
   unsigned int _st;
   mh_sampler_next_start_prog();
   ~mh_sampler_next_start_prog();
-  void set_st_orig();
-  void set_st_all_insts();
-  void set_st_k_cont_insts();
   void set_st(unsigned int st);
   prog* next_start_prog(prog* curr);
 };
