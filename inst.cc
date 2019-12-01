@@ -17,7 +17,7 @@ void prog_state::clear() {
 }
 
 string inst::opcode_to_str(int opcode) const {
-  switch(opcode) {
+  switch (opcode) {
     case NOP: return "NOP";
     case ADDXY: return "ADDXY";
     case MOVXC: return "MOVXC";
@@ -70,7 +70,7 @@ vector<int> inst::get_reg_list() const {
 
 void inst::print() const {
   cout << opcode_to_str(_opcode);
-  for (int i=0; i < num_operands[_opcode]; i++) {
+  for (int i = 0; i < num_operands[_opcode]; i++) {
     cout << " " << _args[i];
   }
   cout << endl;
@@ -99,9 +99,9 @@ ostream& operator<<(ostream& out, abs_bv_inst& bv) {
 
 size_t instHash::operator()(const inst &x) const {
   return hash<int>()(x._opcode) ^
-      (hash<int>()(x._args[0]) << 1) ^
-      (hash<int>()(x._args[1]) << 2) ^
-      (hash<int>()(x._args[2]) << 3);
+         (hash<int>()(x._args[0]) << 1) ^
+         (hash<int>()(x._args[1]) << 2) ^
+         (hash<int>()(x._args[2]) << 3);
 }
 
 void print_program(const inst* program, int length) {
@@ -120,19 +120,19 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
   ps.regs[0] = input;
 
   static void *jumptable[256] = {
-    [NOP]   = &&INSN_NOP,
-    [ADDXY] = &&INSN_ADDXY,
-    [MOVXC] = &&INSN_MOVXC,
-    [RETX] = &&INSN_RETX,
-    [RETC] = &&INSN_RETC,
-    [JMPEQ] = &&INSN_JMPEQ,
-    [JMPGT] = &&INSN_JMPGT,
-    [JMPGE] = &&INSN_JMPGE,
-    [JMPLT] = &&INSN_JMPLT,
-    [JMPLE] = &&INSN_JMPLE,
-    [MAXC] = &&INSN_MAXC,
-    [MAXX] = &&INSN_MAXX,
-    [NUM_INSTR ... 255] = &&error_label,
+    [NOP]   = && INSN_NOP,
+    [ADDXY] = && INSN_ADDXY,
+    [MOVXC] = && INSN_MOVXC,
+    [RETX] = && INSN_RETX,
+    [RETC] = && INSN_RETC,
+    [JMPEQ] = && INSN_JMPEQ,
+    [JMPGT] = && INSN_JMPGT,
+    [JMPGE] = && INSN_JMPGE,
+    [JMPLT] = && INSN_JMPLT,
+    [JMPLE] = && INSN_JMPLE,
+    [MAXC] = && INSN_MAXC,
+    [MAXX] = && INSN_MAXX,
+    [NUM_INSTR ... 255] = && error_label,
   };
 
 #define CONT { \
@@ -180,11 +180,11 @@ INSN_MAXX:
         insn += insn->_args[2];                 \
   CONT;
 
-  JMP(EQ, ==)
-  JMP(GT, >)
-  JMP(GE, >=)
-  JMP(LT, <)
-  JMP(LE, <=)
+  JMP(EQ, == )
+  JMP(GT, > )
+  JMP(GE, >= )
+  JMP(LT, < )
+  JMP(LE, <= )
 
 error_label:
   cout << "Error in processing instruction; unknown opcode" << endl;
