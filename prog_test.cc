@@ -10,7 +10,7 @@ inst instructions[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                         inst(RETX, 3),      /* ret r3 */
                         inst(RETX, 0),      /* else ret r1 */
                         inst(), /* nop */
-};
+                       };
 
 inst instructions2[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                          inst(ADDXY, 0, 2),  /* add r0, r2 */
@@ -19,7 +19,7 @@ inst instructions2[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                          inst(RETX, 3),      /* ret r3 */
                          inst(RETX, 0),      /* else ret r0 */
                          inst(), /* nop */
-};
+                        };
 
 inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                          inst(ADDXY, 0, 2),  /* add r0, r2 */
@@ -28,7 +28,7 @@ inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                          inst(RETX, 3),      /* ret r3 */
                          inst(RETX, 2),      /* else ret r2 */
                          inst(), /* nop */
-};
+                        };
 
 inst instructions4[7] = {inst(NOP),
                          inst(RETC, 1),
@@ -37,7 +37,7 @@ inst instructions4[7] = {inst(NOP),
                          inst(), /* nop */
                          inst(), /* nop */
                          inst(), /* nop */
-};
+                        };
 
 int test1() {
   prog p(instructions);
@@ -137,7 +137,7 @@ void test6() {
                    };
   inst insts3[2] = {inst(NOP),
                     inst(),
-                    };
+                   };
   prog p1(insts1);
   prog p2(insts2);
   p1.canonicalize();

@@ -15,18 +15,18 @@ int main(int argc, char *argv[]) {
                           inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
                           inst(RETX, 3),      /* ret r3 */
                           inst(RETX, 0),      /* else ret r0 */
-  };
+                         };
   prog_state ps;
 
   inst instructions2[4] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
                            inst(ADDXY, 0, 2),     /* add r0, r2 */
                            inst(MAXC, 0, 15),     /* max r1, 15 */
                            inst(RETX, 0),         /* ret r0 */
-  };
+                          };
 
   inst instructions3[2] = {inst(NOP), /* test no-op */
                            inst(RETX, 0), /* ret r0 */
-  };
+                          };
 
   cout << "Result of full interpretation: " << endl;
   cout << interpret(instructions, 6, ps, input) << endl;
