@@ -59,6 +59,8 @@ class inst {
   void print() const;
   string opcode_to_str(int) const;
   abs_bv_inst inst_to_abs_bv() const;
+  int get_num_reg() const;
+  vector<int> get_reg_list() const;
   bool operator==(const inst &x) const;
   inst& operator=(const inst &rhs);
 };

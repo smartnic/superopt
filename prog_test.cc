@@ -117,11 +117,46 @@ void test5() {
   print_test_res(p1.prog_abs_bit_vec().to_string() == expected_bv_str, "prog_abs_bit_vec");
 }
 
+void test6() {
+  cout << endl << "Test 6 " << endl;
+  inst insts1[7] = {inst(MOVXC, 2, 15),
+                    inst(ADDXY, 2, 1),
+                    inst(ADDXY, 1, 2),
+                    inst(JMPGT, 1, 2, 1),
+                    inst(RETX, 1),
+                    inst(ADDXY, 1, 2),
+                    inst(RETC, 11),
+                   };
+  inst insts2[7] = {inst(MOVXC, 1, 15),
+                    inst(ADDXY, 1, 0),
+                    inst(ADDXY, 0, 1),
+                    inst(JMPGT, 0, 1, 1),
+                    inst(RETX, 0),
+                    inst(ADDXY, 0, 1),
+                    inst(RETC, 11),
+                   };
+  inst insts3[2] = {inst(NOP),
+                    inst(),
+                    };
+  prog p1(insts1);
+  prog p2(insts2);
+  p1.canonicalize();
+  bool assert_res = (p1 == p2);
+  p2.canonicalize();
+  assert_res = assert_res && (p1 == p2);
+  prog p3(insts3);
+  prog p4(insts3);
+  p3.canonicalize();
+  assert_res = assert_res && (p3 == p4);
+  print_test_res(assert_res, "canonicalize");
+}
+
 int main() {
   test1();
   test2();
   test3();
   test4();
   test5();
+  test6();
   return 0;
 }

@@ -1,3 +1,4 @@
+#include <map>
 #include "prog.h"
 
 using namespace std;
@@ -99,6 +100,39 @@ abs_bv_prog prog::prog_abs_bit_vec() const {
   }
   abs_bv_prog bvp(s);
   return bvp;
+}
+
+void prog::canonicalize() {
+  map<int, int> map_before_after; // key: reg_id before, val: reg_id after
+  vector<int> reg_list(2);
+  // store all used reg_ids as key in map_before_after
+  for (int i = 0; i < MAX_PROG_LEN; i++) {
+    reg_list = inst_list[i].get_reg_list();
+    for (size_t j = 0; j < reg_list.size(); j++) {
+      map_before_after[reg_list[j]] = -1;
+    }
+  }
+  // if (max_reg_id_before + 1) == map_before_after.size(),
+  // do not need to be canonicalized (already canonicalized)
+  // reg_id starts from 0, so (max_reg_id_before + 1)
+  int max_reg_id_before = -1;
+  for (auto it = map_before_after.begin(); it != map_before_after.end(); it++) {
+    if (it->first > max_reg_id_before)
+      max_reg_id_before = it->first;
+  }
+  if ((max_reg_id_before + 1) == map_before_after.size()) return;
+  // compute all reg_ids(after) and store into map_before_after
+  int cur_reg_id = -1;
+  for (auto it = map_before_after.begin(); it != map_before_after.end(); it++) {
+    cur_reg_id++;
+    it->second = cur_reg_id;
+  }
+  // replace reg_ids(before) with reg_ids(after) for all instructions
+  for (int i = 0; i < MAX_PROG_LEN; i++) {
+    for (int j = 0; j < inst_list[i].get_num_reg(); j++) {
+      inst_list[i]._args[j] = map_before_after[inst_list[i]._args[j]];
+    }
+  }
 }
 
 size_t progHash::operator()(const prog &x) const {
