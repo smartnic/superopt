@@ -30,6 +30,7 @@ class prog {
   rel_bv_prog prog_rel_bit_vec(const prog &p);
   rel_bv_prog prog_rel_bit_vec(const vector<prog> &ps);
   abs_bv_prog prog_abs_bit_vec() const;
+  void canonicalize();
 };
 
 struct progHash {
