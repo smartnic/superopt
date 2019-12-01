@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <utility>
+#include <iomanip>
 #include <getopt.h>
 #include "common.h"
 #include "meas_mh_data.h"
@@ -221,8 +222,89 @@ void gen_file_name_from_input(const input_paras &in_para) {
   file_raw_data_optimals += "_" + to_string(in_para.bm_id) + ".txt";
 }
 
-void parse_input(int argc, char* argv[], input_paras &in_para) {
-  const char* const short_opts = "n:";
+string para_st_ex_desc() {
+  string s = "strategy of error cost computation from example. " \
+             "`arg`: 0(abs), 1(pop)";
+  return s;
+}
+
+string para_st_eq_desc() {
+  string s = "strategy of error cost computation equations. " \
+             "`arg`: 0(eq1), 1(eq2)";
+  return s;
+}
+
+string para_st_avg_desc() {
+  string s = "strategy of whether average total error cost from examples. " \
+             "`arg`: 0(navg), 1(avg)";
+  return s;
+}
+
+string para_st_when_to_restart_desc() {
+  string s = "strategy of when to restart during sampling. " \
+             "`arg`: 0(no restart), 1(restart every `st_when_to_restart_niter`)";
+  return s;
+}
+
+string para_st_when_to_restart_niter_desc() {
+  string s = "when `st_when_to_restart` is set as 1, should set this parameter.";
+  return s;
+}
+
+string para_st_start_prog_desc() {
+  string s = "strategy of a new start program for restart" \
+             "`arg`: 0(no change) 1(change all instructions) 2(change k continuous instructions)";
+  return s;
+}
+
+string para_next_proposal_desc() {
+  string s = "The next two parameters are about new proposal generation.\n" \
+             "A new proposal has three modification typies: modify a random instrution operand, \n" \
+             "instruction and two continuous instructions. Sum of their probabilities is 1. \n" \
+             "The three probabilities are set by `p_inst_operand` and `p_inst` " \
+             "(`p_two_cont_insts` can be computed)";
+  return s;
+}
+
+string para_p_inst_operand_desc() {
+  string s = "probability of modifying a random operand in a random instruction for a new proposal";
+  return s;
+}
+
+string para_p_inst_desc() {
+  string s = "probability of modifying a random instruction (both opcode and operands) for a new proposal";
+  return s;
+}
+
+void usage() {
+  // setw(.): Sets the field width to be used on output operations.
+  // reference: http://www.cplusplus.com/reference/iomanip/setw/
+  const int W = 31; // field width
+  cout << "usage: " << endl
+       << "options and descriptions" << endl
+       << left // set setw(.) as left-aligned
+       << setw(W) << "-h" << ": display usage" << endl
+       << setw(W) << "-n arg" << ": number of iterations" << endl
+       << setw(W) << "--path_out arg" << ": output file path" << endl
+       << setw(W) << "--bm arg" << ": benchmark ID" << endl
+       << endl
+       << setw(W) << "--we arg" << ": weight of error cost in cost function" << endl
+       << setw(W) << "--wp arg" << ": weight of performance cost in cost function" << endl
+       << endl
+       << setw(W) << "--st_ex arg" << ": " +  para_st_ex_desc() << endl
+       << setw(W) << "--st_eq arg" << ": " +  para_st_eq_desc() << endl
+       << setw(W) << "--st_avg arg" << ": " + para_st_avg_desc() << endl
+       << endl
+       << setw(W) << "--st_when_to_restart arg" << ": " + para_st_when_to_restart_desc() << endl
+       << setw(W) << "--st_when_to_restart_niter arg" << ": "  + para_st_when_to_restart_niter_desc() << endl
+       << setw(W) << "--st_start_prog arg" << ": " << para_st_start_prog_desc() << endl
+       << endl << para_next_proposal_desc() << endl
+       << setw(W) << "--p_inst_operand arg:" << ": " << para_p_inst_operand_desc() << endl
+       << setw(W) << "--p_inst arg" << ": " << para_p_inst_desc() << endl;
+}
+
+bool parse_input_and_return_whether_to_measure(int argc, char* argv[], input_paras &in_para) {
+  const char* const short_opts = "hn:";
   static struct option long_opts[] = {
     {"path_out", required_argument, nullptr, 0},
     {"bm", required_argument, nullptr, 1},
@@ -242,6 +324,7 @@ void parse_input(int argc, char* argv[], input_paras &in_para) {
   while ((opt = getopt_long(argc, argv, short_opts,
                             long_opts, nullptr)) != -1) {
     switch (opt) {
+      case 'h': usage(); return false;
       case 'n': in_para.niter = stoi(optarg); break;
       case 0: in_para.path = optarg; break;
       case 1: in_para.bm_id = stoi(optarg); break;
@@ -255,8 +338,10 @@ void parse_input(int argc, char* argv[], input_paras &in_para) {
       case 9: in_para.st_start_prog = stoi(optarg); break;
       case 10: in_para.p_inst_operand = stod(optarg); break;
       case 11: in_para.p_inst = stod(optarg); break;
+      case '?': usage(); return false;
     }
   }
+  return true;
 }
 
 void set_default_para_vals(input_paras &in_para) {
@@ -278,7 +363,7 @@ void set_default_para_vals(input_paras &in_para) {
 int main(int argc, char* argv[]) {
   input_paras in_para;
   set_default_para_vals(in_para);
-  parse_input(argc, argv, in_para);
+  if (! parse_input_and_return_whether_to_measure(argc, argv, in_para)) return 0;
   gen_file_name_from_input(in_para);
   vector<inst*> bm_optis_orig;
   init_benchmarks(bm_optis_orig, in_para.bm_id);
