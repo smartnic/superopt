@@ -50,7 +50,7 @@ class inst {
  public:
   int _opcode;
   int _args[3];
-  inst(int opcode=NOP, int arg1=0, int arg2=0, int arg3=0) {
+  inst(int opcode = NOP, int arg1 = 0, int arg2 = 0, int arg3 = 0) {
     _opcode  = opcode;
     _args[0] = arg1;
     _args[1] = arg2;
