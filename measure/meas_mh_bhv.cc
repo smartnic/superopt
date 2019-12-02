@@ -53,35 +53,17 @@ void init_benchmarks(vector<inst*> &bm_optis_orig, int bm_id) {
       bm_optis_orig.push_back(bm_opti01);
       bm_optis_orig.push_back(bm_opti02);
       bm_optis_orig.push_back(bm_opti03);
-      bm_optis_orig.push_back(bm_opti04);
-      bm_optis_orig.push_back(bm_opti05);
-      bm_optis_orig.push_back(bm_opti06);
-      bm_optis_orig.push_back(bm_opti07);
-      bm_optis_orig.push_back(bm_opti08);
-      bm_optis_orig.push_back(bm_opti09);
-      bm_optis_orig.push_back(bm_opti010);
-      bm_optis_orig.push_back(bm_opti011);
       return;
     case 1:
       bm = bm1;
       bm_optis_orig.push_back(bm_opti10);
       bm_optis_orig.push_back(bm_opti11);
-      bm_optis_orig.push_back(bm_opti12);
-      bm_optis_orig.push_back(bm_opti13);
-      bm_optis_orig.push_back(bm_opti14);
-      bm_optis_orig.push_back(bm_opti15);
       return;
     case 2:
       bm = bm2;
       bm_optis_orig.push_back(bm_opti20);
       bm_optis_orig.push_back(bm_opti21);
       bm_optis_orig.push_back(bm_opti22);
-      bm_optis_orig.push_back(bm_opti23);
-      bm_optis_orig.push_back(bm_opti24);
-      bm_optis_orig.push_back(bm_opti25);
-      bm_optis_orig.push_back(bm_opti26);
-      bm_optis_orig.push_back(bm_opti27);
-      bm_optis_orig.push_back(bm_opti28);
       return;
     default:
       cout << "bm_id" + to_string(bm_id) + "is out of range {0, 1, 2}" << endl;
