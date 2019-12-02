@@ -109,7 +109,9 @@ void prog::canonicalize() {
   for (int i = 0; i < MAX_PROG_LEN; i++) {
     reg_list = inst_list[i].get_reg_list();
     for (size_t j = 0; j < reg_list.size(); j++) {
-      map_before_after[reg_list[j]] = -1;
+      if (map_before_after.find(reg_list[j]) == map_before_after.end()) {
+        map_before_after[reg_list[j]] = -1;
+      }
     }
   }
   // if (max_reg_id_before + 1) == map_before_after.size(),
