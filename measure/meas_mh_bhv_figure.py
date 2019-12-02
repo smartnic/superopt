@@ -264,36 +264,7 @@ def cost_function_for_different_types_when_steady(c_type, file_type, fin_path, s
     return x_axis, y_axis
 
 
-def best_perf_cost_with_zero_cost_for_programs(file_data):
-    error_cost_list = [float(c) for c in file_data.error_cost_list]
-    perf_cost_list = [float(c) for c in file_data.perf_cost_list]
-    iter_num_list = [int(i) for i in file_data.iter_num_list]
-    min_perf = perf_cost_list[0]
-    x_axis = [0]
-    y_axis = [min_perf]
-    for iter_num, e, p in zip(iter_num_list, error_cost_list, perf_cost_list):
-        if e == 0 and p < min_perf:
-            y_axis.append(p)
-            x_axis.append(iter_num)
-            min_perf = p
-    return x_axis, y_axis
-
-
-def best_perf_cost_with_zero_cost_for_proposals(file_data):
-    error_cost_list = [float(c) for c in file_data.error_cost_list]
-    perf_cost_list = [float(c) for c in file_data.perf_cost_list]
-    min_perf = perf_cost_list[0]
-    x_axis = [0]
-    y_axis = [min_perf]
-    for (i, e), p in zip(enumerate(error_cost_list), perf_cost_list):
-        if e == 0 and p < min_perf:
-            y_axis.append(p)
-            x_axis.append(i)
-            min_perf = p
-    return x_axis, y_axis
-
-
-def best_perf_cost_with_zero_cost_for_different_types(file_type, fin_path, bm_id, niter, st, w_e, w_p):
+def best_perf_cost_with_zero_error_cost_for_different_types(file_type, fin_path, bm_id, niter, st, w_e, w_p):
     file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st, w_e, w_p)
     if file_type == file_name_type.programs:
         iter_num_list = [int(i) for i in file_data.iter_num_list]
@@ -302,7 +273,7 @@ def best_perf_cost_with_zero_cost_for_different_types(file_type, fin_path, bm_id
     MAX_PERF_COST = 14
     best_perf = MAX_PERF_COST
     for e, p in zip(file_data.error_cost_list, file_data.perf_cost_list):
-        if float(e) == 0 and best_perf > float(p):
+        if float(e) == 0 and float(p) < best_perf:
             best_perf = float(p)
     e = float(file_data.error_cost_list[0])
     p = float(file_data.perf_cost_list[0])
@@ -402,12 +373,12 @@ def figure_cost_function_cdf_when_steady(file_type, c_type, fin_path, fout_path,
     plt.close(f)
 
 
-def figure_best_perf_cost_with_zero_error_cost(file_type, fin_path, fout_path, niter,
-                                               bm_id, best_perf_cost, st, w_e_list, w_p_list):
+def figure_best_perf_cost_with_zero_error_error_cost(file_type, fin_path, fout_path, niter,
+                                                     bm_id, best_perf_cost, st, w_e_list, w_p_list):
     f = plt.figure()
     for w_e, w_p in zip(w_e_list, w_p_list):
-        x_axis, y_axis = best_perf_cost_with_zero_cost_for_different_types(file_type, fin_path, bm_id,
-                                                                           niter, st, w_e, w_p)
+        x_axis, y_axis = best_perf_cost_with_zero_error_cost_for_different_types(file_type, fin_path, bm_id,
+                                                                                 niter, st, w_e, w_p)
         curve_name = " w_e:" + w_e + " w_p:" + w_p
         plt.plot(x_axis, y_axis, linestyle='-.', linewidth=1.5, label=curve_name, marker='x')
     graph_title = file_type + " best perf cost with zero error cost over iterations"
@@ -771,9 +742,9 @@ if __name__ == "__main__":
                                                          in_para.niter, in_para.steady_start, bm_id, best_perf_cost,
                                                          st, in_para.w_e_list, in_para.w_p_list)
                 # figure 2: best performance cost with zero error cost over iterations
-                figure_best_perf_cost_with_zero_error_cost(file_type, in_para.fin_path, in_para.fout_path,
-                                                           in_para.niter, bm_id, best_perf_cost, st,
-                                                           in_para.w_e_list, in_para.w_p_list)
+                figure_best_perf_cost_with_zero_error_error_cost(file_type, in_para.fin_path, in_para.fout_path,
+                                                                 in_para.niter, bm_id, best_perf_cost, st,
+                                                                 in_para.w_e_list, in_para.w_p_list)
                 # figure 3: the number of unique programs over iterations
                 figure_num_unique_programs(file_type, in_para.fin_path, in_para.fout_path, in_para.niter,
                                            bm_id, st, in_para.w_e_list, in_para.w_p_list)
