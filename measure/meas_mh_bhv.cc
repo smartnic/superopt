@@ -336,7 +336,7 @@ void set_default_para_vals(input_paras &in_para) {
   in_para.st_eq = ERROR_COST_STRATEGY_EQ1;
   in_para.st_avg = ERROR_COST_STRATEGY_NAVG;
   in_para.st_when_to_restart = MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART;
-  in_para.st_when_to_restart_niter = 1000;
+  in_para.st_when_to_restart_niter = 0;
   in_para.st_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ORIG;
   in_para.p_inst_operand = 1.0 / 3.0;
   in_para.p_inst = 2.0 / 3.0;
