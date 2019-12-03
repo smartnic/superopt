@@ -45,6 +45,23 @@ struct input_paras {
   double p_inst;
 };
 
+ostream& operator<<(ostream& out, const input_paras& ip) {
+  out << "niter:" << ip.niter << endl
+      << "w_e:" << ip.w_e << endl
+      << "w_p:" << ip.w_p << endl
+      << "bm_id:" << ip.bm_id << endl
+      << "path:" << ip.path << endl
+      << "st_ex:" << ip.st_ex << endl
+      << "st_eq:" << ip.st_eq << endl
+      << "st_avg:" << ip.st_avg << endl
+      << "st_when_to_restart:" << ip.st_when_to_restart << endl
+      << "st_when_to_restart_niter:" << ip.st_when_to_restart_niter << endl
+      << "st_start_prog:" << ip.st_start_prog << endl
+      << "p_inst_operand:" << ip.p_inst_operand << endl
+      << "p_inst:" << ip.p_inst << endl;
+  return out;
+}
+
 void init_benchmarks(vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
@@ -346,6 +363,7 @@ int main(int argc, char* argv[]) {
   input_paras in_para;
   set_default_para_vals(in_para);
   if (! parse_input_and_return_whether_to_measure(argc, argv, in_para)) return 0;
+  cout << in_para;
   gen_file_name_from_input(in_para);
   vector<inst*> bm_optis_orig;
   init_benchmarks(bm_optis_orig, in_para.bm_id);
