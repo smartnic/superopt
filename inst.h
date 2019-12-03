@@ -17,6 +17,11 @@ using namespace std;
 #define OP_IMM 2
 #define OP_OFF 3
 
+// Opcode types for instructions
+#define OP_RET 0
+#define OP_JMP 1
+#define OP_OTHERS 2
+
 // Instruction opcodes
 #define NOP 0
 #define ADDXY 1
@@ -61,6 +66,7 @@ class inst {
   abs_bv_inst inst_to_abs_bv() const;
   int get_num_reg() const;
   vector<int> get_reg_list() const;
+  int get_opcode_type() const;
   bool operator==(const inst &x) const;
   inst& operator=(const inst &rhs);
 };
