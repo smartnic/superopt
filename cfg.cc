@@ -7,14 +7,11 @@ int get_inst_type(inst& ins) {
   switch (ins._opcode) {
     case RETX: return CFG_END;
     case RETC: return CFG_END;
-    case JMPEQ:
-    case JMPGT:
-    case JMPGE:
-    case JMPLT:
-    case JMPLE:
-      // if jmp distance is 0, regard this instruction as NOP
-      if (ins._args[2] == 0) return CFG_NOP;
-      else return CFG_CONDJMP;
+    case JMPEQ: return CFG_CONDJMP;
+    case JMPGT: return CFG_CONDJMP;
+    case JMPGE: return CFG_CONDJMP;
+    case JMPLT: return CFG_CONDJMP;
+    case JMPLE: return CFG_CONDJMP;
     case NOP: return CFG_NOP;
     default: return CFG_OTHERS;
   }
@@ -214,11 +211,9 @@ void graph::gen_graph(inst* inst_lst, int length) {
   } catch (const string err_msg) {
     throw err_msg;
   }
-
   // 2 generate node ends for each start in node_starts
   vector<size_t> node_ends;
   gen_node_ends(inst_lst, length, node_starts, node_ends);
-
   // 3 generate graph G containg all nodes and all edges
   vector<node> gnodes;
   vector<vector<unsigned int> > gnodes_out;

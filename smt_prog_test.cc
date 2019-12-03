@@ -102,10 +102,17 @@ void test2() {
   print_test_res(assert_res, "instruction MAXX logic");
 
   // check instruction JMP logic when jmp distance is 0
-  inst p2[1] = {inst(JMPEQ, 2, 0, 0)};
-  ps.gen_smt(prog_id, p2, 1);
-  bl_expected = v("true");
-  print_test_res(is_smt_valid(bl_expected == ps.bl[0]), "instruction JMP logic when jmp distance is 0");
+  inst p2[2] = {inst(JMPEQ, 2, 0, 0),
+                inst(ADDXY, 0, 1),
+               };
+  expr pl = ps.gen_smt(prog_id, p2, 2);
+  expr pl_expected = (v("r_0_1_0_0") == v("r_0_0_0_0")) &&
+                     (v("r_0_1_1_0") == v("r_0_0_1_0")) &&
+                     (v("r_0_1_2_0") == v("r_0_0_2_0")) &&
+                     (v("r_0_1_3_0") == v("r_0_0_3_0")) &&
+                     (v("r_0_1_0_1") == v("r_0_1_0_0") + v("r_0_1_1_0")) &&
+                     (v("output0") == v("r_0_1_0_1"));
+  print_test_res(is_smt_valid(pl_expected == pl), "instruction JMP logic when jmp distance is 0");
 }
 
 int main() {
