@@ -116,6 +116,16 @@ void prog::canonicalize() {
     }
   }
   if (map_before_after.size() == 0) return;
+  // if reg 0 is used, then cannot modify reg 0, since it stores the input value
+  if (map_before_after.find(0) != map_before_after.end()) {
+    if (map_before_after[0] != 0) {
+      int thr = map_before_after[0];
+      for (auto it = map_before_after.begin(); it != map_before_after.end(); it++) {
+        if (it->second < thr) it->second++;
+      }
+      map_before_after[0] = 0;
+    }
+  }
   // replace reg_ids(before) with reg_ids(after) for all instructions
   for (int i = 0; i < MAX_PROG_LEN; i++) {
     for (int j = 0; j < inst_list[i].get_num_reg(); j++) {
