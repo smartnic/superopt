@@ -119,7 +119,12 @@ void test5() {
 
 void test6() {
   cout << endl << "Test 6 " << endl;
-  inst insts1[7] = {inst(MOVXC, 2, 15),
+  // case 1: no reg used
+  inst insts1[2] = {inst(NOP),
+                    inst(),
+                   };
+  // case 2: do not use reg 0
+  inst insts2[7] = {inst(MOVXC, 2, 15),
                     inst(ADDXY, 2, 1),
                     inst(ADDXY, 1, 2),
                     inst(JMPGT, 1, 2, 1),
@@ -127,7 +132,18 @@ void test6() {
                     inst(ADDXY, 1, 2),
                     inst(RETC, 11),
                    };
-  inst insts2[7] = {inst(MOVXC, 0, 15),
+  // case 3: use reg 0, and other regs have been used before reg 0
+  inst insts3[7] = {inst(MOVXC, 2, 15),
+                    inst(ADDXY, 2, 1),
+                    inst(ADDXY, 0, 2),
+                    inst(JMPGT, 1, 2, 1),
+                    inst(RETX, 1),
+                    inst(ADDXY, 1, 2),
+                    inst(RETC, 11),
+                   };
+  // case 4: already canonical
+  // the canonical of insts2
+  inst insts4[7] = {inst(MOVXC, 0, 15),
                     inst(ADDXY, 0, 1),
                     inst(ADDXY, 1, 0),
                     inst(JMPGT, 1, 0, 1),
@@ -135,20 +151,34 @@ void test6() {
                     inst(ADDXY, 1, 0),
                     inst(RETC, 11),
                    };
-  inst insts3[2] = {inst(NOP),
-                    inst(),
+  // the canonical of insts3
+  inst insts5[7] = {inst(MOVXC, 1, 15),
+                    inst(ADDXY, 1, 2),
+                    inst(ADDXY, 0, 1),
+                    inst(JMPGT, 2, 1, 1),
+                    inst(RETX, 2),
+                    inst(ADDXY, 2, 1),
+                    inst(RETC, 11),
                    };
+  // test case 1
   prog p1(insts1);
-  prog p2(insts2);
+  prog p2(insts1);
   p1.canonicalize();
-  bool assert_res = (p1 == p2);
-  p2.canonicalize();
-  assert_res = assert_res && (p1 == p2);
-  prog p3(insts3);
-  prog p4(insts3);
+  print_test_res(p1 == p2, "canonicalize 1");
+  // test case 2
+  prog p3(insts2);
+  prog p4(insts4);
   p3.canonicalize();
-  assert_res = assert_res && (p3 == p4);
-  print_test_res(assert_res, "canonicalize");
+  print_test_res(p3 == p4, "canonicalize 2");
+  // test case 3
+  prog p5(insts3);
+  prog p6(insts5);
+  p5.canonicalize();
+  print_test_res(p5 == p6, "canonicalize 3");
+  // test case 4
+  p4.canonicalize();
+  p6.canonicalize();
+  print_test_res((p4 == p3) && (p6 == p5), "canonicalize 4");
 }
 
 int main() {
