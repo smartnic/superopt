@@ -258,6 +258,15 @@ void smt_prog::gen_post_path_con(smt_var& sv, size_t cur_bid, inst& inst_end) {
   smt_jmp_inst(sv, c_inst_end, inst_end);
   // case 3 step 3
   // push the c_inst_end[0] and c_inst_end[1] into next_bids' path_con
+  // check whether no jmp and jmp cases have the same next block id.
+  if (g.nodes_out[cur_bid][0] == g.nodes_out[cur_bid][1]) {
+    unsigned int next_bid = g.nodes_out[cur_bid][0];
+    expr c_next_bid = (c_in && (c_inst_end[0] || c_inst_end[1])).simplify();
+    add_path_cond(c_next_bid, cur_bid, next_bid);
+    post[cur_bid][0] = c_next_bid; // store
+    post[cur_bid][1] = c_next_bid; // store
+    return;
+  }
   // no jmp
   unsigned int next_bid = g.nodes_out[cur_bid][0];
   expr c_next_bid = (c_in && c_inst_end[0]).simplify();
