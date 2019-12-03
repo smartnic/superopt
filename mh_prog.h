@@ -3,7 +3,7 @@
 #include "prog.h"
 #include "inout.h"
 #include "cost.h"
-#include "measure/meas_mh_data.h"
+#include "measure/meas_mh_bhv.h"
 
 using namespace std;
 
