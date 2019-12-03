@@ -19,10 +19,10 @@ class mh_sampler_when_to_restart {
  public:
   unsigned int _st;
   // restart every `_max_num_iter` iterations
-  unsigned int _max_num_iter;
+  unsigned int _max_num_iter = 0;
   mh_sampler_when_to_restart();
   ~mh_sampler_when_to_restart();
-  void set_st(unsigned int st, unsigned int max_num_iter = 1000);
+  void set_st(unsigned int st, unsigned int max_num_iter = 0);
   bool whether_to_restart(unsigned int iter_num);
 };
 
