@@ -3,6 +3,7 @@
 #include <iostream>
 #include <bitset>
 #include <vector>
+#include <unordered_map>
 #include "inst.h"
 
 using namespace std;
@@ -30,6 +31,8 @@ class prog {
   rel_bv_prog prog_rel_bit_vec(const prog &p);
   rel_bv_prog prog_rel_bit_vec(const vector<prog> &ps);
   abs_bv_prog prog_abs_bit_vec() const;
+  bool if_ret_exists(int start, int end) const;
+  void update_map_if_reg0_cannot_be_used(unordered_map<int, int> &map_before_after) const;
   void canonicalize();
 };
 
