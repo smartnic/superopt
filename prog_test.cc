@@ -120,7 +120,12 @@ void test5() {
 void test6() {
   cout << endl << "Test 6 " << endl;
   // case 1: no reg used
-  inst insts1[2] = {inst(NOP),
+  inst insts1[7] = {inst(NOP),
+                    inst(),
+                    inst(),
+                    inst(),
+                    inst(),
+                    inst(),
                     inst(),
                    };
   // case 2: do not use reg 0
@@ -141,9 +146,28 @@ void test6() {
                     inst(ADDXY, 1, 2),
                     inst(RETC, 11),
                    };
-  // case 4: already canonical
+  // case 4: need implicit RETX 0 instruction, no reg0 usage, other regs are used
+  // case 4.1: no RETs instruction: reg0 cannot be used
+  inst insts41[7] = {inst(MOVXC, 2, 15),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                    };
+  // case 4.2: RETs instruction with JMP: reg0 cannot be used
+  inst insts42[7] = {inst(MOVXC, 2, 15),
+                     inst(JMPGT, 1, 2, 1),
+                     inst(RETC, 11),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                    };
+  // case 5: already canonical
   // the canonical of insts2
-  inst insts4[7] = {inst(MOVXC, 0, 15),
+  inst insts5[7] = {inst(MOVXC, 0, 15),
                     inst(ADDXY, 0, 1),
                     inst(ADDXY, 1, 0),
                     inst(JMPGT, 1, 0, 1),
@@ -152,7 +176,7 @@ void test6() {
                     inst(RETC, 11),
                    };
   // the canonical of insts3
-  inst insts5[7] = {inst(MOVXC, 1, 15),
+  inst insts6[7] = {inst(MOVXC, 1, 15),
                     inst(ADDXY, 1, 2),
                     inst(ADDXY, 0, 1),
                     inst(JMPGT, 2, 1, 1),
@@ -160,6 +184,24 @@ void test6() {
                     inst(ADDXY, 2, 1),
                     inst(RETC, 11),
                    };
+  // the canonical of insts40
+  inst insts71[7] = {inst(MOVXC, 1, 15),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                    };
+  // the canonical of insts41
+  inst insts72[7] = {inst(MOVXC, 1, 15),
+                     inst(JMPGT, 2, 1, 1),
+                     inst(RETC, 11),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                    };
   // test case 1
   prog p1(insts1);
   prog p2(insts1);
@@ -167,18 +209,30 @@ void test6() {
   print_test_res(p1 == p2, "canonicalize 1");
   // test case 2
   prog p3(insts2);
-  prog p4(insts4);
+  prog p4(insts5);
   p3.canonicalize();
   print_test_res(p3 == p4, "canonicalize 2");
   // test case 3
   prog p5(insts3);
-  prog p6(insts5);
+  prog p6(insts6);
   p5.canonicalize();
   print_test_res(p5 == p6, "canonicalize 3");
   // test case 4
+  prog p7(insts41);
+  prog p8(insts71);
+  p7.canonicalize();
+  print_test_res(p7 == p8, "canonicalize 4.1");
+  prog p9(insts42);
+  prog p10(insts72);
+  p9.canonicalize();
+  print_test_res(p9 == p10, "canonicalize 4.2");
+  // test case 5
   p4.canonicalize();
   p6.canonicalize();
-  print_test_res((p4 == p3) && (p6 == p5), "canonicalize 4");
+  p8.canonicalize();
+  p10.canonicalize();
+  print_test_res((p4 == p3) && (p6 == p5) && (p8 == p7) && (p10 == p9),
+                 "canonicalize 5");
 }
 
 int main() {

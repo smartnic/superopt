@@ -1,4 +1,3 @@
-#include <unordered_map>
 #include "prog.h"
 
 using namespace std;
@@ -102,6 +101,49 @@ abs_bv_prog prog::prog_abs_bit_vec() const {
   return bvp;
 }
 
+bool prog::if_ret_exists(int start, int end) const {
+  for (int i = start; i < end; i++) {
+    if (inst_list[i].get_opcode_type() == OP_RET) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// if reg 0 is NOT used but implicit RETX 0 instruction is needed, reg 0 cannot be used
+// case 1: no RETs instruction(test6 insts41)
+// case 2: has RETs instruction, but JMP makes implicit RETX 0 instruction needed(test6 insts42)
+void prog::update_map_if_reg0_cannot_be_used(unordered_map<int, int> &map_before_after) const {
+  bool can_use_reg0 = true;
+  // check whether there is RETs
+  bool ret_exists = if_ret_exists(0, MAX_PROG_LEN);
+  // step 1: check whether reg0 can be used
+  if (! ret_exists) {
+    // no RETs instruction
+    can_use_reg0 = false;
+  } else {
+    // has RETs instruction, check jmp distance
+    int start_index_chk_ret = 0;
+    for (int i = 0; i < MAX_PROG_LEN; i++) {
+      if ((inst_list[i].get_opcode_type() == OP_JMP) &&
+          ((i + 1 + inst_list[i]._args[2]) > start_index_chk_ret)) {
+        start_index_chk_ret = i + 1 + inst_list[i]._args[2];
+      }
+    }
+    ret_exists = if_ret_exists(start_index_chk_ret, MAX_PROG_LEN);
+    if (! ret_exists) {
+      can_use_reg0 = false;
+    }
+  }
+
+  // step 2: if reg0 cannot be used, update the map_before_after
+  if (! can_use_reg0) {
+    for (auto it = map_before_after.begin(); it != map_before_after.end(); it++) {
+      it->second++;
+    }
+  }
+}
+
 void prog::canonicalize() {
   unordered_map<int, int> map_before_after; // key: reg_id before, val: reg_id after
   vector<int> reg_list(2);
@@ -116,8 +158,9 @@ void prog::canonicalize() {
     }
   }
   if (map_before_after.size() == 0) return;
-  // if reg 0 is used, then cannot modify reg 0, since it stores the input value
+
   if (map_before_after.find(0) != map_before_after.end()) {
+    // if reg 0 is used, then cannot modify reg 0, since it stores the input value
     if (map_before_after[0] != 0) {
       int thr = map_before_after[0];
       for (auto it = map_before_after.begin(); it != map_before_after.end(); it++) {
@@ -125,7 +168,10 @@ void prog::canonicalize() {
       }
       map_before_after[0] = 0;
     }
+  } else {
+    update_map_if_reg0_cannot_be_used(map_before_after);
   }
+
   // replace reg_ids(before) with reg_ids(after) for all instructions
   for (int i = 0; i < MAX_PROG_LEN; i++) {
     for (int j = 0; j < inst_list[i].get_num_reg(); j++) {
