@@ -127,12 +127,12 @@ void test6() {
                     inst(ADDXY, 1, 2),
                     inst(RETC, 11),
                    };
-  inst insts2[7] = {inst(MOVXC, 1, 15),
+  inst insts2[7] = {inst(MOVXC, 0, 15),
+                    inst(ADDXY, 0, 1),
                     inst(ADDXY, 1, 0),
-                    inst(ADDXY, 0, 1),
-                    inst(JMPGT, 0, 1, 1),
-                    inst(RETX, 0),
-                    inst(ADDXY, 0, 1),
+                    inst(JMPGT, 1, 0, 1),
+                    inst(RETX, 1),
+                    inst(ADDXY, 1, 0),
                     inst(RETC, 11),
                    };
   inst insts3[2] = {inst(NOP),
