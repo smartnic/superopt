@@ -113,7 +113,7 @@ bool prog::if_ret_exists(int start, int end) const {
 // if reg 0 is NOT used but implicit RETX 0 instruction is needed, reg 0 cannot be used
 // case 1: no RETs instruction(test6 insts41)
 // case 2: has RETs instruction, but JMP makes implicit RETX 0 instruction needed(test6 insts42)
-void prog::update_map_if_reg0_cannot_be_used(unordered_map<int, int> &map_before_after) const {
+void prog::update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const {
   bool can_use_reg0 = true;
   // check whether there is RETs
   bool ret_exists = if_ret_exists(0, MAX_PROG_LEN);
@@ -169,7 +169,7 @@ void prog::canonicalize() {
       map_before_after[0] = 0;
     }
   } else {
-    update_map_if_reg0_cannot_be_used(map_before_after);
+    update_map_if_implicit_ret_r0_needed(map_before_after);
   }
 
   // replace reg_ids(before) with reg_ids(after) for all instructions
