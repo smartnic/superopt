@@ -20,6 +20,11 @@ class InputParas:
         self.w_e_list = []
         self.w_p_list = []
         self.st_list = []
+        self.st_when_to_restart_list = []
+        self.st_when_to_restart_niter_list = []
+        self.st_start_prog_list = []
+        self.p_inst_operand_list = []
+        self.p_inst_list = []
 
     def print_out(self):
         print("fin_path:", self.fin_path)
@@ -31,13 +36,20 @@ class InputParas:
         print("w_e_list:", self.w_e_list)
         print("w_p_list:", self.w_p_list)
         print("st_list:", self.st_list)
+        print("st_when_to_restart_list:", self.st_when_to_restart_list)
+        print("st_when_to_restart_niter_list:", self.st_when_to_restart_niter_list)
+        print("st_start_prog_list:", self.st_start_prog_list)
+        print("p_inst_operand_list:", self.p_inst_operand_list)
+        print("p_inst_list:", self.p_inst_list)
 
 
 def parse_input():
     in_para = InputParas()
     short_opts = "n:"
     long_opts = ["fin_path=", "bm_ids=", "w_list=", "st_list=",
-                 "best_perf_costs=", "steady_start="]
+                 "best_perf_costs=", "steady_start=",
+                 "st_when_to_restart_list=", "st_when_to_restart_niter_list=",
+                 "st_start_prog_list=", "p_list="]
     try:
         opts, args = getopt.getopt(sys.argv[1:], short_opts, long_opts)
     except getopt.GetoptError as err:
@@ -48,7 +60,7 @@ def parse_input():
             in_para.niter = a
         elif o == "--fin_path":
             in_para.fin_path = a
-            in_para.fout_path = a + "../figure/"
+            in_para.fout_path = a + "figure/"
         elif o == "--bm_ids":
             in_para.bm_ids = a.split(" ")
         elif o == "--w_list":
@@ -63,6 +75,18 @@ def parse_input():
             in_para.best_perf_costs = a.split(" ")
         elif o == "--steady_start":
             in_para.steady_start = a
+        elif o == "--st_when_to_restart_list":
+            in_para.st_when_to_restart_list = a.split(" ")
+        elif o == "--st_when_to_restart_niter_list":
+            in_para.st_when_to_restart_niter_list = a.split(" ")
+        elif o == "--st_start_prog_list":
+            in_para.st_start_prog_list = a.split(" ")
+        elif o == "--p_list":
+            p_inst = a.split(" ")
+            for p in p_inst:
+                p = p.split(",")
+                in_para.p_inst_operand_list.append(p[0])
+                in_para.p_inst_list.append(p[1])
         else:
             assert False, "unhandled option"
     return in_para
@@ -98,11 +122,15 @@ class FileNameType:
 file_name_type = FileNameType()
 
 
-def get_input_file_name(fin_path, file_type, bm_id, niter, st, w_e, w_p):
+def get_input_file_name(fin_path, file_type, bm_id, niter, st, st_when_to_restart, st_when_to_restart_niter,
+                        st_start_prog, p_inst_operand, p_inst, w_e, w_p):
     prefix = "raw_data"
     if file_type in [file_name_type.programs, file_name_type.proposals]:
         file_name = fin_path + prefix + "_" + file_type + "_" + bm_id + "_" + \
-                    niter + "_" + st + "_" + w_e + "_" + w_p + ".txt"
+                    niter + "_" + st + "_" + w_e + "_" + w_p + "_" + \
+                    st_when_to_restart + "_" + st_when_to_restart_niter + "_" + \
+                    st_start_prog + "_" + \
+                    p_inst_operand + "_" + p_inst + ".txt"
     elif file_type == file_name_type.optimals:
         file_name = fin_path + prefix + "_" + file_type + "_" + bm_id + ".txt"
     return file_name
@@ -165,8 +193,12 @@ class Optimals:
         print(len(self.abs_coding_list), self.abs_coding_list)
 
 
-def get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st, w_e, w_p):
-    fin_name = get_input_file_name(fin_path, file_type, bm_id, niter, st, w_e, w_p)
+def get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st,
+                                      st_when_to_restart, st_when_to_restart_niter,
+                                      st_start_prog, p_inst_operand, p_inst, w_e, w_p):
+    fin_name = get_input_file_name(fin_path, file_type, bm_id, niter, st,
+                                   st_when_to_restart, st_when_to_restart_niter,
+                                   st_start_prog, p_inst_operand, p_inst, w_e, w_p)
     print("...processing " + fin_name)
     if file_type == file_name_type.programs:
         x = Programs(fin_name)
@@ -242,25 +274,65 @@ def total_cost_function_cdf_xy(error_cost_list, perf_cost_list, w_e, w_p):
     return x_axis, y_axis
 
 
-def cost_function_for_different_types_when_steady(c_type, file_type, fin_path, steady_start,
-                                                  bm_id, niter, st, w_e, w_p):
-    file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st, w_e, w_p)
-    steady_start_index = 0
-    if file_type == file_name_type.programs:
+def get_cost_list_for_each_iteration(file_type, file_data, cost_list, niter):
+    if file_type == file_name_type.proposals:
+        return cost_list
+    elif file_type == file_name_type.programs:
+        new_cost_list = []
         for i, iter in enumerate(file_data.iter_num_list):
-            if int(iter) >= int(steady_start):
-                steady_start_index = i
-                break
-    elif file_type == file_name_type.proposals:
-        steady_start_index = int(steady_start)
+            start = len(new_cost_list)
+            for _ in range(start, int(iter)):
+                new_cost_list.append(cost_list[i-1])
+        start = len(new_cost_list)
+        for i in range(start, int(niter)):
+            new_cost_list.append(cost_list[-1])
+        return new_cost_list
+    else:
+        return []
+
+
+def get_cost_list_when_steady(file_type, file_data, cost_list, steady_start, niter, st_when_to_restart,
+                              st_when_to_restart_niter):
+    cost_list = get_cost_list_for_each_iteration(file_type, file_data, cost_list, niter)
+    if st_when_to_restart == '0':
+        return cost_list[int(steady_start):]
+    if st_when_to_restart_niter == '0':
+        print("ERROR: st_when_to_restart is not 0, but st_when_to_restart_niter is 0")
+        return cost_list[int(steady_start):]
+    new_cost_list = []
+    steady_start_index = int(steady_start)
+    num_iter = int(niter)
+    length = int(st_when_to_restart_niter) - int(steady_start)
+    period = int(st_when_to_restart_niter)
+    while steady_start_index < num_iter:
+        steady_end_index = min(steady_start_index + length, num_iter)
+        new_cost_list = new_cost_list + cost_list[steady_start_index:steady_end_index]
+        steady_start_index += period
+    return new_cost_list
+
+
+def cost_function_for_different_types_when_steady(c_type, file_type, fin_path, steady_start,
+                                                  bm_id, niter, st,
+                                                  st_when_to_restart, st_when_to_restart_niter,
+                                                  st_start_prog, p_inst_operand, p_inst, w_e, w_p):
+    file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st,
+                                                  st_when_to_restart, st_when_to_restart_niter,
+                                                  st_start_prog, p_inst_operand, p_inst,
+                                                  w_e, w_p)
     if c_type == cost_type.error_cost:
-        x_axis, y_axis = error_cost_function_cdf_xy(file_data.error_cost_list[steady_start_index:])
+        error_cost_list = get_cost_list_when_steady(file_type, file_data, file_data.error_cost_list, steady_start,
+                                                    niter, st_when_to_restart, st_when_to_restart_niter)
+        x_axis, y_axis = error_cost_function_cdf_xy(error_cost_list)
     elif c_type == cost_type.perf_cost:
-        x_axis, y_axis = perf_cost_function_cdf_xy(file_data.perf_cost_list[steady_start_index:])
+        perf_cost_list = get_cost_list_when_steady(file_type, file_data, file_data.perf_cost_list, steady_start,
+                                                   niter, st_when_to_restart, st_when_to_restart_niter)
+        x_axis, y_axis = perf_cost_function_cdf_xy(perf_cost_list)
     elif c_type == cost_type.total_cost:
-        x_axis, y_axis = total_cost_function_cdf_xy(file_data.error_cost_list[steady_start_index:],
-                                                    file_data.perf_cost_list[steady_start_index:],
-                                                    w_e, w_p)
+        error_cost_list = get_cost_list_when_steady(file_type, file_data, file_data.error_cost_list, steady_start,
+                                                    niter, st_when_to_restart, st_when_to_restart_niter)
+        perf_cost_list = get_cost_list_when_steady(file_type, file_data, file_data.perf_cost_list, steady_start,
+                                                   niter, st_when_to_restart, st_when_to_restart_niter)
+        x_axis, y_axis = total_cost_function_cdf_xy(error_cost_list, perf_cost_list, w_e, w_p)
     return x_axis, y_axis
 
 
@@ -351,12 +423,18 @@ def get_abs_opcodes_operands_for_different_types(file_type, fin_path, bm_id, nit
 
 #################### figure plotting ####################
 def figure_cost_function_cdf_when_steady(file_type, c_type, fin_path, fout_path, niter,
-                                         steady_start, bm_id, best_perf_cost, st, w_e_list, w_p_list):
+                                         steady_start, bm_id, best_perf_cost, st,
+                                         st_when_to_restart, st_when_to_restart_niter,
+                                         st_start_prog, p_inst_operand, p_inst,
+                                         w_e_list, w_p_list):
     f = plt.figure()
     for w_e, w_p in zip(w_e_list, w_p_list):
         x_axis, y_axis = cost_function_for_different_types_when_steady(c_type, file_type,
                                                                        fin_path, steady_start,
-                                                                       bm_id, niter, st, w_e, w_p)
+                                                                       bm_id, niter, st,
+                                                                       st_when_to_restart, st_when_to_restart_niter,
+                                                                       st_start_prog, p_inst_operand, p_inst,
+                                                                       w_e, w_p)
         curve_name = " w_e:" + w_e + " w_p:" + w_p
         plt.plot(x_axis, y_axis, linestyle='-.', linewidth=1.5, label=curve_name, marker='x')
     graph_title = file_type + " " + c_type + " function CDF"
@@ -367,7 +445,10 @@ def figure_cost_function_cdf_when_steady(file_type, c_type, fin_path, fout_path,
     plt.ylabel('CDF')
     plt.legend()
     plt.grid()
-    figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st])
+    figure_name = get_output_figure_file_name(fout_path,
+                                              [graph_title, bm_id, niter, st,
+                                               st_when_to_restart, st_when_to_restart_niter,
+                                               st_start_prog, p_inst_operand, p_inst])
     f.savefig(figure_name, bbox_inches='tight')
     print("figure output : " + figure_name)
     plt.close(f)
@@ -728,6 +809,31 @@ def figure_relative_coding_transfer_graph(file_type, fin_path, fout_path, niter,
     plt.close(f)
 
 
+def figure_all(bm_id, best_perf_cost, st, st_when_to_restart, st_when_to_restart_niter,
+               st_start_prog, p_inst_operand, p_inst, in_para):
+    for file_type in [file_name_type.proposals, file_name_type.programs]:
+        # figure 1: cost function CDF
+        for c_type in [cost_type.error_cost, cost_type.perf_cost, cost_type.total_cost]:
+            figure_cost_function_cdf_when_steady(file_type, c_type, in_para.fin_path, in_para.fout_path,
+                                                 in_para.niter, in_para.steady_start, bm_id, best_perf_cost,
+                                                 st, st_when_to_restart, st_when_to_restart_niter,
+                                                 st_start_prog, p_inst_operand, p_inst,
+                                                 in_para.w_e_list, in_para.w_p_list)
+        # figure 2: best performance cost with zero error cost over iterations
+        figure_best_perf_cost_with_zero_error_error_cost(file_type, in_para.fin_path, in_para.fout_path,
+                                                         in_para.niter, bm_id, best_perf_cost, st,
+                                                         in_para.w_e_list, in_para.w_p_list)
+        # figure 3: the number of unique programs over iterations
+        figure_num_unique_programs(file_type, in_para.fin_path, in_para.fout_path, in_para.niter,
+                                   bm_id, st, in_para.w_e_list, in_para.w_p_list)
+        for w_e, w_p in zip(in_para.w_e_list, in_para.w_p_list):
+            # figure 4: relative coding transfer graph
+            figure_relative_coding_transfer_graph(file_type, in_para.fin_path, in_para.fout_path,
+                                                  in_para.niter, bm_id, st, w_e, w_p)
+            # figure 5: absolute coding transfer graph
+            figure_absolute_coding_transfer_graph(file_type, in_para.fin_path, in_para.fout_path,
+                                                  in_para.niter, bm_id, st, w_e, w_p)
+
 if __name__ == "__main__":
     in_para = parse_input()
     in_para.print_out()
@@ -735,23 +841,9 @@ if __name__ == "__main__":
 
     for bm_id, best_perf_cost in zip(in_para.bm_ids, in_para.best_perf_costs):
         for st in in_para.st_list:
-            for file_type in [file_name_type.proposals, file_name_type.programs]:
-                # figure 1: cost function CDF
-                for c_type in [cost_type.error_cost, cost_type.perf_cost, cost_type.total_cost]:
-                    figure_cost_function_cdf_when_steady(file_type, c_type, in_para.fin_path, in_para.fout_path,
-                                                         in_para.niter, in_para.steady_start, bm_id, best_perf_cost,
-                                                         st, in_para.w_e_list, in_para.w_p_list)
-                # figure 2: best performance cost with zero error cost over iterations
-                figure_best_perf_cost_with_zero_error_error_cost(file_type, in_para.fin_path, in_para.fout_path,
-                                                                 in_para.niter, bm_id, best_perf_cost, st,
-                                                                 in_para.w_e_list, in_para.w_p_list)
-                # figure 3: the number of unique programs over iterations
-                figure_num_unique_programs(file_type, in_para.fin_path, in_para.fout_path, in_para.niter,
-                                           bm_id, st, in_para.w_e_list, in_para.w_p_list)
-                for w_e, w_p in zip(in_para.w_e_list, in_para.w_p_list):
-                    # figure 4: relative coding transfer graph
-                    figure_relative_coding_transfer_graph(file_type, in_para.fin_path, in_para.fout_path,
-                                                          in_para.niter, bm_id, st, w_e, w_p)
-                    # figure 5: absolute coding transfer graph
-                    figure_absolute_coding_transfer_graph(file_type, in_para.fin_path, in_para.fout_path,
-                                                          in_para.niter, bm_id, st, w_e, w_p)
+            for st_when_to_restart in in_para.st_when_to_restart_list:
+                for st_when_to_restart_niter in in_para.st_when_to_restart_niter_list:
+                    for st_start_prog in in_para.st_start_prog_list:
+                        for p_inst_operand, p_inst in zip(in_para.p_inst_operand_list, in_para.p_inst_list):
+                            figure_all(bm_id, best_perf_cost, st, st_when_to_restart, st_when_to_restart_niter,
+                                       st_start_prog, p_inst_operand, p_inst, in_para)
