@@ -43,10 +43,3 @@ class graph {
   void gen_graph(inst* inst_lst, int length);
   friend ostream& operator<<(ostream& out, const graph& g);
 };
-
-#define CFG_OTHERS 0
-#define CFG_CONDJMP 1
-#define CFG_END 2
-#define CFG_NOP 3
-int get_inst_type(inst& ins);
-

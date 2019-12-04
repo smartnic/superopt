@@ -18,9 +18,10 @@ using namespace std;
 #define OP_OFF 3
 
 // Opcode types for instructions
-#define OP_RET 0
-#define OP_JMP 1
-#define OP_OTHERS 2
+#define OP_NOP 0
+#define OP_RET 1
+#define OP_JMP 2
+#define OP_OTHERS 3
 
 // Instruction opcodes
 #define NOP 0

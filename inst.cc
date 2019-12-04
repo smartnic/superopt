@@ -52,7 +52,7 @@ vector<int> inst::get_reg_list() const {
 
 int inst::get_opcode_type() const {
   switch (_opcode) {
-    case NOP:
+    case NOP: return OP_NOP;
     case ADDXY:
     case MOVXC:
     case MAXC:

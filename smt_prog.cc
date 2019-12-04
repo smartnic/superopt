@@ -97,7 +97,7 @@ void smt_prog::smt_block(expr& smt_b, inst* program, int length, smt_var& sv) {
   inst* inst_lst = program;
   expr p = string_to_expr("true");
   for (size_t i = 0; i < length; i++) {
-    if (get_inst_type(inst_lst[i]) != CFG_OTHERS) continue;
+    if (inst_lst[i].get_opcode_type() != OP_OTHERS) continue;
     p = p and smt_inst(sv, &inst_lst[i]);
   }
   smt_b = p.simplify();
