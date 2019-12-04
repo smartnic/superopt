@@ -116,9 +116,9 @@ string gen_file_name_suffix_from_input(const input_paras &in_para) {
 
 void run_mh_sampler(const input_paras &in_para, vector<inst*> &bm_optis_orig) {
   mh_sampler mh;
-  mh._when_to_restart.set_st(in_para.st_when_to_restart,
-                             in_para.st_when_to_restart_niter);
-  mh._start_prog.set_st(in_para.st_start_prog);
+  mh._restart.set_st_when_to_restart(in_para.st_when_to_restart,
+                                     in_para.st_when_to_restart_niter);
+  mh._restart.set_st_next_start_prog(in_para.st_start_prog);
   mh._next_proposal.set_probability(in_para.p_inst_operand,
                                     in_para.p_inst);
   if (in_para.meas_mode) mh.turn_on_measure();

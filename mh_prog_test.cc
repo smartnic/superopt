@@ -52,8 +52,8 @@ void mh_sampler_res_print(int nrolls,
 
 void test1(int nrolls, double w_e, double w_p)  {
   mh_sampler mh;
-  mh._when_to_restart.set_st(MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER, 5);
-  mh._start_prog.set_st(MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS);
+  mh._restart.set_st_when_to_restart(MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER, 5);
+  mh._restart.set_st_next_start_prog(MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS);
   mh._next_proposal.set_probability(0.3, 0.5);
   std::unordered_map<int, vector<prog*> > prog_freq;
   prog orig(instructions);
