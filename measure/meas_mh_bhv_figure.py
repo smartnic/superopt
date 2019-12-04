@@ -413,8 +413,13 @@ def num_unique_programs_for_different_types(file_type, fin_path, bm_id, niter, s
     return x_axis, y_axis
 
 
-def get_abs_opcodes_operands_for_different_types(file_type, fin_path, bm_id, niter, st, w_e, w_p):
-    file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st, w_e, w_p)
+def get_abs_opcodes_operands_for_different_types(file_type, fin_path, bm_id, niter, st, w_e, w_p,
+                                                 st_when_to_restart, st_when_to_restart_niter, st_start_prog,
+                                                 p_inst_operand, p_inst):
+    file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st,
+                                                  st_when_to_restart, st_when_to_restart_niter, st_start_prog,
+                                                  p_inst_operand, p_inst,
+                                                  w_e, w_p)
     abs_bv_list = file_data.abs_coding_list
     opcode_list = []
     operand_list = []
@@ -523,9 +528,14 @@ def figure_num_unique_programs(file_type, fin_path, fout_path, niter, bm_id, st,
     plt.close(f)
 
 
-def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, niter, bm_id, st, w_e, w_p):
+def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, niter, bm_id, st, w_e, w_p,
+                                          st_when_to_restart, st_when_to_restart_niter, st_start_prog,
+                                          p_inst_operand, p_inst):
     opcode_list, operand_list = get_abs_opcodes_operands_for_different_types(file_type, fin_path, bm_id,
-                                                                             niter, st, w_e, w_p)
+                                                                             niter, st, w_e, w_p,
+                                                                             st_when_to_restart,
+                                                                             st_when_to_restart_niter, st_start_prog,
+                                                                             p_inst_operand, p_inst)
     figsize_x = 16
     figsize_y = 8
     f = plt.figure(figsize=(figsize_x, figsize_y))
@@ -535,7 +545,12 @@ def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, niter,
     # compute the optimal program points and add them into the figure
     opti_opcode_list, opti_operand_list = get_abs_opcodes_operands_for_different_types(file_name_type.optimals,
                                                                                        fin_path, bm_id,
-                                                                                       niter, st, w_e, w_p)
+                                                                                       niter, st, w_e, w_p,
+                                                                                       st_when_to_restart,
+                                                                                       st_when_to_restart_niter,
+                                                                                       st_start_prog, p_inst_operand,
+                                                                                       p_inst,
+                                                                                       )
     plt.scatter(opti_operand_list, opti_opcode_list, marker='*', c="tab:red", alpha=0.1)
     graph_title = file_type + " absolute coding transfer graph"
     graph_title_suffix = "\nbm:" + bm_id + " niter:" + niter + " strategy:" + \
@@ -558,7 +573,10 @@ def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, niter,
     plt.xscale('log')
     plt.ylim(ymin=pow(10, 7))
     plt.grid()
-    figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st, w_e, w_p])
+    figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st,
+                                                          st_when_to_restart, st_when_to_restart_niter,
+                                                          st_start_prog, p_inst_operand, p_inst,
+                                                          w_e, w_p])
     f.savefig(figure_name, bbox_inches='tight')
     print("figure output : " + figure_name)
     plt.close(f)
@@ -788,8 +806,12 @@ def gen_text_node_in_rel_transfer_graph(nodes, nodes_info, max_cost, file_type, 
     return text_nodes
 
 
-def figure_relative_coding_transfer_graph(file_type, fin_path, fout_path, niter, bm_id, st, w_e, w_p):
-    file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st, w_e, w_p)
+def figure_relative_coding_transfer_graph(file_type, fin_path, fout_path, niter, bm_id, st, w_e, w_p,
+                                          st_when_to_restart, st_when_to_restart_niter, st_start_prog,
+                                          p_inst_operand, p_inst):
+    file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st,
+                                                  st_when_to_restart, st_when_to_restart_niter, st_start_prog,
+                                                  p_inst_operand, p_inst, w_e, w_p)
     nodes_list = file_data.rel_coding_list
     nodes_list_ordered = sorted(list(set(nodes_list)))
     # `nodes`: each item in `nodes` is a node list where each node has
@@ -831,7 +853,10 @@ def figure_relative_coding_transfer_graph(file_type, fin_path, fout_path, niter,
     graph_title_suffix = "\nbm:" + bm_id + " niter:" + niter + " strategy:" + \
                          st + "\nbest perf cost:" + best_perf_cost + " w_e:" + w_e + " w_p:" + w_p
     plt.title(graph_title + graph_title_suffix)
-    figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st, w_e, w_p])
+    figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st,
+                                                          st_when_to_restart, st_when_to_restart_niter,
+                                                          st_start_prog, p_inst_operand, p_inst,
+                                                          w_e, w_p])
     f.savefig(figure_name, bbox_inches='tight')
     print("figure output : " + figure_name)
     plt.close(f)
@@ -861,10 +886,14 @@ def figure_all(bm_id, best_perf_cost, st, st_when_to_restart, st_when_to_restart
         for w_e, w_p in zip(in_para.w_e_list, in_para.w_p_list):
             # figure 4: relative coding transfer graph
             figure_relative_coding_transfer_graph(file_type, in_para.fin_path, in_para.fout_path,
-                                                  in_para.niter, bm_id, st, w_e, w_p)
+                                                  in_para.niter, bm_id, st, w_e, w_p,
+                                                  st_when_to_restart, st_when_to_restart_niter, st_start_prog,
+                                                  p_inst_operand, p_inst)
             # figure 5: absolute coding transfer graph
             figure_absolute_coding_transfer_graph(file_type, in_para.fin_path, in_para.fout_path,
-                                                  in_para.niter, bm_id, st, w_e, w_p)
+                                                  in_para.niter, bm_id, st, w_e, w_p,
+                                                  st_when_to_restart, st_when_to_restart_niter, st_start_prog,
+                                                  p_inst_operand, p_inst)
 
 if __name__ == "__main__":
     in_para = parse_input()
