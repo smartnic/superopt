@@ -336,8 +336,14 @@ def cost_function_for_different_types_when_steady(c_type, file_type, fin_path, s
     return x_axis, y_axis
 
 
-def best_perf_cost_with_zero_error_cost_for_different_types(file_type, fin_path, bm_id, niter, st, w_e, w_p):
-    file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st, w_e, w_p)
+def best_perf_cost_with_zero_error_cost_for_different_types(file_type, fin_path, bm_id, niter, st,
+                                                            st_when_to_restart, st_when_to_restart_niter,
+                                                            st_start_prog, p_inst_operand, p_inst,
+                                                            w_e, w_p):
+    file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st,
+                                                  st_when_to_restart, st_when_to_restart_niter,
+                                                  st_start_prog, p_inst_operand, p_inst,
+                                                  w_e, w_p)
     if file_type == file_name_type.programs:
         iter_num_list = [int(i) for i in file_data.iter_num_list]
     elif file_type == file_name_type.proposals:
@@ -455,11 +461,17 @@ def figure_cost_function_cdf_when_steady(file_type, c_type, fin_path, fout_path,
 
 
 def figure_best_perf_cost_with_zero_error_error_cost(file_type, fin_path, fout_path, niter,
-                                                     bm_id, best_perf_cost, st, w_e_list, w_p_list):
+                                                     bm_id, best_perf_cost, st,
+                                                     st_when_to_restart, st_when_to_restart_niter,
+                                                     st_start_prog, p_inst_operand, p_inst,
+                                                     w_e_list, w_p_list):
     f = plt.figure()
     for w_e, w_p in zip(w_e_list, w_p_list):
-        x_axis, y_axis = best_perf_cost_with_zero_error_cost_for_different_types(file_type, fin_path, bm_id,
-                                                                                 niter, st, w_e, w_p)
+        x_axis, y_axis = best_perf_cost_with_zero_error_cost_for_different_types(file_type, fin_path, bm_id, niter, st,
+                                                                                 st_when_to_restart,
+                                                                                 st_when_to_restart_niter,
+                                                                                 st_start_prog, p_inst_operand, p_inst,
+                                                                                 w_e, w_p)
         curve_name = " w_e:" + w_e + " w_p:" + w_p
         plt.plot(x_axis, y_axis, linestyle='-.', linewidth=1.5, label=curve_name, marker='x')
     graph_title = file_type + " best perf cost with zero error cost over iterations"
@@ -470,7 +482,9 @@ def figure_best_perf_cost_with_zero_error_error_cost(file_type, fin_path, fout_p
     plt.ylabel('Perf cost with zero error cost')
     plt.legend()
     plt.grid()
-    figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st])
+    figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st,
+                                                          st_when_to_restart, st_when_to_restart_niter,
+                                                          st_start_prog, p_inst_operand, p_inst])
     f.savefig(figure_name, bbox_inches='tight')
     print("figure output : " + figure_name)
     plt.close(f)
@@ -822,6 +836,8 @@ def figure_all(bm_id, best_perf_cost, st, st_when_to_restart, st_when_to_restart
         # figure 2: best performance cost with zero error cost over iterations
         figure_best_perf_cost_with_zero_error_error_cost(file_type, in_para.fin_path, in_para.fout_path,
                                                          in_para.niter, bm_id, best_perf_cost, st,
+                                                         st_when_to_restart, st_when_to_restart_niter,
+                                                         st_start_prog, p_inst_operand, p_inst,
                                                          in_para.w_e_list, in_para.w_p_list)
         # figure 3: the number of unique programs over iterations
         figure_num_unique_programs(file_type, in_para.fin_path, in_para.fout_path, in_para.niter,
