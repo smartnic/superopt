@@ -118,7 +118,7 @@ int main () {
                             inst(),
                            };
   graph g10(instructions10, 7);
-  int expected_num_blocks = 1;
+  int expected_num_blocks = 2;
   print_test_res(expected_num_blocks == int(g10.nodes.size()),
                  "instruction JMP logic when jmp distance is 0");
 
