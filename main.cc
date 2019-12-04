@@ -36,6 +36,8 @@ struct input_paras {
   int st_when_to_restart;
   int st_when_to_restart_niter;
   int st_start_prog;
+  vector<double> restart_w_e_list;
+  vector<double> restart_w_p_list;
   double p_inst_operand;
   double p_inst;
 };
@@ -53,6 +55,8 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
       << "st_when_to_restart:" << ip.st_when_to_restart << endl
       << "st_when_to_restart_niter:" << ip.st_when_to_restart_niter << endl
       << "st_start_prog:" << ip.st_start_prog << endl
+      << "restart_w_e_list:" << ip.restart_w_e_list << endl
+      << "restart_w_p_list:" << ip.restart_w_p_list << endl
       << "p_inst_operand:" << ip.p_inst_operand << endl
       << "p_inst:" << ip.p_inst << endl;
   return out;
@@ -158,6 +162,12 @@ string para_st_avg_desc() {
   return s;
 }
 
+string para_restart_desc() {
+  string s = "The next five parameters are about restart. The last four " \
+             "parameters work ONLY when `st_when_to_restart` is not set as 0";
+  return s;
+}
+
 string para_st_when_to_restart_desc() {
   string s = "strategy of when to restart during sampling. " \
              "`arg`: 0(no restart), 1(restart every `st_when_to_restart_niter`)";
@@ -170,8 +180,20 @@ string para_st_when_to_restart_niter_desc() {
 }
 
 string para_st_start_prog_desc() {
-  string s = "strategy of a new start program for restart" \
+  string s = "strategy of a new start program for restart." \
              "`arg`: 0(no change) 1(change all instructions) 2(change k continuous instructions)";
+  return s;
+}
+
+string para_restart_w_e_list_desc() {
+  string s = "weights of error cost in cost function for restart. " \
+             "`arg` eg: 1.5,0.5";
+  return s;
+}
+
+string para_restart_w_p_list_desc() {
+  string s = "weights of performance cost in cost function for restart. " \
+             "`arg` eg: 1.5,0.5";
   return s;
 }
 
@@ -211,12 +233,23 @@ void usage() {
        << setw(W) << "--st_ex arg" << ": " +  para_st_ex_desc() << endl
        << setw(W) << "--st_eq arg" << ": " +  para_st_eq_desc() << endl
        << setw(W) << "--st_avg arg" << ": " + para_st_avg_desc() << endl
+       << endl << para_restart_desc() << endl
        << setw(W) << "--st_when_to_restart arg" << ": " + para_st_when_to_restart_desc() << endl
        << setw(W) << "--st_when_to_restart_niter arg" << ": "  + para_st_when_to_restart_niter_desc() << endl
        << setw(W) << "--st_start_prog arg" << ": " << para_st_start_prog_desc() << endl
+       << setw(W) << "--restart_we_list arg" << ": " << para_restart_w_e_list_desc() << endl
+       << setw(W) << "--restart_wp_list arg" << ": " << para_restart_w_p_list_desc() << endl
        << endl << para_next_proposal_desc() << endl
        << setw(W) << "--p_inst_operand arg:" << ": " << para_p_inst_operand_desc() << endl
        << setw(W) << "--p_inst arg" << ": " << para_p_inst_desc() << endl;
+}
+
+void set_w_list(vector<double> &list, string s) {
+  vector<string> str_v;
+  split_string(s, str_v, ",");
+  list.clear();
+  for (size_t i = 0; i < str_v.size(); i++)
+    list.push_back(stod(str_v[i]));
 }
 
 bool parse_input_and_return_whether_to_sample(int argc, char* argv[], input_paras &in_para) {
@@ -232,8 +265,10 @@ bool parse_input_and_return_whether_to_sample(int argc, char* argv[], input_para
     {"st_when_to_restart", required_argument, nullptr, 7},
     {"st_when_to_restart_niter", required_argument, nullptr, 8},
     {"st_start_prog", required_argument, nullptr, 9},
-    {"p_inst_operand", required_argument, nullptr, 10},
-    {"p_inst", required_argument, nullptr, 11},
+    {"restart_we_list", required_argument, nullptr, 10},
+    {"restart_wp_list", required_argument, nullptr, 11},
+    {"p_inst_operand", required_argument, nullptr, 12},
+    {"p_inst", required_argument, nullptr, 13},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -253,8 +288,10 @@ bool parse_input_and_return_whether_to_sample(int argc, char* argv[], input_para
       case 7: in_para.st_when_to_restart = stoi(optarg); break;
       case 8: in_para.st_when_to_restart_niter = stoi(optarg); break;
       case 9: in_para.st_start_prog = stoi(optarg); break;
-      case 10: in_para.p_inst_operand = stod(optarg); break;
-      case 11: in_para.p_inst = stod(optarg); break;
+      case 10: set_w_list(in_para.restart_w_e_list, optarg); break;
+      case 11: set_w_list(in_para.restart_w_p_list, optarg); break;
+      case 12: in_para.p_inst_operand = stod(optarg); break;
+      case 13: in_para.p_inst = stod(optarg); break;
       case '?': usage(); return false;
     }
   }

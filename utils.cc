@@ -1,4 +1,3 @@
-#include <iostream>
 #include <random>
 #include <unordered_set>
 #include "utils.h"
@@ -26,4 +25,24 @@ void gen_random_input(vector<int>& inputs, int min, int max) {
       i++;
     }
   }
+}
+
+ostream& operator<<(ostream& out, const vector<double>& vec) {
+  for (size_t i = 0; i < vec.size(); i++) {
+    out << vec[i] << " ";
+  }
+  return out;
+}
+
+void split_string(const string& s, vector<string>& v, const string& c) {
+  std::string::size_type pos1, pos2;
+  pos2 = s.find(c);
+  pos1 = 0;
+  while (std::string::npos != pos2) {
+    v.push_back(s.substr(pos1, pos2 - pos1));
+    pos1 = pos2 + c.size();
+    pos2 = s.find(c, pos1);
+  }
+  if (pos1 != s.length())
+    v.push_back(s.substr(pos1));
 }
