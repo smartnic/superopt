@@ -15,23 +15,17 @@ using namespace std;
 #define MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS 1
 #define MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS 2
 
-class mh_sampler_when_to_restart {
+class mh_sampler_restart {
  public:
-  unsigned int _st;
+  unsigned int _st_when_to_start;
   // restart every `_max_num_iter` iterations
-  unsigned int _max_num_iter = 0;
-  mh_sampler_when_to_restart();
-  ~mh_sampler_when_to_restart();
-  void set_st(unsigned int st, unsigned int max_num_iter = 0);
+  unsigned int _max_num_iter;
+  unsigned int _st_next_start_prog;
+  mh_sampler_restart();
+  ~mh_sampler_restart();
+  void set_st_when_to_restart(unsigned int st, unsigned int max_num_iter = 0);
+  void set_st_next_start_prog(unsigned int st);
   bool whether_to_restart(unsigned int iter_num);
-};
-
-class mh_sampler_next_start_prog {
- public:
-  unsigned int _st;
-  mh_sampler_next_start_prog();
-  ~mh_sampler_next_start_prog();
-  void set_st(unsigned int st);
   prog* next_start_prog(prog* curr);
 };
 
@@ -67,7 +61,7 @@ class mh_sampler_next_proposal {
  * start program, moves.
  * Example to use a mh_sampler:
  *   mh_sampler mh;        // define a `mh_sampler` variable
- *   mh.[strategy].set_st_*(.) // [optional] set different mh sampler strategy, 
+ *   mh.[strategy].set_st_*(.) // [optional] set different mh sampler strategy,
  *                             // the default is used without setting
  *   mh.turn_on_measure(); // [optional] turn on measure mode if measurement needed
  *   mh._cost.init(.);     // initialize the parameters of cost function
@@ -82,8 +76,7 @@ class mh_sampler {
   double cost_to_pi(double cost);
   void print_restart_info(int iter_num, const prog &curr, const prog &restart);
  public:
-  mh_sampler_when_to_restart _when_to_restart;
-  mh_sampler_next_start_prog _start_prog;
+  mh_sampler_restart _restart;
   mh_sampler_next_proposal _next_proposal;
   meas_mh_data _meas_data;
   cost _cost;
