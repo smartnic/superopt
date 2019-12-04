@@ -397,8 +397,14 @@ def num_unique_programs_over_iterations(iter_num_list, abs_coding_list):
     return x_axis, y_axis
 
 
-def num_unique_programs_for_different_types(file_type, fin_path, bm_id, niter, st, w_e, w_p):
-    file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st, w_e, w_p)
+def num_unique_programs_for_different_types(file_type, fin_path, bm_id, niter, st,
+                                            st_when_to_restart, st_when_to_restart_niter,
+                                            st_start_prog, p_inst_operand, p_inst,
+                                            w_e, w_p):
+    file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st,
+                                                  st_when_to_restart, st_when_to_restart_niter,
+                                                  st_start_prog, p_inst_operand, p_inst,
+                                                  w_e, w_p)
     if file_type == file_name_type.programs:
         x_axis, y_axis = num_unique_programs_over_iterations(file_data.iter_num_list, file_data.abs_coding_list)
     elif file_type == file_name_type.proposals:
@@ -490,10 +496,16 @@ def figure_best_perf_cost_with_zero_error_error_cost(file_type, fin_path, fout_p
     plt.close(f)
 
 
-def figure_num_unique_programs(file_type, fin_path, fout_path, niter, bm_id, st, w_e_list, w_p_list):
+def figure_num_unique_programs(file_type, fin_path, fout_path, niter, bm_id, st,
+                               st_when_to_restart, st_when_to_restart_niter,
+                               st_start_prog, p_inst_operand, p_inst,
+                               w_e_list, w_p_list):
     f = plt.figure()
     for w_e, w_p in zip(w_e_list, w_p_list):
-        x_axis, y_axis = num_unique_programs_for_different_types(file_type, fin_path, bm_id, niter, st, w_e, w_p)
+        x_axis, y_axis = num_unique_programs_for_different_types(file_type, fin_path, bm_id, niter, st,
+                                                                 st_when_to_restart, st_when_to_restart_niter,
+                                                                 st_start_prog, p_inst_operand, p_inst,
+                                                                 w_e, w_p)
         curve_name = " w_e:" + w_e + " w_p:" + w_p + " total #unique_programs:" + str(y_axis[-1])
         plt.plot(x_axis, y_axis, linestyle='-', linewidth=1.5, label=curve_name)
     graph_title = file_type + " number of unique programs over iterations"
@@ -503,7 +515,9 @@ def figure_num_unique_programs(file_type, fin_path, fout_path, niter, bm_id, st,
     plt.ylabel('Number of unique programs')
     plt.legend()
     plt.grid()
-    figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st])
+    figure_name = get_output_figure_file_name(fout_path, [graph_title, bm_id, niter, st,
+                                                          st_when_to_restart, st_when_to_restart_niter,
+                                                          st_start_prog, p_inst_operand, p_inst])
     f.savefig(figure_name, bbox_inches='tight')
     print("figure output : " + figure_name)
     plt.close(f)
@@ -840,8 +854,10 @@ def figure_all(bm_id, best_perf_cost, st, st_when_to_restart, st_when_to_restart
                                                          st_start_prog, p_inst_operand, p_inst,
                                                          in_para.w_e_list, in_para.w_p_list)
         # figure 3: the number of unique programs over iterations
-        figure_num_unique_programs(file_type, in_para.fin_path, in_para.fout_path, in_para.niter,
-                                   bm_id, st, in_para.w_e_list, in_para.w_p_list)
+        figure_num_unique_programs(file_type, in_para.fin_path, in_para.fout_path, in_para.niter, bm_id, st,
+                                   st_when_to_restart, st_when_to_restart_niter,
+                                   st_start_prog, p_inst_operand, p_inst,
+                                   in_para.w_e_list, in_para.w_p_list)
         for w_e, w_p in zip(in_para.w_e_list, in_para.w_p_list):
             # figure 4: relative coding transfer graph
             figure_relative_coding_transfer_graph(file_type, in_para.fin_path, in_para.fout_path,
