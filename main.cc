@@ -240,8 +240,8 @@ void usage() {
        << setw(W) << "-m" << ": turn on measurement" << endl
        << setw(W) << "--path_out arg" << ": output file path" << endl
        << setw(W) << "--bm arg" << ": benchmark ID" << endl
-       << setw(W) << "--we arg" << ": weight of error cost in cost function" << endl
-       << setw(W) << "--wp arg" << ": weight of performance cost in cost function" << endl
+       << setw(W) << "--w_e arg" << ": weight of error cost in cost function" << endl
+       << setw(W) << "--w_p arg" << ": weight of performance cost in cost function" << endl
        << setw(W) << "--st_ex arg" << ": " +  para_st_ex_desc() << endl
        << setw(W) << "--st_eq arg" << ": " +  para_st_eq_desc() << endl
        << setw(W) << "--st_avg arg" << ": " + para_st_avg_desc() << endl
@@ -249,8 +249,8 @@ void usage() {
        << setw(W) << "--st_when_to_restart arg" << ": " + para_st_when_to_restart_desc() << endl
        << setw(W) << "--st_when_to_restart_niter arg" << ": "  + para_st_when_to_restart_niter_desc() << endl
        << setw(W) << "--st_start_prog arg" << ": " << para_st_start_prog_desc() << endl
-       << setw(W) << "--restart_we_list arg" << ": " << para_restart_w_e_list_desc() << endl
-       << setw(W) << "--restart_wp_list arg" << ": " << para_restart_w_p_list_desc() << endl
+       << setw(W) << "--restart_w_e_list arg" << ": " << para_restart_w_e_list_desc() << endl
+       << setw(W) << "--restart_w_p_list arg" << ": " << para_restart_w_p_list_desc() << endl
        << endl << para_next_proposal_desc() << endl
        << setw(W) << "--p_inst_operand arg:" << ": " << para_p_inst_operand_desc() << endl
        << setw(W) << "--p_inst arg" << ": " << para_p_inst_desc() << endl;
@@ -269,16 +269,16 @@ bool parse_input_and_return_whether_to_sample(int argc, char* argv[], input_para
   static struct option long_opts[] = {
     {"path_out", required_argument, nullptr, 0},
     {"bm", required_argument, nullptr, 1},
-    {"we", required_argument, nullptr, 2},
-    {"wp", required_argument, nullptr, 3},
+    {"w_e", required_argument, nullptr, 2},
+    {"w_p", required_argument, nullptr, 3},
     {"st_ex", required_argument, nullptr, 4},
     {"st_eq", required_argument, nullptr, 5},
     {"st_avg", required_argument, nullptr, 6},
     {"st_when_to_restart", required_argument, nullptr, 7},
     {"st_when_to_restart_niter", required_argument, nullptr, 8},
     {"st_start_prog", required_argument, nullptr, 9},
-    {"restart_we_list", required_argument, nullptr, 10},
-    {"restart_wp_list", required_argument, nullptr, 11},
+    {"restart_w_e_list", required_argument, nullptr, 10},
+    {"restart_w_p_list", required_argument, nullptr, 11},
     {"p_inst_operand", required_argument, nullptr, 12},
     {"p_inst", required_argument, nullptr, 13},
     {nullptr, no_argument, nullptr, 0}
