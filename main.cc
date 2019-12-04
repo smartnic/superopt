@@ -18,6 +18,8 @@
 
 using namespace std;
 
+string FILE_CONFIG = "config";
+
 inst* bm;
 int bm_len = MAX_PROG_LEN;
 vector<int> inputs;
@@ -29,7 +31,7 @@ struct input_paras {
   double w_e;
   double w_p;
   bool meas_mode;
-  string meas_path_out;
+  string path_out;
   int st_ex;
   int st_eq;
   int st_avg;
@@ -44,7 +46,7 @@ struct input_paras {
 
 ostream& operator<<(ostream& out, const input_paras& ip) {
   out << "meas_mode:" << ip.meas_mode << endl
-      << "meas_path_out:" << ip.meas_path_out << endl
+      << "path_out:" << ip.path_out << endl
       << "bm:" << ip.bm << endl
       << "niter:" << ip.niter << endl
       << "w_e:" << ip.w_e << endl
@@ -123,6 +125,7 @@ void run_mh_sampler(const input_paras &in_para, vector<inst*> &bm_optis_orig) {
   mh._restart.set_st_when_to_restart(in_para.st_when_to_restart,
                                      in_para.st_when_to_restart_niter);
   mh._restart.set_st_next_start_prog(in_para.st_start_prog);
+  mh._restart.set_we_wp_list(in_para.restart_w_e_list, in_para.restart_w_p_list);
   mh._next_proposal.set_probability(in_para.p_inst_operand,
                                     in_para.p_inst);
   if (in_para.meas_mode) mh.turn_on_measure();
@@ -138,10 +141,19 @@ void run_mh_sampler(const input_paras &in_para, vector<inst*> &bm_optis_orig) {
     vector<prog> bm_optimals;
     // get all optimal programs from the original ones
     gen_optis_for_progs(bm_optis_orig, bm_optimals);
-    meas_store_raw_data(mh._meas_data, in_para.meas_path_out,
+    meas_store_raw_data(mh._meas_data, in_para.path_out,
                         suffix, in_para.bm, bm_optimals);
     mh.turn_off_measure();
   }
+}
+
+void store_config_to_file(const input_paras &in_para) {
+  string suffix = gen_file_name_suffix_from_input(in_para);
+  string file_name = in_para.path_out + FILE_CONFIG + suffix;
+  fstream fout;
+  fout.open(file_name, ios::out | ios::trunc);
+  fout << in_para;
+  fout.close();
 }
 
 string para_st_ex_desc() {
@@ -226,7 +238,7 @@ void usage() {
        << setw(W) << "-h" << ": display usage" << endl
        << setw(W) << "-n arg" << ": number of iterations" << endl
        << setw(W) << "-m" << ": turn on measurement" << endl
-       << setw(W) << "--meas_path_out arg" << ": measurement output file path" << endl
+       << setw(W) << "--path_out arg" << ": output file path" << endl
        << setw(W) << "--bm arg" << ": benchmark ID" << endl
        << setw(W) << "--we arg" << ": weight of error cost in cost function" << endl
        << setw(W) << "--wp arg" << ": weight of performance cost in cost function" << endl
@@ -255,7 +267,7 @@ void set_w_list(vector<double> &list, string s) {
 bool parse_input_and_return_whether_to_sample(int argc, char* argv[], input_paras &in_para) {
   const char* const short_opts = "hmn:";
   static struct option long_opts[] = {
-    {"meas_path_out", required_argument, nullptr, 0},
+    {"path_out", required_argument, nullptr, 0},
     {"bm", required_argument, nullptr, 1},
     {"we", required_argument, nullptr, 2},
     {"wp", required_argument, nullptr, 3},
@@ -278,7 +290,7 @@ bool parse_input_and_return_whether_to_sample(int argc, char* argv[], input_para
       case 'h': usage(); return false;
       case 'm': in_para.meas_mode = true; break;
       case 'n': in_para.niter = stoi(optarg); break;
-      case 0: in_para.meas_path_out = optarg; break;
+      case 0: in_para.path_out = optarg; break;
       case 1: in_para.bm = stoi(optarg); break;
       case 2: in_para.w_e = stod(optarg); break;
       case 3: in_para.w_p = stod(optarg); break;
@@ -300,7 +312,7 @@ bool parse_input_and_return_whether_to_sample(int argc, char* argv[], input_para
 
 void set_default_para_vals(input_paras &in_para) {
   in_para.meas_mode = false;
-  in_para.meas_path_out = "measure/";
+  in_para.path_out = "measure/";
   in_para.bm = 0;
   in_para.niter = 10;
   in_para.w_e = 1.0;
@@ -311,6 +323,8 @@ void set_default_para_vals(input_paras &in_para) {
   in_para.st_when_to_restart = MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART;
   in_para.st_when_to_restart_niter = 0;
   in_para.st_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ORIG;
+  in_para.restart_w_e_list = {1};
+  in_para.restart_w_p_list = {0};
   in_para.p_inst_operand = 1.0 / 3.0;
   in_para.p_inst = 1.0 / 3.0;
 }
@@ -320,6 +334,7 @@ int main(int argc, char* argv[]) {
   set_default_para_vals(in_para);
   if (! parse_input_and_return_whether_to_sample(argc, argv, in_para)) return 0;
   cout << in_para;
+  store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
   init_benchmarks(bm_optis_orig, in_para.bm);
   inputs.resize(30);
