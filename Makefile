@@ -1,6 +1,6 @@
 all: main.out proposals_test.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out cfg_test.out inout_test.out smt_prog_test.out
 
-main.out: main.cc main_z3.o measure/common.cc measure/common.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc mh_prog.cc mh_prog.h proposals.cc proposals.h prog.cc prog.h cost.cc cost.h inout.cc inout.h inst.cc inst.h validator.cc validator.h cfg.cc cfg.h smt_prog.cc smt_prog.h utils.cc utils.h
+main.out: main.cc main.h main_z3.o measure/common.cc measure/common.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc mh_prog.cc mh_prog.h proposals.cc proposals.h prog.cc prog.h cost.cc cost.h inout.cc inout.h inst.cc inst.h validator.cc validator.h cfg.cc cfg.h smt_prog.cc smt_prog.h utils.cc utils.h
 	g++ -std=c++11 main_z3.o measure/common.cc measure/meas_mh_bhv.cc inst.cc mh_prog.cc proposals.cc prog.cc cost.cc inout.cc validator.cc cfg.cc smt_prog.cc utils.cc -o main.out ../z3/build/libz3.dylib -lpthread
 
 main_z3.o: main.cc
