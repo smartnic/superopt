@@ -3,6 +3,7 @@
 #include "prog.h"
 #include "inout.h"
 #include "cost.h"
+#include <utility>
 #include "measure/meas_mh_bhv.h"
 
 using namespace std;
@@ -21,12 +22,17 @@ class mh_sampler_restart {
   // restart every `_max_num_iter` iterations
   unsigned int _max_num_iter;
   unsigned int _st_next_start_prog;
+  vector<double> _w_e_list;
+  vector<double> _w_p_list;
+  size_t _cur_w_pointer;
   mh_sampler_restart();
   ~mh_sampler_restart();
   void set_st_when_to_restart(unsigned int st, unsigned int max_num_iter = 0);
   void set_st_next_start_prog(unsigned int st);
+  void set_we_wp_list(const vector<double> &w_e_list, const vector<double> &w_p_list);
   bool whether_to_restart(unsigned int iter_num);
   prog* next_start_prog(prog* curr);
+  pair<double, double> next_start_we_wp();
 };
 
 /* The main function of class mh_sampler_next_proposal is to
@@ -61,8 +67,10 @@ class mh_sampler_next_proposal {
  * start program, moves.
  * Example to use a mh_sampler:
  *   mh_sampler mh;        // define a `mh_sampler` variable
- *   mh.[strategy].set_st_*(.) // [optional] set different mh sampler strategy,
- *                             // the default is used without setting
+ *   mh._restart.set_st_*(.) // [optional] set different mh sampler strategies,
+ *                           // the default values are used without setting
+ *   mh._next_proposal.set_probability(.) // [optional] set probabilities of different moves
+ *                                        // the default values are used without setting
  *   mh.turn_on_measure(); // [optional] turn on measure mode if measurement needed
  *   mh._cost.init(.);     // initialize the parameters of cost function
  *                         // view `cost.h` for more details
@@ -74,7 +82,7 @@ class mh_sampler_next_proposal {
 class mh_sampler {
  private:
   double cost_to_pi(double cost);
-  void print_restart_info(int iter_num, const prog &curr, const prog &restart);
+  void print_restart_info(int iter_num, const prog &restart, double w_e, double w_p);
  public:
   mh_sampler_restart _restart;
   mh_sampler_next_proposal _next_proposal;

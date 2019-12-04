@@ -18,6 +18,7 @@ uniform_real_distribution<double> unidist_mh(0.0, 1.0);
 mh_sampler_restart::mh_sampler_restart() {
   set_st_when_to_restart(MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART);
   set_st_next_start_prog(MH_SAMPLER_ST_NEXT_START_PROG_ORIG);
+  set_we_wp_list(vector<double> {1}, vector<double> {0});
 }
 
 mh_sampler_restart::~mh_sampler_restart() {}
@@ -63,6 +64,23 @@ void mh_sampler_restart::set_st_next_start_prog(unsigned int st) {
   }
 }
 
+void mh_sampler_restart::set_we_wp_list(const vector<double> &w_e_list,
+                                        const vector<double> &w_p_list) {
+  _w_e_list.clear();
+  _w_p_list.clear();
+  _cur_w_pointer = 0;
+  int len = min((int)w_e_list.size(), (int)w_p_list.size());
+  for (int i = 0; i < len; i++) {
+    _w_e_list.push_back(w_e_list[i]);
+    _w_p_list.push_back(w_p_list[i]);
+  }
+  cout << "set w_e and w_p pairs as: ";
+  for (int i = 0; i < _w_e_list.size(); i++) {
+    cout << _w_e_list[i] << "," << _w_p_list[i] << " ";
+  }
+  cout << endl;
+}
+
 bool mh_sampler_restart::whether_to_restart(unsigned int iter_num) {
   switch (_st_when_to_start) {
     case MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART: return false;
@@ -90,6 +108,12 @@ prog* mh_sampler_restart::next_start_prog(prog* curr) {
            << "return the same program" << endl;
       return curr;
   }
+}
+
+pair<double, double> mh_sampler_restart::next_start_we_wp() {
+  pair<double, double> we_wp(_w_e_list[_cur_w_pointer], _w_p_list[_cur_w_pointer]);
+  _cur_w_pointer = (_cur_w_pointer + 1) % _w_e_list.size();
+  return we_wp;
 }
 /* class mh_sampler_restart end */
 
@@ -193,10 +217,9 @@ void insert_into_prog_freq_dic(const prog &next,
   }
 }
 
-void mh_sampler::print_restart_info(int iter_num, const prog &curr, const prog &restart) {
+void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_e, double w_p) {
   cout << "restart at iteration " << iter_num << endl;
-  cout << "  current program" << endl;
-  curr.print(curr);
+  cout << "  restart w_e, w_p: " << w_e << ", " << w_p << endl;
   cout << "  restart program" << endl;
   restart.print(restart);
 }
@@ -209,11 +232,14 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {
       prog *restart = _restart.next_start_prog(curr);
-      print_restart_info(i, *curr, *restart);
       if (curr != restart) {
         prog::clear_prog(curr);
         curr = restart;
       }
+      pair<double, double> restart_we_wp = _restart.next_start_we_wp();
+      if (restart_we_wp.first != _cost._w_e) _cost._w_e = restart_we_wp.first;
+      if (restart_we_wp.second != _cost._w_p) _cost._w_p = restart_we_wp.second;
+      print_restart_info(i, *restart, restart_we_wp.first, restart_we_wp.second);
     }
     // sample one program
     next = mh_next(curr);
