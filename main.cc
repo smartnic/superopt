@@ -205,7 +205,7 @@ void usage() {
        << setw(W) << "-n arg" << ": number of iterations" << endl
        << setw(W) << "-m" << ": turn on measurement" << endl
        << setw(W) << "--meas_path_out arg" << ": measurement output file path" << endl
-       << setw(W) << "--bm arg" << ": measurement benchmark ID" << endl
+       << setw(W) << "--bm arg" << ": benchmark ID" << endl
        << setw(W) << "--we arg" << ": weight of error cost in cost function" << endl
        << setw(W) << "--wp arg" << ": weight of performance cost in cost function" << endl
        << setw(W) << "--st_ex arg" << ": " +  para_st_ex_desc() << endl
