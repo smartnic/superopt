@@ -14,76 +14,71 @@ using namespace std;
 default_random_engine gen_mh;
 uniform_real_distribution<double> unidist_mh(0.0, 1.0);
 
-/* class mh_sampler_when_to_restart start */
-mh_sampler_when_to_restart::mh_sampler_when_to_restart() {
-  set_st(MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART);
+/* class mh_sampler_restart start */
+mh_sampler_restart::mh_sampler_restart() {
+  set_st_when_to_restart(MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART);
+  set_st_next_start_prog(MH_SAMPLER_ST_NEXT_START_PROG_ORIG);
 }
 
-mh_sampler_when_to_restart::~mh_sampler_when_to_restart() {}
+mh_sampler_restart::~mh_sampler_restart() {}
 
-void mh_sampler_when_to_restart::set_st(unsigned int st, unsigned int max_num_iter) {
+void mh_sampler_restart::set_st_when_to_restart(unsigned int st, unsigned int max_num_iter) {
   switch (st) {
     case MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART:
       cout << "set strategy MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART" << endl;
-      _st = MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART;
+      _st_when_to_start = MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART;
+      _max_num_iter = 0;
       return;
     case MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER:
       cout << "set strategy MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER with max_num_iter "
            << max_num_iter << endl;
-      _st = MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER;
+      _st_when_to_start = MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER;
       _max_num_iter = max_num_iter;
       return;
     default:
-      cout << "ERROR: no when_to_restart strategy matches. "
-           << "Set as MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART" << endl;
-      set_st(MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART);
+      cout << "ERROR: no when_to_restart strategy matches." << endl;
+      set_st_when_to_restart(MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART);
       return;
   }
 }
 
-bool mh_sampler_when_to_restart::whether_to_restart(unsigned int iter_num) {
-  switch (_st) {
+void mh_sampler_restart::set_st_next_start_prog(unsigned int st) {
+  switch (st) {
+    case MH_SAMPLER_ST_NEXT_START_PROG_ORIG:
+      cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_ORIG" << endl;
+      _st_next_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ORIG;
+      return;
+    case MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS:
+      cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS" << endl;
+      _st_next_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS;
+      return;
+    case MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS:
+      cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS" << endl;
+      _st_next_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS;
+      return;
+    default:
+      cout << "ERROR: no next_start_prog strategy matches." << endl;
+      set_st_next_start_prog(MH_SAMPLER_ST_NEXT_START_PROG_ORIG);
+      return;
+  }
+}
+
+bool mh_sampler_restart::whether_to_restart(unsigned int iter_num) {
+  switch (_st_when_to_start) {
     case MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART: return false;
     case MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER:
       // iter_num starts from 0 but not 1
       if (((iter_num + 1) % _max_num_iter) == 0) return true;
       else return false;
     default:
-      cout << "ERROR: no when_to_restart strategy matches." << endl;
+      cout << "ERROR: no when_to_restart strategy matches. "
+           << "return false" << endl;
       return false;
   }
 }
-/* class mh_sampler_when_to_restart end */
 
-/* class mh_sampler_next_start_prog start */
-mh_sampler_next_start_prog::mh_sampler_next_start_prog() {
-  set_st(MH_SAMPLER_ST_NEXT_START_PROG_ORIG);
-}
-
-mh_sampler_next_start_prog::~mh_sampler_next_start_prog() {}
-
-void mh_sampler_next_start_prog::set_st(unsigned int st) {
-  switch (st) {
-    case MH_SAMPLER_ST_NEXT_START_PROG_ORIG:
-      cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_ORIG" << endl;
-      _st = MH_SAMPLER_ST_NEXT_START_PROG_ORIG;
-      return;
-    case MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS:
-      cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS" << endl;
-      _st = MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS;      return;
-    case MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS:
-      cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS" << endl;
-      _st = MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS;      return;
-    default:
-      cout << "ERROR: no next_start_prog strategy matches."
-           << "Set as MH_SAMPLER_ST_NEXT_START_PROG_ORIG" << endl;
-      set_st(MH_SAMPLER_ST_NEXT_START_PROG_ORIG);
-      return;
-  }
-}
-
-prog* mh_sampler_next_start_prog::next_start_prog(prog* curr) {
-  switch (_st) {
+prog* mh_sampler_restart::next_start_prog(prog* curr) {
+  switch (_st_next_start_prog) {
     case MH_SAMPLER_ST_NEXT_START_PROG_ORIG:
       return curr;
     case MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS:
@@ -91,11 +86,12 @@ prog* mh_sampler_next_start_prog::next_start_prog(prog* curr) {
     case MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS:
       return mod_random_cont_insts(*curr);
     default:
-      cout << "ERROR: no next_start_prog strategy matches." << endl;
+      cout << "ERROR: no next_start_prog strategy matches. "
+           << "return the same program" << endl;
       return curr;
   }
 }
-/* class mh_sampler_next_start_prog end */
+/* class mh_sampler_restart end */
 
 /* class mh_sampler_next_proposal start */
 mh_sampler_next_proposal::mh_sampler_next_proposal() {
@@ -211,8 +207,8 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
   curr = prog::make_prog(orig);
   for (int i = 0; i < niter; i++) {
     // check whether need restart, if need, update `start`
-    if (_when_to_restart.whether_to_restart(i)) {
-      prog *restart = _start_prog.next_start_prog(curr);
+    if (_restart.whether_to_restart(i)) {
+      prog *restart = _restart.next_start_prog(curr);
       print_restart_info(i, *curr, *restart);
       if (curr != restart) {
         prog::clear_prog(curr);
