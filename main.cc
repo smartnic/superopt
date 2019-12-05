@@ -246,7 +246,7 @@ void set_w_list(vector<double> &list, string s) {
     list.push_back(stod(str_v[i]));
 }
 
-bool parse_input_and_return_whether_to_sample(int argc, char* argv[], input_paras &in_para) {
+bool parse_input(int argc, char* argv[], input_paras &in_para) {
   const char* const short_opts = "hmn:";
   static struct option long_opts[] = {
     {"path_out", required_argument, nullptr, 0},
@@ -314,7 +314,7 @@ void set_default_para_vals(input_paras &in_para) {
 int main(int argc, char* argv[]) {
   input_paras in_para;
   set_default_para_vals(in_para);
-  if (! parse_input_and_return_whether_to_sample(argc, argv, in_para)) return 0;
+  if (! parse_input(argc, argv, in_para)) return 0;
   cout << in_para;
   store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
