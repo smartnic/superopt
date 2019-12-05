@@ -84,7 +84,6 @@ prog* mod_random_inst_operand(const prog &orig) {
   int inst_index = sample_int(MAX_PROG_LEN);
   prog* synth = prog::make_prog(orig);
   mod_random_operand(orig, synth, inst_index);
-  synth->canonicalize();
   return synth;
 }
 
@@ -117,7 +116,6 @@ prog* mod_random_inst(const prog &orig) {
   prog* synth = prog::make_prog(orig);
   int inst_index = sample_int(MAX_PROG_LEN);
   mod_select_inst(synth, inst_index);
-  synth->canonicalize();
   return synth;
 }
 
@@ -131,7 +129,6 @@ prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
   for (int i = start_inst_index; i < start_inst_index + k; i++) {
     mod_select_inst(synth, i);
   }
-  synth->canonicalize();
   return synth;
 }
 
