@@ -66,7 +66,6 @@ class inst {
   string opcode_to_str(int) const;
   abs_bv_inst inst_to_abs_bv() const;
   vector<int> get_reg_list() const;
-  int get_opcode_type() const;
   bool operator==(const inst &x) const;
   inst& operator=(const inst &rhs);
 };
@@ -129,6 +128,22 @@ static int num_regs[256] = {
   [JMPLE] = 2,
   [MAXC]  = 1,
   [MAXX]  = 2,
+  [NUM_INSTR ... 255] = 0,
+};
+
+static int opcode_type[256] = {
+  [NOP]   = OP_NOP,
+  [ADDXY] = OP_OTHERS,
+  [MOVXC] = OP_OTHERS,
+  [RETX]  = OP_RET,
+  [RETC]  = OP_RET,
+  [JMPEQ] = OP_JMP,
+  [JMPGT] = OP_JMP,
+  [JMPGE] = OP_JMP,
+  [JMPLT] = OP_JMP,
+  [JMPLE] = OP_JMP,
+  [MAXC]  = OP_OTHERS,
+  [MAXX]  = OP_OTHERS,
   [NUM_INSTR ... 255] = 0,
 };
 

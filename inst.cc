@@ -50,24 +50,6 @@ vector<int> inst::get_reg_list() const {
   return reg_list;
 }
 
-int inst::get_opcode_type() const {
-  switch (_opcode) {
-    case NOP: return OP_NOP;
-    case ADDXY:
-    case MOVXC:
-    case MAXC:
-    case MAXX: return OP_OTHERS;
-    case RETX:
-    case RETC: return OP_RET;
-    case JMPEQ:
-    case JMPGT:
-    case JMPGE:
-    case JMPLT:
-    case JMPLE: return OP_JMP;
-    default: cout << "unknown opcode" << endl; return -1;
-  }
-}
-
 void inst::print() const {
   cout << opcode_to_str(_opcode);
   for (int i = 0; i < num_operands[_opcode]; i++) {

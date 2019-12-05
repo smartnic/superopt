@@ -103,7 +103,7 @@ abs_bv_prog prog::prog_abs_bit_vec() const {
 
 bool prog::if_ret_exists(int start, int end) const {
   for (int i = start; i < end; i++) {
-    if (inst_list[i].get_opcode_type() == OP_RET) {
+    if (opcode_type[inst_list[i]._opcode] == OP_RET) {
       return true;
     }
   }
@@ -125,7 +125,7 @@ void prog::update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_bef
     // has RETs instruction, check jmp distance
     int start_index_chk_ret = 0;
     for (int i = 0; i < MAX_PROG_LEN; i++) {
-      if ((inst_list[i].get_opcode_type() == OP_JMP) &&
+      if ((opcode_type[inst_list[i]._opcode] == OP_JMP) &&
           ((i + 1 + inst_list[i]._args[2]) > start_index_chk_ret)) {
         start_index_chk_ret = i + 1 + inst_list[i]._args[2];
       }
