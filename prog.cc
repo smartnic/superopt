@@ -176,8 +176,7 @@ void prog::canonicalize() {
   for (int i = 0; i < MAX_PROG_LEN; i++) {
     for (int j = 0; j < num_regs[inst_list[i]._opcode]; j++) {
       int reg_id_after = map_before_after[inst_list[i]._args[j]];
-      if (inst_list[i]._args[j] != reg_id_after)
-        inst_list[i]._args[j] = reg_id_after;
+      inst_list[i]._args[j] = reg_id_after;
     }
   }
 }

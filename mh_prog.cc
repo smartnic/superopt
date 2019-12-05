@@ -240,8 +240,8 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
         curr->canonicalize();
       }
       pair<double, double> restart_we_wp = _restart.next_start_we_wp();
-      if (restart_we_wp.first != _cost._w_e) _cost._w_e = restart_we_wp.first;
-      if (restart_we_wp.second != _cost._w_p) _cost._w_p = restart_we_wp.second;
+      _cost._w_e = restart_we_wp.first;
+      _cost._w_p = restart_we_wp.second;
       print_restart_info(i, *restart, restart_we_wp.first, restart_we_wp.second);
     }
     // sample one program
