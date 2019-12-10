@@ -32,7 +32,7 @@ class prog {
   rel_bv_prog prog_rel_bit_vec(const vector<prog> &ps);
   abs_bv_prog prog_abs_bit_vec() const;
   bool if_ret_exists(int start, int end) const;
-  void update_map_if_reg0_cannot_be_used(unordered_map<int, int> &map_before_after) const;
+  void update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const;
   void canonicalize();
 };
 

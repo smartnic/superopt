@@ -103,7 +103,7 @@ abs_bv_prog prog::prog_abs_bit_vec() const {
 
 bool prog::if_ret_exists(int start, int end) const {
   for (int i = start; i < end; i++) {
-    if (inst_list[i].get_opcode_type() == OP_RET) {
+    if (opcode_type[inst_list[i]._opcode] == OP_RET) {
       return true;
     }
   }
@@ -113,7 +113,7 @@ bool prog::if_ret_exists(int start, int end) const {
 // if reg 0 is NOT used but implicit RETX 0 instruction is needed, reg 0 cannot be used
 // case 1: no RETs instruction(test6 insts41)
 // case 2: has RETs instruction, but JMP makes implicit RETX 0 instruction needed(test6 insts42)
-void prog::update_map_if_reg0_cannot_be_used(unordered_map<int, int> &map_before_after) const {
+void prog::update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const {
   bool can_use_reg0 = true;
   // check whether there is RETs
   bool ret_exists = if_ret_exists(0, MAX_PROG_LEN);
@@ -125,7 +125,7 @@ void prog::update_map_if_reg0_cannot_be_used(unordered_map<int, int> &map_before
     // has RETs instruction, check jmp distance
     int start_index_chk_ret = 0;
     for (int i = 0; i < MAX_PROG_LEN; i++) {
-      if ((inst_list[i].get_opcode_type() == OP_JMP) &&
+      if ((opcode_type[inst_list[i]._opcode] == OP_JMP) &&
           ((i + 1 + inst_list[i]._args[2]) > start_index_chk_ret)) {
         start_index_chk_ret = i + 1 + inst_list[i]._args[2];
       }
@@ -169,15 +169,14 @@ void prog::canonicalize() {
       map_before_after[0] = 0;
     }
   } else {
-    update_map_if_reg0_cannot_be_used(map_before_after);
+    update_map_if_implicit_ret_r0_needed(map_before_after);
   }
 
   // replace reg_ids(before) with reg_ids(after) for all instructions
   for (int i = 0; i < MAX_PROG_LEN; i++) {
-    for (int j = 0; j < inst_list[i].get_num_reg(); j++) {
+    for (int j = 0; j < num_regs[inst_list[i]._opcode]; j++) {
       int reg_id_after = map_before_after[inst_list[i]._args[j]];
-      if (inst_list[i]._args[j] != reg_id_after)
-        inst_list[i]._args[j] = reg_id_after;
+      inst_list[i]._args[j] = reg_id_after;
     }
   }
 }

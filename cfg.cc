@@ -3,20 +3,6 @@
 
 using namespace std;
 
-int get_inst_type(inst& ins) {
-  switch (ins._opcode) {
-    case RETX: return CFG_END;
-    case RETC: return CFG_END;
-    case JMPEQ: return CFG_CONDJMP;
-    case JMPGT: return CFG_CONDJMP;
-    case JMPGE: return CFG_CONDJMP;
-    case JMPLT: return CFG_CONDJMP;
-    case JMPLE: return CFG_CONDJMP;
-    case NOP: return CFG_NOP;
-    default: return CFG_OTHERS;
-  }
-}
-
 /* class node start */
 node::node(unsigned int start, unsigned int end) {
   _start = start;
@@ -44,7 +30,7 @@ void graph::init() {
 void graph::gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts) {
   node_starts.insert(0);
   for (size_t i = 0; i < length; i++) {
-    if (get_inst_type(inst_lst[i]) == CFG_CONDJMP) {
+    if (opcode_type[inst_lst[i]._opcode] == OP_JMP) {
       if ((i + 1) < length) {
         node_starts.insert(i + 1);
       } else {
@@ -68,7 +54,7 @@ void graph::gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts
 // return end instruction ID in [start: end]
 size_t graph::get_end_inst_id(inst* inst_lst, size_t start, size_t end) {
   for (size_t i = start; i < end; i++) {
-    if (get_inst_type(inst_lst[i]) == CFG_END) {
+    if (opcode_type[inst_lst[i]._opcode] == OP_RET) {
       return i;
     }
   }
@@ -77,8 +63,8 @@ size_t graph::get_end_inst_id(inst* inst_lst, size_t start, size_t end) {
 
 void graph::gen_node_ends(inst* inst_lst, int length, set<size_t>& node_starts, vector<size_t>& node_ends) {
   /* Traverse all starts in node_starts, find an end for each start
-     The end for all starts except the last one is the CFG_END instruction OR the ${next start - 1} instruction
-     The end for the last start is the CFG_END instruction OR the last instruction.
+     The end for all starts except the last one is the OP_RET instruction OR the ${next start - 1} instruction
+     The end for the last start is the OP_RET instruction OR the last instruction.
   */
   // ends for all starts except the last start
   set<size_t>::iterator i = node_starts.begin();
@@ -127,10 +113,10 @@ void graph::gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vecto
   for (size_t i = 0; i < gnodes.size(); i++) {
     size_t end_inst_id = gnodes[i]._end;
     vector <unsigned int> next_inst_ids;
-    int inst_type = get_inst_type(inst_lst[end_inst_id]);
-    if (inst_type == CFG_OTHERS || inst_type == CFG_NOP) {
+    int inst_type = opcode_type[inst_lst[end_inst_id]._opcode];
+    if (inst_type == OP_OTHERS || inst_type == OP_NOP) {
       next_inst_ids.push_back(end_inst_id + 1);
-    } else if (inst_type == CFG_CONDJMP) {
+    } else if (inst_type == OP_JMP) {
       // keep order: insert no jmp first
       next_inst_ids.push_back(end_inst_id + 1); //no jmp
       next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id]._args[2]); //jmp

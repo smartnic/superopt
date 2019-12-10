@@ -172,6 +172,7 @@ double mh_sampler::alpha(prog* curr, prog* next) {
 
 prog* mh_sampler::mh_next(prog* curr) {
   prog* next = _next_proposal.next_proposal(curr);
+  next->canonicalize();
   double uni_sample = unidist_mh(gen_mh);
   double a = alpha(curr, next);
   _meas_data.insert_proposal(*next, uni_sample < a);
@@ -228,6 +229,7 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
                            unordered_map<int, vector<prog*> > &prog_freq) {
   prog *curr, *next;
   curr = prog::make_prog(orig);
+  curr->canonicalize();
   for (int i = 0; i < niter; i++) {
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {
@@ -235,10 +237,11 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
       if (curr != restart) {
         prog::clear_prog(curr);
         curr = restart;
+        curr->canonicalize();
       }
       pair<double, double> restart_we_wp = _restart.next_start_we_wp();
-      if (restart_we_wp.first != _cost._w_e) _cost._w_e = restart_we_wp.first;
-      if (restart_we_wp.second != _cost._w_p) _cost._w_p = restart_we_wp.second;
+      _cost._w_e = restart_we_wp.first;
+      _cost._w_p = restart_we_wp.second;
       print_restart_info(i, *restart, restart_we_wp.first, restart_we_wp.second);
     }
     // sample one program

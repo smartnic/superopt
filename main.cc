@@ -8,6 +8,7 @@
 #include <utility>
 #include <iomanip>
 #include <getopt.h>
+#include "main.h"
 #include "measure/common.h"
 #include "measure/meas_mh_bhv.h"
 #include "prog.h"
@@ -24,25 +25,6 @@ inst* bm;
 int bm_len = MAX_PROG_LEN;
 vector<int> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
-
-struct input_paras {
-  int niter;
-  int bm;
-  double w_e;
-  double w_p;
-  bool meas_mode;
-  string path_out;
-  int st_ex;
-  int st_eq;
-  int st_avg;
-  int st_when_to_restart;
-  int st_when_to_restart_niter;
-  int st_start_prog;
-  vector<double> restart_w_e_list;
-  vector<double> restart_w_p_list;
-  double p_inst_operand;
-  double p_inst;
-};
 
 ostream& operator<<(ostream& out, const input_paras& ip) {
   out << "meas_mode:" << ip.meas_mode << endl
@@ -264,7 +246,7 @@ void set_w_list(vector<double> &list, string s) {
     list.push_back(stod(str_v[i]));
 }
 
-bool parse_input_and_return_whether_to_sample(int argc, char* argv[], input_paras &in_para) {
+bool parse_input(int argc, char* argv[], input_paras &in_para) {
   const char* const short_opts = "hmn:";
   static struct option long_opts[] = {
     {"path_out", required_argument, nullptr, 0},
@@ -332,7 +314,7 @@ void set_default_para_vals(input_paras &in_para) {
 int main(int argc, char* argv[]) {
   input_paras in_para;
   set_default_para_vals(in_para);
-  if (! parse_input_and_return_whether_to_sample(argc, argv, in_para)) return 0;
+  if (! parse_input(argc, argv, in_para)) return 0;
   cout << in_para;
   store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;

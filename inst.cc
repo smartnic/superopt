@@ -43,47 +43,11 @@ abs_bv_inst inst::inst_to_abs_bv() const {
   return bv;
 }
 
-int inst::get_num_reg() const {
-  switch (_opcode) {
-    case NOP:
-    case RETC: return 0;
-    case MOVXC:
-    case RETX:
-    case MAXC: return 1;
-    case ADDXY:
-    case JMPEQ:
-    case JMPGT:
-    case JMPGE:
-    case JMPLT:
-    case JMPLE:
-    case MAXX: return 2;
-    default: cout << "unknown opcode" << endl; return 0;
-  }
-}
-
 vector<int> inst::get_reg_list() const {
   vector<int> reg_list;
-  for (int i = 0 ; i < get_num_reg(); i++)
+  for (int i = 0 ; i < num_regs[_opcode]; i++)
     reg_list.push_back(_args[i]);
   return reg_list;
-}
-
-int inst::get_opcode_type() const {
-  switch (_opcode) {
-    case NOP:
-    case ADDXY:
-    case MOVXC:
-    case MAXC:
-    case MAXX: return OP_OTHERS;
-    case RETX:
-    case RETC: return OP_RET;
-    case JMPEQ:
-    case JMPGT:
-    case JMPGE:
-    case JMPLT:
-    case JMPLE: return OP_JMP;
-    default: cout << "unknown opcode" << endl; return -1;
-  }
 }
 
 void inst::print() const {
