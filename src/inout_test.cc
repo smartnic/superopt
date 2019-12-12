@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
-#include "inout.h"
 #include "utils.h"
+#include "inout.h"
 
 using namespace std;
 

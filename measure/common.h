@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <ostream>
-#include "../inst.h"
+#include "../src/isa/toy-isa/inst.h"
 
 using namespace std;
 

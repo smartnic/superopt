@@ -1,9 +1,9 @@
 #pragma once
 
-#include "inst.h"
-#include "inout.h"
-#include "smt_prog.h"
 #include "z3++.h"
+#include "../../../src/inout.h"
+#include "../../../src/isa/toy-isa/inst.h"
+#include "smt_prog.h"
 
 using namespace z3;
 

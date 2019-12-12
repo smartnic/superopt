@@ -1,7 +1,6 @@
 #include <iostream>
-#include "validator.h"
-#include "inst.h"
-#include "utils.h"
+#include "../../../src/utils.h"
+#include "smt_prog.h"
 
 using namespace z3;
 

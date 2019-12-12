@@ -8,14 +8,14 @@
 #include <utility>
 #include <iomanip>
 #include <getopt.h>
-#include "main.h"
 #include "measure/common.h"
 #include "measure/meas_mh_bhv.h"
-#include "prog.h"
-#include "inout.h"
-#include "mh_prog.h"
-#include "inst.h"
-#include "utils.h"
+#include "src/prog.h"
+#include "src/inout.h"
+#include "src/utils.h"
+#include "src/search/mh_prog.h"
+#include "src/isa/toy-isa/inst.h"
+#include "main.h"
 
 using namespace std;
 

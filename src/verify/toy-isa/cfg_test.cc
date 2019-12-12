@@ -1,7 +1,6 @@
 #include <iostream>
+#include "../../../src/utils.h"
 #include "cfg.h"
-#include "inst.h"
-#include "utils.h"
 
 using namespace std;
 

@@ -1,10 +1,10 @@
 #include <iostream>
 #include <fstream>
-#include "prog.h"
-#include "inout.h"
-#include "cost.h"
 #include <utility>
-#include "measure/meas_mh_bhv.h"
+#include "../../measure/meas_mh_bhv.h"
+#include "../../src/prog.h"
+#include "../../src/inout.h"
+#include "cost.h"
 
 using namespace std;
 

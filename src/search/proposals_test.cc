@@ -1,7 +1,6 @@
 #include <iostream>
+#include "../../src/utils.h"
 #include "proposals.h"
-#include "inst.h"
-#include "utils.h"
 
 int test1(int input) {
   cout << "Test 1" << endl;

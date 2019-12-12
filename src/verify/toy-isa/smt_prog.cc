@@ -2,9 +2,6 @@
 #include <vector>
 #include <string>
 #include "smt_prog.h"
-#include "inst.h"
-#include "cfg.h"
-#include "z3++.h"
 
 using namespace z3;
 

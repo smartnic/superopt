@@ -1,6 +1,6 @@
 #include <iostream>
+#include "../../../src/utils.h"
 #include "inst.h"
-#include "utils.h"
 
 int main(int argc, char *argv[]) {
   /* Add the notion of program input */

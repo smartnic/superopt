@@ -1,10 +1,10 @@
 #pragma once
 
 #include <vector>
-#include "inst.h"
-#include "inout.h"
-#include "validator.h"
-#include "prog.h"
+#include "../../src/inout.h"
+#include "../../src/prog.h"
+#include "../../src/isa/toy-isa/inst.h"
+#include "../../src/verify/toy-isa/validator.h"
 
 using namespace std;
 

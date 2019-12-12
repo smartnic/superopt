@@ -1,7 +1,6 @@
 #include <iostream>
+#include "../../src/utils.h"
 #include "cost.h"
-#include "utils.h"
-#include "prog.h"
 
 using namespace std;
 

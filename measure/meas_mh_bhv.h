@@ -2,8 +2,8 @@
 
 #include <utility>
 #include <vector>
-#include "../prog.h"
-#include "../inout.h"
+#include "../src/prog.h"
+#include "../src/inout.h"
 
 using namespace std;
 

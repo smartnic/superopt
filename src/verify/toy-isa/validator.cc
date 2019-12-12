@@ -2,8 +2,6 @@
 #include <vector>
 #include <string>
 #include "validator.h"
-#include "inst.h"
-#include "z3++.h"
 
 using namespace z3;
 

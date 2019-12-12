@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <string>
 #include <climits>
-#include "inst.h"
-#include "inout.h"
 #include "cost.h"
 
 #define ERROR_COST_MAX 100000

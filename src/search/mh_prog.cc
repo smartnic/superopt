@@ -5,8 +5,6 @@
 #include <cmath>
 #include <unordered_map>
 #include "proposals.h"
-#include "prog.h"
-#include "cost.h"
 #include "mh_prog.h"
 
 using namespace std;

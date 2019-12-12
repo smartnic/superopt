@@ -4,7 +4,7 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
-#include "inst.h"
+#include "../../../src/isa/toy-isa/inst.h"
 
 using namespace std;
 

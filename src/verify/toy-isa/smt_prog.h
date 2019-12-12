@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vector>
-#include "inst.h"
-#include "cfg.h"
 #include "z3++.h"
+#include "../../../src/isa/toy-isa/inst.h"
+#include "cfg.h"
 
 using namespace z3;
 

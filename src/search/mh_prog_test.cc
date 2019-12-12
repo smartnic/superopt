@@ -3,10 +3,8 @@
 #include <random>
 #include <algorithm>
 #include <unordered_set>
-#include "prog.h"
-#include "inout.h"
+#include "../../src/utils.h"
 #include "mh_prog.h"
-#include "utils.h"
 
 using namespace std;
 

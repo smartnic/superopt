@@ -2,10 +2,10 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <chrono>
-#include "../prog.h"
-#include "../inout.h"
-#include "../mh_prog.h"
-#include "../utils.h"
+#include "../src/prog.h"
+#include "../src/inout.h"
+#include "../src/utils.h"
+#include "../src/search/mh_prog.h"
 #include "common.h"
 #include "z3++.h"
 
