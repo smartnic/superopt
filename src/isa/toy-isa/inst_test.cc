@@ -2,52 +2,58 @@
 #include "../../../src/utils.h"
 #include "inst.h"
 
-int main(int argc, char *argv[]) {
-  /* Add the notion of program input */
-  int input = 10;
-  if (argc > 1) {
-    input = atoi(argv[1]);
-  }
-  /* r0 contains the input */
-  inst instructions[6] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                          inst(ADDXY, 0, 2),  /* add r0, r2 */
-                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                          inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                          inst(RETX, 3),      /* ret r3 */
-                          inst(RETX, 0),      /* else ret r0 */
-                         };
+/* r0 contains the input */
+inst instructions[6] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                        inst(ADDXY, 0, 2),  /* add r0, r2 */
+                        inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                        inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                        inst(RETX, 3),      /* ret r3 */
+                        inst(RETX, 0),      /* else ret r0 */
+                       };
+
+inst instructions2[4] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
+                         inst(ADDXY, 0, 2),     /* add r0, r2 */
+                         inst(MAXC, 0, 15),     /* max r0, 15 */
+                         inst(RETX, 0),         /* ret r0 */
+                        };
+
+inst instructions3[2] = {inst(NOP), /* test no-op */
+                         inst(RETX, 0), /* ret r0 */
+                        };
+
+void test1(int input) {
   prog_state ps;
+  cout << "Test 1: full interpretation check" << endl;
+  print_test_res(interpret(instructions, 6, ps, input) == max(input + 4, 15),
+                 "interpret program 1");
+  print_test_res(interpret(instructions2, 4, ps, input) == max(input + 4, 15),
+                 "interpret program 2");
+  print_test_res(interpret(instructions3, 2, ps, input) == input,
+                 "interpret program 3");
+}
 
-  inst instructions2[4] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
-                           inst(ADDXY, 0, 2),     /* add r0, r2 */
-                           inst(MAXC, 0, 15),     /* max r1, 15 */
-                           inst(RETX, 0),         /* ret r0 */
-                          };
-
-  inst instructions3[2] = {inst(NOP), /* test no-op */
-                           inst(RETX, 0), /* ret r0 */
-                          };
-
-  cout << "Result of full interpretation: " << endl;
-  cout << interpret(instructions, 6, ps, input) << endl;
-  cout << "Program 2" << endl;
-  cout << interpret(instructions2, 4, ps, input) << endl;
-  cout << "Program 3" << endl;
-  cout << interpret(instructions3, 2, ps, input) << endl;
-
+void test2() {
+  cout << "Test 2" << endl;
   inst x = inst(MOVXC, 2, 4);
   inst y = inst(MOVXC, 2, 4);
   inst z = inst(MOVXC, 2, 3);
   inst w = inst(RETX, 3);
 
-  cout << (x == y) << endl;
-  cout << (inst(RETX, 3) == inst(RETC, 3)) << endl;
-  cout << (inst(RETX, 3) == inst(RETX, 2)) << endl;
-  cout << (inst(RETX, 3) == inst(RETX, 3)) << endl;
-  cout << "Hashes of mov instructions: " << instHash()(x) << " "
-       << instHash()(y) << endl;
-  cout << "Hashes of different instructions: " << instHash()(x) << " "
-       << instHash()(z) << " " << instHash()(w) << endl;
+  cout << "Instruction operator== check" << endl;
+  print_test_res((x == y) == true, "operator== 1");
+  print_test_res((inst(RETX, 3) == inst(RETC, 3)) == false, "operator== 2");
+  print_test_res((inst(RETX, 3) == inst(RETX, 2)) == false, "operator== 3");
+  print_test_res((inst(RETX, 3) == inst(RETX, 3)) == true, "operator== 4");
+
+  cout << "Instruction hash value check" << endl;
+  print_test_res(instHash()(x) == 22, "hash value 1");
+  print_test_res(instHash()(y) == 22, "hash value 2");
+  print_test_res(instHash()(z) == 10, "hash value 3");
+  print_test_res(instHash()(w) == 5, "hash value 4");
+}
+
+void test3() {
+  cout << "Test 3" << endl;
   string expected_bv_str = string("00010000100010000000") +
                            string("00001000000001000000") +
                            string("00010000110111100000") +
@@ -60,5 +66,18 @@ int main(int argc, char *argv[]) {
     bv_str += x.inst_to_abs_bv().to_string();
   }
   print_test_res(bv_str == expected_bv_str, "inst_to_abs_bv");
+}
+
+int main(int argc, char *argv[]) {
+  /* Add the notion of program input */
+  int input = 10;
+  if (argc > 1) {
+    input = atoi(argv[1]);
+  }
+
+  test1(input);
+  test2();
+  test3();
+
   return 0;
 }
