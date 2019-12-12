@@ -125,7 +125,7 @@ void prog::update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_bef
     // has RETs instruction, check jmp distance
     int start_index_chk_ret = 0;
     for (int i = 0; i < MAX_PROG_LEN; i++) {
-      if ((opcode_type[inst_list[i]._opcode] == OP_JMP) &&
+      if ((opcode_type[inst_list[i]._opcode] == OP_COND_JMP) &&
           ((i + 1 + inst_list[i]._args[2]) > start_index_chk_ret)) {
         start_index_chk_ret = i + 1 + inst_list[i]._args[2];
       }

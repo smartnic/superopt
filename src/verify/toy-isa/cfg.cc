@@ -30,7 +30,7 @@ void graph::init() {
 void graph::gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts) {
   node_starts.insert(0);
   for (size_t i = 0; i < length; i++) {
-    if (opcode_type[inst_lst[i]._opcode] == OP_JMP) {
+    if (opcode_type[inst_lst[i]._opcode] == OP_COND_JMP) {
       if ((i + 1) < length) {
         node_starts.insert(i + 1);
       } else {
@@ -116,7 +116,7 @@ void graph::gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vecto
     int inst_type = opcode_type[inst_lst[end_inst_id]._opcode];
     if (inst_type == OP_OTHERS || inst_type == OP_NOP) {
       next_inst_ids.push_back(end_inst_id + 1);
-    } else if (inst_type == OP_JMP) {
+    } else if (inst_type == OP_COND_JMP) {
       // keep order: insert no jmp first
       next_inst_ids.push_back(end_inst_id + 1); //no jmp
       next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id]._args[2]); //jmp

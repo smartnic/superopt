@@ -20,7 +20,7 @@ using namespace std;
 // Opcode types for instructions
 #define OP_NOP 0
 #define OP_RET 1
-#define OP_JMP 2
+#define OP_COND_JMP 2
 #define OP_OTHERS 3
 
 // Instruction opcodes
@@ -137,11 +137,11 @@ static int opcode_type[256] = {
   [MOVXC] = OP_OTHERS,
   [RETX]  = OP_RET,
   [RETC]  = OP_RET,
-  [JMPEQ] = OP_JMP,
-  [JMPGT] = OP_JMP,
-  [JMPGE] = OP_JMP,
-  [JMPLT] = OP_JMP,
-  [JMPLE] = OP_JMP,
+  [JMPEQ] = OP_COND_JMP,
+  [JMPGT] = OP_COND_JMP,
+  [JMPGE] = OP_COND_JMP,
+  [JMPLT] = OP_COND_JMP,
+  [JMPLE] = OP_COND_JMP,
   [MAXC]  = OP_OTHERS,
   [MAXX]  = OP_OTHERS,
   [NUM_INSTR ... 255] = 0,
