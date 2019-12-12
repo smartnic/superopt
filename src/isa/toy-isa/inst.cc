@@ -23,6 +23,7 @@ string inst::opcode_to_str(int opcode) const {
     case MOVXC: return "MOVXC";
     case RETX: return "RETX";
     case RETC: return "RETC";
+    case JMP: return "JMP";
     case JMPEQ: return "JMPEQ";
     case JMPGT: return "JMPGT";
     case JMPGE: return "JMPGE";
@@ -107,6 +108,7 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
     [MOVXC] = && INSN_MOVXC,
     [RETX] = && INSN_RETX,
     [RETC] = && INSN_RETC,
+    [JMP] = && INSN_JMP,
     [JMPEQ] = && INSN_JMPEQ,
     [JMPGT] = && INSN_JMPGT,
     [JMPGE] = && INSN_JMPGE,
@@ -156,17 +158,21 @@ INSN_MAXX:
   DST = max(DST, SRC);
   CONT;
 
-#define JMP(SUFFIX, OP)                         \
+INSN_JMP:
+  insn += IMM1;
+  CONT;
+
+#define COND_JMP(SUFFIX, OP)                    \
   INSN_JMP##SUFFIX:                             \
       if (DST OP SRC)                           \
         insn += insn->_args[2];                 \
   CONT;
 
-  JMP(EQ, == )
-  JMP(GT, > )
-  JMP(GE, >= )
-  JMP(LT, < )
-  JMP(LE, <= )
+  COND_JMP(EQ, == )
+  COND_JMP(GT, > )
+  COND_JMP(GE, >= )
+  COND_JMP(LT, < )
+  COND_JMP(LE, <= )
 
 error_label:
   cout << "Error in processing instruction; unknown opcode" << endl;

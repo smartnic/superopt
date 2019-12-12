@@ -21,6 +21,12 @@ inst instructions3[2] = {inst(NOP), /* test no-op */
                          inst(RETX, 0), /* ret r0 */
                         };
 
+/* test unconditional jmp */
+inst instructions4[3] = {inst(JMP, 1),
+                         inst(ADDXY, 0, 0),
+                         inst(RETX, 0),
+                        };
+
 void test1(int input) {
   prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
@@ -30,6 +36,8 @@ void test1(int input) {
                  "interpret program 2");
   print_test_res(interpret(instructions3, 2, ps, input) == input,
                  "interpret program 3");
+  print_test_res(interpret(instructions4, 3, ps, input) == input,
+                 "interpret program 4");
 }
 
 void test2() {
@@ -57,7 +65,7 @@ void test3() {
   string expected_bv_str = string("00010000100010000000") +
                            string("00001000000001000000") +
                            string("00010000110111100000") +
-                           string("00110000000001100001") +
+                           string("00111000000001100001") +
                            string("00011000110000000000") +
                            string("00011000000000000000");
   string bv_str = "";

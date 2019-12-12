@@ -20,8 +20,9 @@ using namespace std;
 // Opcode types for instructions
 #define OP_NOP 0
 #define OP_RET 1
-#define OP_COND_JMP 2
-#define OP_OTHERS 3
+#define OP_UNCOND_JMP 2
+#define OP_COND_JMP 3
+#define OP_OTHERS 4
 
 // Instruction opcodes
 #define NOP 0
@@ -29,15 +30,16 @@ using namespace std;
 #define MOVXC 2
 #define RETX 3
 #define RETC 4
-#define JMPEQ 5
-#define JMPGT 6
-#define JMPGE 7
-#define JMPLT 8
-#define JMPLE 9
-#define MAXC 10
-#define MAXX 11
+#define JMP 5
+#define JMPEQ 6
+#define JMPGT 7
+#define JMPGE 8
+#define JMPLT 9
+#define JMPLE 10
+#define MAXC 11
+#define MAXX 12
 
-#define NUM_INSTR 12
+#define NUM_INSTR 13
 
 #define OP_ABS_BIT_LEN 5
 #define INST_ABS_BIT_LEN 20
@@ -89,6 +91,7 @@ static int optable[256] = {
   [MOVXC] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
   [RETX]  = FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
   [RETC]  = FSTOP(OP_IMM) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
+  [JMP]   = FSTOP(OP_IMM) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
   [JMPEQ] = JMP_OPS,
   [JMPGT] = JMP_OPS,
   [JMPGE] = JMP_OPS,
@@ -105,6 +108,7 @@ static int num_operands[256] = {
   [MOVXC] = 2,
   [RETX]  = 1,
   [RETC]  = 1,
+  [JMP]   = 1,
   [JMPEQ] = 3,
   [JMPGT] = 3,
   [JMPGE] = 3,
@@ -121,6 +125,7 @@ static int num_regs[256] = {
   [MOVXC] = 1,
   [RETX]  = 1,
   [RETC]  = 0,
+  [JMP]   = 0,
   [JMPEQ] = 2,
   [JMPGT] = 2,
   [JMPGE] = 2,
@@ -137,6 +142,7 @@ static int opcode_type[256] = {
   [MOVXC] = OP_OTHERS,
   [RETX]  = OP_RET,
   [RETC]  = OP_RET,
+  [JMP]   = OP_UNCOND_JMP,
   [JMPEQ] = OP_COND_JMP,
   [JMPGT] = OP_COND_JMP,
   [JMPGE] = OP_COND_JMP,
