@@ -24,6 +24,7 @@ class node {
 class graph {
  private:
   size_t get_end_inst_id(inst* inst_lst, size_t start, size_t end);
+  void insert_node_start(int cur_index, int d, int length, set<size_t>& node_starts);
   void gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts);
   void gen_node_ends(inst* inst_lst, int length, set<size_t>& node_starts, vector<size_t>& node_ends);
   void gen_all_nodes_graph(vector<node>& gnodes, set<size_t>& node_starts, vector<size_t>& node_ends);

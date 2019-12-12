@@ -47,8 +47,8 @@ void test1() {
 
 void test2() {
   // test illegal input with loop
-  cout << "graph5 is" << endl;
-  inst instructions5[6] = {inst(MOVXC, 1, 4),     // 0 mov r0, 4
+  cout << "graph1 is" << endl;
+  inst instructions1[6] = {inst(MOVXC, 1, 4),     // 0 mov r0, 4
                            inst(JMPGT, 0, 2, 3),  // 1 if r0 <= r2:
                            inst(MOVXC, 2, 15),    // 2 mov r2, 15
                            inst(JMPGT, 0, 2, -4), // 3 loop from here to instruction 0
@@ -56,56 +56,68 @@ void test2() {
                            inst(RETX, 0),         // 5 else ret r0
                           };
   try {
-    graph g5(instructions5, 6);
+    graph g1(instructions1, 6);
   } catch (const string err_msg) {
     cerr << err_msg << endl;
   }
 
   // test illegal input with loop
-  cout << "graph6 is " << endl;
-  inst instructions6[5] = {inst(JMPGT, 0, 2, 2),     // 0 JMP to inst 3
+  cout << "graph2 is " << endl;
+  inst instructions2[5] = {inst(JMPGT, 0, 2, 2),     // 0 JMP to inst 3
                            inst(RETX, 2),            // 1 END
                            inst(NOP),                // 2
                            inst(JMPGT, 0, 2, -2),    // 3 JMP to inst 2, cause the loop from inst 2 to inst 3
                            inst(RETX, 0),            // 4 END
                           };
   try {
-    graph g6(instructions6, 5);
+    graph g2(instructions2, 5);
   } catch (const string err_msg) {
     cerr << err_msg << endl;
   }
 
   // test illegal input: goes to an invalid instruction
-  cout << "graph7 is " << endl;
-  inst instructions7[5] = {inst(JMPGT, 0, 2, 2),     // 0 JMP to inst 3
+  cout << "graph3 is " << endl;
+  inst instructions3[5] = {inst(JMPGT, 0, 2, 2),     // 0 JMP to inst 3
                            inst(RETX, 2),            // 1 END
                            inst(RETX, 0),            // 2 END
                            inst(JMPGT, 0, 2, -2),    // 3 JMP to inst 2. illegal: no jump will go to 4
                           };
   try {
-    graph g7(instructions7, 4);
+    graph g3(instructions3, 4);
   } catch (const string err_msg) {
     cerr << err_msg << endl;
   }
 
   // test illegal input: goes to an invalid instruction
-  cout << "graph8 is " << endl;
-  inst instructions8[2] = {inst(JMPGT, 0, 2, 1),     // 0 JMP to inst 2 -> illegal
+  cout << "graph4 is " << endl;
+  inst instructions4[2] = {inst(JMPGT, 0, 2, 1),     // 0 JMP to inst 2 -> illegal
                            inst(RETX, 2),            // 1 END
                           };
   try {
-    graph g8(instructions8, 2);
+    graph g4(instructions4, 2);
   } catch (const string err_msg) {
     cerr << err_msg << endl;
   }
 
   // test illegal input: goes to an invalid instruction
-  cout << "graph9 is " << endl;
-  inst instructions9[2] = {inst(JMPGT, 0, 2, -2),     // 0 JMP to inst -1 -> illegal
+  cout << "graph5 is " << endl;
+  inst instructions5[2] = {inst(JMPGT, 0, 2, -2),     // 0 JMP to inst -1 -> illegal
                            inst(RETX, 2),             // 1 END
                           };
   try {
-    graph g9(instructions9, 2);
+    graph g5(instructions5, 2);
+  } catch (const string err_msg) {
+    cerr << err_msg << endl;
+  }
+
+  cout << "graph6 is " << endl;
+  // loop caused by unconditional jmp
+  inst instructions6[3] = {inst(JMP, 1),
+                           inst(RETX, 0),
+                           inst(JMP, -3),
+                          };
+  try {
+    graph g6(instructions6, 3);
   } catch (const string err_msg) {
     cerr << err_msg << endl;
   }
@@ -139,10 +151,29 @@ void test3() {
                  "block starting from the instruction following NOP");
 }
 
+/* test unconditional jmp */
+void test4() {
+  cout << "Test unconditional jmp" << endl;
+  inst instructions1[3] = {inst(JMP, 1),
+                           inst(ADDXY, 0, 0),
+                           inst(RETX, 0),
+                          };
+  graph g1(instructions1, 3);
+  cout << "graph1 is" << g1 << endl;
+
+  inst instructions2[3] = {inst(JMP, 1),
+                           inst(RETX, 0),
+                           inst(JMP, -2),
+                          };
+  graph g2(instructions2, 3);
+  cout << "graph2 is" << g2 << endl;
+}
+
 int main () {
   test1();
   test2();
   test3();
+  test4();
 
   return 0;
 }

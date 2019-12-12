@@ -114,8 +114,30 @@ void test2() {
   print_test_res(is_smt_valid(pl_expected == pl), "instruction JMP logic when jmp distance is 0");
 }
 
+void test3() {
+  std::cout << "\ntest3: check unconditional jmp program\n";
+  inst p1[4] = {inst(JMP, 1),
+                inst(ADDXY, 0, 0),
+                inst(ADDXY, 0, 0),
+                inst(RETX, 0),
+               };
+  int prog_id = 1;
+  smt_prog ps;
+  ps.gen_smt(prog_id, p1, 4);
+  expr pre_iv1_1 = (v("r_1_1_0_0") == v("r_1_0_0_0") && \
+                    v("r_1_1_1_0") == v("r_1_0_1_0") && \
+                    v("r_1_1_2_0") == v("r_1_0_2_0") && \
+                    v("r_1_1_3_0") == v("r_1_0_3_0")
+                   );
+  expr bl1_1 = (v("r_1_1_0_1") == v("r_1_1_0_0") + v("r_1_1_0_0"));
+  expr post1 = v("output" + to_string(prog_id)) == v("r_1_1_0_1");
+  expr pl1 = pre_iv1_1 && bl1_1 && post1;
+  print_test_res(is_smt_valid(pl1 == ps.pl), "unconditional jmp");
+}
+
 int main() {
   test1();
   test2();
+  test3();
   return 0;
 }

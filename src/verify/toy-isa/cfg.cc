@@ -27,25 +27,33 @@ void graph::init() {
   nodes_out.clear();
 }
 
+void graph::insert_node_start(int cur_index, int d, int length, set<size_t>& node_starts) {
+  // Legal inputs : case1 (d >= 0): (cur_index + 1 + d) < length;
+  // case2 (d < 0):(cur_index + 1 >= -d)
+  if (((d >= 0) && (cur_index + 1 + d < length)) || ((d < 0) && (cur_index + 1 >= -d))) {
+    node_starts.insert(cur_index + 1 + d);
+  } else {
+    string err_msg = "illegal input: instruction " + to_string(cur_index) +
+                     " goes to an invalid instruction " + to_string(cur_index + 1 + d);
+    throw (err_msg);
+  }
+}
+
 void graph::gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts) {
   node_starts.insert(0);
   for (size_t i = 0; i < length; i++) {
-    if (opcode_type[inst_lst[i]._opcode] == OP_COND_JMP) {
-      if ((i + 1) < length) {
-        node_starts.insert(i + 1);
-      } else {
-        string err_msg = "illegal input: instruction " + to_string(i) + " -> "\
-                         "no jmp goes to an invalid instruction " + to_string(i + 1);
-        throw (err_msg);
-      }
-      int d = inst_lst[i]._args[2];
-      // Legal inputs : case1 (d >= 0): (i + 1 + d) < length; case2 (d < 0):(i + 1 >= -d)
-      if (((d >= 0) && (i + 1 + d < length)) || ((d < 0) && (i + 1 >= -d))) {
-        node_starts.insert(i + 1 + d);
-      } else {
-        string err_msg = "illegal input: instruction " + to_string(i) + " -> "\
-                         "jmp goes to an invalid instruction " + to_string((int)(i) + 1 + d);
-        throw (err_msg);
+    vector<int> distances;
+    if (opcode_type[inst_lst[i]._opcode] == OP_UNCOND_JMP) {
+      distances.push_back(inst_lst[i]._args[0]);
+    } else if (opcode_type[inst_lst[i]._opcode] == OP_COND_JMP) {
+      distances.push_back(0);
+      distances.push_back(inst_lst[i]._args[2]);
+    }
+    for (size_t j = 0; j < distances.size(); j++) {
+      try {
+        insert_node_start(i, distances[j], length, node_starts); // no jmp
+      } catch (const string err_msg) {
+        throw err_msg;
       }
     }
   }
@@ -54,7 +62,8 @@ void graph::gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts
 // return end instruction ID in [start: end]
 size_t graph::get_end_inst_id(inst* inst_lst, size_t start, size_t end) {
   for (size_t i = start; i < end; i++) {
-    if (opcode_type[inst_lst[i]._opcode] == OP_RET) {
+    int opcode = opcode_type[inst_lst[i]._opcode];
+    if ((opcode == OP_RET) || (opcode == OP_UNCOND_JMP)) {
       return i;
     }
   }
@@ -63,8 +72,9 @@ size_t graph::get_end_inst_id(inst* inst_lst, size_t start, size_t end) {
 
 void graph::gen_node_ends(inst* inst_lst, int length, set<size_t>& node_starts, vector<size_t>& node_ends) {
   /* Traverse all starts in node_starts, find an end for each start
-     The end for all starts except the last one is the OP_RET instruction OR the ${next start - 1} instruction
-     The end for the last start is the OP_RET instruction OR the last instruction.
+     The end for all starts except the last one is the OP_RET/OP_UNCOND_JMP instruction 
+     OR the ${next start - 1} instruction
+     The end for the last start is the OP_RET/OP_UNCOND_JMP instruction OR the last instruction.
   */
   // ends for all starts except the last start
   set<size_t>::iterator i = node_starts.begin();
@@ -116,6 +126,8 @@ void graph::gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vecto
     int inst_type = opcode_type[inst_lst[end_inst_id]._opcode];
     if (inst_type == OP_OTHERS || inst_type == OP_NOP) {
       next_inst_ids.push_back(end_inst_id + 1);
+    } else if (inst_type == OP_UNCOND_JMP) {
+      next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id]._args[0]);
     } else if (inst_type == OP_COND_JMP) {
       // keep order: insert no jmp first
       next_inst_ids.push_back(end_inst_id + 1); //no jmp

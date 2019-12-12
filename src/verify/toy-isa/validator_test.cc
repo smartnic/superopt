@@ -97,6 +97,34 @@ void test2() {
                  };
   vld.set_orig(p11, 5);
   print_test_res(vld.is_equal_to(p12, 11), "f(x)_p1 == f(x)_p2");
+
+  // check unconditonal jmp
+  // p13 != p11, p14 == p15 == p11
+  inst p13[6] = {inst(JMP, 3),
+                 inst(MAXX, 0, 1),
+                 inst(MAXX, 0, 2),
+                 inst(MOVXC, 1, 10),
+                 inst(MAXX, 0, 1),
+                 inst(RETX, 0),
+                };
+  inst p14[6] = {inst(JMP, 0),
+                 inst(MAXX, 0, 1),
+                 inst(MAXX, 0, 2),
+                 inst(MOVXC, 1, 10),
+                 inst(MAXX, 0, 1),
+                 inst(RETX, 0),
+                };
+  inst p15[7] = {inst(JMP, 3),
+                 inst(MOVXC, 1, 10),
+                 inst(MAXX, 0, 1),
+                 inst(RETX, 0),
+                 inst(MAXX, 0, 1),
+                 inst(MAXX, 0, 2),
+                 inst(JMP, -6),
+                };
+  print_test_res(!vld.is_equal_to(p13, 6), "unconditonal jmp 1");
+  print_test_res(vld.is_equal_to(p14, 6), "unconditonal jmp 2");
+  print_test_res(vld.is_equal_to(p15, 7), "unconditonal jmp 3");
 }
 
 // fx == program_fx test
