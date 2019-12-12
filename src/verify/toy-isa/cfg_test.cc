@@ -4,7 +4,7 @@
 
 using namespace std;
 
-int main () {
+void test1() {
   inst instructions1[6] = {inst(JMPGT, 0, 2, 1),  // if r0 <= r2:
                            inst(ADDXY, 0, 1),     // add r0, r1
                            inst(MOVXC, 2, 15),    // mov r2, 15
@@ -43,7 +43,9 @@ int main () {
                           };
   graph g4(instructions4, 4);
   cout << "graph4 is" << g4 << endl;
+}
 
+void test2() {
   // test illegal input with loop
   cout << "graph5 is" << endl;
   inst instructions5[6] = {inst(MOVXC, 1, 4),     // 0 mov r0, 4
@@ -107,7 +109,9 @@ int main () {
   } catch (const string err_msg) {
     cerr << err_msg << endl;
   }
+}
 
+void test3() {
   inst instructions10[7] = {inst(MOVXC, 2, 4),
                             inst(ADDXY, 0, 2),
                             inst(MOVXC, 3, 15),
@@ -133,5 +137,12 @@ int main () {
                      (g11.nodes_in[2][0] == 1 && g11.nodes_in[2][1] == 0));
   print_test_res(assert_res, "block ending up with NOP will connect to " \
                  "block starting from the instruction following NOP");
+}
+
+int main () {
+  test1();
+  test2();
+  test3();
+
   return 0;
 }
