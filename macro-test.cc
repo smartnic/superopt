@@ -20,28 +20,67 @@ string dog_to_string(enum dog_enums dog)
 /* Inputs x, y, z must be side-effect-free expressions. */
 #define ADDXY_EXPR(x, y, z) (z GENMODE x + y)
 
+/* Predicate expressions capture instructions like MAX which have different
+ * results on a register based on the evaluation of a predicate. */
+/* Inputs x, y, z, pred_if, pred_else must be side-effect-free. */
+#define PRED_EXPR(x, y, z, pred_if, ret_if, ret_else) ({  \
+    IF_PRED_ACTION(pred_if, ret_if, z)                    \
+    CONNECTIFELSE                                         \
+    ELSE_PRED_ACTION(pred_if, ret_else, z);           \
+  })
+
+#define MAXX_EXPR(a, b, c) (PRED_EXPR(a, b, c, a > b, a, b))
+
 #undef GENMODE
 #define GENMODE =
+#undef IF_PRED_ACTION
+#define IF_PRED_ACTION(pred, expr, var) if(pred) var GENMODE expr
+#undef CONNECTIFELSE
+#define CONNECTIFELSE  ;
+#undef ELSE_PRED_ACTION
+#define ELSE_PRED_ACTION(pred, expr, var) else var GENMODE expr
 
 int compute_add(int a, int b, int c) {
-  return ADDXY_EXPR(a, b, c);
+  ADDXY_EXPR(a, b, c);
+  return c;
+}
+
+int compute_max(int a, int b, int c) {
+  MAXX_EXPR(a, b, c);
+  return c;
 }
 
 #undef GENMODE
 #define GENMODE ==
+#undef IF_PRED_ACTION
+#define IF_PRED_ACTION(pred, expr, var) ((pred) && (var GENMODE expr))
+#undef CONNECTIFELSE
+#define CONNECTIFELSE ||
+#undef ELSE_PRED_ACTION
+#define ELSE_PRED_ACTION(pred, expr, var) (!(pred) && (var GENMODE expr))
 
 bool predicate_add(int a, int b, int c) {
   return ADDXY_EXPR(a, b, c);
+}
+
+bool predicate_max(int a, int b, int c) {
+  return MAXX_EXPR(a, b, c);
 }
 
 int main() {
   cout << dog_to_string(ENUM_ITALIAN_GREYHOUND) << endl;
 
   int a = 4, b = 5, c = 10;
-  cout << compute_add(a, b, c) << endl;
-  cout << predicate_add(a, b, c) << endl;
+  cout << compute_add(a, b, c) << " expected 9" << endl;
+  cout << predicate_add(a, b, c) << " expected 0" << endl;
   c = compute_add(a, b, c);
-  cout << predicate_add(a, b, c) << endl;
+  cout << predicate_add(a, b, c) << " expected 1" << endl;
+
+  cout << compute_max(a, b, c) << " expected 5" << endl;
+  cout << predicate_max(a, b, c) << " expected 0" << endl;
+  cout << predicate_max(a, b, compute_max(a, b, c)) << " expected 1" << endl;
+  c = compute_max(a, b, c);
+  cout << predicate_max(a, b, c) << " expected 1" << endl;
 
   return 0;
 }
