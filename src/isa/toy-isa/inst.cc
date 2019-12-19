@@ -1,4 +1,5 @@
 #include <iostream>
+#include "macro-test.h"
 #include "inst.h"
 
 using namespace std;
@@ -137,7 +138,7 @@ INSN_NOP:
   CONT;
 
 INSN_ADDXY:
-  DST = DST + SRC;
+  DST = compute_add(DST, SRC, DST);
   CONT;
 
 INSN_MOVXC:
@@ -151,11 +152,11 @@ INSN_RETC:
   return IMM1;
 
 INSN_MAXC:
-  DST = max(DST, IMM2);
+  DST = compute_max(DST, IMM2, DST);
   CONT;
 
 INSN_MAXX:
-  DST = max(DST, SRC);
+  DST = compute_max(DST, SRC, DST);
   CONT;
 
 INSN_JMP:

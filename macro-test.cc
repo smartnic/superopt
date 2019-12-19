@@ -1,4 +1,5 @@
 #include <iostream>
+#include "macro-test.h"
 
 using namespace std;
 
@@ -59,28 +60,14 @@ int compute_max(int a, int b, int c) {
 #undef ELSE_PRED_ACTION
 #define ELSE_PRED_ACTION(pred, expr, var) (!(pred) && (var GENMODE expr))
 
-bool predicate_add(int a, int b, int c) {
+z3::expr predicate_add(z3::expr a, z3::expr b, z3::expr c) {
   return ADDXY_EXPR(a, b, c);
 }
 
-bool predicate_max(int a, int b, int c) {
+z3::expr predicate_max(z3::expr a, int b, z3::expr c) {
   return MAXX_EXPR(a, b, c);
 }
 
-int main() {
-  cout << dog_to_string(ENUM_ITALIAN_GREYHOUND) << endl;
-
-  int a = 4, b = 5, c = 10;
-  cout << compute_add(a, b, c) << " expected 9" << endl;
-  cout << predicate_add(a, b, c) << " expected 0" << endl;
-  c = compute_add(a, b, c);
-  cout << predicate_add(a, b, c) << " expected 1" << endl;
-
-  cout << compute_max(a, b, c) << " expected 5" << endl;
-  cout << predicate_max(a, b, c) << " expected 0" << endl;
-  cout << predicate_max(a, b, compute_max(a, b, c)) << " expected 1" << endl;
-  c = compute_max(a, b, c);
-  cout << predicate_max(a, b, c) << " expected 1" << endl;
-
-  return 0;
+z3::expr predicate_max(z3::expr a, z3::expr b, z3::expr c) {
+  return MAXX_EXPR(a, b, c);
 }
