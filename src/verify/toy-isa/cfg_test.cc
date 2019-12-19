@@ -121,6 +121,14 @@ void test2() {
   } catch (const string err_msg) {
     cerr << err_msg << endl;
   }
+  cout << "graph7 is " << endl;
+  // test (jmp -1) loop
+  inst instructions7[1] = {inst(JMP, -1)};
+  try {
+    graph g7(instructions7, 1);
+  } catch (const string err_msg) {
+    cerr << err_msg << endl;
+  }
 }
 
 void test3() {
