@@ -1,12 +1,13 @@
 SRC=src/
-ISA=src/isa/toy-isa/
-VERIFY=src/verify/toy-isa/
+VERIFY=src/verify/
 SEARCH=src/search/
+ISA=src/isa/toy-isa/
+VERIFYISA=src/verify/toy-isa/
 
 all: main.out proposals_test.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out cfg_test.out inout_test.out smt_prog_test.out
 
-main.out: main.cc main.h main_z3.o measure/common.cc measure/common.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h $(SEARCH)proposals.cc $(SEARCH)proposals.h $(SRC)prog.cc $(SRC)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(SRC)utils.cc $(SRC)utils.h
-	g++ -std=c++11 main_z3.o measure/common.cc measure/meas_mh_bhv.cc $(ISA)inst.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(SRC)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(VERIFY)smt_prog.cc $(SRC)utils.cc -o main.out ../z3/build/libz3.dylib -lpthread
+main.out: main.cc main.h main_z3.o measure/common.cc measure/common.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h $(SEARCH)proposals.cc $(SEARCH)proposals.h $(SRC)prog.cc $(SRC)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(VERIFYISA)smt_inst.cc $(VERIFYISA)smt_inst.h $(SRC)utils.cc $(SRC)utils.h
+	g++ -std=c++11 main_z3.o measure/common.cc measure/meas_mh_bhv.cc $(ISA)inst.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(SRC)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(VERIFY)smt_prog.cc $(VERIFY)smt_var.cc $(VERIFYISA)smt_inst.cc $(SRC)utils.cc -o main.out ../z3/build/libz3.dylib -lpthread
 
 main_z3.o: main.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o main_z3.o  -I../z3/src/api -I../z3/src/api/c++ main.cc
@@ -17,8 +18,8 @@ proposals_test.out: $(ISA)inst.cc $(ISA)inst.h $(SEARCH)proposals.cc $(SEARCH)pr
 inst_test.out: $(ISA)inst.cc $(ISA)inst.h $(ISA)inst_test.cc $(SRC)utils.cc $(SRC)utils.h
 	g++ -std=c++11 $(ISA)inst.cc $(ISA)inst_test.cc $(SRC)utils.cc -o $(ISA)inst_test.out
 
-cost_test.out: $(SEARCH)cost.cc cost_z3.o $(SEARCH)cost.h $(SRC)inout.h $(SRC)inout.cc $(ISA)inst.cc $(ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(SRC)utils.cc $(SRC)utils.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(SRC)prog.cc $(SRC)prog.h
-	g++ -std=c++11 $(SEARCH)cost.cc $(SEARCH)cost_z3.o $(SRC)inout.cc $(ISA)inst.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(SRC)utils.cc $(VERIFY)smt_prog.cc $(SRC)prog.cc -o $(SEARCH)cost_test.out ../z3/build/libz3.dylib -lpthread
+cost_test.out: $(SEARCH)cost.cc cost_z3.o $(SEARCH)cost.h $(SRC)inout.h $(SRC)inout.cc $(ISA)inst.cc $(ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(SRC)utils.cc $(SRC)utils.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(VERIFYISA)smt_inst.cc $(VERIFYISA)smt_inst.h $(SRC)prog.cc $(SRC)prog.h
+	g++ -std=c++11 $(SEARCH)cost.cc $(SEARCH)cost_z3.o $(SRC)inout.cc $(ISA)inst.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(SRC)utils.cc $(VERIFY)smt_prog.cc $(VERIFY)smt_var.cc $(VERIFYISA)smt_inst.cc $(SRC)prog.cc -o $(SEARCH)cost_test.out ../z3/build/libz3.dylib -lpthread
 
 cost_z3.o: $(SEARCH)cost_test.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o $(SEARCH)cost_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(SEARCH)cost_test.cc
@@ -26,20 +27,20 @@ cost_z3.o: $(SEARCH)cost_test.cc
 prog_test.out: $(SRC)prog.cc $(ISA)inst.h $(ISA)inst.cc $(SRC)prog.h $(SRC)prog_test.cc $(SRC)utils.h $(SRC)utils.cc
 	g++ -std=c++11 $(SRC)prog_test.cc $(SRC)prog.cc $(ISA)inst.cc $(SRC)utils.cc -o $(SRC)prog_test.out
 
-mh_prog_test.out: $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h mh_prog_z3.o $(SEARCH)proposals.cc $(SEARCH)proposals.h $(SRC)prog.cc $(SRC)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(SRC)utils.cc $(SRC)utils.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc
-	g++ -std=c++11 $(ISA)inst.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(SRC)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(SEARCH)mh_prog_z3.o $(VERIFY)smt_prog.cc $(SRC)utils.cc measure/meas_mh_bhv.cc -o $(SEARCH)mh_prog_test.out ../z3/build/libz3.dylib -lpthread
+mh_prog_test.out: $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h mh_prog_z3.o $(SEARCH)proposals.cc $(SEARCH)proposals.h $(SRC)prog.cc $(SRC)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(VERIFYISA)smt_inst.cc $(VERIFYISA)smt_inst.h $(SRC)utils.cc $(SRC)utils.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc
+	g++ -std=c++11 $(ISA)inst.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(SRC)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(SEARCH)mh_prog_z3.o $(VERIFY)smt_prog.cc $(VERIFY)smt_var.cc $(VERIFYISA)smt_inst.cc $(SRC)utils.cc measure/meas_mh_bhv.cc -o $(SEARCH)mh_prog_test.out ../z3/build/libz3.dylib -lpthread
 
 mh_prog_z3.o: $(SEARCH)mh_prog_test.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o $(SEARCH)mh_prog_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(SEARCH)mh_prog_test.cc
 
-validator_test.out: validator_z3.o $(VERIFY)validator.cc $(VERIFY)validator.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(SRC)inout.cc $(SRC)inout.h $(SRC)utils.cc $(SRC)utils.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h
-	g++ -std=c++11 $(VERIFY)validator_z3.o $(VERIFY)validator.cc $(ISA)inst.cc $(VERIFY)cfg.cc $(SRC)inout.cc $(SRC)utils.cc $(VERIFY)smt_prog.cc -o $(VERIFY)validator_test.out ../z3/build/libz3.dylib -lpthread
+validator_test.out: validator_z3.o $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(VERIFYISA)smt_inst.cc $(VERIFYISA)smt_inst.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(SRC)inout.cc $(SRC)inout.h $(SRC)utils.cc $(SRC)utils.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h
+	g++ -std=c++11 $(VERIFY)validator_z3.o $(VERIFY)validator.cc $(VERIFY)smt_var.cc $(VERIFYISA)smt_inst.cc $(ISA)inst.cc $(VERIFY)cfg.cc $(SRC)inout.cc $(SRC)utils.cc $(VERIFY)smt_prog.cc -o $(VERIFY)validator_test.out ../z3/build/libz3.dylib -lpthread
 
 validator_z3.o: $(VERIFY)validator_test.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o $(VERIFY)validator_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)validator_test.cc
 
-smt_prog_test.out: smt_prog_z3.o $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(SRC)utils.cc $(SRC)utils.h
-	g++ -std=c++11 $(VERIFY)smt_prog_z3.o $(VERIFY)smt_prog.cc $(ISA)inst.cc $(VERIFY)cfg.cc $(SRC)utils.cc -o $(VERIFY)smt_prog_test.out ../z3/build/libz3.dylib -lpthread
+smt_prog_test.out: smt_prog_z3.o $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(VERIFYISA)smt_inst.cc $(VERIFYISA)smt_inst.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(SRC)utils.cc $(SRC)utils.h
+	g++ -std=c++11 $(VERIFY)smt_prog_z3.o $(VERIFY)smt_prog.cc $(VERIFY)smt_var.cc $(VERIFYISA)smt_inst.cc $(ISA)inst.cc $(VERIFY)cfg.cc $(SRC)utils.cc -o $(VERIFY)smt_prog_test.out ../z3/build/libz3.dylib -lpthread
 
 smt_prog_z3.o: $(VERIFY)smt_prog_test.cc
 	g++ -D_MP_INTERNAL -DNDEBUG -D_EXTERNAL_RELEASE -std=c++11 -fvisibility=hidden -c -mfpmath=sse -msse -msse2 -O3 -Wno-unknown-pragmas -Wno-overloaded-virtual -Wno-unused-value -fPIC -o $(VERIFY)smt_prog_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)smt_prog_test.cc

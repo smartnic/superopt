@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../../../src/utils.h"
+#include "../../src/utils.h"
 #include "cfg.h"
 
 using namespace std;

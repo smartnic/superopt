@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../../../src/utils.h"
+#include "../../src/utils.h"
 #include "smt_prog.h"
 
 using namespace z3;

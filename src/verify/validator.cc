@@ -27,7 +27,7 @@ void validator::gen_counterex(model& m) {
 }
 
 bool validator::is_smt_valid(expr& smt) {
-  solver s(smt_prog_c);
+  solver s(smt_c);
   s.add(!smt);
   switch (s.check()) {
     case unsat: return true;
@@ -104,7 +104,7 @@ int validator::is_equal_to(inst* synth, int len) {
 int validator::get_orig_output(int input) {
   smt_var sv(VLD_PROG_ID_ORIG, 0);
   expr input_logic = (sv.get_init_reg_var(0) == input);
-  solver s(smt_prog_c);
+  solver s(smt_c);
   s.add(_pl_orig && input_logic);
   s.check();
   model m = s.get_model();

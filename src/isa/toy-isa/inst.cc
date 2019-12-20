@@ -190,3 +190,25 @@ int num_real_instructions(inst* program, int len) {
   }
   return count;
 }
+
+int inst_output_opcode_type(inst* inst_end) {
+  switch (inst_end->_opcode) {
+    case RETX:
+      return RET_X;
+    case RETC:
+      return RET_C;
+    default: // no RET, return register 0
+      return RET_R0;
+  }
+}
+
+int inst_output(inst* inst_end) {
+  switch (inst_end->_opcode) {
+    case RETX:
+      return DSTREG(inst_end);
+    case RETC:
+      return IMM1VAL(inst_end);
+    default: // no RET, return register 0
+      return 0;
+  }
+}

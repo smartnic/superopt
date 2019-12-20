@@ -24,6 +24,11 @@ using namespace std;
 #define OP_COND_JMP 3
 #define OP_OTHERS 4
 
+// Return opcode types for instructions
+#define RET_C 0   // return immediate number
+#define RET_X 1   // return register
+#define RET_R0 2  // return register 0
+
 // Instruction opcodes
 #define NOP 0
 #define ADDXY 1
@@ -162,3 +167,5 @@ void print_program(const inst* program, int length);
 int interpret(inst* program, int length, prog_state &ps, int input);
 int num_real_instructions(inst* program, int len);
 string to_string(const abs_bv_inst &bv);
+int inst_output_opcode_type(inst* inst_end);
+int inst_output(inst* inst_end);

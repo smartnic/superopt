@@ -4,7 +4,7 @@
 #include "../../src/inout.h"
 #include "../../src/prog.h"
 #include "../../src/isa/toy-isa/inst.h"
-#include "../../src/verify/toy-isa/validator.h"
+#include "../../src/verify/validator.h"
 
 using namespace std;
 

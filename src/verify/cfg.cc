@@ -72,7 +72,7 @@ size_t graph::get_end_inst_id(inst* inst_lst, size_t start, size_t end) {
 
 void graph::gen_node_ends(inst* inst_lst, int length, set<size_t>& node_starts, vector<size_t>& node_ends) {
   /* Traverse all starts in node_starts, find an end for each start
-     The end for all starts except the last one is the OP_RET/OP_UNCOND_JMP instruction 
+     The end for all starts except the last one is the OP_RET/OP_UNCOND_JMP instruction
      OR the ${next start - 1} instruction
      The end for the last start is the OP_RET/OP_UNCOND_JMP instruction OR the last instruction.
   */
