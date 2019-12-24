@@ -55,6 +55,19 @@ clean:
 	for i in */; do find . -name "*.o" -delete; done
 	for i in */; do find . -name "*.out" -delete; done
 
+run_tests:
+	make
+	./src/inout_test.out
+	./src/isa/toy-isa/inst_test.out
+	./src/verify/validator_test.out
+	./src/verify/smt_prog_test.out
+	./src/search/cost_test.out
+	./src/verify/cfg_test.out
+	./src/search/mh_prog_test.out
+	./src/search/proposals_test.out
+	./src/prog_test.out
+	./main.out
+
 all_measure: meas_time.out meas_mh_bhv_test.out
 
 meas_time.out: measure/meas_time.cc measure/common.cc measure/common.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc meas_time_z3.o $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h $(SEARCH)proposals.cc $(SEARCH)proposals.h $(SRC)prog.cc $(SRC)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(SRC)utils.cc $(SRC)utils.h
