@@ -43,9 +43,34 @@ class InputParas:
         print("p_inst_list:", self.p_inst_list)
 
 
+def usage():
+    print("-n: number of iterations")
+    print("--fin_path: input raw data path")
+    print("--bm_ids: benchmark list, e.g., \"0 1\"")
+    print("--best_perf_costs: best performance cost for each benchmark in `bm_ids`")
+    print("                   the order should keep the same as `bm_ids`")
+    print("--w_list: weight pair list for error cost and performance cost,")
+    print("          e.g., \"1,0 1.5,1.5\" represents error and performance cost pairs <1,0> and <1.5,1.5>")
+    print("--st_list: cost function strategy list, each item format: st_ex + st_eq + st_avg")
+    print("--st_when_to_restart_list: each item represents st_when_to_restart. supported strategies:")
+    print("                           MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART 0")
+    print("                           MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER 1")
+    print("                           if strategy is 0, `st_when_to_restart_niter` should be 0")
+    print("                           if strategy is 1, `st_when_to_restart_niter` can not be 0")
+    print("--st_when_to_restart_niter_list: each item represents iteration number for mh sampler restarting")
+    print("--st_start_prog: st_start_prog list. supported strategies:")
+    print("                 MH_SAMPLER_ST_NEXT_START_PROG_ORIG 0")
+    print("                 MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS 1")
+    print("                 MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS 2")
+    print("--p_list: there are three different modification typies for new proposals:")
+    print("          modify a random instruction operand, instruction and two continuous instructions.")
+    print("          Sum of these probabilities is 1")
+    print("          Each item represents probabilities of the first two modifications (the third can be computed).")
+
+
 def parse_input():
     in_para = InputParas()
-    short_opts = "n:"
+    short_opts = "n:h"
     long_opts = ["fin_path=", "bm_ids=", "w_list=", "st_list=",
                  "best_perf_costs=", "steady_start=",
                  "st_when_to_restart_list=", "st_when_to_restart_niter_list=",
@@ -87,9 +112,12 @@ def parse_input():
                 p = p.split(",")
                 in_para.p_inst_operand_list.append(p[0])
                 in_para.p_inst_list.append(p[1])
+        elif o == "-h":
+            usage()
+            return False, in_para
         else:
             assert False, "unhandled option"
-    return in_para
+    return True, in_para
 
 
 def create_fout_path(fout_path):
@@ -899,7 +927,9 @@ def figure_all(bm_id, best_perf_cost, st, st_when_to_restart, st_when_to_restart
                                                   p_inst_operand, p_inst)
 
 if __name__ == "__main__":
-    in_para = parse_input()
+    flag, in_para = parse_input()
+    if flag is False:
+        exit(0)
     in_para.print_out()
     create_fout_path(in_para.fout_path)
 
