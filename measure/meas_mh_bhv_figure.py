@@ -273,7 +273,9 @@ def total_cost_function_cdf_xy(error_cost_list, perf_cost_list, w_e, w_p):
     x_axis, y_axis = cost_function_cdf_xy(total_cost_list, MAX_TOTAL_COST_IN_FIGURE)
     return x_axis, y_axis
 
-
+# normalize the cost list for programs to the same format as proposals
+# original cost list: for proposals, cost list keeps values for each iteration one by one
+# for programs, cost list only keeps values for iterations where cost values change
 def get_cost_list_for_each_iteration(file_type, file_data, cost_list, niter):
     if file_type == file_name_type.proposals:
         return cost_list
@@ -311,6 +313,7 @@ def get_cost_list_when_steady(file_type, file_data, cost_list, steady_start, nit
     return new_cost_list
 
 
+# steady start applies independently to each restart
 def cost_function_for_different_types_when_steady(c_type, file_type, fin_path, steady_start,
                                                   bm_id, niter, st,
                                                   st_when_to_restart, st_when_to_restart_niter,
