@@ -51,7 +51,7 @@ void graph::gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts
     }
     for (size_t j = 0; j < distances.size(); j++) {
       try {
-        insert_node_start(i, distances[j], length, node_starts); // no jmp
+        insert_node_start(i, distances[j], length, node_starts);
       } catch (const string err_msg) {
         throw err_msg;
       }
