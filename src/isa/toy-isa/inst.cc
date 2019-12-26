@@ -125,10 +125,10 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
-#define DST ps.regs[DSTREG(insn)]
-#define SRC ps.regs[SRCREG(insn)]
-#define IMM1 IMM1VAL(insn)
-#define IMM2 IMM2VAL(insn)
+#define DST ps.regs[DSTREG(*insn)]
+#define SRC ps.regs[SRCREG(*insn)]
+#define IMM1 IMM1VAL(*insn)
+#define IMM2 IMM2VAL(*insn)
 
 select_insn:
   goto *jumptable[insn->_opcode];
@@ -191,8 +191,8 @@ int num_real_instructions(inst* program, int len) {
   return count;
 }
 
-int inst_output_opcode_type(inst* inst_end) {
-  switch (inst_end->_opcode) {
+int inst_output_opcode_type(const inst& inst_end) {
+  switch (inst_end._opcode) {
     case RETX:
       return RET_X;
     case RETC:
@@ -202,8 +202,8 @@ int inst_output_opcode_type(inst* inst_end) {
   }
 }
 
-int inst_output(inst* inst_end) {
-  switch (inst_end->_opcode) {
+int inst_output(const inst& inst_end) {
+  switch (inst_end._opcode) {
     case RETX:
       return DSTREG(inst_end);
     case RETC:

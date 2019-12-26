@@ -47,7 +47,7 @@ void smt_prog::smt_block(expr& smt_b, inst* program, int length, smt_var& sv) {
   expr p = string_to_expr("true");
   for (size_t i = 0; i < length; i++) {
     if (opcode_type[inst_lst[i]._opcode] != OP_OTHERS) continue;
-    p = p and smt_inst(sv, &inst_lst[i]);
+    p = p and smt_inst(sv, inst_lst[i]);
   }
   smt_b = p.simplify();
 }
@@ -201,7 +201,7 @@ void smt_prog::get_init_val(expr& f_iv, smt_var& sv, size_t in_bid) {
 
 // TODO: needed to be generalized
 // for each return value v, smt: v == output[prog_id]
-expr smt_prog::smt_end_block_inst(size_t cur_bid, inst* inst_end, unsigned int prog_id) {
+expr smt_prog::smt_end_block_inst(size_t cur_bid, inst& inst_end, unsigned int prog_id) {
   switch (inst_output_opcode_type(inst_end)) {
     case RET_X:
       return (string_to_expr("output" + to_string(prog_id)) == post_reg_val[cur_bid][inst_output(inst_end)]);
@@ -222,7 +222,7 @@ void smt_prog::process_output(expr& f_p_output, inst* inst_lst, unsigned int pro
     // process END instruction
     expr c_in = string_to_expr("true");
     gen_block_c_in(c_in, i);
-    expr e1 = smt_end_block_inst(i, &inst_lst[g.nodes[i]._end], prog_id);
+    expr e1 = smt_end_block_inst(i, inst_lst[g.nodes[i]._end], prog_id);
     expr e2 = implies(c_in.simplify(), e1);
     e = e && e2;
     post[i][0] = e2; // store

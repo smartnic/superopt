@@ -7,8 +7,8 @@ using namespace z3;
 #define NEWDST sv.update_reg_var(DSTREG(in))
 #define IMM2 IMM2VAL(in)
 
-expr smt_inst(smt_var& sv, inst* in) {
-  switch (in->_opcode) {
+expr smt_inst(smt_var& sv, const inst& in) {
+  switch (in._opcode) {
     case ADDXY: return (CURDST + CURSRC == NEWDST);
     case MOVXC: return (IMM2 == NEWDST);
     case MAXC: {
@@ -30,11 +30,10 @@ expr smt_inst(smt_var& sv, inst* in) {
   }
 }
 
-expr smt_inst_jmp(smt_var& sv, inst& insn) {
-  inst* in = &insn;
+expr smt_inst_jmp(smt_var& sv, const inst& in) {
   // e is formula for Jmp
   expr e = string_to_expr("true");
-  switch (insn._opcode) {
+  switch (in._opcode) {
     case JMPEQ: e = (CURDST == CURSRC); return e;
     case JMPGT: e = (CURDST > CURSRC); return e;
     case JMPGE: e = (CURDST >= CURSRC); return e;

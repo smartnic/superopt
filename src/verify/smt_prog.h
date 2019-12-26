@@ -29,7 +29,7 @@ class smt_prog {
   void add_path_cond(expr p_con, size_t cur_bid, size_t next_bId);
   void gen_post_path_con(smt_var& sv, size_t cur_bid, inst& inst_end);
   void get_init_val(expr& f_iv, smt_var& sv, size_t in_bid);
-  expr smt_end_block_inst(size_t cur_bid, inst* inst_end, unsigned int prog_id);
+  expr smt_end_block_inst(size_t cur_bid, inst& inst_end, unsigned int prog_id);
   void gen_block_c_in(expr& c_in, size_t cur_bid);
   void process_output(expr& f_p_output, inst* inst_lst, unsigned int prog_id);
  public:
