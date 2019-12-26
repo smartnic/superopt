@@ -198,7 +198,7 @@ int inst_output_opcode_type(inst* inst_end) {
     case RETC:
       return RET_C;
     default: // no RET, return register 0
-      return RET_R0;
+      return RET_X;
   }
 }
 

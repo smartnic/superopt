@@ -24,10 +24,9 @@ using namespace std;
 #define OP_COND_JMP 3
 #define OP_OTHERS 4
 
-// Return opcode types for instructions
+// Return opcode types for the end instruction of a program
 #define RET_C 0   // return immediate number
 #define RET_X 1   // return register
-#define RET_R0 2  // return register 0
 
 // Instruction opcodes
 #define NOP 0
@@ -167,5 +166,6 @@ void print_program(const inst* program, int length);
 int interpret(inst* program, int length, prog_state &ps, int input);
 int num_real_instructions(inst* program, int len);
 string to_string(const abs_bv_inst &bv);
+// assume `inst_end` is the end instruction of a program
 int inst_output_opcode_type(inst* inst_end);
 int inst_output(inst* inst_end);

@@ -207,8 +207,6 @@ expr smt_prog::smt_end_block_inst(size_t cur_bid, inst* inst_end, unsigned int p
       return (string_to_expr("output" + to_string(prog_id)) == post_reg_val[cur_bid][inst_output(inst_end)]);
     case RET_C:
       return (string_to_expr("output" + to_string(prog_id)) == inst_output(inst_end));
-    case RET_R0:
-      return (string_to_expr("output" + to_string(prog_id)) == post_reg_val[cur_bid][0]);
     default:
       return string_to_expr("false");
   }
