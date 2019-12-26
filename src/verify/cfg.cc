@@ -44,10 +44,10 @@ void graph::gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts
   for (size_t i = 0; i < length; i++) {
     vector<int> distances;
     if (opcode_type[inst_lst[i]._opcode] == OP_UNCOND_JMP) {
-      distances.push_back(inst_lst[i]._args[0]);
+      distances.push_back(UNCONDJMPDIS(inst_lst[i]));
     } else if (opcode_type[inst_lst[i]._opcode] == OP_COND_JMP) {
       distances.push_back(0);
-      distances.push_back(inst_lst[i]._args[2]);
+      distances.push_back(CONDJMPDIS(inst_lst[i]));
     }
     for (size_t j = 0; j < distances.size(); j++) {
       try {
@@ -127,11 +127,11 @@ void graph::gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vecto
     if (inst_type == OP_OTHERS || inst_type == OP_NOP) {
       next_inst_ids.push_back(end_inst_id + 1);
     } else if (inst_type == OP_UNCOND_JMP) {
-      next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id]._args[0]);
+      next_inst_ids.push_back(end_inst_id + 1 + UNCONDJMPDIS(inst_lst[end_inst_id]));
     } else if (inst_type == OP_COND_JMP) {
       // keep order: insert no jmp first
       next_inst_ids.push_back(end_inst_id + 1); //no jmp
-      next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id]._args[2]); //jmp
+      next_inst_ids.push_back(end_inst_id + 1 + CONDJMPDIS(inst_lst[end_inst_id])); //jmp
     }
 
     for (size_t j = 0; j < next_inst_ids.size(); j++) {
