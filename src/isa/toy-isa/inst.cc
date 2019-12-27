@@ -1,5 +1,5 @@
 #include <iostream>
-#include "macro-test.h"
+#include "../inst_codegen.h"
 #include "inst.h"
 
 using namespace std;
@@ -142,7 +142,7 @@ INSN_ADDXY:
   CONT;
 
 INSN_MOVXC:
-  DST = IMM2;
+  DST = compute_mov(IMM2, DST);
   CONT;
 
 INSN_RETX:

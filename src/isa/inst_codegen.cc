@@ -1,25 +1,11 @@
 #include <iostream>
-#include "macro-test.h"
+#include "inst_codegen.h"
 
 using namespace std;
 
-#define DOGS { C(JACK_RUSSELL), C(BULL_TERRIER), C(ITALIAN_GREYHOUND) }
-
-#undef C
-#define C(a) ENUM_##a
-enum dog_enums DOGS;
-#undef C
-#define C(a) #a
-string dog_strings[] = DOGS;
-
-string dog_to_string(enum dog_enums dog)
-{
-  return dog_strings[dog];
-}
-
-
 /* Inputs x, y, z must be side-effect-free expressions. */
 #define ADDXY_EXPR(x, y, z) (z GENMODE x + y)
+#define MOV_EXPR(x, y) (y GENMODE x)
 
 /* Predicate expressions capture instructions like MAX which have different
  * results on a register based on the evaluation of a predicate. */
@@ -46,6 +32,11 @@ int compute_add(int a, int b, int c) {
   return c;
 }
 
+int compute_mov(int a, int b) {
+  MOV_EXPR(a, b);
+  return b;
+}
+
 int compute_max(int a, int b, int c) {
   MAXX_EXPR(a, b, c);
   return c;
@@ -62,6 +53,10 @@ int compute_max(int a, int b, int c) {
 
 z3::expr predicate_add(z3::expr a, z3::expr b, z3::expr c) {
   return ADDXY_EXPR(a, b, c);
+}
+
+z3::expr predicate_mov(int a, z3::expr b) {
+  return MOV_EXPR(a, b);
 }
 
 z3::expr predicate_max(z3::expr a, int b, z3::expr c) {

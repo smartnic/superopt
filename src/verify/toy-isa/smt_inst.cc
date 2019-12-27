@@ -1,3 +1,4 @@
+#include "../../../src/isa/inst_codegen.h"
 #include "smt_inst.h"
 
 using namespace z3;
@@ -8,37 +9,43 @@ using namespace z3;
 #define IMM2 IMM2VAL(in)
 
 expr smt_inst(smt_var& sv, const inst& in) {
+  expr curDst = string_to_expr("false");
+  expr curSrc = string_to_expr("false");
+  expr newDst = string_to_expr("false");
+  int imm;
   switch (in._opcode) {
-    case ADDXY: return (CURDST + CURSRC == NEWDST);
-    case MOVXC: return (IMM2 == NEWDST);
-    case MAXC: {
-      expr curDst = CURDST;
-      expr newDst = NEWDST;
-      expr cond1 = (curDst > IMM2) and (newDst == curDst);
-      expr cond2 = (curDst <= IMM2) and (newDst == IMM2);
-      return (cond1 or cond2);
-    }
-    case MAXX: {
-      expr curDst = CURDST;
-      expr curSrc = CURSRC;
-      expr newDst = NEWDST;
-      expr cond1 = (curDst > curSrc) and (newDst == curDst);
-      expr cond2 = (curDst <= curSrc) and (newDst == curSrc);
-      return (cond1 or cond2);
-    }
+    case MAXX:
+    case ADDXY:
+      curDst = CURDST;
+      curSrc = CURSRC;
+      newDst = NEWDST;
+      break;
+    case MOVXC:
+      imm = IMM2;
+      newDst = NEWDST;
+      break;
+    case MAXC:
+      curDst = CURDST;
+      imm = IMM2;
+      newDst = NEWDST;
+      break;
+  }
+  switch (in._opcode) {
+    case ADDXY: return predicate_add(curDst, curSrc, newDst);
+    case MOVXC: return predicate_mov(imm, newDst);
+    case MAXC: return predicate_max(curDst, imm, newDst);
+    case MAXX: return predicate_max(curDst, curSrc, newDst);
     default: return string_to_expr("false");
   }
 }
 
 expr smt_inst_jmp(smt_var& sv, const inst& in) {
-  // e is formula for Jmp
-  expr e = string_to_expr("true");
   switch (in._opcode) {
-    case JMPEQ: e = (CURDST == CURSRC); return e;
-    case JMPGT: e = (CURDST > CURSRC); return e;
-    case JMPGE: e = (CURDST >= CURSRC); return e;
-    case JMPLT: e = (CURDST < CURSRC); return e;
-    case JMPLE: e = (CURDST <= CURSRC); return e;
+    case JMPEQ: return (CURDST == CURSRC); 
+    case JMPGT: return (CURDST > CURSRC); 
+    case JMPGE: return (CURDST >= CURSRC);
+    case JMPLT: return (CURDST < CURSRC);
+    case JMPLE: return (CURDST <= CURSRC);
+    default: return string_to_expr("false");
   }
-  return e;
 }
