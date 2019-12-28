@@ -103,7 +103,7 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
   ps.clear();
   ps.regs[0] = input;
 
-  static void *jumptable[256] = {
+  static void *jumptable[NUM_INSTR] = {
     [NOP]   = && INSN_NOP,
     [ADDXY] = && INSN_ADDXY,
     [MOVXC] = && INSN_MOVXC,
@@ -117,7 +117,6 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
     [JMPLE] = && INSN_JMPLE,
     [MAXC] = && INSN_MAXC,
     [MAXX] = && INSN_MAXX,
-    [NUM_INSTR ... 255] = && error_label,
   };
 
 #define CONT { \

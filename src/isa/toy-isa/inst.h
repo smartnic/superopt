@@ -89,7 +89,7 @@ struct instHash {
 #define JMP_OPS (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
 #define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 
-static int optable[256] = {
+static int optable[NUM_INSTR] = {
   [NOP]   = UNUSED_OPS,
   [ADDXY] = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
   [MOVXC] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
@@ -103,10 +103,9 @@ static int optable[256] = {
   [JMPLE] = JMP_OPS,
   [MAXC]  = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
   [MAXX]  = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
-  [NUM_INSTR ... 255] = UNUSED_OPS,
 };
 
-static int num_operands[256] = {
+static int num_operands[NUM_INSTR] = {
   [NOP]   = 0,
   [ADDXY] = 2,
   [MOVXC] = 2,
@@ -120,10 +119,9 @@ static int num_operands[256] = {
   [JMPLE] = 3,
   [MAXC]  = 2,
   [MAXX]  = 2,
-  [NUM_INSTR ... 255] = 0,
 };
 
-static int num_regs[256] = {
+static int num_regs[NUM_INSTR] = {
   [NOP]   = 0,
   [ADDXY] = 2,
   [MOVXC] = 1,
@@ -137,10 +135,9 @@ static int num_regs[256] = {
   [JMPLE] = 2,
   [MAXC]  = 1,
   [MAXX]  = 2,
-  [NUM_INSTR ... 255] = 0,
 };
 
-static int opcode_type[256] = {
+static int opcode_type[NUM_INSTR] = {
   [NOP]   = OP_NOP,
   [ADDXY] = OP_OTHERS,
   [MOVXC] = OP_OTHERS,
@@ -154,7 +151,6 @@ static int opcode_type[256] = {
   [JMPLE] = OP_COND_JMP,
   [MAXC]  = OP_OTHERS,
   [MAXX]  = OP_OTHERS,
-  [NUM_INSTR ... 255] = 0,
 };
 
 #define DSTREG(inst_var) (inst_var)._args[0]

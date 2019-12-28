@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <cmath>
+#include <cassert>
 #include <unordered_set>
 #include "proposals.h"
 
