@@ -20,6 +20,9 @@
 
 using namespace std;
 
+#define NOW chrono::steady_clock::now()
+#define DUR chrono::duration <double, micro> (end - start).count()
+
 string FILE_CONFIG = "config";
 
 inst* bm;
@@ -55,17 +58,26 @@ void init_benchmarks(vector<inst*> &bm_optis_orig, int bm_id) {
       bm_optis_orig.push_back(bm_opti01);
       bm_optis_orig.push_back(bm_opti02);
       bm_optis_orig.push_back(bm_opti03);
+      bm_optis_orig.push_back(bm_opti04);
+      bm_optis_orig.push_back(bm_opti05);
       return;
     case 1:
       bm = bm1;
       bm_optis_orig.push_back(bm_opti10);
       bm_optis_orig.push_back(bm_opti11);
+      bm_optis_orig.push_back(bm_opti12);
+      bm_optis_orig.push_back(bm_opti13);
       return;
     case 2:
       bm = bm2;
       bm_optis_orig.push_back(bm_opti20);
       bm_optis_orig.push_back(bm_opti21);
       bm_optis_orig.push_back(bm_opti22);
+      bm_optis_orig.push_back(bm_opti23);
+      bm_optis_orig.push_back(bm_opti24);
+      bm_optis_orig.push_back(bm_opti25);
+      bm_optis_orig.push_back(bm_opti26);
+      bm_optis_orig.push_back(bm_opti27);
       return;
     default:
       cout << "bm_id" + to_string(bm_id) + "is out of range {0, 1, 2}" << endl;
@@ -319,9 +331,12 @@ int main(int argc, char* argv[]) {
   cout << in_para;
   store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
+  auto start = NOW;
   init_benchmarks(bm_optis_orig, in_para.bm);
   inputs.resize(30);
   gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);
+  auto end = NOW;
+  cout << "compiling time: " << DUR << " us" << endl;
   return 0;
 }
