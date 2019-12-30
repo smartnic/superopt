@@ -120,6 +120,15 @@ def parse_input():
     return True, in_para
 
 
+def input_check(in_para):
+    for st, niter in zip(in_para.st_when_to_restart_list,
+                         in_para.st_when_to_restart_niter_list):
+        if (st != '0') and (niter == '0'):
+            print("ERROR: if st_when_to_restart is greater than 0, st_when_to_restart_niter should be greater than 0.")
+            return False
+    return True
+
+
 def create_fout_path(fout_path):
     folder = os.path.exists(fout_path)
     if not folder:
@@ -325,9 +334,6 @@ def get_cost_list_when_steady(file_type, file_data, cost_list, steady_start, nit
                               st_when_to_restart_niter):
     cost_list = get_cost_list_for_each_iteration(file_type, file_data, cost_list, niter)
     if st_when_to_restart == '0':
-        return cost_list[int(steady_start):]
-    if st_when_to_restart_niter == '0':
-        print("ERROR: st_when_to_restart is not 0, but st_when_to_restart_niter is 0")
         return cost_list[int(steady_start):]
     new_cost_list = []
     steady_start_index = int(steady_start)
@@ -929,6 +935,8 @@ def figure_all(bm_id, best_perf_cost, st, st_when_to_restart, st_when_to_restart
 if __name__ == "__main__":
     flag, in_para = parse_input()
     if flag is False:
+        exit(0)
+    if not input_check(in_para):
         exit(0)
     in_para.print_out()
     create_fout_path(in_para.fout_path)
