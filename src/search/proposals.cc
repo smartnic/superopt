@@ -49,17 +49,10 @@ int sample_int_with_exception(int limit, int except) {
   return val;
 }
 
-int get_new_operand(int sel_inst_index, int opcode, int op_to_change, int old_opvalue) {
-  // Number of possibilities for each operand type
-  int num_poss[4] = {
-    [OP_UNUSED] = 0,
-    [OP_REG] = NUM_REGS,
-    [OP_IMM] = MAX_CONST,
-    [OP_OFF] = MAX_PROG_LEN - sel_inst_index - 1,
-  };
-  int optype = OPTYPE(opcode, op_to_change);
+int get_new_operand(int sel_inst_index, const inst& sel_inst, int op_to_change, int old_opvalue) {
+  int max_opvalue = sel_inst.get_max_operand_val(op_to_change, sel_inst_index);
   // TODO: is it wise to sample with exception?
-  int new_opvalue = sample_int_with_exception(num_poss[optype], old_opvalue);
+  int new_opvalue = sample_int_with_exception(max_opvalue, old_opvalue);
   return new_opvalue;
 }
 
@@ -68,15 +61,14 @@ void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_ch
   assert(sel_inst_index < MAX_PROG_LEN);
   // First make a fresh copy of the program.
   inst* sel_inst = &synth->inst_list[sel_inst_index];
-  int sel_opcode = sel_inst->_opcode;
-  int old_opvalue = sel_inst->_args[op_to_change];
-  int new_opvalue = get_new_operand(sel_inst_index, sel_opcode, op_to_change, old_opvalue);
-  sel_inst->_args[op_to_change] = new_opvalue;
+  int old_opvalue = sel_inst->get_operand(op_to_change);
+  int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, op_to_change, old_opvalue);
+  sel_inst->set_operand(op_to_change, new_opvalue);
 }
 
 void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
   inst sel_inst = orig.inst_list[inst_index];
-  int sel_opcode = sel_inst._opcode;
+  int sel_opcode = sel_inst.get_opcode();
   int op_to_change = sample_int(num_operands[sel_opcode]);
   mod_operand(orig, synth, inst_index, op_to_change);
 }
@@ -92,7 +84,7 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   assert(sel_inst_index < MAX_PROG_LEN);
   // TODO: is it wise to sample with exception?
   inst* sel_inst = &orig->inst_list[sel_inst_index];
-  int old_opcode = sel_inst->_opcode;
+  int old_opcode = sel_inst->get_opcode();
   // If sel_inst_index == MAX_PROG_LEN - 1, then new_opcode can not be JMP
   unordered_set<int> exceptions;
   if (sel_inst_index == MAX_PROG_LEN - 1) {
@@ -102,13 +94,13 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   }
   int new_opcode = sample_int_with_exceptions(NUM_INSTR, exceptions);
   // int new_opcode = sample_int_with_exception(NUM_INSTR, old_opcode);
-  sel_inst->_opcode = new_opcode;
+  sel_inst->set_opcode(new_opcode);
   for (int i = 0; i < num_operands[new_opcode]; i++) {
-    int new_opvalue = get_new_operand(sel_inst_index, new_opcode, i, -1);
-    sel_inst->_args[i] = new_opvalue;
+    int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, i, -1);
+    sel_inst->set_operand(i, new_opvalue);
   }
   for (int i = num_operands[new_opcode]; i < MAX_OP_LEN; i++) {
-    sel_inst->_args[i] = 0;
+    sel_inst->set_operand(i, 0);
   }
 }
 

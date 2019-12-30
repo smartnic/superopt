@@ -2,6 +2,7 @@
 
 #include <bitset>
 #include <vector>
+#include "../inst.h"
 
 using namespace std;
 
@@ -16,17 +17,6 @@ using namespace std;
 #define OP_REG 1
 #define OP_IMM 2
 #define OP_OFF 3
-
-// Opcode types for instructions
-#define OP_NOP 0
-#define OP_RET 1
-#define OP_UNCOND_JMP 2
-#define OP_COND_JMP 3
-#define OP_OTHERS 4
-
-// Return opcode types for the end instruction of a program
-#define RET_C 0   // return immediate number
-#define RET_X 1   // return register
 
 // Instruction opcodes
 #define NOP 0
@@ -74,6 +64,12 @@ class inst {
   vector<int> get_reg_list() const;
   bool operator==(const inst &x) const;
   inst& operator=(const inst &rhs);
+  int get_max_operand_val(int op_index, int inst_index = 0) const;
+  int get_operand(int op_index) const;
+  void set_operand(int op_index, int op_value);
+  int get_opcode() const;
+  void set_opcode(int op_value);
+  int get_jmp_dis() const;
 };
 
 struct instHash {
@@ -157,8 +153,6 @@ static int opcode_type[NUM_INSTR] = {
 #define SRCREG(inst_var) (inst_var)._args[1]
 #define IMM1VAL(inst_var) (inst_var)._args[0]
 #define IMM2VAL(inst_var) (inst_var)._args[1]
-#define UNCONDJMPDIS(inst_var) (inst_var)._args[0]
-#define CONDJMPDIS(inst_var) (inst_var)._args[2]
 
 void print_program(const inst* program, int length);
 int interpret(inst* program, int length, prog_state &ps, int input);

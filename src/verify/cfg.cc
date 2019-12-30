@@ -43,11 +43,11 @@ void graph::gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts
   node_starts.insert(0);
   for (size_t i = 0; i < length; i++) {
     vector<int> distances;
-    if (opcode_type[inst_lst[i]._opcode] == OP_UNCOND_JMP) {
-      distances.push_back(UNCONDJMPDIS(inst_lst[i]));
-    } else if (opcode_type[inst_lst[i]._opcode] == OP_COND_JMP) {
+    if (opcode_type[inst_lst[i].get_opcode()] == OP_UNCOND_JMP) {
+      distances.push_back(inst_lst[i].get_jmp_dis());
+    } else if (opcode_type[inst_lst[i].get_opcode()] == OP_COND_JMP) {
       distances.push_back(0);
-      distances.push_back(CONDJMPDIS(inst_lst[i]));
+      distances.push_back(inst_lst[i].get_jmp_dis());
     }
     for (size_t j = 0; j < distances.size(); j++) {
       try {
@@ -62,7 +62,7 @@ void graph::gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts
 // return end instruction ID in [start: end]
 size_t graph::get_end_inst_id(inst* inst_lst, size_t start, size_t end) {
   for (size_t i = start; i < end; i++) {
-    int opcode = opcode_type[inst_lst[i]._opcode];
+    int opcode = opcode_type[inst_lst[i].get_opcode()];
     if ((opcode == OP_RET) || (opcode == OP_UNCOND_JMP)) {
       return i;
     }
@@ -123,15 +123,15 @@ void graph::gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vecto
   for (size_t i = 0; i < gnodes.size(); i++) {
     size_t end_inst_id = gnodes[i]._end;
     vector <unsigned int> next_inst_ids;
-    int inst_type = opcode_type[inst_lst[end_inst_id]._opcode];
+    int inst_type = opcode_type[inst_lst[end_inst_id].get_opcode()];
     if (inst_type == OP_OTHERS || inst_type == OP_NOP) {
       next_inst_ids.push_back(end_inst_id + 1);
     } else if (inst_type == OP_UNCOND_JMP) {
-      next_inst_ids.push_back(end_inst_id + 1 + UNCONDJMPDIS(inst_lst[end_inst_id]));
+      next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id].get_jmp_dis());
     } else if (inst_type == OP_COND_JMP) {
       // keep order: insert no jmp first
       next_inst_ids.push_back(end_inst_id + 1); //no jmp
-      next_inst_ids.push_back(end_inst_id + 1 + CONDJMPDIS(inst_lst[end_inst_id])); //jmp
+      next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id].get_jmp_dis()); //jmp
     }
 
     for (size_t j = 0; j < next_inst_ids.size(); j++) {

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cassert>
 #include "../inst_codegen.h"
 #include "inst.h"
 
@@ -73,6 +74,44 @@ inst& inst::operator=(const inst &rhs) {
   _args[1] = rhs._args[1];
   _args[2] = rhs._args[2];
   return *this;
+}
+
+int inst::get_max_operand_val(int op_index, int inst_index) const {
+  // max value for each operand type
+  int max_val[4] = {
+    [OP_UNUSED] = 0,
+    [OP_REG] = NUM_REGS,
+    [OP_IMM] = MAX_CONST,
+    [OP_OFF] = MAX_PROG_LEN - inst_index - 1,
+  };
+  return max_val[OPTYPE(_opcode, op_index)];
+}
+
+int inst::get_operand(int op_index) const {
+  assert(op_index < MAX_OP_LEN);
+  return _args[op_index];
+}
+
+void inst::set_operand(int op_index, int op_value) {
+  assert(op_index < MAX_OP_LEN);
+  _args[op_index] = op_value;
+}
+
+int inst::get_opcode() const {
+  return _opcode;
+}
+
+void inst::set_opcode(int op_value) {
+  assert(op_value < NUM_INSTR);
+  _opcode = op_value;
+}
+
+int inst::get_jmp_dis() const {
+  switch (opcode_type[_opcode]) {
+    case (OP_UNCOND_JMP): return _args[0];
+    case (OP_COND_JMP): return _args[2];
+    default: cout << "Error: opcode is not jmp" << endl; return 0;
+  }
 }
 
 ostream& operator<<(ostream& out, abs_bv_inst& bv) {
