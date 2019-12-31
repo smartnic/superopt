@@ -41,7 +41,9 @@ prog* prog::make_prog(const prog &other) {
 
 void prog::clear_prog(prog* p) {
   free(p->inst_list);
+  p->inst_list = nullptr;
   free(p);
+  p = nullptr;
 }
 
 prog::prog() {
@@ -50,6 +52,7 @@ prog::prog() {
 
 prog::~prog() {
   free(inst_list);
+  inst_list = nullptr;
 }
 
 void prog::print() const {
