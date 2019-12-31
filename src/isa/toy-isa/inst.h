@@ -51,6 +51,22 @@ class toy_isa {
   static constexpr int MAX_OP_LEN = 3;
   // Number of opcode types
   static constexpr int NUM_INSTR = 13;
+
+  static constexpr int num_operands[NUM_INSTR] = {
+    [NOP]   = 0,
+    [ADDXY] = 2,
+    [MOVXC] = 2,
+    [RETX]  = 1,
+    [RETC]  = 1,
+    [JMP]   = 1,
+    [JMPEQ] = 3,
+    [JMPGT] = 3,
+    [JMPGE] = 3,
+    [JMPLT] = 3,
+    [JMPLE] = 3,
+    [MAXC]  = 2,
+    [MAXX]  = 2,
+  };
 };
 
 class prog_state {
@@ -89,6 +105,7 @@ class inst {
   int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}
   int get_max_op_len() const {return _isa.MAX_OP_LEN;}
   int get_num_instr() const {return _isa.NUM_INSTR;}
+  int get_num_operands() const {return _isa.num_operands[_opcode];}
 };
 
 struct instHash {
@@ -109,22 +126,6 @@ static int optable[toy_isa::NUM_INSTR] = {
   [JMPLE] = JMP_OPS,
   [MAXC]  = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
   [MAXX]  = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
-};
-
-static int num_operands[toy_isa::NUM_INSTR] = {
-  [NOP]   = 0,
-  [ADDXY] = 2,
-  [MOVXC] = 2,
-  [RETX]  = 1,
-  [RETC]  = 1,
-  [JMP]   = 1,
-  [JMPEQ] = 3,
-  [JMPGT] = 3,
-  [JMPGE] = 3,
-  [JMPLT] = 3,
-  [JMPLE] = 3,
-  [MAXC]  = 2,
-  [MAXX]  = 2,
 };
 
 static int num_regs[toy_isa::NUM_INSTR] = {

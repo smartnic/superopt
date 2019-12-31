@@ -5,6 +5,8 @@
 
 using namespace std;
 
+constexpr int toy_isa::num_operands[toy_isa::NUM_INSTR];
+
 void prog_state::print() {
   for (int i = 0; i < toy_isa::NUM_REGS; i++) {
     cout << "Register "  << i << " " << regs[i] << endl;
@@ -55,7 +57,7 @@ vector<int> inst::get_reg_list() const {
 
 void inst::print() const {
   cout << opcode_to_str(_opcode);
-  for (int i = 0; i < num_operands[_opcode]; i++) {
+  for (int i = 0; i < get_num_operands(); i++) {
     cout << " " << _args[i];
   }
   cout << endl;

@@ -68,8 +68,7 @@ void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_ch
 
 void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
   inst sel_inst = orig.inst_list[inst_index];
-  int sel_opcode = sel_inst.get_opcode();
-  int op_to_change = sample_int(num_operands[sel_opcode]);
+  int op_to_change = sample_int(sel_inst.get_num_operands());
   mod_operand(orig, synth, inst_index, op_to_change);
 }
 
@@ -95,11 +94,11 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   }
   int new_opcode = sample_int_with_exceptions(orig->get_num_instr(), exceptions);
   sel_inst->set_opcode(new_opcode);
-  for (int i = 0; i < num_operands[new_opcode]; i++) {
+  for (int i = 0; i < sel_inst->get_num_operands(); i++) {
     int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, i, -1);
     sel_inst->set_operand(i, new_opvalue);
   }
-  for (int i = num_operands[new_opcode]; i < orig->get_max_op_len(); i++) {
+  for (int i = sel_inst->get_num_operands(); i < orig->get_max_op_len(); i++) {
     sel_inst->set_operand(i, 0);
   }
 }
