@@ -30,7 +30,7 @@ void cost::init(prog* orig, int len, const vector<int> &input,
   _examples.clear();
   for (size_t i = 0; i < input.size(); i++) {
     prog_state ps;
-    int output = interpret((inst*)orig->inst_list, len, ps, input[i]);
+    int output = ((inst*)orig->inst_list)->interpret(len, ps, input[i]);
     inout example;
     example.set_in_out(input[i], output);
     _examples.insert(example);
@@ -52,7 +52,7 @@ void cost::set_orig(prog* orig, int len) {
     throw (err_msg);
     return;
   }
-  _num_real_orig = num_real_instructions((inst*)orig->inst_list, len);
+  _num_real_orig = orig->num_real_instructions();
 }
 
 int cost::get_ex_error_cost(int output1, int output2) {
@@ -123,7 +123,7 @@ double cost::error_cost(prog* synth, int len) {
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
-    output2 = interpret(inst_list, len, ps, _examples._exs[i].input);
+    output2 = inst_list->interpret(len, ps, _examples._exs[i].input);
     int ex_cost = get_ex_error_cost(output1, output2);
     if (ex_cost == 0) num_successful_ex++;
     total_cost += ex_cost;
@@ -158,7 +158,7 @@ double cost::error_cost(prog* synth, int len) {
 double cost::perf_cost(prog* synth, int len) {
   if (synth->_perf_cost != -1) return synth->_perf_cost;
   int total_cost =  synth->get_max_prog_len() - _num_real_orig +
-                    num_real_instructions((inst*)synth->inst_list, len);
+                    synth->num_real_instructions();
   synth->set_perf_cost(total_cost);
   return total_cost;
 }

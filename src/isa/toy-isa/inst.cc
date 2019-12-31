@@ -118,31 +118,38 @@ int inst::get_jmp_dis() const {
   }
 }
 
-ostream& operator<<(ostream& out, abs_bv_inst& bv) {
-  for (size_t i = 0; i < bv.size(); i++)
-    out << bv[i];
-  return out;
-}
-
-size_t instHash::operator()(const inst &x) const {
-  return hash<int>()(x._opcode) ^
-         (hash<int>()(x._args[0]) << 1) ^
-         (hash<int>()(x._args[1]) << 2) ^
-         (hash<int>()(x._args[2]) << 3);
-}
-
-void print_program(const inst* program, int length) {
-  for (int i = 0; i < length; i++) {
-    cout << i << ": ";
-    program[i].print();
+int inst::inst_output_opcode_type() const {
+  switch (_opcode) {
+    case RETX:
+      return RET_X;
+    case RETC:
+      return RET_C;
+    default: // no RET, return register 0
+      return RET_X;
   }
-  cout << endl;
 }
 
-int interpret(inst *program, int length, prog_state &ps, int input) {
+int inst::inst_output() const {
+  switch (_opcode) {
+    case RETX:
+      return DSTREG(*this);
+    case RETC:
+      return IMM1VAL(*this);
+    default: // no RET, return register 0
+      return 0;
+  }
+}
+
+bool inst::is_real_inst() const {
+  if (_opcode == NOP) return false;
+  return true;
+}
+
+int inst::interpret(int length, prog_state &ps, int input) {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
-  inst *insn = program;
+  inst *start = this;
+  inst *insn = this;
   ps.clear();
   ps.regs[0] = input;
 
@@ -164,7 +171,7 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
 
 #define CONT { \
       insn++;                                                           \
-      if (insn < program + length) {                                    \
+      if (insn < start + length) {                                    \
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
@@ -226,32 +233,15 @@ out:
   return ps.regs[0]; /* return default R0 value */
 }
 
-int num_real_instructions(inst* program, int len) {
-  int count = 0;
-  for (int i = 0; i < len; i++) {
-    if (program[i]._opcode != NOP) count++;
-  }
-  return count;
+ostream& operator<<(ostream& out, abs_bv_inst& bv) {
+  for (size_t i = 0; i < bv.size(); i++)
+    out << bv[i];
+  return out;
 }
 
-int inst_output_opcode_type(const inst& inst_end) {
-  switch (inst_end._opcode) {
-    case RETX:
-      return RET_X;
-    case RETC:
-      return RET_C;
-    default: // no RET, return register 0
-      return RET_X;
-  }
-}
-
-int inst_output(const inst& inst_end) {
-  switch (inst_end._opcode) {
-    case RETX:
-      return DSTREG(inst_end);
-    case RETC:
-      return IMM1VAL(inst_end);
-    default: // no RET, return register 0
-      return 0;
-  }
+size_t instHash::operator()(const inst &x) const {
+  return hash<int>()(x._opcode) ^
+         (hash<int>()(x._args[0]) << 1) ^
+         (hash<int>()(x._args[1]) << 2) ^
+         (hash<int>()(x._args[2]) << 3);
 }

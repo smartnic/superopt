@@ -132,6 +132,10 @@ class inst {
   int get_opcode() const;
   void set_opcode(int op_value);
   int get_jmp_dis() const;
+  // assume `inst_end` is the end instruction of a program
+  int inst_output_opcode_type() const;
+  int inst_output() const;
+  bool is_real_inst() const;
   // for class toy_isa
   int get_num_regs() const {return _isa.NUM_REGS;}
   int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}
@@ -140,6 +144,7 @@ class inst {
   int get_num_operands() const {return _isa.num_operands[_opcode];}
   int get_insn_num_regs() const {return _isa.insn_num_regs[_opcode];}
   int get_opcode_type() const {return _isa.opcode_type[_opcode];}
+  int interpret(int length, prog_state &ps, int input);
 };
 
 struct instHash {
@@ -166,11 +171,3 @@ static int optable[toy_isa::NUM_INSTR] = {
 #define SRCREG(inst_var) (inst_var)._args[1]
 #define IMM1VAL(inst_var) (inst_var)._args[0]
 #define IMM2VAL(inst_var) (inst_var)._args[1]
-
-void print_program(const inst* program, int length);
-int interpret(inst* program, int length, prog_state &ps, int input);
-int num_real_instructions(inst* program, int len);
-string to_string(const abs_bv_inst &bv);
-// assume `inst_end` is the end instruction of a program
-int inst_output_opcode_type(const inst& inst_end);
-int inst_output(const inst& inst_end);

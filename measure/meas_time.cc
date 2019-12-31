@@ -58,13 +58,13 @@ void time_validator_is_smt_valid() {
 void time_validator_get_orig_output() {
   validator vld;
   vld.set_orig(bm0, N);
-  time_measure(vld.get_orig_output(i), 100,
+  time_measure(vld.get_orig_output(i, bm0->get_num_regs()), 100,
                "validator::get_orig_output: ");
 }
 
 void time_interpret() {
   prog_state ps;
-  time_measure(interpret(bm0, N, ps, i), 10000,
+  time_measure(bm0->interpret(N, ps, i), 10000,
                "interpret: ");
 }
 

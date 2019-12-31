@@ -30,13 +30,13 @@ inst instructions4[3] = {inst(JMP, 1),
 void test1(int input) {
   prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
-  print_test_res(interpret(instructions, 6, ps, input) == max(input + 4, 15),
+  print_test_res(instructions->interpret(6, ps, input) == max(input + 4, 15),
                  "interpret program 1");
-  print_test_res(interpret(instructions2, 4, ps, input) == max(input + 4, 15),
+  print_test_res(instructions2->interpret(4, ps, input) == max(input + 4, 15),
                  "interpret program 2");
-  print_test_res(interpret(instructions3, 2, ps, input) == input,
+  print_test_res(instructions3->interpret(2, ps, input) == input,
                  "interpret program 3");
-  print_test_res(interpret(instructions4, 3, ps, input) == input,
+  print_test_res(instructions4->interpret(3, ps, input) == input,
                  "interpret program 4");
 }
 

@@ -52,12 +52,16 @@ prog::~prog() {
   free(inst_list);
 }
 
-void prog::print() {
-  print_program(inst_list, this->get_max_prog_len());
+void prog::print() const {
+  for (int i = 0; i < this->get_max_prog_len(); i++) {
+    cout << i << ": ";
+    inst_list[i].print();
+  }
+  cout << endl;
 }
 
 void prog::print(const prog &p) {
-  print_program(p.inst_list, p.get_max_prog_len());
+  p.print();
 }
 
 bool prog::operator==(const prog &x) const {
@@ -190,6 +194,14 @@ void prog::canonicalize() {
       inst_list[i].set_operand(j, reg_id_after);
     }
   }
+}
+
+int prog::num_real_instructions() const {
+  int count = 0;
+  for (int i = 0; i < get_max_prog_len(); i++) {
+    count += inst_list[i].is_real_inst();
+  }
+  return count;
 }
 
 size_t progHash::operator()(const prog &x) const {

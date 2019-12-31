@@ -157,7 +157,7 @@ void gen_n_combinations(int n, int s, int e,
 // then the second and third instructions are replaced with real instructions
 void gen_optis_for_prog(const prog& p, const int& len,
                         vector<prog>& opti_set) {
-  int n = num_real_instructions((inst*)p.inst_list, len);
+  int n = p.num_real_instructions();
   // C_len^n
   int num_opti = combination(len, n);
   vector<vector<int> > comb_set(num_opti);

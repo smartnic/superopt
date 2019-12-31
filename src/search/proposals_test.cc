@@ -13,13 +13,13 @@ int test1(int input) {
                           inst(RETX, 3),      /* ret r3 */
                           inst(RETX, 1),      /* else ret r1 */
   };
-  print_program(instructions, N);
   prog p1(instructions);
+  p1.print();
   prog* p[6];
   p[0] = &p1;
   for (int i = 1; i < 6; i++) {
     p[i] = mod_random_inst_operand(*p[i-1]);
-    print_program(p[i]->inst_list, N);
+    p[i]->print();
   }
   for (int i = 1; i < 6; i++) {
     prog::clear_prog(p[i]);
@@ -38,14 +38,14 @@ int test2(int input) {
                           inst(RETX, 3),      /* ret r3 */
                           inst(RETX, 1),      /* else ret r1 */
   };
-  print_program(instructions, N);
   prog p1(instructions);
+  p1.print();
   prog* p[6];
   p[0] = &p1;
   for (int i = 1; i < 6; i++) {
     p[i] = mod_random_inst(*p[i-1]);
     cout << "Transformed program after " << i << " proposals:" << endl;
-    print_program(p[i]->inst_list, N);
+    p[i]->print();
   }
   bool assert_res = true;
   for (int i = 1; i < 6; i++) {
@@ -81,15 +81,15 @@ int test3(int input) {
                           inst(RETX, 3),      /* ret r3 */
                           inst(RETX, 1),      /* else ret r1 */
   };
-  print_program(instructions, N);
   prog p1(instructions);
+  p1.print();
   prog* p[6];
   p[0] = &p1;
   for (int i = 1; i < 6; i++) {
     p[i] = mod_random_k_cont_insts(*p[i-1], i);
     cout << "Transformed program after " << i << " proposals:" << endl;
     cout << "(" << i << " continuous instrcution(s) is(are) changed." << ")" << endl;
-    print_program(p[i]->inst_list, N);
+    p[i]->print();
   }
   for (int i = 1; i < 6; i++) {
     prog::clear_prog(p[i]);

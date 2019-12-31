@@ -203,11 +203,11 @@ void smt_prog::get_init_val(expr& f_iv, smt_var& sv, size_t in_bid, unsigned int
 // TODO: needed to be generalized
 // for each return value v, smt: v == output[prog_id]
 expr smt_prog::smt_end_block_inst(size_t cur_bid, inst& inst_end, unsigned int prog_id) {
-  switch (inst_output_opcode_type(inst_end)) {
+  switch (inst_end.inst_output_opcode_type()) {
     case RET_X:
-      return (string_to_expr("output" + to_string(prog_id)) == post_reg_val[cur_bid][inst_output(inst_end)]);
+      return (string_to_expr("output" + to_string(prog_id)) == post_reg_val[cur_bid][inst_end.inst_output()]);
     case RET_C:
-      return (string_to_expr("output" + to_string(prog_id)) == inst_output(inst_end));
+      return (string_to_expr("output" + to_string(prog_id)) == inst_end.inst_output());
     default:
       return string_to_expr("false");
   }

@@ -20,7 +20,7 @@ class prog {
   prog(const prog& other);
   prog(inst* instructions);
   prog();
-  void print();
+  void print() const;
   static void print(const prog &p);
   ~prog();
   bool operator==(const prog &x) const;
@@ -34,6 +34,7 @@ class prog {
   bool if_ret_exists(int start, int end) const;
   void update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const;
   void canonicalize();
+  int num_real_instructions() const;
   int get_max_prog_len() const {return inst_list[0].get_max_prog_len();}
   int get_max_op_len() const {return inst_list[0].get_max_op_len();}
   int get_num_instr() const {return inst_list[0].get_num_instr();}
