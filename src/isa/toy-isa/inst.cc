@@ -88,12 +88,12 @@ int inst::get_max_operand_val(int op_index, int inst_index) const {
 }
 
 int inst::get_operand(int op_index) const {
-  assert(op_index < MAX_OP_LEN);
+  assert(op_index < get_max_op_len());
   return _args[op_index];
 }
 
 void inst::set_operand(int op_index, int op_value) {
-  assert(op_index < MAX_OP_LEN);
+  assert(op_index < get_max_op_len());
   _args[op_index] = op_value;
 }
 

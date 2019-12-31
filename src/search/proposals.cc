@@ -57,7 +57,7 @@ int get_new_operand(int sel_inst_index, const inst& sel_inst, int op_to_change, 
 }
 
 void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_change) {
-  assert (op_to_change < 3);
+  assert (op_to_change < orig.get_max_op_len());
   assert(sel_inst_index < orig.get_max_prog_len());
   // First make a fresh copy of the program.
   inst* sel_inst = &synth->inst_list[sel_inst_index];
@@ -100,7 +100,7 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
     int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, i, -1);
     sel_inst->set_operand(i, new_opvalue);
   }
-  for (int i = num_operands[new_opcode]; i < MAX_OP_LEN; i++) {
+  for (int i = num_operands[new_opcode]; i < orig->get_max_op_len(); i++) {
     sel_inst->set_operand(i, 0);
   }
 }

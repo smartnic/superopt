@@ -35,6 +35,7 @@ class prog {
   void update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const;
   void canonicalize();
   int get_max_prog_len() const {return inst_list[0].get_max_prog_len();}
+  int get_max_op_len() const {return inst_list[0].get_max_op_len();}
 };
 
 struct progHash {

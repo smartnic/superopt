@@ -7,8 +7,6 @@
 using namespace std;
 
 #define MAX_CONST 20
-// Max number of operands in one instruction
-#define MAX_OP_LEN 3
 
 // Operand types for instructions
 #define OP_UNUSED 0
@@ -51,6 +49,8 @@ class toy_isa {
  public:
   static constexpr int NUM_REGS = 4;
   static constexpr int MAX_PROG_LEN = 7;
+  // Max number of operands in one instruction
+  static constexpr int MAX_OP_LEN = 3;
 };
 
 class prog_state {
@@ -87,6 +87,7 @@ class inst {
   // for class toy_isa
   int get_num_regs() const {return _isa.NUM_REGS;}
   int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}
+  int get_max_op_len() const {return _isa.MAX_OP_LEN;}
 };
 
 struct instHash {
