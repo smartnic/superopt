@@ -6,14 +6,14 @@
 using namespace std;
 
 void prog_state::print() {
-  for (int i = 0; i < NUM_REGS; i++) {
+  for (int i = 0; i < toy_isa::NUM_REGS; i++) {
     cout << "Register "  << i << " " << regs[i] << endl;
   }
 }
 
 void prog_state::clear() {
   pc = 0;
-  for (int i = 0; i < NUM_REGS; i++) {
+  for (int i = 0; i < toy_isa::NUM_REGS; i++) {
     regs[i] = 0;
   }
 }
@@ -80,7 +80,7 @@ int inst::get_max_operand_val(int op_index, int inst_index) const {
   // max value for each operand type
   int max_val[4] = {
     [OP_UNUSED] = 0,
-    [OP_REG] = NUM_REGS,
+    [OP_REG] = toy_isa::NUM_REGS,
     [OP_IMM] = MAX_CONST,
     [OP_OFF] = MAX_PROG_LEN - inst_index - 1,
   };

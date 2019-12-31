@@ -54,7 +54,7 @@ void smt_prog::smt_block(expr& smt_b, inst* program, int length, smt_var& sv) {
 }
 
 // init variables in class
-void smt_prog::init() {
+void smt_prog::init(unsigned int num_regs) {
   post_reg_val.clear();
   path_con.clear();
   reg_iv.clear();
@@ -65,7 +65,7 @@ void smt_prog::init() {
 
   post_reg_val.resize(block_num);
   for (size_t i = 0; i < block_num; i++) {
-    post_reg_val[i].resize(NUM_REGS, string_to_expr("true"));
+    post_reg_val[i].resize(num_regs, string_to_expr("true"));
   }
 
   path_con.resize(block_num);
@@ -110,8 +110,8 @@ void smt_prog::gen_block_prog_logic(expr& e, smt_var& sv, size_t cur_bid, inst* 
   bl[cur_bid] = e; // store
 }
 
-void smt_prog::store_post_reg_val(smt_var& sv, size_t cur_bid) {
-  for (size_t i = 0; i < NUM_REGS; i++) {
+void smt_prog::store_post_reg_val(smt_var& sv, size_t cur_bid, unsigned int num_regs) {
+  for (size_t i = 0; i < num_regs; i++) {
     post_reg_val[cur_bid][i] = sv.get_cur_reg_var(i);
   }
 }
@@ -192,9 +192,9 @@ void smt_prog::gen_post_path_con(smt_var& sv, size_t cur_bid, inst& inst_end) {
   post[cur_bid][1] = c_next_bid; // store
 }
 
-void smt_prog::get_init_val(expr& f_iv, smt_var& sv, size_t in_bid) {
+void smt_prog::get_init_val(expr& f_iv, smt_var& sv, size_t in_bid, unsigned int num_regs) {
   expr e = (sv.get_init_reg_var(0) == post_reg_val[in_bid][0]);
-  for (size_t i = 1; i < NUM_REGS; i++) {
+  for (size_t i = 1; i < num_regs; i++) {
     e = e && (sv.get_init_reg_var(i) == post_reg_val[in_bid][i]);
   }
   f_iv = e;
@@ -241,7 +241,8 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
     throw (err_msg);
   }
   // init class variables
-  init();
+  const unsigned int NUM_REGS = inst_lst[0].get_num_regs();
+  init(NUM_REGS);
 
   // blocks stores the block IDs in order after topological sorting
   vector<unsigned int> blocks;
@@ -256,7 +257,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   // process each basic block in order
   for (size_t i = 0; i < blocks.size(); i++) {
     unsigned int b = blocks[i];
-    smt_var sv(prog_id, b);
+    smt_var sv(prog_id, b, NUM_REGS);
     // generate f_bl: the block program logic
     expr f_bl = string_to_expr("true");
     gen_block_prog_logic(f_bl, sv, b, inst_lst);
@@ -268,13 +269,13 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
       for (size_t j = 0; j < g.nodes_in[b].size(); j++) {
         // generate f_iv: the logic that the initial values are fed by the last basic block
         expr f_iv = string_to_expr("true");
-        get_init_val(f_iv, sv, g.nodes_in[b][j]);
+        get_init_val(f_iv, sv, g.nodes_in[b][j], NUM_REGS);
         reg_iv[b][j] = f_iv; // store
         f_block[b] = f_block[b] && implies(path_con[b][j], f_iv && f_bl);
       }
     }
     // store post iv for current basic block b
-    store_post_reg_val(sv, b);
+    store_post_reg_val(sv, b, NUM_REGS);
     // update post path condtions "path_con" created by current basic block b
     gen_post_path_con(sv, b, inst_lst[g.nodes[b]._end]);
   }

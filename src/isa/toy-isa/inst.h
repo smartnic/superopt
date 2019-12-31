@@ -6,7 +6,6 @@
 
 using namespace std;
 
-#define NUM_REGS 4
 #define MAX_CONST 20
 #define MAX_PROG_LEN 7
 // Max number of operands in one instruction
@@ -40,16 +39,31 @@ using namespace std;
 // For absolute coding of each instruction
 typedef bitset<INST_ABS_BIT_LEN> abs_bv_inst;
 
+/* The definitions below assume a minimum 16-bit integer data type */
+#define FSTOP(x) (x)
+#define SNDOP(x) (x << 5)
+#define TRDOP(x) (x << 10)
+#define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex) * 5)) & 31)
+
+#define JMP_OPS (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
+#define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
+
+class toy_isa {
+ public:
+  static constexpr int NUM_REGS = 4;
+};
+
 class prog_state {
   int pc = 0; /* Assume only straight line code execution for now */
  public:
-  int regs[NUM_REGS] = {}; /* assume only registers for now */
+  int regs[toy_isa::NUM_REGS] = {}; /* assume only registers for now */
   void print();
   void clear();
 };
 
 class inst {
  public:
+  static toy_isa _isa;
   int _opcode;
   int _args[3];
   inst(int opcode = NOP, int arg1 = 0, int arg2 = 0, int arg3 = 0) {
@@ -70,20 +84,13 @@ class inst {
   int get_opcode() const;
   void set_opcode(int op_value);
   int get_jmp_dis() const;
+  // for class toy_isa
+  int get_num_regs() const {return _isa.NUM_REGS;}
 };
 
 struct instHash {
   size_t operator()(const inst &x) const;
 };
-
-/* The definitions below assume a minimum 16-bit integer data type */
-#define FSTOP(x) (x)
-#define SNDOP(x) (x << 5)
-#define TRDOP(x) (x << 10)
-#define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex) * 5)) & 31)
-
-#define JMP_OPS (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
-#define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 
 static int optable[NUM_INSTR] = {
   [NOP]   = UNUSED_OPS,

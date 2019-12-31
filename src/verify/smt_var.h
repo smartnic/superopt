@@ -17,12 +17,12 @@ class smt_var {
  private:
   string _name;
   // store the curId
-  unsigned int reg_cur_id[NUM_REGS];
+  vector<unsigned int> reg_cur_id;
   std::vector<expr> reg_var;
  public:
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
-  // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., NUM_REGS
-  smt_var(unsigned int prog_id, unsigned int node_id);
+  // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs
+  smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
   ~smt_var();
   // inital value for [versionId] is 0, and increases when updated
   expr update_reg_var(unsigned int reg_id);

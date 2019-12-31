@@ -66,12 +66,12 @@ class validator {
   // return 0: not equal; return 1: equal; return -1: synth is illegal
   int is_equal_to(inst* synth, int len);
   // given input, return the output of the original
-  int get_orig_output(int input);
+  int get_orig_output(int input, unsigned int num_regs);
   // move from `private` to `public` for testing time
   bool is_smt_valid(expr& smt);
   void gen_counterex(model& m);
   // set register 0 in basic block 0 as input[prog_id]
-  void smt_pre(expr& pre, unsigned int prog_id);
+  void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs);
   // set the input variable of FOL formula as input[prog_id]
   void smt_pre(expr& pre, expr e);
   // setting outputs of two programs are equal

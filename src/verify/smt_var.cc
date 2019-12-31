@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <cstring>
 #include "smt_var.h"
 
 using namespace z3;
@@ -8,11 +7,11 @@ using namespace z3;
 context smt_c;
 
 /* class smt_var start */
-smt_var::smt_var(unsigned int prog_id, unsigned int node_id) {
+smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs) {
+  reg_cur_id.resize(num_regs, 0);
   _name = std::to_string(prog_id) + "_" + std::to_string(node_id);
-  std::memset(reg_cur_id, 0, NUM_REGS * sizeof(unsigned int));
   std::string name_prefix = "r_" + _name + "_";
-  for (size_t i = 0; i < NUM_REGS; i++) {
+  for (size_t i = 0; i < num_regs; i++) {
     std::string name = name_prefix + std::to_string(i) + "_0";
     reg_var.push_back(string_to_expr(name));
   }
