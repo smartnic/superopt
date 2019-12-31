@@ -112,7 +112,7 @@ abs_bv_prog prog::prog_abs_bit_vec() const {
 
 bool prog::if_ret_exists(int start, int end) const {
   for (int i = start; i < end; i++) {
-    if (opcode_type[inst_list[i].get_opcode()] == OP_RET) {
+    if (inst_list[i].get_opcode_type() == OP_RET) {
       return true;
     }
   }
@@ -135,7 +135,7 @@ void prog::update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_bef
     // has RETs instruction, check jmp distance
     int start_index_chk_ret = 0;
     for (int i = 0; i < MAX_PROG_LEN; i++) {
-      if ((opcode_type[inst_list[i].get_opcode()] == OP_COND_JMP) &&
+      if ((inst_list[i].get_opcode_type() == OP_COND_JMP) &&
           ((i + 1 + inst_list[i].get_jmp_dis()) > start_index_chk_ret)) {
         start_index_chk_ret = i + 1 + inst_list[i].get_jmp_dis();
       }
@@ -185,7 +185,7 @@ void prog::canonicalize() {
 
   // replace reg_ids(before) with reg_ids(after) for all instructions
   for (int i = 0; i < MAX_PROG_LEN; i++) {
-    for (int j = 0; j < num_regs[inst_list[i].get_opcode()]; j++) {
+    for (int j = 0; j < inst_list[i].get_insn_num_regs(); j++) {
       int reg_id_after = map_before_after[inst_list[i].get_operand(j)];
       inst_list[i].set_operand(j, reg_id_after);
     }

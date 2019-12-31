@@ -6,6 +6,8 @@
 using namespace std;
 
 constexpr int toy_isa::num_operands[toy_isa::NUM_INSTR];
+constexpr int toy_isa::insn_num_regs[toy_isa::NUM_INSTR];
+constexpr int toy_isa::opcode_type[toy_isa::NUM_INSTR];
 
 void prog_state::print() {
   for (int i = 0; i < toy_isa::NUM_REGS; i++) {
@@ -50,7 +52,7 @@ abs_bv_inst inst::inst_to_abs_bv() const {
 
 vector<int> inst::get_reg_list() const {
   vector<int> reg_list;
-  for (int i = 0 ; i < num_regs[_opcode]; i++)
+  for (int i = 0 ; i < get_insn_num_regs(); i++)
     reg_list.push_back(_args[i]);
   return reg_list;
 }
@@ -109,7 +111,7 @@ void inst::set_opcode(int op_value) {
 }
 
 int inst::get_jmp_dis() const {
-  switch (opcode_type[_opcode]) {
+  switch (get_opcode_type()) {
     case (OP_UNCOND_JMP): return _args[0];
     case (OP_COND_JMP): return _args[2];
     default: cout << "Error: opcode is not jmp" << endl; return 0;

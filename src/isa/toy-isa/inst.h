@@ -67,6 +67,38 @@ class toy_isa {
     [MAXC]  = 2,
     [MAXX]  = 2,
   };
+
+  static constexpr int insn_num_regs[NUM_INSTR] = {
+    [NOP]   = 0,
+    [ADDXY] = 2,
+    [MOVXC] = 1,
+    [RETX]  = 1,
+    [RETC]  = 0,
+    [JMP]   = 0,
+    [JMPEQ] = 2,
+    [JMPGT] = 2,
+    [JMPGE] = 2,
+    [JMPLT] = 2,
+    [JMPLE] = 2,
+    [MAXC]  = 1,
+    [MAXX]  = 2,
+  };
+
+  static constexpr int opcode_type[NUM_INSTR] = {
+    [NOP]   = OP_NOP,
+    [ADDXY] = OP_OTHERS,
+    [MOVXC] = OP_OTHERS,
+    [RETX]  = OP_RET,
+    [RETC]  = OP_RET,
+    [JMP]   = OP_UNCOND_JMP,
+    [JMPEQ] = OP_COND_JMP,
+    [JMPGT] = OP_COND_JMP,
+    [JMPGE] = OP_COND_JMP,
+    [JMPLT] = OP_COND_JMP,
+    [JMPLE] = OP_COND_JMP,
+    [MAXC]  = OP_OTHERS,
+    [MAXX]  = OP_OTHERS,
+  };
 };
 
 class prog_state {
@@ -106,6 +138,8 @@ class inst {
   int get_max_op_len() const {return _isa.MAX_OP_LEN;}
   int get_num_instr() const {return _isa.NUM_INSTR;}
   int get_num_operands() const {return _isa.num_operands[_opcode];}
+  int get_insn_num_regs() const {return _isa.insn_num_regs[_opcode];}
+  int get_opcode_type() const {return _isa.opcode_type[_opcode];}
 };
 
 struct instHash {
@@ -126,38 +160,6 @@ static int optable[toy_isa::NUM_INSTR] = {
   [JMPLE] = JMP_OPS,
   [MAXC]  = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
   [MAXX]  = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
-};
-
-static int num_regs[toy_isa::NUM_INSTR] = {
-  [NOP]   = 0,
-  [ADDXY] = 2,
-  [MOVXC] = 1,
-  [RETX]  = 1,
-  [RETC]  = 0,
-  [JMP]   = 0,
-  [JMPEQ] = 2,
-  [JMPGT] = 2,
-  [JMPGE] = 2,
-  [JMPLT] = 2,
-  [JMPLE] = 2,
-  [MAXC]  = 1,
-  [MAXX]  = 2,
-};
-
-static int opcode_type[toy_isa::NUM_INSTR] = {
-  [NOP]   = OP_NOP,
-  [ADDXY] = OP_OTHERS,
-  [MOVXC] = OP_OTHERS,
-  [RETX]  = OP_RET,
-  [RETC]  = OP_RET,
-  [JMP]   = OP_UNCOND_JMP,
-  [JMPEQ] = OP_COND_JMP,
-  [JMPGT] = OP_COND_JMP,
-  [JMPGE] = OP_COND_JMP,
-  [JMPLT] = OP_COND_JMP,
-  [JMPLE] = OP_COND_JMP,
-  [MAXC]  = OP_OTHERS,
-  [MAXX]  = OP_OTHERS,
 };
 
 #define DSTREG(inst_var) (inst_var)._args[0]
