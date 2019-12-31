@@ -5,9 +5,9 @@
 
 using namespace std;
 
-constexpr int toy_isa::num_operands[toy_isa::NUM_INSTR];
-constexpr int toy_isa::insn_num_regs[toy_isa::NUM_INSTR];
-constexpr int toy_isa::opcode_type[toy_isa::NUM_INSTR];
+constexpr int toy_isa::num_operands[NUM_INSTR];
+constexpr int toy_isa::insn_num_regs[NUM_INSTR];
+constexpr int toy_isa::opcode_type[NUM_INSTR];
 constexpr int toy_isa::optable[NUM_INSTR];
 
 void prog_state::print() {
