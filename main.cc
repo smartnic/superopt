@@ -8,6 +8,7 @@
 #include <utility>
 #include <iomanip>
 #include <getopt.h>
+#include <chrono>
 #include "measure/common.h"
 #include "measure/meas_mh_bhv.h"
 #include "src/prog.h"
