@@ -82,7 +82,7 @@ int inst::get_max_operand_val(int op_index, int inst_index) const {
     [OP_UNUSED] = 0,
     [OP_REG] = toy_isa::NUM_REGS,
     [OP_IMM] = MAX_CONST,
-    [OP_OFF] = MAX_PROG_LEN - inst_index - 1,
+    [OP_OFF] = toy_isa::MAX_PROG_LEN - inst_index - 1,
   };
   return max_val[OPTYPE(_opcode, op_index)];
 }
@@ -129,6 +129,14 @@ size_t instHash::operator()(const inst &x) const {
 
 void print_program(const inst* program, int length) {
   for (int i = 0; i < length; i++) {
+    cout << i << ": ";
+    program[i].print();
+  }
+  cout << endl;
+}
+
+void print_program(const vector<inst>& program) {
+  for (int i = 0; i < program.size(); i++) {
     cout << i << ": ";
     program[i].print();
   }

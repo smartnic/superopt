@@ -4,6 +4,8 @@ using namespace std;
 
 // TODO: find canonical way to invoke one constructor from another
 prog::prog(const prog& other) {
+  const int MAX_PROG_LEN = other.get_max_prog_len();
+  inst_list = (inst*)malloc(MAX_PROG_LEN * sizeof(inst));
   freq_count = other.freq_count;
   _error_cost = other._error_cost;
   _perf_cost = other._perf_cost;
@@ -13,6 +15,8 @@ prog::prog(const prog& other) {
 }
 
 prog::prog(inst* instructions) {
+  const int MAX_PROG_LEN = instructions[0].get_max_prog_len();
+  inst_list = (inst*)malloc(MAX_PROG_LEN * sizeof(inst));
   freq_count = 0;
   _error_cost = -1;
   _perf_cost = -1;
@@ -27,6 +31,8 @@ prog* prog::make_prog(const prog &other) {
   new_prog->freq_count = 0;
   new_prog->_error_cost = -1;
   new_prog->_perf_cost = -1;
+  const int MAX_PROG_LEN = other.get_max_prog_len();
+  new_prog->inst_list = (inst*)malloc(MAX_PROG_LEN * sizeof(inst));
   for (int i = 0; i < MAX_PROG_LEN; i++) {
     new_prog->inst_list[i] = other.inst_list[i];
   }
@@ -34,6 +40,7 @@ prog* prog::make_prog(const prog &other) {
 }
 
 void prog::clear_prog(prog* p) {
+  free(p->inst_list);
   free(p);
 }
 
@@ -42,18 +49,19 @@ prog::prog() {
 }
 
 prog::~prog() {
+  free(inst_list);
 }
 
 void prog::print() {
-  print_program(inst_list, MAX_PROG_LEN);
+  print_program(inst_list, this->get_max_prog_len());
 }
 
 void prog::print(const prog &p) {
-  print_program(p.inst_list, MAX_PROG_LEN);
+  print_program(p.inst_list, p.get_max_prog_len());
 }
 
 bool prog::operator==(const prog &x) const {
-  for (int i = 0; i < MAX_PROG_LEN; i++) {
+  for (int i = 0; i < x.get_max_prog_len(); i++) {
     if (! (inst_list[i] == x.inst_list[i])) return false;
   }
   return true;
@@ -68,6 +76,7 @@ void prog::set_perf_cost(double cost) {
 }
 
 rel_bv_prog prog::prog_rel_bit_vec(const prog &p) {
+  const int MAX_PROG_LEN = p.get_max_prog_len();
   rel_bv_prog bv;
   bv.reset(0);
   for (int i = 0; i < MAX_PROG_LEN; i++) {
@@ -94,7 +103,7 @@ rel_bv_prog prog::prog_rel_bit_vec(const vector<prog> &ps) {
 
 abs_bv_prog prog::prog_abs_bit_vec() const {
   string s = "";
-  for (int i = 0; i < MAX_PROG_LEN; i++) {
+  for (int i = 0; i < this->get_max_prog_len(); i++) {
     s += inst_list[i].inst_to_abs_bv().to_string();
   }
   abs_bv_prog bvp(s);
@@ -114,6 +123,7 @@ bool prog::if_ret_exists(int start, int end) const {
 // case 1: no RETs instruction(test6 insts41)
 // case 2: has RETs instruction, but JMP makes implicit RETX 0 instruction needed(test6 insts42)
 void prog::update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const {
+  const int MAX_PROG_LEN = this->get_max_prog_len();
   bool can_use_reg0 = true;
   // check whether there is RETs
   bool ret_exists = if_ret_exists(0, MAX_PROG_LEN);
@@ -147,6 +157,7 @@ void prog::update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_bef
 void prog::canonicalize() {
   unordered_map<int, int> map_before_after; // key: reg_id before, val: reg_id after
   vector<int> reg_list(2);
+  const int MAX_PROG_LEN = this->get_max_prog_len();
   // traverse all instructions and once there is a new reg_id(before), assign it a reg_id(after)
   // store reg_id(before) and reg_id(after) into map
   for (int i = 0; i < MAX_PROG_LEN; i++) {
@@ -183,7 +194,7 @@ void prog::canonicalize() {
 
 size_t progHash::operator()(const prog &x) const {
   size_t hval = 0;
-  for (int i = 0; i < MAX_PROG_LEN; i++) {
+  for (int i = 0; i < x.get_max_prog_len(); i++) {
     hval = hval ^ (instHash()(x.inst_list[i]) << (i % 4));
   }
   return hval;

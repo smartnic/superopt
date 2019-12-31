@@ -26,7 +26,6 @@ using namespace std;
 string FILE_CONFIG = "config";
 
 inst* bm;
-int bm_len = MAX_PROG_LEN;
 vector<int> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
 
@@ -126,7 +125,7 @@ void run_mh_sampler(const input_paras &in_para, vector<inst*> &bm_optis_orig) {
   if (in_para.meas_mode) mh.turn_on_measure();
   prog orig(bm);
   orig.print();
-  mh._cost.init(&orig, bm_len, inputs,
+  mh._cost.init(&orig, orig.get_max_prog_len(), inputs,
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
                 in_para.st_avg);

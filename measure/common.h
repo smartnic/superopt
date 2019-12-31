@@ -10,7 +10,7 @@ ostream& operator<<(ostream& out, vector<int>& v);
 ostream& operator<<(ostream& out, vector<vector<int> >& v);
 
 // instruction_list set
-#define N MAX_PROG_LEN
+#define N toy_isa::MAX_PROG_LEN
 
 #define NUM_ORIG 3
 extern inst bm0[N];

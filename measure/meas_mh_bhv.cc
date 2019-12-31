@@ -181,7 +181,7 @@ void gen_optis_for_progs(const vector<inst*> &bm_optis_orig, vector<prog> &bm_op
     prog bm_opti(bm_optis_orig[i]);
     // op_set: temporarily store optimals for one bm optimal program
     vector<prog> op_set;
-    gen_optis_for_prog(bm_opti, MAX_PROG_LEN, op_set);
+    gen_optis_for_prog(bm_opti, bm_opti.get_max_prog_len(), op_set);
     for (size_t j = 0; j < op_set.size(); j++)
       bm_optimals.push_back(op_set[j]);
   }

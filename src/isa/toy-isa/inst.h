@@ -7,7 +7,6 @@
 using namespace std;
 
 #define MAX_CONST 20
-#define MAX_PROG_LEN 7
 // Max number of operands in one instruction
 #define MAX_OP_LEN 3
 
@@ -51,6 +50,7 @@ typedef bitset<INST_ABS_BIT_LEN> abs_bv_inst;
 class toy_isa {
  public:
   static constexpr int NUM_REGS = 4;
+  static constexpr int MAX_PROG_LEN = 7;
 };
 
 class prog_state {
@@ -86,6 +86,7 @@ class inst {
   int get_jmp_dis() const;
   // for class toy_isa
   int get_num_regs() const {return _isa.NUM_REGS;}
+  int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}
 };
 
 struct instHash {
@@ -162,8 +163,10 @@ static int opcode_type[NUM_INSTR] = {
 #define IMM2VAL(inst_var) (inst_var)._args[1]
 
 void print_program(const inst* program, int length);
+void print_program(const vector<inst>& program);
 int interpret(inst* program, int length, prog_state &ps, int input);
 int num_real_instructions(inst* program, int len);
+int num_real_instructions(const vector<inst>& program);
 string to_string(const abs_bv_inst &bv);
 // assume `inst_end` is the end instruction of a program
 int inst_output_opcode_type(const inst& inst_end);

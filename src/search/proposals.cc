@@ -58,7 +58,7 @@ int get_new_operand(int sel_inst_index, const inst& sel_inst, int op_to_change, 
 
 void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_change) {
   assert (op_to_change < 3);
-  assert(sel_inst_index < MAX_PROG_LEN);
+  assert(sel_inst_index < orig.get_max_prog_len());
   // First make a fresh copy of the program.
   inst* sel_inst = &synth->inst_list[sel_inst_index];
   int old_opvalue = sel_inst->get_operand(op_to_change);
@@ -74,13 +74,14 @@ void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
 }
 
 prog* mod_random_inst_operand(const prog &orig) {
-  int inst_index = sample_int(MAX_PROG_LEN);
+  int inst_index = sample_int(orig.get_max_prog_len());
   prog* synth = prog::make_prog(orig);
   mod_random_operand(orig, synth, inst_index);
   return synth;
 }
 
 void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
+  const int MAX_PROG_LEN = orig->get_max_prog_len();
   assert(sel_inst_index < MAX_PROG_LEN);
   // TODO: is it wise to sample with exception?
   inst* sel_inst = &orig->inst_list[sel_inst_index];
@@ -107,12 +108,13 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
 prog* mod_random_inst(const prog &orig) {
   // First make a copy of the old program
   prog* synth = prog::make_prog(orig);
-  int inst_index = sample_int(MAX_PROG_LEN);
+  int inst_index = sample_int(orig.get_max_prog_len());
   mod_select_inst(synth, inst_index);
   return synth;
 }
 
 prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
+  const int MAX_PROG_LEN = orig.get_max_prog_len();
   // If k is too big, modify all instructions of the original program
   if (k > MAX_PROG_LEN) k = MAX_PROG_LEN;
   // First make a copy of the old program
@@ -127,6 +129,6 @@ prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
 
 prog* mod_random_cont_insts(const prog &orig) {
   int start_k_value = 2; // at least change two instructions
-  int k = sample_int(start_k_value, MAX_PROG_LEN + 1);
+  int k = sample_int(start_k_value, orig.get_max_prog_len() + 1);
   return mod_random_k_cont_insts(orig, k);
 }

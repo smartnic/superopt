@@ -8,12 +8,12 @@
 
 using namespace std;
 
-typedef bitset<MAX_PROG_LEN> rel_bv_prog;
-typedef bitset<MAX_PROG_LEN * INST_ABS_BIT_LEN> abs_bv_prog;
+typedef bitset<toy_isa::MAX_PROG_LEN> rel_bv_prog;
+typedef bitset<toy_isa::MAX_PROG_LEN * INST_ABS_BIT_LEN> abs_bv_prog;
 
 class prog {
  public:
-  inst inst_list[MAX_PROG_LEN];
+  inst* inst_list;
   int freq_count;
   double  _error_cost;
   double  _perf_cost;
@@ -34,6 +34,7 @@ class prog {
   bool if_ret_exists(int start, int end) const;
   void update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const;
   void canonicalize();
+  int get_max_prog_len() const {return inst_list[0].get_max_prog_len();}
 };
 
 struct progHash {
