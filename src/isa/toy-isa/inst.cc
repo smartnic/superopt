@@ -139,14 +139,6 @@ void print_program(const inst* program, int length) {
   cout << endl;
 }
 
-void print_program(const vector<inst>& program) {
-  for (int i = 0; i < program.size(); i++) {
-    cout << i << ": ";
-    program[i].print();
-  }
-  cout << endl;
-}
-
 int interpret(inst *program, int length, prog_state &ps, int input) {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */

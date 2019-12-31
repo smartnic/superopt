@@ -168,10 +168,8 @@ static int optable[toy_isa::NUM_INSTR] = {
 #define IMM2VAL(inst_var) (inst_var)._args[1]
 
 void print_program(const inst* program, int length);
-void print_program(const vector<inst>& program);
 int interpret(inst* program, int length, prog_state &ps, int input);
 int num_real_instructions(inst* program, int len);
-int num_real_instructions(const vector<inst>& program);
 string to_string(const abs_bv_inst &bv);
 // assume `inst_end` is the end instruction of a program
 int inst_output_opcode_type(const inst& inst_end);
