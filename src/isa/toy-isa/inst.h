@@ -6,14 +6,6 @@
 
 using namespace std;
 
-#define MAX_CONST 20
-
-// Operand types for instructions
-#define OP_UNUSED 0
-#define OP_REG 1
-#define OP_IMM 2
-#define OP_OFF 3
-
 // Instruction opcodes
 #define NOP 0
 #define ADDXY 1
@@ -33,15 +25,6 @@ using namespace std;
 #define INST_ABS_BIT_LEN 20
 // For absolute coding of each instruction
 typedef bitset<INST_ABS_BIT_LEN> abs_bv_inst;
-
-/* The definitions below assume a minimum 16-bit integer data type */
-#define FSTOP(x) (x)
-#define SNDOP(x) (x << 5)
-#define TRDOP(x) (x << 10)
-#define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex) * 5)) & 31)
-
-#define JMP_OPS (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
-#define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 
 class toy_isa {
  public:
@@ -99,6 +82,42 @@ class toy_isa {
     [MAXC]  = OP_OTHERS,
     [MAXX]  = OP_OTHERS,
   };
+
+  // Max value for immediate operand
+  static constexpr int MAX_CONST = 20;
+  // Operand types for instructions
+  static constexpr int OP_UNUSED = 0;
+  static constexpr int OP_REG = 1;
+  static constexpr int OP_IMM = 2;
+  static constexpr int OP_OFF = 3;
+
+  /* The definitions below assume a minimum 16-bit integer data type */
+#define TOY_ISA_OPTYPE(opcode, opindex) ((toy_isa::optable[opcode] >> ((opindex) * 5)) & 31)
+#define FSTOP(x) (x)
+#define SNDOP(x) (x << 5)
+#define TRDOP(x) (x << 10)
+#define JMP_OPS (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
+#define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
+  static constexpr int optable[NUM_INSTR] = {
+    [NOP]   = UNUSED_OPS,
+    [ADDXY] = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
+    [MOVXC] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
+    [RETX]  = FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
+    [RETC]  = FSTOP(OP_IMM) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
+    [JMP]   = FSTOP(OP_OFF) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
+    [JMPEQ] = JMP_OPS,
+    [JMPGT] = JMP_OPS,
+    [JMPGE] = JMP_OPS,
+    [JMPLT] = JMP_OPS,
+    [JMPLE] = JMP_OPS,
+    [MAXC]  = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
+    [MAXX]  = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
+  };
+#undef FSTOP
+#undef SNDOP
+#undef TRDOP
+#undef JMP_OPS
+#undef UNUSED_OPS
 };
 
 class prog_state {
@@ -151,23 +170,7 @@ struct instHash {
   size_t operator()(const inst &x) const;
 };
 
-static int optable[toy_isa::NUM_INSTR] = {
-  [NOP]   = UNUSED_OPS,
-  [ADDXY] = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
-  [MOVXC] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
-  [RETX]  = FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
-  [RETC]  = FSTOP(OP_IMM) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
-  [JMP]   = FSTOP(OP_OFF) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
-  [JMPEQ] = JMP_OPS,
-  [JMPGT] = JMP_OPS,
-  [JMPGE] = JMP_OPS,
-  [JMPLT] = JMP_OPS,
-  [JMPLE] = JMP_OPS,
-  [MAXC]  = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
-  [MAXX]  = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
-};
-
-#define DSTREG(inst_var) (inst_var)._args[0]
-#define SRCREG(inst_var) (inst_var)._args[1]
-#define IMM1VAL(inst_var) (inst_var)._args[0]
-#define IMM2VAL(inst_var) (inst_var)._args[1]
+#define TOY_ISA_DSTREG(inst_var) (inst_var)._args[0]
+#define TOY_ISA_SRCREG(inst_var) (inst_var)._args[1]
+#define TOY_ISA_IMM1VAL(inst_var) (inst_var)._args[0]
+#define TOY_ISA_IMM2VAL(inst_var) (inst_var)._args[1]

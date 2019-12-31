@@ -241,7 +241,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
     throw (err_msg);
   }
   // init class variables
-  const unsigned int NUM_REGS = inst_lst[0].get_num_regs();
+  const unsigned int NUM_REGS = inst_lst->get_num_regs();
   init(NUM_REGS);
 
   // blocks stores the block IDs in order after topological sorting

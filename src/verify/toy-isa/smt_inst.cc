@@ -3,10 +3,10 @@
 
 using namespace z3;
 
-#define CURSRC sv.get_cur_reg_var(SRCREG(in))
-#define CURDST sv.get_cur_reg_var(DSTREG(in))
-#define NEWDST sv.update_reg_var(DSTREG(in))
-#define IMM2 IMM2VAL(in)
+#define CURSRC sv.get_cur_reg_var(TOY_ISA_SRCREG(in))
+#define CURDST sv.get_cur_reg_var(TOY_ISA_DSTREG(in))
+#define NEWDST sv.update_reg_var(TOY_ISA_DSTREG(in))
+#define IMM2 TOY_ISA_IMM2VAL(in)
 
 expr smt_inst(smt_var& sv, const inst& in) {
   expr curDst = string_to_expr("false");

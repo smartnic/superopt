@@ -15,7 +15,7 @@ prog::prog(const prog& other) {
 }
 
 prog::prog(inst* instructions) {
-  const int MAX_PROG_LEN = instructions[0].get_max_prog_len();
+  const int MAX_PROG_LEN = instructions->get_max_prog_len();
   inst_list = (inst*)malloc(MAX_PROG_LEN * sizeof(inst));
   freq_count = 0;
   _error_cost = -1;

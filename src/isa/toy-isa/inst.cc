@@ -8,6 +8,7 @@ using namespace std;
 constexpr int toy_isa::num_operands[toy_isa::NUM_INSTR];
 constexpr int toy_isa::insn_num_regs[toy_isa::NUM_INSTR];
 constexpr int toy_isa::opcode_type[toy_isa::NUM_INSTR];
+constexpr int toy_isa::optable[NUM_INSTR];
 
 void prog_state::print() {
   for (int i = 0; i < toy_isa::NUM_REGS; i++) {
@@ -83,12 +84,12 @@ inst& inst::operator=(const inst &rhs) {
 int inst::get_max_operand_val(int op_index, int inst_index) const {
   // max value for each operand type
   int max_val[4] = {
-    [OP_UNUSED] = 0,
-    [OP_REG] = toy_isa::NUM_REGS,
-    [OP_IMM] = MAX_CONST,
-    [OP_OFF] = toy_isa::MAX_PROG_LEN - inst_index - 1,
+    [toy_isa::OP_UNUSED] = 0,
+    [toy_isa::OP_REG] = toy_isa::NUM_REGS,
+    [toy_isa::OP_IMM] = toy_isa::MAX_CONST,
+    [toy_isa::OP_OFF] = toy_isa::MAX_PROG_LEN - inst_index - 1,
   };
-  return max_val[OPTYPE(_opcode, op_index)];
+  return max_val[TOY_ISA_OPTYPE(_opcode, op_index)];
 }
 
 int inst::get_operand(int op_index) const {
@@ -132,9 +133,9 @@ int inst::inst_output_opcode_type() const {
 int inst::inst_output() const {
   switch (_opcode) {
     case RETX:
-      return DSTREG(*this);
+      return TOY_ISA_DSTREG(*this);
     case RETC:
-      return IMM1VAL(*this);
+      return TOY_ISA_IMM1VAL(*this);
     default: // no RET, return register 0
       return 0;
   }
@@ -175,10 +176,10 @@ int inst::interpret(int length, prog_state &ps, int input) {
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
-#define DST ps.regs[DSTREG(*insn)]
-#define SRC ps.regs[SRCREG(*insn)]
-#define IMM1 IMM1VAL(*insn)
-#define IMM2 IMM2VAL(*insn)
+#define DST ps.regs[TOY_ISA_DSTREG(*insn)]
+#define SRC ps.regs[TOY_ISA_SRCREG(*insn)]
+#define IMM1 TOY_ISA_IMM1VAL(*insn)
+#define IMM2 TOY_ISA_IMM2VAL(*insn)
 
 select_insn:
   goto *jumptable[insn->_opcode];
