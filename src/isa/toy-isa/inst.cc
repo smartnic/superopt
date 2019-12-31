@@ -102,7 +102,7 @@ int inst::get_opcode() const {
 }
 
 void inst::set_opcode(int op_value) {
-  assert(op_value < NUM_INSTR);
+  assert(op_value < get_num_instr());
   _opcode = op_value;
 }
 
@@ -150,7 +150,7 @@ int interpret(inst *program, int length, prog_state &ps, int input) {
   ps.clear();
   ps.regs[0] = input;
 
-  static void *jumptable[NUM_INSTR] = {
+  static void *jumptable[toy_isa::NUM_INSTR] = {
     [NOP]   = && INSN_NOP,
     [ADDXY] = && INSN_ADDXY,
     [MOVXC] = && INSN_MOVXC,

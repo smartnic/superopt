@@ -36,6 +36,7 @@ class prog {
   void canonicalize();
   int get_max_prog_len() const {return inst_list[0].get_max_prog_len();}
   int get_max_op_len() const {return inst_list[0].get_max_op_len();}
+  int get_num_instr() const {return inst_list[0].get_num_instr();}
 };
 
 struct progHash {

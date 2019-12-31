@@ -29,8 +29,6 @@ using namespace std;
 #define MAXC 11
 #define MAXX 12
 
-#define NUM_INSTR 13
-
 #define OP_ABS_BIT_LEN 5
 #define INST_ABS_BIT_LEN 20
 // For absolute coding of each instruction
@@ -51,6 +49,8 @@ class toy_isa {
   static constexpr int MAX_PROG_LEN = 7;
   // Max number of operands in one instruction
   static constexpr int MAX_OP_LEN = 3;
+  // Number of opcode types
+  static constexpr int NUM_INSTR = 13;
 };
 
 class prog_state {
@@ -88,13 +88,14 @@ class inst {
   int get_num_regs() const {return _isa.NUM_REGS;}
   int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}
   int get_max_op_len() const {return _isa.MAX_OP_LEN;}
+  int get_num_instr() const {return _isa.NUM_INSTR;}
 };
 
 struct instHash {
   size_t operator()(const inst &x) const;
 };
 
-static int optable[NUM_INSTR] = {
+static int optable[toy_isa::NUM_INSTR] = {
   [NOP]   = UNUSED_OPS,
   [ADDXY] = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
   [MOVXC] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
@@ -110,7 +111,7 @@ static int optable[NUM_INSTR] = {
   [MAXX]  = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
 };
 
-static int num_operands[NUM_INSTR] = {
+static int num_operands[toy_isa::NUM_INSTR] = {
   [NOP]   = 0,
   [ADDXY] = 2,
   [MOVXC] = 2,
@@ -126,7 +127,7 @@ static int num_operands[NUM_INSTR] = {
   [MAXX]  = 2,
 };
 
-static int num_regs[NUM_INSTR] = {
+static int num_regs[toy_isa::NUM_INSTR] = {
   [NOP]   = 0,
   [ADDXY] = 2,
   [MOVXC] = 1,
@@ -142,7 +143,7 @@ static int num_regs[NUM_INSTR] = {
   [MAXX]  = 2,
 };
 
-static int opcode_type[NUM_INSTR] = {
+static int opcode_type[toy_isa::NUM_INSTR] = {
   [NOP]   = OP_NOP,
   [ADDXY] = OP_OTHERS,
   [MOVXC] = OP_OTHERS,
