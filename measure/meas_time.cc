@@ -8,6 +8,8 @@
 #include "../src/search/mh_prog.h"
 #include "../src/verify/validator.h"
 #include "../src/verify/smt_prog.h"
+#include "../src/isa/inst.h"
+#include "../src/isa/toy-isa/inst.h"
 #include "common.h"
 #include "z3++.h"
 
@@ -63,7 +65,7 @@ void time_validator_get_orig_output() {
 }
 
 void time_interpret() {
-  prog_state ps;
+  toy_isa_prog_state ps;
   time_measure(bm0->interpret(N, ps, i), 10000,
                "interpret: ");
 }

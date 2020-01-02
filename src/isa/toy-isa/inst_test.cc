@@ -28,7 +28,7 @@ inst instructions4[3] = {inst(JMP, 1),
                         };
 
 void test1(int input) {
-  prog_state ps;
+  toy_isa_prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
   print_test_res(instructions->interpret(6, ps, input) == max(input + 4, 15),
                  "interpret program 1");

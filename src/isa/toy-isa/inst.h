@@ -120,12 +120,9 @@ class toy_isa {
 #undef UNUSED_OPS
 };
 
-class prog_state {
-  int pc = 0; /* Assume only straight line code execution for now */
+class toy_isa_prog_state: public prog_state {
  public:
-  int regs[toy_isa::NUM_REGS] = {}; /* assume only registers for now */
-  void print();
-  void clear();
+  toy_isa_prog_state() {regs.resize(toy_isa::NUM_REGS, 0);}
 };
 
 class inst {
@@ -163,7 +160,7 @@ class inst {
   int get_num_operands() const {return _isa.num_operands[_opcode];}
   int get_insn_num_regs() const {return _isa.insn_num_regs[_opcode];}
   int get_opcode_type() const {return _isa.opcode_type[_opcode];}
-  int interpret(int length, prog_state &ps, int input);
+  int interpret(int length, toy_isa_prog_state &ps, int input);
 };
 
 struct instHash {

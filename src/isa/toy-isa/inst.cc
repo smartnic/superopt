@@ -10,19 +10,6 @@ constexpr int toy_isa::insn_num_regs[NUM_INSTR];
 constexpr int toy_isa::opcode_type[NUM_INSTR];
 constexpr int toy_isa::optable[NUM_INSTR];
 
-void prog_state::print() {
-  for (int i = 0; i < toy_isa::NUM_REGS; i++) {
-    cout << "Register "  << i << " " << regs[i] << endl;
-  }
-}
-
-void prog_state::clear() {
-  pc = 0;
-  for (int i = 0; i < toy_isa::NUM_REGS; i++) {
-    regs[i] = 0;
-  }
-}
-
 string inst::opcode_to_str(int opcode) const {
   switch (opcode) {
     case NOP: return "NOP";
@@ -146,7 +133,7 @@ bool inst::is_real_inst() const {
   return true;
 }
 
-int inst::interpret(int length, prog_state &ps, int input) {
+int inst::interpret(int length, toy_isa_prog_state &ps, int input) {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
   inst *start = this;

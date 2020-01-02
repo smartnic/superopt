@@ -29,7 +29,7 @@ void cost::init(prog* orig, int len, const vector<int> &input,
   set_orig(orig, len);
   _examples.clear();
   for (size_t i = 0; i < input.size(); i++) {
-    prog_state ps;
+    toy_isa_prog_state ps;
     int output = ((inst*)orig->inst_list)->interpret(len, ps, input[i]);
     inout example;
     example.set_in_out(input[i], output);
@@ -117,7 +117,7 @@ double cost::error_cost(prog* synth, int len) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   double total_cost = 0;
   inst* inst_list = (inst*)synth->inst_list;
-  prog_state ps;
+  toy_isa_prog_state ps;
   int output1, output2;
   int num_successful_ex = 0;
   // process total_cost with example set
