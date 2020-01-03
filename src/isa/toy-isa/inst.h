@@ -1,6 +1,5 @@
 #pragma once
 
-#include <bitset>
 #include <vector>
 #include "../inst.h"
 
@@ -138,7 +137,6 @@ class toy_isa_inst: public inst {
   toy_isa_inst& operator=(const inst &rhs);
   int get_max_operand_val(int op_index, int inst_index = 0) const;
   int get_jmp_dis() const;
-  // assume `inst_end` is the end instruction of a program
   int inst_output_opcode_type() const;
   int inst_output() const;
   bool is_real_inst() const;

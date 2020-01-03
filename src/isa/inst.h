@@ -46,7 +46,6 @@ class inst {
   int get_opcode() const;
   void set_opcode(int op_value);
   virtual int get_jmp_dis() const {return 0;}
-  // assume `inst_end` is the end instruction of a program
   virtual int inst_output_opcode_type() const {return 0;}
   virtual int inst_output() const {return 0;}
   virtual bool is_real_inst() const {return false;}
