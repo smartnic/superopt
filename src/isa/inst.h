@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <bitset>
+#include <unordered_set>
 
 using namespace std;
 
@@ -46,6 +47,7 @@ class inst {
   int get_opcode() const;
   void set_opcode(int op_value);
   virtual int get_jmp_dis() const {return 0;}
+  virtual void insert_jmp_opcodes(unordered_set<int>& jmp_sets) const {}
   virtual int inst_output_opcode_type() const {return 0;}
   virtual int inst_output() const {return 0;}
   virtual bool is_real_inst() const {return false;}

@@ -64,6 +64,13 @@ int toy_isa_inst::get_jmp_dis() const {
   }
 }
 
+void toy_isa_inst::insert_jmp_opcodes(unordered_set<int>& jmp_sets) const {
+  for (enum toy_isa::OPCODES opcode = toy_isa::JMP; opcode <= toy_isa::JMPLE;
+       opcode = toy_isa::OPCODES(opcode + 1)) {
+    jmp_sets.insert(opcode);
+  }
+}
+
 int toy_isa_inst::inst_output_opcode_type() const {
   switch (_opcode) {
     case toy_isa::RETX:

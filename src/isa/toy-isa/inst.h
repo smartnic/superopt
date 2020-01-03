@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_set>
 #include "../inst.h"
 
 using namespace std;
@@ -138,6 +139,7 @@ class toy_isa_inst: public inst {
   toy_isa_inst& operator=(const inst &rhs);
   int get_max_operand_val(int op_index, int inst_index = 0) const;
   int get_jmp_dis() const;
+  void insert_jmp_opcodes(unordered_set<int>& jmp_sets) const;
   int inst_output_opcode_type() const;
   int inst_output() const;
   bool is_real_inst() const;
