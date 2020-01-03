@@ -184,10 +184,3 @@ ostream& operator<<(ostream& out, abs_bv_inst& bv) {
     out << bv[i];
   return out;
 }
-
-size_t instHash::operator()(const inst &x) const {
-  return hash<int>()(x._opcode) ^
-         (hash<int>()(x._args[0]) << 1) ^
-         (hash<int>()(x._args[1]) << 2) ^
-         (hash<int>()(x._args[2]) << 3);
-}

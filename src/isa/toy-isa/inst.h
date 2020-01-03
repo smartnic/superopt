@@ -153,10 +153,6 @@ class toy_isa_inst: public inst {
   int interpret(int length, toy_isa_prog_state &ps, int input);
 };
 
-struct instHash {
-  size_t operator()(const inst &x) const;
-};
-
 #define TOY_ISA_DSTREG(inst_var) (inst_var)._args[0]
 #define TOY_ISA_SRCREG(inst_var) (inst_var)._args[1]
 #define TOY_ISA_IMM1VAL(inst_var) (inst_var)._args[0]

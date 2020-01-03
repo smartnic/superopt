@@ -68,3 +68,11 @@ void inst::set_opcode(int op_value) {
   assert(op_value < get_num_instr());
   _opcode = op_value;
 }
+
+size_t instHash::operator()(const inst &x) const {
+  size_t res = hash<int>()(x._opcode);
+  for (int i = 0; i < x._args.size(); i++) {
+    res ^= hash<int>()(x._args[i]) << (i + 1);
+  }
+  return res;
+}

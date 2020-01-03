@@ -60,3 +60,7 @@ class inst {
   virtual int get_opcode_type() const {return 0;}
   virtual int interpret(int length, prog_state &ps, int input) {return 0;}
 };
+
+struct instHash {
+  size_t operator()(const inst &x) const;
+};
