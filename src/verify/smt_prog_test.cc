@@ -9,11 +9,11 @@ using namespace z3;
 // basic block test
 void test1() {
   std::cout << "test 1: basic block check starts...\n";
-  toy_isa_inst p[5] = {toy_isa_inst(MOVXC, 1, 10),   // 0
-                       toy_isa_inst(JMPLT, 0, 1, 1), // 1
-                       toy_isa_inst(RETX, 1),        // 2
-                       toy_isa_inst(MAXC, 0, 15),    // 3
-                       toy_isa_inst(RETX, 0),        // 4
+  toy_isa_inst p[5] = {toy_isa_inst(toy_isa::MOVXC, 1, 10),   // 0
+                       toy_isa_inst(toy_isa::JMPLT, 0, 1, 1), // 1
+                       toy_isa_inst(toy_isa::RETX, 1),        // 2
+                       toy_isa_inst(toy_isa::MAXC, 0, 15),    // 3
+                       toy_isa_inst(toy_isa::RETX, 0),        // 4
                       };
   smt_prog ps;
   unsigned int prog_id = 0;
@@ -37,13 +37,13 @@ void test1() {
   print_test_res(is_smt_valid(post2 == ps.post[2][0]), "post condition");
 
   std::cout << "\ntest1.2: check basic block 2[2:3]\n";
-  toy_isa_inst p1[7] = {toy_isa_inst(JMPLT, 0, 1, 3),   // 0 [0:0]
-                        toy_isa_inst(MOVXC, 0, 1),      // 1 [1:1]
-                        toy_isa_inst(ADDXY, 0, 0),      // 2 [2:3]
-                        toy_isa_inst(RETX, 0),          // 3
-                        toy_isa_inst(ADDXY, 0, 0),      // 4 [4:5]
-                        toy_isa_inst(JMPLT, 0, 1, -4),  // 5
-                        toy_isa_inst(RETX, 0),          // 6 [6:6]
+  toy_isa_inst p1[7] = {toy_isa_inst(toy_isa::JMPLT, 0, 1, 3),   // 0 [0:0]
+                        toy_isa_inst(toy_isa::MOVXC, 0, 1),      // 1 [1:1]
+                        toy_isa_inst(toy_isa::ADDXY, 0, 0),      // 2 [2:3]
+                        toy_isa_inst(toy_isa::RETX, 0),          // 3
+                        toy_isa_inst(toy_isa::ADDXY, 0, 0),      // 4 [4:5]
+                        toy_isa_inst(toy_isa::JMPLT, 0, 1, -4),  // 5
+                        toy_isa_inst(toy_isa::RETX, 0),          // 6 [6:6]
                        };
   prog_id = 1;
   ps.gen_smt(prog_id, p1, 7);
@@ -74,7 +74,7 @@ void test1() {
   print_test_res(is_smt_valid(post2 == ps.post[2][0]), "post condition");
 
   std::cout << "\ntest1.3: check program-end basic block 0[0:0] without RET instructions\n";
-  toy_isa_inst p2[1] = {toy_isa_inst(ADDXY, 0, 0),
+  toy_isa_inst p2[1] = {toy_isa_inst(toy_isa::ADDXY, 0, 0),
                        };
   prog_id = 2;
   ps.gen_smt(prog_id, p2, 1);
@@ -86,14 +86,14 @@ void test1() {
 void test2() {
   std::cout << "\ntest2.1: check single instruction logic\n";
   // check instrcution MAXX logic
-  // case1: toy_isa_inst(MAXX, 0, 0); case2: toy_isa_inst(MAXX, 0, 1)
-  toy_isa_inst p[1] = {toy_isa_inst(MAXX, 0, 0)};
+  // case1: toy_isa_inst(toy_isa::MAXX, 0, 0); case2: toy_isa_inst(toy_isa::MAXX, 0, 1)
+  toy_isa_inst p[1] = {toy_isa_inst(toy_isa::MAXX, 0, 0)};
   smt_prog ps;
   unsigned int prog_id = 0;
   ps.gen_smt(prog_id, p, 1);
   expr bl_expected = v("r_0_0_0_1") == v("r_0_0_0_0");
   bool assert_res = is_smt_valid(bl_expected == ps.bl[0]);
-  toy_isa_inst p1[1] = {toy_isa_inst(MAXX, 0, 1)};
+  toy_isa_inst p1[1] = {toy_isa_inst(toy_isa::MAXX, 0, 1)};
   ps.gen_smt(prog_id, p1, 1);
   bl_expected = (v("r_0_0_0_0") >= v("r_0_0_1_0") && (v("r_0_0_0_1") == v("r_0_0_0_0"))) ||
                 (v("r_0_0_0_0") < v("r_0_0_1_0") && (v("r_0_0_0_1") == v("r_0_0_1_0")));
@@ -101,8 +101,8 @@ void test2() {
   print_test_res(assert_res, "instruction MAXX logic");
 
   // check instruction JMP logic when jmp distance is 0
-  toy_isa_inst p2[2] = {toy_isa_inst(JMPEQ, 2, 0, 0),
-                        toy_isa_inst(ADDXY, 0, 1),
+  toy_isa_inst p2[2] = {toy_isa_inst(toy_isa::JMPEQ, 2, 0, 0),
+                        toy_isa_inst(toy_isa::ADDXY, 0, 1),
                        };
   expr pl = ps.gen_smt(prog_id, p2, 2);
   expr pl_expected = (v("r_0_1_0_0") == v("r_0_0_0_0")) &&
@@ -116,10 +116,10 @@ void test2() {
 
 void test3() {
   std::cout << "\ntest3: check unconditional jmp program\n";
-  toy_isa_inst p1[4] = {toy_isa_inst(JMP, 1),
-                        toy_isa_inst(ADDXY, 0, 0),
-                        toy_isa_inst(ADDXY, 0, 0),
-                        toy_isa_inst(RETX, 0),
+  toy_isa_inst p1[4] = {toy_isa_inst(toy_isa::JMP, 1),
+                        toy_isa_inst(toy_isa::ADDXY, 0, 0),
+                        toy_isa_inst(toy_isa::ADDXY, 0, 0),
+                        toy_isa_inst(toy_isa::RETX, 0),
                        };
   int prog_id = 1;
   smt_prog ps;

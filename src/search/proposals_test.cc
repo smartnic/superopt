@@ -5,13 +5,13 @@
 int test1(int input) {
   cout << "Test 1" << endl;
 #define N 7
-  toy_isa_inst instructions[N] = {toy_isa_inst(MOVXC, 1, input), /* mov r1, input */
-                                  toy_isa_inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                                  toy_isa_inst(ADDXY, 1, 2),  /* add r1, r2 */
-                                  toy_isa_inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                                  toy_isa_inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
-                                  toy_isa_inst(RETX, 3),      /* ret r3 */
-                                  toy_isa_inst(RETX, 1),      /* else ret r1 */
+  toy_isa_inst instructions[N] = {toy_isa_inst(toy_isa::MOVXC, 1, input), /* mov r1, input */
+                                  toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
+                                  toy_isa_inst(toy_isa::ADDXY, 1, 2),  /* add r1, r2 */
+                                  toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
+                                  toy_isa_inst(toy_isa::JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                                  toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
+                                  toy_isa_inst(toy_isa::RETX, 1),      /* else ret r1 */
                                  };
   prog p1(instructions);
   p1.print();
@@ -30,13 +30,13 @@ int test1(int input) {
 int test2(int input) {
   cout << "Test 2" << endl;
 #define N 7
-  toy_isa_inst instructions[N] = {toy_isa_inst(MOVXC, 1, input), /* mov r1, input */
-                                  toy_isa_inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                                  toy_isa_inst(ADDXY, 1, 2),  /* add r1, r2 */
-                                  toy_isa_inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                                  toy_isa_inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
-                                  toy_isa_inst(RETX, 3),      /* ret r3 */
-                                  toy_isa_inst(RETX, 1),      /* else ret r1 */
+  toy_isa_inst instructions[N] = {toy_isa_inst(toy_isa::MOVXC, 1, input), /* mov r1, input */
+                                  toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
+                                  toy_isa_inst(toy_isa::ADDXY, 1, 2),  /* add r1, r2 */
+                                  toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
+                                  toy_isa_inst(toy_isa::JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                                  toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
+                                  toy_isa_inst(toy_isa::RETX, 1),      /* else ret r1 */
                                  };
   prog p1(instructions);
   p1.print();
@@ -73,13 +73,13 @@ int test2(int input) {
 int test3(int input) {
   cout << "Test 3" << endl;
 #define N 7
-  toy_isa_inst instructions[N] = {toy_isa_inst(MOVXC, 1, input), /* mov r1, input */
-                                  toy_isa_inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                                  toy_isa_inst(ADDXY, 1, 2),  /* add r1, r2 */
-                                  toy_isa_inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                                  toy_isa_inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
-                                  toy_isa_inst(RETX, 3),      /* ret r3 */
-                                  toy_isa_inst(RETX, 1),      /* else ret r1 */
+  toy_isa_inst instructions[N] = {toy_isa_inst(toy_isa::MOVXC, 1, input), /* mov r1, input */
+                                  toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
+                                  toy_isa_inst(toy_isa::ADDXY, 1, 2),  /* add r1, r2 */
+                                  toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
+                                  toy_isa_inst(toy_isa::JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                                  toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
+                                  toy_isa_inst(toy_isa::RETX, 1),      /* else ret r1 */
                                  };
   prog p1(instructions);
   p1.print();

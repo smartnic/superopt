@@ -88,7 +88,9 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   // If sel_inst_index == MAX_PROG_LEN - 1, then new_opcode can not be JMP
   unordered_set<int> exceptions;
   if (sel_inst_index == MAX_PROG_LEN - 1) {
-    exceptions = {old_opcode, JMP, JMPEQ, JMPGT, JMPGE, JMPLT, JMPLE};
+    exceptions = {old_opcode, toy_isa::JMP, toy_isa::JMPEQ,
+                  toy_isa::JMPGT, toy_isa::JMPGE, toy_isa::JMPLT, toy_isa::JMPLE
+                 };
   } else {
     exceptions = {old_opcode};
   }

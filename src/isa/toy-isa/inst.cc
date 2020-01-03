@@ -11,19 +11,19 @@ constexpr int toy_isa::optable[NUM_INSTR];
 
 string toy_isa_inst::opcode_to_str(int opcode) const {
   switch (opcode) {
-    case NOP: return "NOP";
-    case ADDXY: return "ADDXY";
-    case MOVXC: return "MOVXC";
-    case RETX: return "RETX";
-    case RETC: return "RETC";
-    case JMP: return "JMP";
-    case JMPEQ: return "JMPEQ";
-    case JMPGT: return "JMPGT";
-    case JMPGE: return "JMPGE";
-    case JMPLT: return "JMPLT";
-    case JMPLE: return "JMPLE";
-    case MAXC: return "MAXC";
-    case MAXX: return "MAXX";
+    case toy_isa::NOP: return "NOP";
+    case toy_isa::ADDXY: return "ADDXY";
+    case toy_isa::MOVXC: return "MOVXC";
+    case toy_isa::RETX: return "RETX";
+    case toy_isa::RETC: return "RETC";
+    case toy_isa::JMP: return "JMP";
+    case toy_isa::JMPEQ: return "JMPEQ";
+    case toy_isa::JMPGT: return "JMPGT";
+    case toy_isa::JMPGE: return "JMPGE";
+    case toy_isa::JMPLT: return "JMPLT";
+    case toy_isa::JMPLE: return "JMPLE";
+    case toy_isa::MAXC: return "MAXC";
+    case toy_isa::MAXX: return "MAXX";
     default: return "unknown opcode";
   }
 }
@@ -66,9 +66,9 @@ int toy_isa_inst::get_jmp_dis() const {
 
 int toy_isa_inst::inst_output_opcode_type() const {
   switch (_opcode) {
-    case RETX:
+    case toy_isa::RETX:
       return RET_X;
-    case RETC:
+    case toy_isa::RETC:
       return RET_C;
     default: // no RET, return register 0
       return RET_X;
@@ -77,9 +77,9 @@ int toy_isa_inst::inst_output_opcode_type() const {
 
 int toy_isa_inst::inst_output() const {
   switch (_opcode) {
-    case RETX:
+    case toy_isa::RETX:
       return TOY_ISA_DSTREG(*this);
-    case RETC:
+    case toy_isa::RETC:
       return TOY_ISA_IMM1VAL(*this);
     default: // no RET, return register 0
       return 0;
@@ -87,7 +87,7 @@ int toy_isa_inst::inst_output() const {
 }
 
 bool toy_isa_inst::is_real_inst() const {
-  if (_opcode == NOP) return false;
+  if (_opcode == toy_isa::NOP) return false;
   return true;
 }
 
@@ -100,19 +100,19 @@ int toy_isa_inst::interpret(int length, toy_isa_prog_state &ps, int input) {
   ps.regs[0] = input;
 
   static void *jumptable[toy_isa::NUM_INSTR] = {
-    [NOP]   = && INSN_NOP,
-    [ADDXY] = && INSN_ADDXY,
-    [MOVXC] = && INSN_MOVXC,
-    [RETX] = && INSN_RETX,
-    [RETC] = && INSN_RETC,
-    [JMP] = && INSN_JMP,
-    [JMPEQ] = && INSN_JMPEQ,
-    [JMPGT] = && INSN_JMPGT,
-    [JMPGE] = && INSN_JMPGE,
-    [JMPLT] = && INSN_JMPLT,
-    [JMPLE] = && INSN_JMPLE,
-    [MAXC] = && INSN_MAXC,
-    [MAXX] = && INSN_MAXX,
+    [toy_isa::NOP]   = && INSN_NOP,
+    [toy_isa::ADDXY] = && INSN_ADDXY,
+    [toy_isa::MOVXC] = && INSN_MOVXC,
+    [toy_isa::RETX] = && INSN_RETX,
+    [toy_isa::RETC] = && INSN_RETC,
+    [toy_isa::JMP] = && INSN_JMP,
+    [toy_isa::JMPEQ] = && INSN_JMPEQ,
+    [toy_isa::JMPGT] = && INSN_JMPGT,
+    [toy_isa::JMPGE] = && INSN_JMPGE,
+    [toy_isa::JMPLT] = && INSN_JMPLT,
+    [toy_isa::JMPLE] = && INSN_JMPLE,
+    [toy_isa::MAXC] = && INSN_MAXC,
+    [toy_isa::MAXX] = && INSN_MAXX,
   };
 
 #define CONT { \

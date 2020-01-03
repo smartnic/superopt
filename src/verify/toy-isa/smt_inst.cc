@@ -14,38 +14,38 @@ expr smt_inst(smt_var& sv, const inst& in) {
   expr newDst = string_to_expr("false");
   int imm;
   switch (in._opcode) {
-    case MAXX:
-    case ADDXY:
+    case toy_isa::MAXX:
+    case toy_isa::ADDXY:
       curDst = CURDST;
       curSrc = CURSRC;
       newDst = NEWDST;
       break;
-    case MOVXC:
+    case toy_isa::MOVXC:
       imm = IMM2;
       newDst = NEWDST;
       break;
-    case MAXC:
+    case toy_isa::MAXC:
       curDst = CURDST;
       imm = IMM2;
       newDst = NEWDST;
       break;
   }
   switch (in._opcode) {
-    case ADDXY: return predicate_add(curDst, curSrc, newDst);
-    case MOVXC: return predicate_mov(imm, newDst);
-    case MAXC: return predicate_max(curDst, imm, newDst);
-    case MAXX: return predicate_max(curDst, curSrc, newDst);
+    case toy_isa::ADDXY: return predicate_add(curDst, curSrc, newDst);
+    case toy_isa::MOVXC: return predicate_mov(imm, newDst);
+    case toy_isa::MAXC: return predicate_max(curDst, imm, newDst);
+    case toy_isa::MAXX: return predicate_max(curDst, curSrc, newDst);
     default: return string_to_expr("false");
   }
 }
 
 expr smt_inst_jmp(smt_var& sv, const inst& in) {
   switch (in._opcode) {
-    case JMPEQ: return (CURDST == CURSRC); 
-    case JMPGT: return (CURDST > CURSRC); 
-    case JMPGE: return (CURDST >= CURSRC);
-    case JMPLT: return (CURDST < CURSRC);
-    case JMPLE: return (CURDST <= CURSRC);
+    case toy_isa::JMPEQ: return (CURDST == CURSRC);
+    case toy_isa::JMPGT: return (CURDST > CURSRC);
+    case toy_isa::JMPGE: return (CURDST >= CURSRC);
+    case toy_isa::JMPLT: return (CURDST < CURSRC);
+    case toy_isa::JMPLE: return (CURDST <= CURSRC);
     default: return string_to_expr("false");
   }
 }

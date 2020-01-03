@@ -5,21 +5,6 @@
 
 using namespace std;
 
-// Instruction opcodes
-#define NOP 0
-#define ADDXY 1
-#define MOVXC 2
-#define RETX 3
-#define RETC 4
-#define JMP 5
-#define JMPEQ 6
-#define JMPGT 7
-#define JMPGE 8
-#define JMPLT 9
-#define JMPLE 10
-#define MAXC 11
-#define MAXX 12
-
 #define OP_ABS_BIT_LEN 5
 #define INST_ABS_BIT_LEN 20
 
@@ -29,8 +14,24 @@ class toy_isa {
   static constexpr int MAX_PROG_LEN = 7;
   // Max number of operands in one instruction
   static constexpr int MAX_OP_LEN = 3;
-  // Number of opcode types
-  static constexpr int NUM_INSTR = 13;
+
+  // Instruction opcodes
+  enum OPCODES {
+    NOP = 0,
+    ADDXY,
+    MOVXC,
+    RETX,
+    RETC,
+    JMP,
+    JMPEQ,
+    JMPGT,
+    JMPGE,
+    JMPLT,
+    JMPLE,
+    MAXC,
+    MAXX,
+    NUM_INSTR, // Number of opcode types
+  };
 
   static constexpr int num_operands[NUM_INSTR] = {
     [NOP]   = 0,
@@ -125,7 +126,7 @@ class toy_isa_prog_state: public prog_state {
 class toy_isa_inst: public inst {
  public:
   static toy_isa _isa;
-  toy_isa_inst(int opcode = NOP, int arg1 = 0, int arg2 = 0, int arg3 = 0) {
+  toy_isa_inst(int opcode = _isa.NOP, int arg1 = 0, int arg2 = 0, int arg3 = 0) {
     _args.resize(_isa.MAX_OP_LEN);
     _opcode  = opcode;
     _args[0] = arg1;
