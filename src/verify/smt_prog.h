@@ -3,7 +3,6 @@
 #include <vector>
 #include "z3++.h"
 #include "../../src/isa/inst.h"
-#include "toy-isa/smt_inst.h"
 #include "cfg.h"
 #include "smt_var.h"
 

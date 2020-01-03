@@ -4,6 +4,11 @@
 
 using namespace std;
 
+#define DSTREG(inst_var) (inst_var)._args[0]
+#define SRCREG(inst_var) (inst_var)._args[1]
+#define IMM1VAL(inst_var) (inst_var)._args[0]
+#define IMM2VAL(inst_var) (inst_var)._args[1]
+
 constexpr int toy_isa::num_operands[NUM_INSTR];
 constexpr int toy_isa::insn_num_regs[NUM_INSTR];
 constexpr int toy_isa::opcode_type[NUM_INSTR];
@@ -85,9 +90,9 @@ int toy_isa_inst::inst_output_opcode_type() const {
 int toy_isa_inst::inst_output() const {
   switch (_opcode) {
     case toy_isa::RETX:
-      return TOY_ISA_DSTREG(*this);
+      return DSTREG(*this);
     case toy_isa::RETC:
-      return TOY_ISA_IMM1VAL(*this);
+      return IMM1VAL(*this);
     default: // no RET, return register 0
       return 0;
   }
@@ -128,10 +133,10 @@ int toy_isa_inst::interpret(int length, toy_isa_prog_state &ps, int input) {
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
-#define DST ps.regs[TOY_ISA_DSTREG(*insn)]
-#define SRC ps.regs[TOY_ISA_SRCREG(*insn)]
-#define IMM1 TOY_ISA_IMM1VAL(*insn)
-#define IMM2 TOY_ISA_IMM2VAL(*insn)
+#define DST ps.regs[DSTREG(*insn)]
+#define SRC ps.regs[SRCREG(*insn)]
+#define IMM1 IMM1VAL(*insn)
+#define IMM2 IMM2VAL(*insn)
 
 select_insn:
   goto *jumptable[insn->_opcode];
@@ -184,6 +189,54 @@ error_label:
 out:
   //cout << "Error: program terminated without RET; returning R0" << endl;
   return ps.regs[0]; /* return default R0 value */
+}
+
+#undef IMM2
+#define CURSRC sv.get_cur_reg_var(SRCREG(*this))
+#define CURDST sv.get_cur_reg_var(DSTREG(*this))
+#define NEWDST sv.update_reg_var(DSTREG(*this))
+#define IMM2 IMM2VAL(*this)
+
+z3::expr toy_isa_inst::smt_inst(smt_var& sv) const {
+  z3::expr curDst = string_to_expr("false");
+  z3::expr curSrc = string_to_expr("false");
+  z3::expr newDst = string_to_expr("false");
+  int imm;
+  switch (_opcode) {
+    case toy_isa::MAXX:
+    case toy_isa::ADDXY:
+      curDst = CURDST;
+      curSrc = CURSRC;
+      newDst = NEWDST;
+      break;
+    case toy_isa::MOVXC:
+      imm = IMM2;
+      newDst = NEWDST;
+      break;
+    case toy_isa::MAXC:
+      curDst = CURDST;
+      imm = IMM2;
+      newDst = NEWDST;
+      break;
+  }
+  switch (_opcode) {
+    case toy_isa::ADDXY: return predicate_add(curDst, curSrc, newDst);
+    case toy_isa::MOVXC: return predicate_mov(imm, newDst);
+    case toy_isa::MAXC: return predicate_max(curDst, imm, newDst);
+    case toy_isa::MAXX: return predicate_max(curDst, curSrc, newDst);
+    default: return string_to_expr("false");
+  }
+}
+
+z3::expr toy_isa_inst::smt_inst_jmp(smt_var& sv) const {
+  switch (_opcode) {
+    case toy_isa::JMPEQ: return (CURDST == CURSRC);
+    case toy_isa::JMPGT: return (CURDST > CURSRC);
+    case toy_isa::JMPGE: return (CURDST >= CURSRC);
+    case toy_isa::JMPLT: return (CURDST < CURSRC);
+    case toy_isa::JMPLE: return (CURDST <= CURSRC);
+    default: return string_to_expr("false");
+  }
 }
 
 ostream& operator<<(ostream& out, abs_bv_inst& bv) {

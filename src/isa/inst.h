@@ -3,6 +3,7 @@
 #include <vector>
 #include <bitset>
 #include <unordered_set>
+#include "../../src/verify/smt_var.h"
 
 using namespace std;
 
@@ -60,6 +61,11 @@ class inst {
   virtual int get_insn_num_regs() const {return 0;}
   virtual int get_opcode_type() const {return 0;}
   virtual int interpret(int length, prog_state &ps, int input) {return 0;}
+  // smt
+  // return SMT for the given OP_OTHERS type instruction, other types return false
+  virtual z3::expr smt_inst(smt_var& sv) const {return string_to_expr("false");}
+  // return SMT for the given OP_COND_JMP type instruction, other types return false
+  virtual z3::expr smt_inst_jmp(smt_var& sv) const {return string_to_expr("false");}
 };
 
 struct instHash {
