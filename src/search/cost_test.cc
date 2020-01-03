@@ -4,32 +4,41 @@
 
 using namespace std;
 
-inst instructions[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                        inst(ADDXY, 0, 2),  /* add r0, r2 */
-                        inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                        inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                        inst(RETX, 3),      /* ret r3 */
-                        inst(RETX, 0),      /* else ret r0 */
-                        inst(), /* nop */
-                       };
+toy_isa_inst instructions[7] = {toy_isa_inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                                toy_isa_inst(ADDXY, 0, 2),  /* add r0, r2 */
+                                toy_isa_inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                                toy_isa_inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                                toy_isa_inst(RETX, 3),      /* ret r3 */
+                                toy_isa_inst(RETX, 0),      /* else ret r0 */
+                                toy_isa_inst(), /* nop */
+                               };
 
-inst instructions2[7] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
-                         inst(ADDXY, 0, 2),     /* add r0, r2 */
-                         inst(MAXC, 0, 15),     /* max r0, 15 */
-                         inst(RETX, 0),         /* ret r0 */
-                         inst(), /* nop */
-                         inst(), /* nop */
-                         inst(), /* nop */
-                        };
+toy_isa_inst instructions2[7] = {toy_isa_inst(MOVXC, 2, 4),     /* mov r2, 4 */
+                                 toy_isa_inst(ADDXY, 0, 2),     /* add r0, r2 */
+                                 toy_isa_inst(MAXC, 0, 15),     /* max r0, 15 */
+                                 toy_isa_inst(RETX, 0),         /* ret r0 */
+                                 toy_isa_inst(), /* nop */
+                                 toy_isa_inst(), /* nop */
+                                 toy_isa_inst(), /* nop */
+                                };
 
-inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                         inst(ADDXY, 0, 2),  /* add r0, r2 */
-                         inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                         inst(JMPEQ, 0, 3, 1),  /* if r0 != r3: */
-                         inst(RETX, 3),      /* ret r3 */
-                         inst(RETX, 0),      /* else ret r0 */
-                         inst(), /* nop */
-                        };
+toy_isa_inst instructions3[7] = {toy_isa_inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                                 toy_isa_inst(ADDXY, 0, 2),  /* add r0, r2 */
+                                 toy_isa_inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                                 toy_isa_inst(JMPEQ, 0, 3, 1),  /* if r0 != r3: */
+                                 toy_isa_inst(RETX, 3),      /* ret r3 */
+                                 toy_isa_inst(RETX, 0),      /* else ret r0 */
+                                 toy_isa_inst(), /* nop */
+                                };
+
+toy_isa_inst instructions4[7] = {toy_isa_inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                                 toy_isa_inst(ADDXY, 0, 2),  /* add r0, r2 */
+                                 toy_isa_inst(MOVXC, 3, 16),  /* mov r3, 16  */
+                                 toy_isa_inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                                 toy_isa_inst(RETC, 15),      /* ret 15 */
+                                 toy_isa_inst(RETX, 0),      /* else ret r0 */
+                                 toy_isa_inst(), /* nop */
+                                };
 
 vector<inout> ex_set(2);
 
@@ -61,6 +70,9 @@ void test2() {
   prog synth2(instructions3);
   err_cost = c.error_cost(&synth2, 7);
   print_test_res(err_cost == 6, "3");
+  prog synth3(instructions4);
+  err_cost = c.error_cost(&synth3, 7);
+  print_test_res(err_cost == 2, "4");
 }
 
 int main() {

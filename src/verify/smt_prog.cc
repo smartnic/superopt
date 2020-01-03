@@ -44,11 +44,10 @@ smt_prog::~smt_prog() {}
 
 // assume Block has no branch and is an ordered sequence of instructions
 void smt_prog::smt_block(expr& smt_b, inst* program, int length, smt_var& sv) {
-  inst* inst_lst = program;
   expr p = string_to_expr("true");
   for (size_t i = 0; i < length; i++) {
-    if (inst_lst[i].get_opcode_type() != OP_OTHERS) continue;
-    p = p and smt_inst(sv, inst_lst[i]);
+    if (program[i].get_opcode_type() != OP_OTHERS) continue;
+    p = p and smt_inst(sv, program[i]);
   }
   smt_b = p.simplify();
 }
@@ -103,10 +102,9 @@ void smt_prog::topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vecto
 }
 
 void smt_prog::gen_block_prog_logic(expr& e, smt_var& sv, size_t cur_bid, inst* inst_lst) {
-  inst* start = &inst_lst[g.nodes[cur_bid]._start];
   int length = g.nodes[cur_bid]._end - g.nodes[cur_bid]._start + 1;
   e = string_to_expr("true");
-  smt_block(e, start, length, sv);
+  smt_block(e, &inst_lst[g.nodes[cur_bid]._start], length, sv);
   bl[cur_bid] = e; // store
 }
 

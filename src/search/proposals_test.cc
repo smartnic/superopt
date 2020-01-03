@@ -4,15 +4,15 @@
 
 int test1(int input) {
   cout << "Test 1" << endl;
-  #define N 7
-  inst instructions[N] = {inst(MOVXC, 1, input), /* mov r1, input */
-                          inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                          inst(ADDXY, 1, 2),  /* add r1, r2 */
-                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                          inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
-                          inst(RETX, 3),      /* ret r3 */
-                          inst(RETX, 1),      /* else ret r1 */
-  };
+#define N 7
+  toy_isa_inst instructions[N] = {toy_isa_inst(MOVXC, 1, input), /* mov r1, input */
+                                  toy_isa_inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                                  toy_isa_inst(ADDXY, 1, 2),  /* add r1, r2 */
+                                  toy_isa_inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                                  toy_isa_inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                                  toy_isa_inst(RETX, 3),      /* ret r3 */
+                                  toy_isa_inst(RETX, 1),      /* else ret r1 */
+                                 };
   prog p1(instructions);
   p1.print();
   prog* p[6];
@@ -30,14 +30,14 @@ int test1(int input) {
 int test2(int input) {
   cout << "Test 2" << endl;
 #define N 7
-  inst instructions[N] = {inst(MOVXC, 1, input), /* mov r1, input */
-                          inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                          inst(ADDXY, 1, 2),  /* add r1, r2 */
-                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                          inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
-                          inst(RETX, 3),      /* ret r3 */
-                          inst(RETX, 1),      /* else ret r1 */
-  };
+  toy_isa_inst instructions[N] = {toy_isa_inst(MOVXC, 1, input), /* mov r1, input */
+                                  toy_isa_inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                                  toy_isa_inst(ADDXY, 1, 2),  /* add r1, r2 */
+                                  toy_isa_inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                                  toy_isa_inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                                  toy_isa_inst(RETX, 3),      /* ret r3 */
+                                  toy_isa_inst(RETX, 1),      /* else ret r1 */
+                                 };
   prog p1(instructions);
   p1.print();
   prog* p[6];
@@ -50,7 +50,7 @@ int test2(int input) {
   bool assert_res = true;
   for (int i = 1; i < 6; i++) {
     for (int j = 0; j < N; j++) {
-      inst ins = p[i]->inst_list[j];
+      toy_isa_inst ins = p[i]->inst_list[j];
       for (int k = ins.get_num_operands(); k < p[i]->get_max_op_len(); k++) {
         bool res = (ins.get_operand(k) == 0);
         if (! res) {
@@ -73,14 +73,14 @@ int test2(int input) {
 int test3(int input) {
   cout << "Test 3" << endl;
 #define N 7
-  inst instructions[N] = {inst(MOVXC, 1, input), /* mov r1, input */
-                          inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                          inst(ADDXY, 1, 2),  /* add r1, r2 */
-                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                          inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
-                          inst(RETX, 3),      /* ret r3 */
-                          inst(RETX, 1),      /* else ret r1 */
-  };
+  toy_isa_inst instructions[N] = {toy_isa_inst(MOVXC, 1, input), /* mov r1, input */
+                                  toy_isa_inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                                  toy_isa_inst(ADDXY, 1, 2),  /* add r1, r2 */
+                                  toy_isa_inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                                  toy_isa_inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                                  toy_isa_inst(RETX, 3),      /* ret r3 */
+                                  toy_isa_inst(RETX, 1),      /* else ret r1 */
+                                 };
   prog p1(instructions);
   p1.print();
   prog* p[6];

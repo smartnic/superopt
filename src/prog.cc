@@ -5,7 +5,7 @@ using namespace std;
 // TODO: find canonical way to invoke one constructor from another
 prog::prog(const prog& other) {
   const int MAX_PROG_LEN = other.get_max_prog_len();
-  inst_list = (inst*)malloc(MAX_PROG_LEN * sizeof(inst));
+  inst_list = new toy_isa_inst[MAX_PROG_LEN];
   freq_count = other.freq_count;
   _error_cost = other._error_cost;
   _perf_cost = other._perf_cost;
@@ -16,7 +16,7 @@ prog::prog(const prog& other) {
 
 prog::prog(inst* instructions) {
   const int MAX_PROG_LEN = instructions->get_max_prog_len();
-  inst_list = (inst*)malloc(MAX_PROG_LEN * sizeof(inst));
+  inst_list = new toy_isa_inst[MAX_PROG_LEN];
   freq_count = 0;
   _error_cost = -1;
   _perf_cost = -1;
@@ -27,12 +27,12 @@ prog::prog(inst* instructions) {
 
 // TODO: find canonical way to invoke such a constructor + destructor
 prog* prog::make_prog(const prog &other) {
-  prog* new_prog = (prog*)malloc(sizeof(prog));
+  prog* new_prog = new prog;
   new_prog->freq_count = 0;
   new_prog->_error_cost = -1;
   new_prog->_perf_cost = -1;
   const int MAX_PROG_LEN = other.get_max_prog_len();
-  new_prog->inst_list = (inst*)malloc(MAX_PROG_LEN * sizeof(inst));
+  new_prog->inst_list = new toy_isa_inst[MAX_PROG_LEN];
   for (int i = 0; i < MAX_PROG_LEN; i++) {
     new_prog->inst_list[i] = other.inst_list[i];
   }
@@ -40,9 +40,9 @@ prog* prog::make_prog(const prog &other) {
 }
 
 void prog::clear_prog(prog* p) {
-  free(p->inst_list);
+  delete [](p->inst_list);
   p->inst_list = nullptr;
-  free(p);
+  delete p;
   p = nullptr;
 }
 
@@ -51,7 +51,7 @@ prog::prog() {
 }
 
 prog::~prog() {
-  free(inst_list);
+  delete []inst_list;
   inst_list = nullptr;
 }
 

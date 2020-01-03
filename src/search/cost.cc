@@ -30,7 +30,7 @@ void cost::init(prog* orig, int len, const vector<int> &input,
   _examples.clear();
   for (size_t i = 0; i < input.size(); i++) {
     toy_isa_prog_state ps;
-    int output = ((inst*)orig->inst_list)->interpret(len, ps, input[i]);
+    int output = orig->inst_list->interpret(len, ps, input[i]);
     inout example;
     example.set_in_out(input[i], output);
     _examples.insert(example);
@@ -45,7 +45,7 @@ void cost::init(prog* orig, int len, const vector<int> &input,
 
 void cost::set_orig(prog* orig, int len) {
   try {
-    _vld.set_orig((inst*)orig->inst_list, len);
+    _vld.set_orig(orig->inst_list, len);
   } catch (const string err_msg) {
     cout << "ERROR: the original program is illegal. ";
     cerr << err_msg << endl;
@@ -116,14 +116,13 @@ double cost::get_final_error_cost(int exs_cost, int is_equal,
 double cost::error_cost(prog* synth, int len) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   double total_cost = 0;
-  inst* inst_list = (inst*)synth->inst_list;
   toy_isa_prog_state ps;
   int output1, output2;
   int num_successful_ex = 0;
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
-    output2 = inst_list->interpret(len, ps, _examples._exs[i].input);
+    output2 = synth->inst_list->interpret(len, ps, _examples._exs[i].input);
     int ex_cost = get_ex_error_cost(output1, output2);
     if (ex_cost == 0) num_successful_ex++;
     total_cost += ex_cost;
@@ -131,7 +130,7 @@ double cost::error_cost(prog* synth, int len) {
   int is_equal = 0;
   int ex_set_size = _examples._exs.size();
   if (num_successful_ex == ex_set_size) {
-    is_equal = _vld.is_equal_to(inst_list, len);
+    is_equal = _vld.is_equal_to(synth->inst_list, len);
   }
 
   int avg_value = get_avg_value(ex_set_size);

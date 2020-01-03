@@ -23,8 +23,6 @@ using namespace std;
 
 #define OP_ABS_BIT_LEN 5
 #define INST_ABS_BIT_LEN 20
-// For absolute coding of each instruction
-typedef bitset<INST_ABS_BIT_LEN> abs_bv_inst;
 
 class toy_isa {
  public:
@@ -125,28 +123,20 @@ class toy_isa_prog_state: public prog_state {
   toy_isa_prog_state() {regs.resize(toy_isa::NUM_REGS, 0);}
 };
 
-class inst {
+class toy_isa_inst: public inst {
  public:
   static toy_isa _isa;
-  int _opcode;
-  int _args[3];
-  inst(int opcode = NOP, int arg1 = 0, int arg2 = 0, int arg3 = 0) {
+  toy_isa_inst(int opcode = NOP, int arg1 = 0, int arg2 = 0, int arg3 = 0) {
+    _args.resize(_isa.MAX_OP_LEN);
     _opcode  = opcode;
     _args[0] = arg1;
     _args[1] = arg2;
     _args[2] = arg3;
   }
-  void print() const;
   string opcode_to_str(int) const;
   abs_bv_inst inst_to_abs_bv() const;
-  vector<int> get_reg_list() const;
-  bool operator==(const inst &x) const;
-  inst& operator=(const inst &rhs);
+  toy_isa_inst& operator=(const inst &rhs);
   int get_max_operand_val(int op_index, int inst_index = 0) const;
-  int get_operand(int op_index) const;
-  void set_operand(int op_index, int op_value);
-  int get_opcode() const;
-  void set_opcode(int op_value);
   int get_jmp_dis() const;
   // assume `inst_end` is the end instruction of a program
   int inst_output_opcode_type() const;

@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cassert>
 #include "../inst_codegen.h"
 #include "inst.h"
 
@@ -10,7 +9,7 @@ constexpr int toy_isa::insn_num_regs[NUM_INSTR];
 constexpr int toy_isa::opcode_type[NUM_INSTR];
 constexpr int toy_isa::optable[NUM_INSTR];
 
-string inst::opcode_to_str(int opcode) const {
+string toy_isa_inst::opcode_to_str(int opcode) const {
   switch (opcode) {
     case NOP: return "NOP";
     case ADDXY: return "ADDXY";
@@ -29,7 +28,7 @@ string inst::opcode_to_str(int opcode) const {
   }
 }
 
-abs_bv_inst inst::inst_to_abs_bv() const {
+abs_bv_inst toy_isa_inst::inst_to_abs_bv() const {
   int v = (_opcode << (OP_ABS_BIT_LEN * 3)) +
           (_args[0] << (OP_ABS_BIT_LEN * 2)) +
           (_args[1] << (OP_ABS_BIT_LEN * 1)) +
@@ -38,29 +37,7 @@ abs_bv_inst inst::inst_to_abs_bv() const {
   return bv;
 }
 
-vector<int> inst::get_reg_list() const {
-  vector<int> reg_list;
-  for (int i = 0 ; i < get_insn_num_regs(); i++)
-    reg_list.push_back(_args[i]);
-  return reg_list;
-}
-
-void inst::print() const {
-  cout << opcode_to_str(_opcode);
-  for (int i = 0; i < get_num_operands(); i++) {
-    cout << " " << _args[i];
-  }
-  cout << endl;
-}
-
-bool inst::operator==(const inst &x) const {
-  return ((_opcode  == x._opcode) &&
-          (_args[0] == x._args[0]) &&
-          (_args[1] == x._args[1]) &&
-          (_args[2] == x._args[2]));
-}
-
-inst& inst::operator=(const inst &rhs) {
+toy_isa_inst& toy_isa_inst::operator=(const inst &rhs) {
   _opcode = rhs._opcode;
   _args[0] = rhs._args[0];
   _args[1] = rhs._args[1];
@@ -68,7 +45,7 @@ inst& inst::operator=(const inst &rhs) {
   return *this;
 }
 
-int inst::get_max_operand_val(int op_index, int inst_index) const {
+int toy_isa_inst::get_max_operand_val(int op_index, int inst_index) const {
   // max value for each operand type
   int max_val[4] = {
     [toy_isa::OP_UNUSED] = 0,
@@ -79,26 +56,7 @@ int inst::get_max_operand_val(int op_index, int inst_index) const {
   return max_val[TOY_ISA_OPTYPE(_opcode, op_index)];
 }
 
-int inst::get_operand(int op_index) const {
-  assert(op_index < get_max_op_len());
-  return _args[op_index];
-}
-
-void inst::set_operand(int op_index, int op_value) {
-  assert(op_index < get_max_op_len());
-  _args[op_index] = op_value;
-}
-
-int inst::get_opcode() const {
-  return _opcode;
-}
-
-void inst::set_opcode(int op_value) {
-  assert(op_value < get_num_instr());
-  _opcode = op_value;
-}
-
-int inst::get_jmp_dis() const {
+int toy_isa_inst::get_jmp_dis() const {
   switch (get_opcode_type()) {
     case (OP_UNCOND_JMP): return _args[0];
     case (OP_COND_JMP): return _args[2];
@@ -106,7 +64,7 @@ int inst::get_jmp_dis() const {
   }
 }
 
-int inst::inst_output_opcode_type() const {
+int toy_isa_inst::inst_output_opcode_type() const {
   switch (_opcode) {
     case RETX:
       return RET_X;
@@ -117,7 +75,7 @@ int inst::inst_output_opcode_type() const {
   }
 }
 
-int inst::inst_output() const {
+int toy_isa_inst::inst_output() const {
   switch (_opcode) {
     case RETX:
       return TOY_ISA_DSTREG(*this);
@@ -128,12 +86,12 @@ int inst::inst_output() const {
   }
 }
 
-bool inst::is_real_inst() const {
+bool toy_isa_inst::is_real_inst() const {
   if (_opcode == NOP) return false;
   return true;
 }
 
-int inst::interpret(int length, toy_isa_prog_state &ps, int input) {
+int toy_isa_inst::interpret(int length, toy_isa_prog_state &ps, int input) {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
   inst *start = this;

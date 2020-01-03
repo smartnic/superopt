@@ -13,7 +13,7 @@ typedef bitset<toy_isa::MAX_PROG_LEN * INST_ABS_BIT_LEN> abs_bv_prog;
 
 class prog {
  public:
-  inst* inst_list = nullptr;
+  toy_isa_inst* inst_list = nullptr;
   int freq_count;
   double  _error_cost;
   double  _perf_cost;
