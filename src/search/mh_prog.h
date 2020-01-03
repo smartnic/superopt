@@ -4,6 +4,7 @@
 #include "../../measure/meas_mh_bhv.h"
 #include "../../src/prog.h"
 #include "../../src/inout.h"
+#include "proposals.h"
 #include "cost.h"
 
 using namespace std;

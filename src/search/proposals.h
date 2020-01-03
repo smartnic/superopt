@@ -1,5 +1,5 @@
 #include "../../src/prog.h"
-#include "../../src/isa/toy-isa/inst.h"
+#include "../../src/isa/inst.h"
 
 using namespace std;
 

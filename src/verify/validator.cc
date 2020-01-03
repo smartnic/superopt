@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "toy-isa/smt_inst.h"
 #include "validator.h"
 
 using namespace z3;

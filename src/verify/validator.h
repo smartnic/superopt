@@ -2,7 +2,8 @@
 
 #include "z3++.h"
 #include "../../src/inout.h"
-#include "../../src/isa/toy-isa/inst.h"
+#include "../../src/isa/inst.h"
+#include "toy-isa/smt_inst.h"
 #include "smt_prog.h"
 
 using namespace z3;

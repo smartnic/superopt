@@ -1,5 +1,6 @@
 #include <iostream>
 #include "../../src/utils.h"
+#include "../../src/isa/toy-isa/inst.h"
 #include "proposals.h"
 
 int test1(int input) {

@@ -1,5 +1,6 @@
 #include <iostream>
 #include "../../src/utils.h"
+#include "../../src/isa/toy-isa/inst.h"
 #include "smt_prog.h"
 
 using namespace z3;

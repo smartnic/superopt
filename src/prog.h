@@ -4,6 +4,7 @@
 #include <bitset>
 #include <vector>
 #include <unordered_map>
+#include "../src/isa/inst.h"
 #include "../src/isa/toy-isa/inst.h"
 
 using namespace std;
