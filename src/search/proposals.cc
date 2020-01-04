@@ -75,7 +75,8 @@ void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
 
 prog* mod_random_inst_operand(const prog &orig) {
   int inst_index = sample_int(orig.get_max_prog_len());
-  prog* synth = prog::make_prog(orig);
+  prog* synth = new prog(orig);
+  synth->init_vals();
   mod_random_operand(orig, synth, inst_index);
   return synth;
 }
@@ -106,7 +107,8 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
 
 prog* mod_random_inst(const prog &orig) {
   // First make a copy of the old program
-  prog* synth = prog::make_prog(orig);
+  prog* synth = new prog(orig);
+  synth->init_vals();
   int inst_index = sample_int(orig.get_max_prog_len());
   mod_select_inst(synth, inst_index);
   return synth;
@@ -117,7 +119,8 @@ prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
   // If k is too big, modify all instructions of the original program
   if (k > MAX_PROG_LEN) k = MAX_PROG_LEN;
   // First make a copy of the old program
-  prog* synth = prog::make_prog(orig);
+  prog* synth = new prog(orig);
+  synth->init_vals();
   // Select a random start instruction
   int start_inst_index = sample_int(MAX_PROG_LEN - k + 1);
   for (int i = start_inst_index; i < start_inst_index + k; i++) {

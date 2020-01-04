@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "../../../src/utils.h"
 #include "prog.h"
 
 using namespace std;
@@ -72,10 +72,10 @@ int test2() {
 int test3() {
   cout << endl << "Test 3 " << endl;
   prog p(instructions);
-  prog* q = prog::make_prog(p);
+  prog* q = new prog(p);
   p.print();
   q->print();
-  prog::clear_prog(q);
+  delete q;
   return 0;
 }
 

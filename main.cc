@@ -11,10 +11,10 @@
 #include <chrono>
 #include "measure/common.h"
 #include "measure/meas_mh_bhv.h"
-#include "src/prog.h"
 #include "src/inout.h"
 #include "src/utils.h"
 #include "src/search/mh_prog.h"
+#include "src/isa/toy-isa/prog.h"
 #include "src/isa/toy-isa/inst.h"
 #include "main.h"
 

@@ -4,8 +4,8 @@
 #include <bitset>
 #include <vector>
 #include <unordered_map>
-#include "../src/isa/inst.h"
-#include "../src/isa/toy-isa/inst.h"
+#include "../../../src/isa/inst.h"
+#include "../../../src/isa/toy-isa/inst.h"
 
 using namespace std;
 
@@ -22,11 +22,9 @@ class prog {
   prog(inst* instructions);
   prog();
   void print() const;
-  static void print(const prog &p);
   ~prog();
   bool operator==(const prog &x) const;
-  static prog* make_prog(const prog &x);
-  static void clear_prog(prog* p);
+  void init_vals();
   void set_error_cost(double cost);
   void set_perf_cost(double cost);
   rel_bv_prog prog_rel_bit_vec(const prog &p);

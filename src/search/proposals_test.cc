@@ -23,7 +23,7 @@ int test1(int input) {
     p[i]->print();
   }
   for (int i = 1; i < 6; i++) {
-    prog::clear_prog(p[i]);
+    delete p[i];
   }
   return 0;
 }
@@ -66,7 +66,7 @@ int test2(int input) {
   print_test_res(assert_res, "set unused operands as 0");
 
   for (int i = 1; i < 6; i++) {
-    prog::clear_prog(p[i]);
+    delete p[i];
   }
   return 0;
 }
@@ -93,7 +93,7 @@ int test3(int input) {
     p[i]->print();
   }
   for (int i = 1; i < 6; i++) {
-    prog::clear_prog(p[i]);
+    delete p[i];
   }
   return 0;
 }

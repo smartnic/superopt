@@ -2,13 +2,13 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <chrono>
-#include "../src/prog.h"
 #include "../src/inout.h"
 #include "../src/utils.h"
 #include "../src/search/mh_prog.h"
 #include "../src/verify/validator.h"
 #include "../src/verify/smt_prog.h"
 #include "../src/isa/inst.h"
+#include "../src/isa/toy-isa/prog.h"
 #include "../src/isa/toy-isa/inst.h"
 #include "common.h"
 #include "z3++.h"

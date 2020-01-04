@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "../../src/inout.h"
-#include "../../src/prog.h"
+#include "../../src/isa/toy-isa/prog.h"
 #include "../../src/isa/toy-isa/inst.h"
 #include "../../src/verify/validator.h"
 

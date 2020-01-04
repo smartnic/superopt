@@ -25,25 +25,10 @@ prog::prog(inst* instructions) {
   }
 }
 
-// TODO: find canonical way to invoke such a constructor + destructor
-prog* prog::make_prog(const prog &other) {
-  prog* new_prog = new prog;
-  new_prog->freq_count = 0;
-  new_prog->_error_cost = -1;
-  new_prog->_perf_cost = -1;
-  const int MAX_PROG_LEN = other.get_max_prog_len();
-  new_prog->inst_list = new toy_isa_inst[MAX_PROG_LEN];
-  for (int i = 0; i < MAX_PROG_LEN; i++) {
-    new_prog->inst_list[i] = other.inst_list[i];
-  }
-  return new_prog;
-}
-
-void prog::clear_prog(prog* p) {
-  delete [](p->inst_list);
-  p->inst_list = nullptr;
-  delete p;
-  p = nullptr;
+void prog::init_vals() {
+  freq_count = 0;
+  _error_cost = -1;
+  _perf_cost = -1;
 }
 
 prog::prog() {
@@ -61,10 +46,6 @@ void prog::print() const {
     inst_list[i].print();
   }
   cout << endl;
-}
-
-void prog::print(const prog &p) {
-  p.print();
 }
 
 bool prog::operator==(const prog &x) const {

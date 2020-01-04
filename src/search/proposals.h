@@ -1,4 +1,4 @@
-#include "../../src/prog.h"
+#include "../../src/isa/toy-isa/prog.h"
 #include "../../src/isa/inst.h"
 
 using namespace std;
