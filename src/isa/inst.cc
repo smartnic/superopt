@@ -43,9 +43,7 @@ bool inst::operator==(const inst &x) const {
 inst& inst::operator=(const inst &rhs) {
   _opcode = rhs._opcode;
   for (int i = 0; i < rhs._args.size(); i++) {
-    _args[0] = rhs._args[0];
-    _args[1] = rhs._args[1];
-    _args[2] = rhs._args[2];
+    _args[i] = rhs._args[i];
   }
   return *this;
 }
