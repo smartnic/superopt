@@ -1,4 +1,5 @@
 #include <fstream>
+#include <bitset>
 #include "meas_mh_bhv.h"
 
 using namespace std;
@@ -40,6 +41,18 @@ void meas_mh_data::insert_examples(unsigned int iter_num, const inout &exs) {
 }
 /* class meas_mh_data end */
 
+string prog_rel_bv_to_str(int v) {
+  return bitset<toy_isa::MAX_PROG_LEN>(v).to_string();
+}
+
+string prog_abs_bv_to_str(vector<int>& v) {
+  string str = "";
+  for (size_t i = 0; i < v.size(); i++) {
+    str += bitset<toy_isa::INST_NUM_BITS>(v[i]).to_string();
+  }
+  return str;
+}
+
 // fmt: <accepted?> <error cost> <perf cost> <relative coding> <absolute coding>
 void store_proposals_to_file(string file_name,
                              const meas_mh_data &d,
@@ -50,11 +63,13 @@ void store_proposals_to_file(string file_name,
   fout << "<accepted?> <error cost> <perf cost> <relative coding> <absolute coding>" << endl;
   for (size_t i = 0; i < d._proposals.size(); i++) {
     prog p(d._proposals[i].first);
+    vector<int> bv;
+    p.to_abs_bv(bv);
     fout << d._proposals[i].second << " "
          << p._error_cost << " "
          << p._perf_cost << " "
-         << p.prog_rel_bit_vec(optimals) << " "
-         << p.prog_abs_bit_vec() << endl;
+         << prog_rel_bv_to_str(p.to_rel_bv(optimals)) << " "
+         << prog_abs_bv_to_str(bv) << endl;
   }
   fout.close();
 }
@@ -69,11 +84,13 @@ void store_programs_to_file(string file_name,
   fout << "<iter num> <error cost> <perf cost> <relative coding> <absolute coding>" << endl;
   for (size_t i = 0; i < d._programs.size(); i++) {
     prog p(d._programs[i].second);
+    vector<int> bv;
+    p.to_abs_bv(bv);
     fout << d._programs[i].first << " "
          << p._error_cost << " "
          << p._perf_cost << " "
-         << p.prog_rel_bit_vec(optimals) << " "
-         << p.prog_abs_bit_vec() << endl;
+         << prog_rel_bv_to_str(p.to_rel_bv(optimals)) << " "
+         << prog_abs_bv_to_str(bv) << endl;
   }
   fout.close();
 }
@@ -99,8 +116,11 @@ void store_optimals_to_file(string file_name,
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
   fout << "<absolute coding>" << endl;
-  for (size_t i = 0; i < optimals.size(); i++)
-    fout << optimals[i].prog_abs_bit_vec() << endl;
+  for (size_t i = 0; i < optimals.size(); i++) {
+    vector<int> bv;
+    optimals[i].to_abs_bv(bv);
+    fout << prog_abs_bv_to_str(bv) << endl;
+  }
   fout.close();
 }
 

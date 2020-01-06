@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <bitset>
 #include <unordered_set>
 #include "../../src/verify/smt_var.h"
 
@@ -26,10 +25,6 @@ class prog_state {
   void clear();
 };
 
-// TODO
-// For absolute coding of each instruction
-typedef bitset<20> abs_bv_inst;
-
 class inst {
  public:
   int _opcode;
@@ -37,8 +32,7 @@ class inst {
   inst() {}
   void print() const;
   virtual string opcode_to_str(int) const {return "";}
-  // TODO
-  virtual abs_bv_inst inst_to_abs_bv() const {abs_bv_inst bv(""); return bv;};
+  int to_abs_bv() const;
   vector<int> get_reg_list() const;
   bool operator==(const inst &x) const;
   inst& operator=(const inst &rhs);
@@ -56,6 +50,7 @@ class inst {
   virtual int get_num_regs() const {return 0;}
   virtual int get_max_prog_len() const {return 0;}
   virtual int get_max_op_len() const {return 0;}
+  virtual int get_op_num_bits() const {return 0;}
   virtual int get_num_instr() const {return 0;}
   virtual int get_num_operands() const {return 0;}
   virtual int get_insn_num_regs() const {return 0;}

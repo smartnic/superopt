@@ -99,8 +99,8 @@ meas_time.out: measure/meas_time.cc measure/common.cc measure/common.h measure/m
 meas_time_z3.o: measure/meas_time.cc
 	$(CXX) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)measure/meas_time_z3.o  -I../z3/src/api -I../z3/src/api/c++ measure/meas_time.cc
 
-meas_mh_bhv_test.out: meas_mh_bhv_z3.o measure/meas_mh_bhv.h measure/meas_mh_bhv.cc measure/common.h measure/common.cc $(TOY_ISA)prog.h $(TOY_ISA)prog.cc $(SRC)inout.h $(SRC)inout.cc $(ISA)inst_codegen.cc $(ISA)inst_codegen.h $(ISA)inst.cc  $(ISA)inst.h $(TOY_ISA)inst.h $(TOY_ISA)inst.cc $(VERIFY)smt_var.cc $(VERIFY)smt_var.h
-	g++ -std=c++11 measure/meas_mh_bhv_z3.o measure/meas_mh_bhv.cc measure/common.cc $(TOY_ISA)prog.cc $(SRC)inout.cc $(ISA)inst_codegen.cc $(ISA)inst.cc $(TOY_ISA)inst.cc $(VERIFY)smt_var.cc -o measure/meas_mh_bhv_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+meas_mh_bhv_test.out: meas_mh_bhv_z3.o measure/meas_mh_bhv.h measure/meas_mh_bhv.cc measure/common.h measure/common.cc $(TOY_ISA)prog.h $(TOY_ISA)prog.cc $(SRC)inout.h $(SRC)inout.cc $(ISA)inst_codegen.cc $(ISA)inst_codegen.h $(ISA)inst.cc  $(ISA)inst.h $(TOY_ISA)inst.h $(TOY_ISA)inst.cc $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(SRC)utils.cc $(SRC)utils.h
+	g++ -std=c++11 measure/meas_mh_bhv_z3.o measure/meas_mh_bhv.cc measure/common.cc $(TOY_ISA)prog.cc $(SRC)inout.cc $(ISA)inst_codegen.cc $(ISA)inst.cc $(TOY_ISA)inst.cc $(VERIFY)smt_var.cc $(SRC)utils.cc -o measure/meas_mh_bhv_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 meas_mh_bhv_z3.o: measure/meas_mh_bhv_test.cc
 	$(CXX) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)measure/meas_mh_bhv_z3.o  -I../z3/src/api -I../z3/src/api/c++ measure/meas_mh_bhv_test.cc

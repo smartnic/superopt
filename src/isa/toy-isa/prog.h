@@ -1,16 +1,13 @@
 #pragma once
 
 #include <iostream>
-#include <bitset>
 #include <vector>
 #include <unordered_map>
+#include "../../../src/utils.h"
 #include "../../../src/isa/inst.h"
 #include "../../../src/isa/toy-isa/inst.h"
 
 using namespace std;
-
-typedef bitset<toy_isa::MAX_PROG_LEN> rel_bv_prog;
-typedef bitset<toy_isa::MAX_PROG_LEN * INST_ABS_BIT_LEN> abs_bv_prog;
 
 class prog {
  public:
@@ -27,9 +24,9 @@ class prog {
   void init_vals();
   void set_error_cost(double cost);
   void set_perf_cost(double cost);
-  rel_bv_prog prog_rel_bit_vec(const prog &p);
-  rel_bv_prog prog_rel_bit_vec(const vector<prog> &ps);
-  abs_bv_prog prog_abs_bit_vec() const;
+  int to_rel_bv(const prog &p) const;
+  int to_rel_bv(const vector<prog> &ps) const;
+  void to_abs_bv(vector<int>& bv) const;
   bool if_ret_exists(int start, int end) const;
   void update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const;
   void canonicalize();

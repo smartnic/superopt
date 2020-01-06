@@ -63,24 +63,23 @@ void prog::set_perf_cost(double cost) {
   _perf_cost = cost;
 }
 
-rel_bv_prog prog::prog_rel_bit_vec(const prog &p) {
-  const int MAX_PROG_LEN = p.get_max_prog_len();
-  rel_bv_prog bv;
-  bv.reset(0);
-  for (int i = 0; i < MAX_PROG_LEN; i++) {
+int prog::to_rel_bv(const prog &p) const{
+  const int max_prog_len = p.get_max_prog_len();
+  int bv = 0;
+  for (int i = 0; i < max_prog_len; i++) {
     if (inst_list[i] == p.inst_list[i]) {
-      bv.set(MAX_PROG_LEN - 1 - i);
+      bv += 1 << (max_prog_len - 1 - i);
     }
   }
   return bv;
 }
 
-rel_bv_prog prog::prog_rel_bit_vec(const vector<prog> &ps) {
-  rel_bv_prog best;
+int prog::to_rel_bv(const vector<prog> &ps) const{
+  int best;
   int count = 0;
   for (int i = 0; i < ps.size(); i++) {
-    rel_bv_prog bv = prog_rel_bit_vec(ps[i]);
-    int bv_count = bv.count();
+    int bv = to_rel_bv(ps[i]);
+    int bv_count = pop_count_asm(bv);
     if (bv_count > count) {
       count = bv_count;
       best = bv;
@@ -89,13 +88,10 @@ rel_bv_prog prog::prog_rel_bit_vec(const vector<prog> &ps) {
   return best;
 }
 
-abs_bv_prog prog::prog_abs_bit_vec() const {
-  string s = "";
+void prog::to_abs_bv(vector<int>& bv) const {
   for (int i = 0; i < this->get_max_prog_len(); i++) {
-    s += inst_list[i].inst_to_abs_bv().to_string();
+    bv.push_back(inst_list[i].to_abs_bv());
   }
-  abs_bv_prog bvp(s);
-  return bvp;
 }
 
 bool prog::if_ret_exists(int start, int end) const {

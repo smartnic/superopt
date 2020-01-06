@@ -1,4 +1,5 @@
 #include <iostream>
+#include <bitset>
 #include "../../../src/utils.h"
 #include "inst.h"
 
@@ -71,7 +72,7 @@ void test3() {
   string bv_str = "";
   for (int i = 0; i < 6; i++) {
     toy_isa_inst x = instructions[i];
-    bv_str += x.inst_to_abs_bv().to_string();
+    bv_str += bitset<toy_isa::INST_NUM_BITS>(x.to_abs_bv()).to_string();
   }
   print_test_res(bv_str == expected_bv_str, "inst_to_abs_bv");
 }

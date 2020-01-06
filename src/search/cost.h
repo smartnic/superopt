@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "../../src/utils.h"
 #include "../../src/inout.h"
 #include "../../src/isa/toy-isa/prog.h"
 #include "../../src/isa/toy-isa/inst.h"
@@ -14,8 +15,6 @@ using namespace std;
 #define ERROR_COST_STRATEGY_EQ2 1
 #define ERROR_COST_STRATEGY_NAVG 0
 #define ERROR_COST_STRATEGY_AVG 1
-
-unsigned int pop_count_asm(unsigned int);
 
 class cost {
  private:

@@ -33,15 +33,6 @@ string toy_isa_inst::opcode_to_str(int opcode) const {
   }
 }
 
-abs_bv_inst toy_isa_inst::inst_to_abs_bv() const {
-  int v = (_opcode << (OP_ABS_BIT_LEN * 3)) +
-          (_args[0] << (OP_ABS_BIT_LEN * 2)) +
-          (_args[1] << (OP_ABS_BIT_LEN * 1)) +
-          (_args[2]);
-  abs_bv_inst bv(v);
-  return bv;
-}
-
 toy_isa_inst& toy_isa_inst::operator=(const inst &rhs) {
   _opcode = rhs._opcode;
   _args[0] = rhs._args[0];
@@ -237,10 +228,4 @@ z3::expr toy_isa_inst::smt_inst_jmp(smt_var& sv) const {
     case toy_isa::JMPLE: return (CURDST <= CURSRC);
     default: return string_to_expr("false");
   }
-}
-
-ostream& operator<<(ostream& out, abs_bv_inst& bv) {
-  for (size_t i = 0; i < bv.size(); i++)
-    out << bv[i];
-  return out;
 }

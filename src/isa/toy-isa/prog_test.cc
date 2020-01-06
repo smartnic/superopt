@@ -1,3 +1,4 @@
+#include <bitset>
 #include "../../../src/utils.h"
 #include "prog.h"
 
@@ -85,23 +86,24 @@ void test4() {
   prog p2(instructions2);
   prog p3(instructions3);
   prog p4(instructions4);
-  print_test_res(p1.prog_rel_bit_vec(p2) == rel_bv_prog("1111111"),
-                 "prog_rel_bit_vec(prog) 1");
-  print_test_res(p1.prog_rel_bit_vec(p3) == rel_bv_prog("1111101"),
-                 "prog_rel_bit_vec(prog) 2");
-  print_test_res(p1.prog_rel_bit_vec(p4) == rel_bv_prog("0000001"),
-                 "prog_rel_bit_vec(prog) 3");
+  const int N = toy_isa::MAX_PROG_LEN;
+  print_test_res(bitset<N>(p1.to_rel_bv(p2)).to_string() == "1111111",
+                 "program to_rel_bv(prog) 1");
+  print_test_res(bitset<N>(p1.to_rel_bv(p3)).to_string() == "1111101",
+                 "program to_rel_bv(prog) 2");
+  print_test_res(bitset<N>(p1.to_rel_bv(p4)).to_string() == "0000001",
+                 "program to_rel_bv(prog) 3");
 
   vector<prog> progs;
   progs.push_back(p4);
-  print_test_res(p1.prog_rel_bit_vec(progs) == rel_bv_prog("0000001"),
-                 "prog_rel_bit_vec(progs) 1");
+  print_test_res(bitset<N>(p1.to_rel_bv(progs)).to_string() == "0000001",
+                 "program to_rel_bv(progs) 1");
   progs.push_back(p3);
-  print_test_res(p1.prog_rel_bit_vec(progs) == rel_bv_prog("1111101"),
-                 "prog_rel_bit_vec(progs) 2");
+  print_test_res(bitset<N>(p1.to_rel_bv(progs)).to_string() == "1111101",
+                 "program to_rel_bv(progs) 2");
   progs.push_back(p2);
-  print_test_res(p1.prog_rel_bit_vec(progs) == rel_bv_prog("1111111"),
-                 "prog_rel_bit_vec(progs) 3");
+  print_test_res(bitset<N>(p1.to_rel_bv(progs)).to_string() == "1111111",
+                 "program to_rel_bv(progs) 3");
 }
 
 void test5() {
@@ -114,7 +116,14 @@ void test5() {
                            string("00011000110000000000") +
                            string("00011000000000000000") +
                            string("00000000000000000000");
-  print_test_res(p1.prog_abs_bit_vec().to_string() == expected_bv_str, "prog_abs_bit_vec");
+  vector<int> bv;
+  p1.to_abs_bv(bv);
+  string str = "";
+  const int N = toy_isa::INST_NUM_BITS;
+  for (size_t i = 0; i < bv.size(); i++) {
+    str += bitset<N>(bv[i]).to_string();
+  }
+  print_test_res(str == expected_bv_str, "program to_abs_bv");
 }
 
 void test6() {

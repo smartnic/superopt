@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 #include "../src/isa/toy-isa/prog.h"
+#include "../src/utils.h"
 #include "../src/inout.h"
 
 using namespace std;
