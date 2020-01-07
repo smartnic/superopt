@@ -41,6 +41,10 @@ class inst {
   void set_operand(int op_index, int op_value);
   int get_opcode() const;
   void set_opcode(int op_value);
+  virtual void make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const {}
+  virtual void make_insts(vector<inst*> &instptr_list, const inst* instruction) const {}
+  virtual void clear_insts() {}
+  virtual void convert_to_pointers(vector<inst*> &instptr_list, inst* instruction) const {}
   virtual int get_jmp_dis() const {return 0;}
   virtual void insert_jmp_opcodes(unordered_set<int>& jmp_sets) const {}
   virtual int inst_output_opcode_type() const {return 0;}
@@ -55,7 +59,7 @@ class inst {
   virtual int get_num_operands() const {return 0;}
   virtual int get_insn_num_regs() const {return 0;}
   virtual int get_opcode_type() const {return 0;}
-  virtual int interpret(int length, prog_state &ps, int input) {return 0;}
+  virtual int interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const {return 0;}
   // smt
   // return SMT for the given OP_OTHERS type instruction, other types return false
   virtual z3::expr smt_inst(smt_var& sv) const {return string_to_expr("false");}

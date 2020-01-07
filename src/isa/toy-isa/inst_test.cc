@@ -31,13 +31,24 @@ toy_isa_inst instructions4[3] = {toy_isa_inst(toy_isa::JMP, 1),
 void test1(int input) {
   toy_isa_prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
-  print_test_res(instructions->interpret(6, ps, input) == max(input + 4, 15),
+  vector<inst*> instptr_list(6);
+  instructions->convert_to_pointers(instptr_list, instructions);
+  print_test_res(instptr_list[0]->interpret(instptr_list, ps, input) == max(input + 4, 15),
                  "interpret program 1");
-  print_test_res(instructions2->interpret(4, ps, input) == max(input + 4, 15),
+
+  instptr_list.resize(4);
+  instructions2->convert_to_pointers(instptr_list, instructions2);
+  print_test_res(instptr_list[0]->interpret(instptr_list, ps, input) == max(input + 4, 15),
                  "interpret program 2");
-  print_test_res(instructions3->interpret(2, ps, input) == input,
+
+  instptr_list.resize(2);
+  instructions3->convert_to_pointers(instptr_list, instructions3);
+  print_test_res(instptr_list[0]->interpret(instptr_list, ps, input) == input,
                  "interpret program 3");
-  print_test_res(instructions4->interpret(3, ps, input) == input,
+
+  instptr_list.resize(3);
+  instructions4->convert_to_pointers(instptr_list, instructions4);
+  print_test_res(instptr_list[0]->interpret(instptr_list, ps, input) == input,
                  "interpret program 4");
 }
 

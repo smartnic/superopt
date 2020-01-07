@@ -51,14 +51,14 @@ int test2(int input) {
   bool assert_res = true;
   for (int i = 1; i < 6; i++) {
     for (int j = 0; j < N; j++) {
-      toy_isa_inst ins = p[i]->inst_list[j];
-      for (int k = ins.get_num_operands(); k < p[i]->get_max_op_len(); k++) {
-        bool res = (ins.get_operand(k) == 0);
+      inst* ins = p[i]->instptr_list[j];
+      for (int k = ins->get_num_operands(); k < p[i]->get_max_op_len(); k++) {
+        bool res = (ins->get_operand(k) == 0);
         if (! res) {
           assert_res = false;
           cout << "unused " << k << "th operand in ";
-          ins.print();
-          cout << "is not 0, but " << ins.get_operand(k) << endl;
+          ins->print();
+          cout << "is not 0, but " << ins->get_operand(k) << endl;
         }
       }
     }

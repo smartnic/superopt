@@ -32,26 +32,34 @@ measure_print(print, times);
 
 void time_smt_prog() {
   smt_prog ps;
-  time_measure(ps.gen_smt(i, bm0, N), 1000,
+  vector<inst*> instptr_list(N);
+  bm0->convert_to_pointers(instptr_list, bm0);
+  time_measure(ps.gen_smt(i, instptr_list), 1000,
                "smt prog::gen_smt: ");
 }
 
 void time_validator_set_orig() {
   validator vld;
-  time_measure(vld.set_orig(bm0, N), 1000,
+  vector<inst*> instptr_list(N);
+  bm0->convert_to_pointers(instptr_list, bm0);
+  time_measure(vld.set_orig(instptr_list), 1000,
                "validator::set_orig: ");
 }
 
 void time_validator_is_equal_to() {
   validator vld;
-  vld.set_orig(bm0, N);
-  time_measure(vld.is_equal_to(bm0, N), 100,
+  vector<inst*> instptr_list(N);
+  bm0->convert_to_pointers(instptr_list, bm0);
+  vld.set_orig(instptr_list);
+  time_measure(vld.is_equal_to(instptr_list), 100,
                "validator::is_equal_to: ");
 }
 
 void time_validator_is_smt_valid() {
   validator vld;
-  vld.is_equal_to(bm0, N);
+  vector<inst*> instptr_list(N);
+  bm0->convert_to_pointers(instptr_list, bm0);
+  vld.is_equal_to(instptr_list);
   z3::expr smt = vld._store_f;
   time_measure(vld.is_smt_valid(smt), 100,
                "validator::is_smt_valid: ");
@@ -59,14 +67,17 @@ void time_validator_is_smt_valid() {
 
 void time_validator_get_orig_output() {
   validator vld;
-  vld.set_orig(bm0, N);
+  vector<inst*> instptr_list(N);
+  bm0->convert_to_pointers(instptr_list, bm0);
+  vld.set_orig(instptr_list);
   time_measure(vld.get_orig_output(i, bm0->get_num_regs()), 100,
                "validator::get_orig_output: ");
 }
 
 void time_interpret() {
   toy_isa_prog_state ps;
-  time_measure(bm0->interpret(N, ps, i), 10000,
+  prog p(bm0);
+  time_measure(p.interpret(ps, i), 10000,
                "interpret: ");
 }
 

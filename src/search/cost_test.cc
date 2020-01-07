@@ -63,6 +63,7 @@ void test2() {
     c._examples.insert(ex_set[i]);
   }
   int err_cost = c.error_cost(&orig, 7);
+  cout << "err_cost " << err_cost << endl;
   print_test_res(err_cost == 0, "1");
   prog synth1(instructions2);
   err_cost = c.error_cost(&synth1, 7);

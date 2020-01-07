@@ -9,8 +9,6 @@
 
 using namespace std;
 
-#define SEL_INST(prog) ((prog)->inst_list[sel_inst_index])
-
 default_random_engine gen;
 uniform_real_distribution<double> unidist(0.0, 1.0);
 
@@ -62,14 +60,14 @@ void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_ch
   assert (op_to_change < orig.get_max_op_len());
   assert(sel_inst_index < orig.get_max_prog_len());
   // First make a fresh copy of the program.
-  // inst* sel_inst = &synth->inst_list[sel_inst_index];
-  int old_opvalue = SEL_INST(synth).get_operand(op_to_change);
-  int new_opvalue = get_new_operand(sel_inst_index, SEL_INST(synth), op_to_change, old_opvalue);
-  SEL_INST(synth).set_operand(op_to_change, new_opvalue);
+  inst* sel_inst = synth->instptr_list[sel_inst_index];
+  int old_opvalue = sel_inst->get_operand(op_to_change);
+  int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, op_to_change, old_opvalue);
+  sel_inst->set_operand(op_to_change, new_opvalue);
 }
 
 void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
-  int op_to_change = sample_int(orig.inst_list[inst_index].get_num_operands());
+  int op_to_change = sample_int(orig.instptr_list[inst_index]->get_num_operands());
   mod_operand(orig, synth, inst_index, op_to_change);
 }
 
@@ -85,23 +83,24 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   const int MAX_PROG_LEN = orig->get_max_prog_len();
   assert(sel_inst_index < MAX_PROG_LEN);
   // TODO: is it wise to sample with exception?
-  int old_opcode = SEL_INST(orig).get_opcode();
+  inst* sel_inst = orig->instptr_list[sel_inst_index];
+  int old_opcode = sel_inst->get_opcode();
   // If sel_inst_index == MAX_PROG_LEN - 1, then new_opcode can not be JMP
   unordered_set<int> exceptions;
   if (sel_inst_index == MAX_PROG_LEN - 1) {
     exceptions = {old_opcode};
-    orig->inst_list->insert_jmp_opcodes(exceptions);
+    sel_inst->insert_jmp_opcodes(exceptions);
   } else {
     exceptions = {old_opcode};
   }
   int new_opcode = sample_int_with_exceptions(orig->get_num_instr(), exceptions);
-  SEL_INST(orig).set_opcode(new_opcode);
-  for (int i = 0; i < SEL_INST(orig).get_num_operands(); i++) {
-    int new_opvalue = get_new_operand(sel_inst_index, SEL_INST(orig), i, -1);
-    SEL_INST(orig).set_operand(i, new_opvalue);
+  sel_inst->set_opcode(new_opcode);
+  for (int i = 0; i < sel_inst->get_num_operands(); i++) {
+    int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, i, -1);
+    sel_inst->set_operand(i, new_opvalue);
   }
-  for (int i = SEL_INST(orig).get_num_operands(); i < orig->get_max_op_len(); i++) {
-    SEL_INST(orig).set_operand(i, 0);
+  for (int i = sel_inst->get_num_operands(); i < orig->get_max_op_len(); i++) {
+    sel_inst->set_operand(i, 0);
   }
 }
 

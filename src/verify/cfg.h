@@ -23,12 +23,12 @@ class node {
 
 class graph {
  private:
-  size_t get_end_inst_id(inst* inst_lst, size_t start, size_t end);
+  size_t get_end_inst_id(vector<inst*>& inst_lst, size_t start, size_t end);
   void insert_node_start(int cur_index, int d, int length, set<size_t>& node_starts);
-  void gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts);
-  void gen_node_ends(inst* inst_lst, int length, set<size_t>& node_starts, vector<size_t>& node_ends);
+  void gen_node_starts(vector<inst*>& inst_lst, set<size_t>& node_starts);
+  void gen_node_ends(vector<inst*>& inst_lst, set<size_t>& node_starts, vector<size_t>& node_ends);
   void gen_all_nodes_graph(vector<node>& gnodes, set<size_t>& node_starts, vector<size_t>& node_ends);
-  void gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vector<node>& gnodes, inst* inst_lst);
+  void gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vector<node>& gnodes, vector<inst*>& inst_lst);
   void gen_id_map(unsigned_map& id_map, vector<node>& gnodes);
   void add_node(node& nd, unsigned int& added);
   void dfs(size_t cur_gnode_id, vector<node>& gnodes, vector<vector<unsigned int> >& gnodes_out, \
@@ -39,8 +39,8 @@ class graph {
   vector<vector<unsigned int> > nodes_in;
   vector<vector<unsigned int> > nodes_out;
   graph();
-  graph(inst* inst_lst, int length);
+  graph(vector<inst*>& inst_lst);
   ~graph();
-  void gen_graph(inst* inst_lst, int length);
+  void gen_graph(vector<inst*>& inst_lst);
   friend ostream& operator<<(ostream& out, const graph& g);
 };

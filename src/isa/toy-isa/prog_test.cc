@@ -1,5 +1,6 @@
 #include <bitset>
 #include "../../../src/utils.h"
+#include "../../../src/isa/toy-isa/inst.h"
 #include "prog.h"
 
 using namespace std;
@@ -41,6 +42,7 @@ toy_isa_inst instructions4[7] = {toy_isa_inst(toy_isa::NOP),
                                 };
 
 int test1() {
+  cout << "Test 1" << endl;
   prog p(instructions);
   prog q(p);
   p.print();

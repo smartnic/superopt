@@ -52,6 +52,38 @@ int toy_isa_inst::get_max_operand_val(int op_index, int inst_index) const {
   return max_val[TOY_ISA_OPTYPE(_opcode, op_index)];
 }
 
+void toy_isa_inst::make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const {
+  int num_inst = instptr_list.size();
+  toy_isa_inst* new_insts = new toy_isa_inst[num_inst];
+  for (int i = 0; i < num_inst; i++) {
+    new_insts[i] = *other[i];
+  }
+  for (int i = 0; i < num_inst; i++) {
+    instptr_list[i] = &new_insts[i];
+  }
+}
+
+void toy_isa_inst::make_insts(vector<inst*> &instptr_list, const inst* instruction) const {
+  int num_inst = instptr_list.size();
+  toy_isa_inst* new_insts = new toy_isa_inst[num_inst];
+  for (int i = 0; i < num_inst; i++) {
+    new_insts[i] = instruction[i];
+  }
+  for (int i = 0; i < num_inst; i++) {
+    instptr_list[i] = &new_insts[i];
+  }
+}
+
+void toy_isa_inst::clear_insts() {
+  delete []this;
+}
+
+void toy_isa_inst::convert_to_pointers(vector<inst*> &instptr_list, inst* instruction) const {
+  for (int i = 0; i < instptr_list.size(); i++) {
+    instptr_list[i] = &instruction[i];
+  }
+}
+
 int toy_isa_inst::get_jmp_dis() const {
   switch (get_opcode_type()) {
     case (OP_UNCOND_JMP): return _args[0];
@@ -94,11 +126,12 @@ bool toy_isa_inst::is_real_inst() const {
   return true;
 }
 
-int toy_isa_inst::interpret(int length, toy_isa_prog_state &ps, int input) {
+int toy_isa_inst::interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
-  inst *start = this;
-  inst *insn = this;
+  // inst *insn = this;
+  int insn = 0;
+  int length = instptr_list.size();
   ps.clear();
   ps.regs[0] = input;
 
@@ -118,19 +151,25 @@ int toy_isa_inst::interpret(int length, toy_isa_prog_state &ps, int input) {
     [toy_isa::MAXX] = && INSN_MAXX,
   };
 
+#undef CONT
 #define CONT { \
       insn++;                                                           \
-      if (insn < start + length) {                                    \
+      if (insn < length) {                                    \
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
-#define DST ps.regs[DSTREG(*insn)]
-#define SRC ps.regs[SRCREG(*insn)]
-#define IMM1 IMM1VAL(*insn)
-#define IMM2 IMM2VAL(*insn)
+
+#undef DST
+#undef SRC
+#undef IMM1
+#undef IMM2
+#define DST ps.regs[DSTREG(*instptr_list[insn])]
+#define SRC ps.regs[SRCREG(*instptr_list[insn])]
+#define IMM1 IMM1VAL(*instptr_list[insn])
+#define IMM2 IMM2VAL(*instptr_list[insn])
 
 select_insn:
-  goto *jumptable[insn->_opcode];
+  goto *jumptable[instptr_list[insn]->_opcode];
 
 INSN_NOP:
   CONT;
@@ -161,10 +200,11 @@ INSN_JMP:
   insn += IMM1;
   CONT;
 
+#undef COND_JMP
 #define COND_JMP(SUFFIX, OP)                    \
   INSN_JMP##SUFFIX:                             \
       if (DST OP SRC)                           \
-        insn += insn->_args[2];                 \
+        insn += instptr_list[insn]->_args[2];                 \
   CONT;
 
   COND_JMP(EQ, == )
@@ -181,6 +221,7 @@ out:
   //cout << "Error: program terminated without RET; returning R0" << endl;
   return ps.regs[0]; /* return default R0 value */
 }
+
 
 #undef IMM2
 #define CURSRC sv.get_cur_reg_var(SRCREG(*this))

@@ -9,8 +9,8 @@ using namespace z3;
 validator::validator() {
 }
 
-validator::validator(inst* orig, int len) {
-  set_orig(orig, len);
+validator::validator(vector<inst*>& orig) {
+  set_orig(orig);
 }
 
 validator::validator(expr fx, expr input, expr output) {
@@ -61,11 +61,11 @@ void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2
 }
 
 // calculate and store pre_orig, ps_orign
-void validator::set_orig(inst* orig, int len) {
-  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, orig->get_num_regs());
+void validator::set_orig(vector<inst*>& orig) {
+  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, orig[0]->get_num_regs());
   smt_prog ps_orig;
   try {
-    _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, len);
+    _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig);
   } catch (const string err_msg) {
     throw (err_msg);
     return;
@@ -80,13 +80,13 @@ void validator::set_orig(expr fx, expr input, expr output) {
   // no storing store_ps_orig here
 }
 
-int validator::is_equal_to(inst* synth, int len) {
+int validator::is_equal_to(vector<inst*>& synth) {
   expr pre_synth = string_to_expr("true");
-  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, synth->get_num_regs());
+  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, synth[0]->get_num_regs());
   smt_prog ps_synth;
   expr pl_synth = string_to_expr("true");
   try {
-    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, len);
+    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth);
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
     // cerr << err_msg << endl;
