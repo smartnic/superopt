@@ -1,6 +1,6 @@
 #include <bitset>
-#include "../../../src/utils.h"
-#include "../../../src/isa/toy-isa/inst.h"
+#include "../../src/utils.h"
+#include "../../src/isa/toy-isa/inst.h"
 #include "prog.h"
 
 using namespace std;

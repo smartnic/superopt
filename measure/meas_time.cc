@@ -8,7 +8,7 @@
 #include "../src/verify/validator.h"
 #include "../src/verify/smt_prog.h"
 #include "../src/isa/inst.h"
-#include "../src/isa/toy-isa/prog.h"
+#include "../src/isa/prog.h"
 #include "../src/isa/toy-isa/inst.h"
 #include "common.h"
 #include "z3++.h"

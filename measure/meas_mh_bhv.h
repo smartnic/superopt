@@ -2,8 +2,8 @@
 
 #include <utility>
 #include <vector>
-#include "../src/isa/toy-isa/prog.h"
 #include "../src/isa/toy-isa/inst.h"
+#include "../src/isa/prog.h"
 #include "../src/utils.h"
 #include "../src/inout.h"
 

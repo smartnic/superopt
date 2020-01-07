@@ -3,8 +3,8 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
-#include "../../../src/utils.h"
-#include "../../../src/isa/inst.h"
+#include "../../src/utils.h"
+#include "../../src/isa/inst.h"
 
 using namespace std;
 

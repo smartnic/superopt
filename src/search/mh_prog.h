@@ -2,7 +2,7 @@
 #include <fstream>
 #include <utility>
 #include "../../measure/meas_mh_bhv.h"
-#include "../../src/isa/toy-isa/prog.h"
+#include "../../src/isa/prog.h"
 #include "../../src/inout.h"
 #include "proposals.h"
 #include "cost.h"

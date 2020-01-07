@@ -14,7 +14,7 @@
 #include "src/inout.h"
 #include "src/utils.h"
 #include "src/search/mh_prog.h"
-#include "src/isa/toy-isa/prog.h"
+#include "src/isa/prog.h"
 #include "main.h"
 
 using namespace std;
