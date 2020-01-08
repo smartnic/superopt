@@ -78,12 +78,6 @@ void toy_isa_inst::clear_insts() {
   delete []this;
 }
 
-void toy_isa_inst::convert_to_pointers(vector<inst*> &instptr_list, inst* instruction) const {
-  for (int i = 0; i < instptr_list.size(); i++) {
-    instptr_list[i] = &instruction[i];
-  }
-}
-
 int toy_isa_inst::get_jmp_dis() const {
   switch (get_opcode_type()) {
     case (OP_UNCOND_JMP): return _args[0];

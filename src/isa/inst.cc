@@ -77,6 +77,12 @@ void inst::set_opcode(int op_value) {
   _opcode = op_value;
 }
 
+void inst::convert_to_pointers(vector<inst*> &instptr_list, inst* instruction) const {
+  for (int i = 0; i < instptr_list.size(); i++) {
+    instptr_list[i] = &instruction[i];
+  }
+}
+
 size_t instHash::operator()(const inst &x) const {
   size_t res = hash<int>()(x._opcode);
   for (int i = 0; i < x._args.size(); i++) {

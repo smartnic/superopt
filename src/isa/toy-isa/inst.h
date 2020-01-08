@@ -144,7 +144,6 @@ class toy_isa_inst: public inst {
   void make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const;
   void make_insts(vector<inst*> &instptr_list, const inst* instruction) const;
   void clear_insts();
-  void convert_to_pointers(vector<inst*> &instptr_list, inst* instruction) const;
   int get_jmp_dis() const;
   void insert_jmp_opcodes(unordered_set<int>& jmp_sets) const;
   int inst_output_opcode_type() const;
