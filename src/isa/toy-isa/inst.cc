@@ -123,6 +123,13 @@ bool toy_isa_inst::is_real_inst() const {
   return true;
 }
 
+void toy_isa_inst::set_as_nop_inst() {
+  _opcode = toy_isa::NOP;
+  _args[0] = 0;
+  _args[1] = 0;
+  _args[2] = 0;
+}
+
 int toy_isa_inst::interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */

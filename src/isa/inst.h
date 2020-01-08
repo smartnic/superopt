@@ -59,6 +59,7 @@ class inst {
   virtual int inst_output_opcode_type() const {return 0;}
   virtual int inst_output() const {return 0;}
   virtual bool is_real_inst() const {return false;}
+  virtual void set_as_nop_inst() {}
   // for class toy_isa
   virtual int get_num_regs() const {return 0;}
   virtual int get_max_prog_len() const {return 0;}

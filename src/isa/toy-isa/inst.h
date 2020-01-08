@@ -149,6 +149,7 @@ class toy_isa_inst: public inst {
   int inst_output_opcode_type() const;
   int inst_output() const;
   bool is_real_inst() const;
+  void set_as_nop_inst();
   // for class toy_isa
   int get_num_regs() const {return _isa.NUM_REGS;}
   int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}
