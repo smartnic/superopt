@@ -6,6 +6,10 @@
 
 using namespace std;
 
+enum ISA_TYPES{
+  TOY_ISA = 0,
+};
+
 // Opcode types for instructions
 #define OP_NOP 0
 #define OP_RET 1
@@ -24,6 +28,9 @@ class prog_state {
   void print();
   void clear();
 };
+
+prog_state* make_prog_state(int isa_type);
+void clear_prog_starte(prog_state* ps);
 
 class inst {
  public:

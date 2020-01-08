@@ -24,7 +24,10 @@ class cost {
   double get_final_error_cost(int exs_cost, int is_equal,
                               int ex_set_size, int num_successful_ex,
                               int avg_value);
+  prog_state* make_prog_state();
+  void clear_prog_state(prog_state* ps);
  public:
+  int _isa; // ISA type
   validator _vld;
   examples _examples;
   bool _meas_new_counterex_gened;
@@ -35,7 +38,7 @@ class cost {
   int _strategy_avg = 0;
   cost();
   ~cost();
-  void init(prog* orig, int len, const vector<int> &input,
+  void init(int isa, prog* orig, int len, const vector<int> &input,
             double w_e = 0.5, double w_p = 0.5,
             int strategy_ex = 0, int strategy_eq = 0, int strategy_avg = 0);
   void set_orig(prog* orig, int len);

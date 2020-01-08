@@ -57,13 +57,13 @@ void test2() {
   cout << "test 2: error_cost check starts...\n";
   prog orig(instructions);
   cost c;
+  c._isa = TOY_ISA;
   c.set_orig(&orig, 7);
   c._examples.clear();
   for (size_t i = 0; i < ex_set.size(); i++) {
     c._examples.insert(ex_set[i]);
   }
   int err_cost = c.error_cost(&orig, 7);
-  cout << "err_cost " << err_cost << endl;
   print_test_res(err_cost == 0, "1");
   prog synth1(instructions2);
   err_cost = c.error_cost(&synth1, 7);
