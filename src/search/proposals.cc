@@ -80,14 +80,14 @@ prog* mod_random_inst_operand(const prog &orig) {
 }
 
 void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
-  const int MAX_PROG_LEN = orig->get_max_prog_len();
-  assert(sel_inst_index < MAX_PROG_LEN);
+  const int max_prog_len = orig->get_max_prog_len();
+  assert(sel_inst_index < max_prog_len);
   // TODO: is it wise to sample with exception?
   inst* sel_inst = orig->instptr_list[sel_inst_index];
   int old_opcode = sel_inst->get_opcode();
-  // If sel_inst_index == MAX_PROG_LEN - 1, then new_opcode can not be JMP
+  // exceptions set is used to avoid jumps in the last line of the program
   unordered_set<int> exceptions;
-  if (sel_inst_index == MAX_PROG_LEN - 1) {
+  if (sel_inst_index == max_prog_len - 1) {
     exceptions = {old_opcode};
     sel_inst->insert_jmp_opcodes(exceptions);
   } else {
@@ -114,14 +114,14 @@ prog* mod_random_inst(const prog &orig) {
 }
 
 prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
-  const int MAX_PROG_LEN = orig.get_max_prog_len();
+  const int max_prog_len = orig.get_max_prog_len();
   // If k is too big, modify all instructions of the original program
-  if (k > MAX_PROG_LEN) k = MAX_PROG_LEN;
+  if (k > max_prog_len) k = max_prog_len;
   // First make a copy of the old program
   prog* synth = new prog(orig);
   synth->init_vals();
   // Select a random start instruction
-  int start_inst_index = sample_int(MAX_PROG_LEN - k + 1);
+  int start_inst_index = sample_int(max_prog_len - k + 1);
   for (int i = start_inst_index; i < start_inst_index + k; i++) {
     mod_select_inst(synth, i);
   }

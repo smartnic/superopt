@@ -239,8 +239,8 @@ expr smt_prog::gen_smt(unsigned int prog_id, vector<inst*>& inst_lst) {
     throw (err_msg);
   }
   // init class variables
-  const unsigned int NUM_REGS = inst_lst[0]->get_num_regs();
-  init(NUM_REGS);
+  const unsigned int num_regs = inst_lst[0]->get_num_regs();
+  init(num_regs);
 
   // blocks stores the block IDs in order after topological sorting
   vector<unsigned int> blocks;
@@ -255,7 +255,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, vector<inst*>& inst_lst) {
   // process each basic block in order
   for (size_t i = 0; i < blocks.size(); i++) {
     unsigned int b = blocks[i];
-    smt_var sv(prog_id, b, NUM_REGS);
+    smt_var sv(prog_id, b, num_regs);
     // generate f_bl: the block program logic
     expr f_bl = string_to_expr("true");
     gen_block_prog_logic(f_bl, sv, b, inst_lst);
@@ -267,13 +267,13 @@ expr smt_prog::gen_smt(unsigned int prog_id, vector<inst*>& inst_lst) {
       for (size_t j = 0; j < g.nodes_in[b].size(); j++) {
         // generate f_iv: the logic that the initial values are fed by the last basic block
         expr f_iv = string_to_expr("true");
-        get_init_val(f_iv, sv, g.nodes_in[b][j], NUM_REGS);
+        get_init_val(f_iv, sv, g.nodes_in[b][j], num_regs);
         reg_iv[b][j] = f_iv; // store
         f_block[b] = f_block[b] && implies(path_con[b][j], f_iv && f_bl);
       }
     }
     // store post iv for current basic block b
-    store_post_reg_val(sv, b, NUM_REGS);
+    store_post_reg_val(sv, b, num_regs);
     // update post path condtions "path_con" created by current basic block b
     gen_post_path_con(sv, b, *inst_lst[g.nodes[b]._end]);
   }

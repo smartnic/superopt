@@ -19,9 +19,6 @@
 
 using namespace std;
 
-#define NOW chrono::steady_clock::now()
-#define DUR chrono::duration <double, micro> (end - start).count()
-
 string FILE_CONFIG = "config";
 
 inst* bm;
@@ -335,6 +332,6 @@ int main(int argc, char* argv[]) {
   gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);
   auto end = NOW;
-  cout << "compiling time: " << DUR << " us" << endl;
+  cout << "compiling time: " << DUR(start, end) << " us" << endl;
   return 0;
 }
