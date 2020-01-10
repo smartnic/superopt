@@ -208,10 +208,7 @@ void insert_into_prog_freq_dic(const prog &next,
   if (! found) {
     // TODO: may define new prog copy API
     prog* next_copy = new prog(next);
-    next_copy->init_vals();
-    next_copy->freq_count++;
-    next_copy->_error_cost = next._error_cost;
-    next_copy->_perf_cost = next._perf_cost;
+    next_copy->freq_count = 1;
     prog_freq[ph].push_back(next_copy);
   }
 }

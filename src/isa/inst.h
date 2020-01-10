@@ -6,6 +6,10 @@
 
 using namespace std;
 
+enum ISA_TYPES{
+  TOY_ISA = 0,
+};
+
 // Opcode types for instructions
 #define OP_NOP 0
 #define OP_RET 1
@@ -31,25 +35,28 @@ class inst {
   vector<int> _args;
   inst() {}
   void print() const;
-  virtual string opcode_to_str(int) const {return "";}
   int to_abs_bv() const;
   vector<int> get_reg_list() const;
   bool operator==(const inst &x) const;
   inst& operator=(const inst &rhs);
-  virtual int get_max_operand_val(int op_index, int inst_index = 0) const {return 0;}
   int get_operand(int op_index) const;
   void set_operand(int op_index, int op_value);
   int get_opcode() const;
   void set_opcode(int op_value);
   void convert_to_pointers(vector<inst*> &instptr_list, inst* instruction) const;
+  virtual string opcode_to_str(int) const {return "";}
+  virtual int get_max_operand_val(int op_index, int inst_index = 0) const {return 0;}
   virtual void make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const {}
   virtual void make_insts(vector<inst*> &instptr_list, const inst* instruction) const {}
   virtual void clear_insts() {}
   virtual int get_jmp_dis() const {return 0;}
-  virtual void insert_jmp_opcodes(unordered_set<int>& jmp_sets) const {}
+  // insert all jmp opcode in jmp_set, used by proposals.cc to 
+  // avoid jumps in the last line of the program
+  virtual void insert_jmp_opcodes(unordered_set<int>& jmp_set) const {}
   virtual int inst_output_opcode_type() const {return 0;}
   virtual int inst_output() const {return 0;}
   virtual bool is_real_inst() const {return false;}
+  virtual void set_as_nop_inst() {}
   // for class toy_isa
   virtual int get_num_regs() const {return 0;}
   virtual int get_max_prog_len() const {return 0;}

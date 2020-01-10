@@ -138,17 +138,18 @@ class toy_isa_inst: public inst {
     _args[1] = arg2;
     _args[2] = arg3;
   }
-  string opcode_to_str(int) const;
   toy_isa_inst& operator=(const inst &rhs);
+  string opcode_to_str(int) const;
   int get_max_operand_val(int op_index, int inst_index = 0) const;
   void make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const;
   void make_insts(vector<inst*> &instptr_list, const inst* instruction) const;
   void clear_insts();
   int get_jmp_dis() const;
-  void insert_jmp_opcodes(unordered_set<int>& jmp_sets) const;
+  void insert_jmp_opcodes(unordered_set<int>& jmp_set) const;
   int inst_output_opcode_type() const;
   int inst_output() const;
   bool is_real_inst() const;
+  void set_as_nop_inst();
   // for class toy_isa
   int get_num_regs() const {return _isa.NUM_REGS;}
   int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}

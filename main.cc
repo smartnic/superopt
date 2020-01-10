@@ -19,9 +19,6 @@
 
 using namespace std;
 
-#define NOW chrono::steady_clock::now()
-#define DUR chrono::duration <double, micro> (end - start).count()
-
 string FILE_CONFIG = "config";
 
 inst* bm;
@@ -29,7 +26,8 @@ vector<int> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
 
 ostream& operator<<(ostream& out, const input_paras& ip) {
-  out << "meas_mode:" << ip.meas_mode << endl
+  out << "isa:" << ip.isa << endl
+      << "meas_mode:" << ip.meas_mode << endl
       << "path_out:" << ip.path_out << endl
       << "bm:" << ip.bm << endl
       << "niter:" << ip.niter << endl
@@ -124,7 +122,7 @@ void run_mh_sampler(const input_paras &in_para, vector<inst*> &bm_optis_orig) {
   if (in_para.meas_mode) mh.turn_on_measure();
   prog orig(bm);
   orig.print();
-  mh._cost.init(&orig, orig.get_max_prog_len(), inputs,
+  mh._cost.init(in_para.isa, &orig, orig.get_max_prog_len(), inputs,
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
                 in_para.st_avg);
@@ -135,7 +133,7 @@ void run_mh_sampler(const input_paras &in_para, vector<inst*> &bm_optis_orig) {
     // get all optimal programs from the original ones
     gen_optis_for_progs(bm_optis_orig, bm_optimals);
     meas_store_raw_data(mh._meas_data, in_para.path_out,
-                        suffix, in_para.bm, bm_optimals);
+                        suffix, in_para.bm, bm_optimals, in_para.isa);
     mh.turn_off_measure();
   }
 }
@@ -229,6 +227,7 @@ void usage() {
        << "options and descriptions" << endl
        << left // set setw(.) as left-aligned
        << setw(W) << "-h" << ": display usage" << endl
+       << setw(W) << "-isa arg" << ": ISA type, `arg`: 0(toy_isa)" << endl
        << setw(W) << "-n arg" << ": number of iterations" << endl
        << setw(W) << "-m" << ": turn on measurement" << endl
        << setw(W) << "--path_out arg" << ": output file path" << endl
@@ -274,6 +273,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"restart_w_p_list", required_argument, nullptr, 11},
     {"p_inst_operand", required_argument, nullptr, 12},
     {"p_inst", required_argument, nullptr, 13},
+    {"isa", required_argument, nullptr, 14},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -297,6 +297,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 11: set_w_list(in_para.restart_w_p_list, optarg); break;
       case 12: in_para.p_inst_operand = stod(optarg); break;
       case 13: in_para.p_inst = stod(optarg); break;
+      case 14: in_para.isa = stoi(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -320,6 +321,7 @@ void set_default_para_vals(input_paras &in_para) {
   in_para.restart_w_p_list = {0};
   in_para.p_inst_operand = 1.0 / 3.0;
   in_para.p_inst = 1.0 / 3.0;
+  in_para.isa = 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -335,6 +337,6 @@ int main(int argc, char* argv[]) {
   gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);
   auto end = NOW;
-  cout << "compiling time: " << DUR << " us" << endl;
+  cout << "compiling time: " << DUR(start, end) << " us" << endl;
   return 0;
 }

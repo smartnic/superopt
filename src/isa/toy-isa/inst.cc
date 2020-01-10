@@ -41,6 +41,7 @@ toy_isa_inst& toy_isa_inst::operator=(const inst &rhs) {
   return *this;
 }
 
+// For jmp opcode, it can only jump forward
 int toy_isa_inst::get_max_operand_val(int op_index, int inst_index) const {
   // max value for each operand type
   int max_val[4] = {
@@ -86,11 +87,13 @@ int toy_isa_inst::get_jmp_dis() const {
   }
 }
 
-void toy_isa_inst::insert_jmp_opcodes(unordered_set<int>& jmp_sets) const {
-  for (enum toy_isa::OPCODES opcode = toy_isa::JMP; opcode <= toy_isa::JMPLE;
-       opcode = toy_isa::OPCODES(opcode + 1)) {
-    jmp_sets.insert(opcode);
-  }
+void toy_isa_inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
+  jmp_set.insert(toy_isa::JMP);
+  jmp_set.insert(toy_isa::JMPEQ);
+  jmp_set.insert(toy_isa::JMPGT);
+  jmp_set.insert(toy_isa::JMPGE);
+  jmp_set.insert(toy_isa::JMPLT);
+  jmp_set.insert(toy_isa::JMPLE);
 }
 
 int toy_isa_inst::inst_output_opcode_type() const {
@@ -118,6 +121,13 @@ int toy_isa_inst::inst_output() const {
 bool toy_isa_inst::is_real_inst() const {
   if (_opcode == toy_isa::NOP) return false;
   return true;
+}
+
+void toy_isa_inst::set_as_nop_inst() {
+  _opcode = toy_isa::NOP;
+  _args[0] = 0;
+  _args[1] = 0;
+  _args[2] = 0;
 }
 
 int toy_isa_inst::interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const {

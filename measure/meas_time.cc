@@ -15,10 +15,8 @@
 
 using namespace std;
 
-#define NOW chrono::steady_clock::now()
-#define DUR chrono::duration <double, micro> (end - start).count()
-#define measure_print(print, loop_times) \
-cout << print << DUR / loop_times << " us" << endl;
+#define measure_print(print, loop_times, t1, t2) \
+cout << print << DUR(t1, t2) / loop_times << " us" << endl;
 
 #define time_measure(func_called, times, print) \
 int loop_times = times;                         \
@@ -27,7 +25,7 @@ for (int i = 0; i < loop_times; i++) {          \
   func_called;                                  \
 }                                               \
 auto end = NOW;                                 \
-measure_print(print, times);
+measure_print(print, times, start, end);
 
 
 void time_smt_prog() {
@@ -87,7 +85,7 @@ void time_cost_init() {
   vector<int> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
-  time_measure(c.init(&orig, N, input, w_e, w_p), 100,
+  time_measure(c.init(TOY_ISA, &orig, N, input, w_e, w_p), 100,
                "cost::init: ");
 }
 
@@ -97,7 +95,7 @@ void time_cost_error_cost() {
   vector<int> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
-  c.init(&orig, N, input, w_e, w_p);
+  c.init(TOY_ISA, &orig, N, input, w_e, w_p);
   time_measure(c.error_cost(&orig, N);
                orig._error_cost = -1;
                orig._perf_cost = -1,
@@ -112,7 +110,7 @@ void time_cost_perf_cost() {
   vector<int> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
-  c.init(&orig, N, input, w_e, w_p);
+  c.init(TOY_ISA, &orig, N, input, w_e, w_p);
   time_measure(c.perf_cost(&orig, N), 1000,
                "cost::perf_cost: ");
 }
@@ -129,11 +127,11 @@ void time_mh_sampler() {
     mh_sampler mh;
     unordered_map<int, vector<prog*> > prog_freq;
     prog orig(bm0);
-    mh._cost.init(&orig, N, inputs, w_e, w_p);
+    mh._cost.init(TOY_ISA, &orig, N, inputs, w_e, w_p);
     mh.mcmc_iter(nrolls, orig, prog_freq);
   }
   auto end = NOW;
-  measure_print("cost::mh_sampler: ", loop_times);
+  measure_print("mh_sampler: ", loop_times, start, end);
 }
 
 int main() {
