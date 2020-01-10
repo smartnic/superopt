@@ -1,30 +1,12 @@
 #pragma once
 
-#include <bitset>
 #include <vector>
+#include <unordered_set>
+#include "z3++.h"
+#include "../../../src/verify/smt_var.h"
 #include "../inst.h"
 
 using namespace std;
-
-// Instruction opcodes
-#define NOP 0
-#define ADDXY 1
-#define MOVXC 2
-#define RETX 3
-#define RETC 4
-#define JMP 5
-#define JMPEQ 6
-#define JMPGT 7
-#define JMPGE 8
-#define JMPLT 9
-#define JMPLE 10
-#define MAXC 11
-#define MAXX 12
-
-#define OP_ABS_BIT_LEN 5
-#define INST_ABS_BIT_LEN 20
-// For absolute coding of each instruction
-typedef bitset<INST_ABS_BIT_LEN> abs_bv_inst;
 
 class toy_isa {
  public:
@@ -32,8 +14,29 @@ class toy_isa {
   static constexpr int MAX_PROG_LEN = 7;
   // Max number of operands in one instruction
   static constexpr int MAX_OP_LEN = 3;
-  // Number of opcode types
-  static constexpr int NUM_INSTR = 13;
+
+  // Number of bits of a single opcode or operand
+  static constexpr int OP_NUM_BITS = 5;
+  // Number of bits of a single instruction
+  static constexpr int INST_NUM_BITS = 20;
+
+  // Instruction opcodes
+  enum OPCODES {
+    NOP = 0,
+    ADDXY,
+    MOVXC,
+    RETX,
+    RETC,
+    JMP,
+    JMPEQ,
+    JMPGT,
+    JMPGE,
+    JMPLT,
+    JMPLE,
+    MAXC,
+    MAXX,
+    NUM_INSTR, // Number of opcode types
+  };
 
   static constexpr int num_operands[NUM_INSTR] = {
     [NOP]   = 0,
@@ -120,57 +123,44 @@ class toy_isa {
 #undef UNUSED_OPS
 };
 
-class prog_state {
-  int pc = 0; /* Assume only straight line code execution for now */
+class toy_isa_prog_state: public prog_state {
  public:
-  int regs[toy_isa::NUM_REGS] = {}; /* assume only registers for now */
-  void print();
-  void clear();
+  toy_isa_prog_state() {regs.resize(toy_isa::NUM_REGS, 0);}
 };
 
-class inst {
+class toy_isa_inst: public inst {
  public:
   static toy_isa _isa;
-  int _opcode;
-  int _args[3];
-  inst(int opcode = NOP, int arg1 = 0, int arg2 = 0, int arg3 = 0) {
+  toy_isa_inst(int opcode = _isa.NOP, int arg1 = 0, int arg2 = 0, int arg3 = 0) {
+    _args.resize(_isa.MAX_OP_LEN);
     _opcode  = opcode;
     _args[0] = arg1;
     _args[1] = arg2;
     _args[2] = arg3;
   }
-  void print() const;
+  toy_isa_inst& operator=(const inst &rhs);
   string opcode_to_str(int) const;
-  abs_bv_inst inst_to_abs_bv() const;
-  vector<int> get_reg_list() const;
-  bool operator==(const inst &x) const;
-  inst& operator=(const inst &rhs);
   int get_max_operand_val(int op_index, int inst_index = 0) const;
-  int get_operand(int op_index) const;
-  void set_operand(int op_index, int op_value);
-  int get_opcode() const;
-  void set_opcode(int op_value);
+  void make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const;
+  void make_insts(vector<inst*> &instptr_list, const inst* instruction) const;
+  void clear_insts();
   int get_jmp_dis() const;
-  // assume `inst_end` is the end instruction of a program
+  void insert_jmp_opcodes(unordered_set<int>& jmp_set) const;
   int inst_output_opcode_type() const;
   int inst_output() const;
   bool is_real_inst() const;
+  void set_as_nop_inst();
   // for class toy_isa
   int get_num_regs() const {return _isa.NUM_REGS;}
   int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}
   int get_max_op_len() const {return _isa.MAX_OP_LEN;}
+  int get_op_num_bits() const {return _isa.OP_NUM_BITS;}
   int get_num_instr() const {return _isa.NUM_INSTR;}
   int get_num_operands() const {return _isa.num_operands[_opcode];}
   int get_insn_num_regs() const {return _isa.insn_num_regs[_opcode];}
   int get_opcode_type() const {return _isa.opcode_type[_opcode];}
-  int interpret(int length, prog_state &ps, int input);
+  int interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const;
+  // smt
+  z3::expr smt_inst(smt_var& sv) const;
+  z3::expr smt_inst_jmp(smt_var& sv) const;
 };
-
-struct instHash {
-  size_t operator()(const inst &x) const;
-};
-
-#define TOY_ISA_DSTREG(inst_var) (inst_var)._args[0]
-#define TOY_ISA_SRCREG(inst_var) (inst_var)._args[1]
-#define TOY_ISA_IMM1VAL(inst_var) (inst_var)._args[0]
-#define TOY_ISA_IMM2VAL(inst_var) (inst_var)._args[1]

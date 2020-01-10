@@ -4,7 +4,6 @@
 #include <string>
 #include <cmath>
 #include <unordered_map>
-#include "proposals.h"
 #include "mh_prog.h"
 
 using namespace std;
@@ -184,7 +183,7 @@ prog* mh_sampler::mh_next(prog* curr) {
   if (uni_sample < a) {
     return next;
   } else {
-    prog::clear_prog(next);
+    delete next;
     return curr;
   }
 }
@@ -208,10 +207,8 @@ void insert_into_prog_freq_dic(const prog &next,
   }
   if (! found) {
     // TODO: may define new prog copy API
-    prog* next_copy = prog::make_prog(next);
-    next_copy->freq_count++;
-    next_copy->_error_cost = next._error_cost;
-    next_copy->_perf_cost = next._perf_cost;
+    prog* next_copy = new prog(next);
+    next_copy->freq_count = 1;
     prog_freq[ph].push_back(next_copy);
   }
 }
@@ -220,20 +217,21 @@ void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_
   cout << "restart at iteration " << iter_num << endl;
   cout << "  restart w_e, w_p: " << w_e << ", " << w_p << endl;
   cout << "  restart program" << endl;
-  restart.print(restart);
+  restart.print();
 }
 
 void mh_sampler::mcmc_iter(int niter, const prog &orig,
                            unordered_map<int, vector<prog*> > &prog_freq) {
   prog *curr, *next;
-  curr = prog::make_prog(orig);
+  curr = new prog(orig);
+  curr->init_vals();
   curr->canonicalize();
   for (int i = 0; i < niter; i++) {
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {
       prog *restart = _restart.next_start_prog(curr);
       if (curr != restart) {
-        prog::clear_prog(curr);
+        delete curr;
         curr = restart;
         curr->canonicalize();
       }
@@ -248,14 +246,14 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
     insert_into_prog_freq_dic(*next, prog_freq);
     // update measurement data and update current program with the next program
     if (curr != next) {
-      prog::clear_prog(curr);
+      delete curr;
       _meas_data.insert_program(i, *next);
     } else if (i == 0) {
       _meas_data.insert_program(i, *curr);
     }
     curr = next;
   }
-  prog::clear_prog(curr);
+  delete curr;
 }
 
 void mh_sampler::turn_on_measure() {

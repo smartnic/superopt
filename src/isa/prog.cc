@@ -4,46 +4,28 @@ using namespace std;
 
 // TODO: find canonical way to invoke one constructor from another
 prog::prog(const prog& other) {
-  const int MAX_PROG_LEN = other.get_max_prog_len();
-  inst_list = (inst*)malloc(MAX_PROG_LEN * sizeof(inst));
+  const int max_prog_len = other.get_max_prog_len();
+  instptr_list.resize(max_prog_len);
+  // make instructions, the same as instructions of other
+  other.instptr_list[0]->make_insts(instptr_list, other.instptr_list);
   freq_count = other.freq_count;
   _error_cost = other._error_cost;
   _perf_cost = other._perf_cost;
-  for (int i = 0; i < MAX_PROG_LEN; i++) {
-    inst_list[i] = other.inst_list[i];
-  }
 }
 
 prog::prog(inst* instructions) {
-  const int MAX_PROG_LEN = instructions->get_max_prog_len();
-  inst_list = (inst*)malloc(MAX_PROG_LEN * sizeof(inst));
+  const int max_prog_len = instructions->get_max_prog_len();
+  instptr_list.resize(max_prog_len);
+  instructions->make_insts(instptr_list, instructions);
   freq_count = 0;
   _error_cost = -1;
   _perf_cost = -1;
-  for (int i = 0; i < MAX_PROG_LEN; i++) {
-    inst_list[i] = instructions[i];
-  }
 }
 
-// TODO: find canonical way to invoke such a constructor + destructor
-prog* prog::make_prog(const prog &other) {
-  prog* new_prog = (prog*)malloc(sizeof(prog));
-  new_prog->freq_count = 0;
-  new_prog->_error_cost = -1;
-  new_prog->_perf_cost = -1;
-  const int MAX_PROG_LEN = other.get_max_prog_len();
-  new_prog->inst_list = (inst*)malloc(MAX_PROG_LEN * sizeof(inst));
-  for (int i = 0; i < MAX_PROG_LEN; i++) {
-    new_prog->inst_list[i] = other.inst_list[i];
-  }
-  return new_prog;
-}
-
-void prog::clear_prog(prog* p) {
-  free(p->inst_list);
-  p->inst_list = nullptr;
-  free(p);
-  p = nullptr;
+void prog::init_vals() {
+  freq_count = 0;
+  _error_cost = -1;
+  _perf_cost = -1;
 }
 
 prog::prog() {
@@ -51,25 +33,20 @@ prog::prog() {
 }
 
 prog::~prog() {
-  free(inst_list);
-  inst_list = nullptr;
+  instptr_list[0]->clear_insts();
 }
 
 void prog::print() const {
   for (int i = 0; i < this->get_max_prog_len(); i++) {
     cout << i << ": ";
-    inst_list[i].print();
+    instptr_list[i]->print();
   }
   cout << endl;
 }
 
-void prog::print(const prog &p) {
-  p.print();
-}
-
 bool prog::operator==(const prog &x) const {
   for (int i = 0; i < x.get_max_prog_len(); i++) {
-    if (! (inst_list[i] == x.inst_list[i])) return false;
+    if (! (*instptr_list[i] == *x.instptr_list[i])) return false;
   }
   return true;
 }
@@ -82,24 +59,23 @@ void prog::set_perf_cost(double cost) {
   _perf_cost = cost;
 }
 
-rel_bv_prog prog::prog_rel_bit_vec(const prog &p) {
-  const int MAX_PROG_LEN = p.get_max_prog_len();
-  rel_bv_prog bv;
-  bv.reset(0);
-  for (int i = 0; i < MAX_PROG_LEN; i++) {
-    if (inst_list[i] == p.inst_list[i]) {
-      bv.set(MAX_PROG_LEN - 1 - i);
+int prog::to_rel_bv(const prog &p) const {
+  const int max_prog_len = p.get_max_prog_len();
+  int bv = 0;
+  for (int i = 0; i < max_prog_len; i++) {
+    if (*instptr_list[i] == *p.instptr_list[i]) {
+      bv += 1 << (max_prog_len - 1 - i);
     }
   }
   return bv;
 }
 
-rel_bv_prog prog::prog_rel_bit_vec(const vector<prog> &ps) {
-  rel_bv_prog best;
+int prog::to_rel_bv(const vector<prog> &ps) const {
+  int best;
   int count = 0;
   for (int i = 0; i < ps.size(); i++) {
-    rel_bv_prog bv = prog_rel_bit_vec(ps[i]);
-    int bv_count = bv.count();
+    int bv = to_rel_bv(ps[i]);
+    int bv_count = pop_count_asm(bv);
     if (bv_count > count) {
       count = bv_count;
       best = bv;
@@ -108,18 +84,15 @@ rel_bv_prog prog::prog_rel_bit_vec(const vector<prog> &ps) {
   return best;
 }
 
-abs_bv_prog prog::prog_abs_bit_vec() const {
-  string s = "";
+void prog::to_abs_bv(vector<int>& bv) const {
   for (int i = 0; i < this->get_max_prog_len(); i++) {
-    s += inst_list[i].inst_to_abs_bv().to_string();
+    bv.push_back(instptr_list[i]->to_abs_bv());
   }
-  abs_bv_prog bvp(s);
-  return bvp;
 }
 
 bool prog::if_ret_exists(int start, int end) const {
   for (int i = start; i < end; i++) {
-    if (inst_list[i].get_opcode_type() == OP_RET) {
+    if (instptr_list[i]->get_opcode_type() == OP_RET) {
       return true;
     }
   }
@@ -142,9 +115,9 @@ void prog::update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_bef
     // has RETs instruction, check jmp distance
     int start_index_chk_ret = 0;
     for (int i = 0; i < MAX_PROG_LEN; i++) {
-      if ((inst_list[i].get_opcode_type() == OP_COND_JMP) &&
-          ((i + 1 + inst_list[i].get_jmp_dis()) > start_index_chk_ret)) {
-        start_index_chk_ret = i + 1 + inst_list[i].get_jmp_dis();
+      if ((instptr_list[i]->get_opcode_type() == OP_COND_JMP) &&
+          ((i + 1 + instptr_list[i]->get_jmp_dis()) > start_index_chk_ret)) {
+        start_index_chk_ret = i + 1 + instptr_list[i]->get_jmp_dis();
       }
     }
     ret_exists = if_ret_exists(start_index_chk_ret, MAX_PROG_LEN);
@@ -168,7 +141,7 @@ void prog::canonicalize() {
   // traverse all instructions and once there is a new reg_id(before), assign it a reg_id(after)
   // store reg_id(before) and reg_id(after) into map
   for (int i = 0; i < MAX_PROG_LEN; i++) {
-    reg_list = inst_list[i].get_reg_list();
+    reg_list = instptr_list[i]->get_reg_list();
     for (size_t j = 0; j < reg_list.size(); j++) {
       if (map_before_after.find(reg_list[j]) == map_before_after.end()) {
         map_before_after[reg_list[j]] = (int)map_before_after.size();
@@ -192,9 +165,9 @@ void prog::canonicalize() {
 
   // replace reg_ids(before) with reg_ids(after) for all instructions
   for (int i = 0; i < MAX_PROG_LEN; i++) {
-    for (int j = 0; j < inst_list[i].get_insn_num_regs(); j++) {
-      int reg_id_after = map_before_after[inst_list[i].get_operand(j)];
-      inst_list[i].set_operand(j, reg_id_after);
+    for (int j = 0; j < instptr_list[i]->get_insn_num_regs(); j++) {
+      int reg_id_after = map_before_after[instptr_list[i]->get_operand(j)];
+      instptr_list[i]->set_operand(j, reg_id_after);
     }
   }
 }
@@ -202,15 +175,19 @@ void prog::canonicalize() {
 int prog::num_real_instructions() const {
   int count = 0;
   for (int i = 0; i < get_max_prog_len(); i++) {
-    count += inst_list[i].is_real_inst();
+    count += instptr_list[i]->is_real_inst();
   }
   return count;
+}
+
+int prog::interpret(prog_state &ps, int input) const {
+  return instptr_list[0]->interpret(instptr_list, ps, input);
 }
 
 size_t progHash::operator()(const prog &x) const {
   size_t hval = 0;
   for (int i = 0; i < x.get_max_prog_len(); i++) {
-    hval = hval ^ (instHash()(x.inst_list[i]) << (i % 4));
+    hval = hval ^ (instHash()(*(x.instptr_list[i])) << (i % 4));
   }
   return hval;
 }

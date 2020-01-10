@@ -9,14 +9,14 @@
 using namespace std;
 
 #define N 7
-inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                        inst(ADDXY, 0, 2),  /* add r0, r2 */
-                        inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                        inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                        inst(RETX, 3),      /* ret r3 */
-                        inst(RETX, 0),      /* else ret r0 */
-                        NOP,  /* control never reaches here */
-                       };
+toy_isa_inst instructions[N] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
+                                toy_isa_inst(toy_isa::ADDXY, 0, 2),  /* add r0, r2 */
+                                toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
+                                toy_isa_inst(toy_isa::JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                                toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
+                                toy_isa_inst(toy_isa::RETX, 0),      /* else ret r0 */
+                                toy_isa_inst(),  /* control never reaches here */
+                               };
 
 vector<int> inputs;
 
@@ -56,7 +56,7 @@ void test1(int nrolls, double w_e, double w_p)  {
   mh._next_proposal.set_probability(0.3, 0.5);
   std::unordered_map<int, vector<prog*> > prog_freq;
   prog orig(instructions);
-  mh._cost.init(&orig, N, inputs, w_e, w_p);
+  mh._cost.init(TOY_ISA, &orig, N, inputs, w_e, w_p);
   mh.mcmc_iter(nrolls, orig, prog_freq);
   mh_sampler_res_print(nrolls, prog_freq);
 }

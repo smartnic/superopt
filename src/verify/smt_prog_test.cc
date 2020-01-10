@@ -1,5 +1,6 @@
 #include <iostream>
 #include "../../src/utils.h"
+#include "../../src/isa/toy-isa/inst.h"
 #include "smt_prog.h"
 
 using namespace z3;
@@ -9,15 +10,17 @@ using namespace z3;
 // basic block test
 void test1() {
   std::cout << "test 1: basic block check starts...\n";
-  inst p[5] = {inst(MOVXC, 1, 10),   // 0
-               inst(JMPLT, 0, 1, 1), // 1
-               inst(RETX, 1),        // 2
-               inst(MAXC, 0, 15),    // 3
-               inst(RETX, 0),        // 4
-              };
+  vector<inst*> instptr_list(5);
+  toy_isa_inst p[5] = {toy_isa_inst(toy_isa::MOVXC, 1, 10),   // 0
+                       toy_isa_inst(toy_isa::JMPLT, 0, 1, 1), // 1
+                       toy_isa_inst(toy_isa::RETX, 1),        // 2
+                       toy_isa_inst(toy_isa::MAXC, 0, 15),    // 3
+                       toy_isa_inst(toy_isa::RETX, 0),        // 4
+                      };
   smt_prog ps;
   unsigned int prog_id = 0;
-  expr pl = ps.gen_smt(prog_id, p, 5);
+  p->convert_to_pointers(instptr_list, p);
+  expr pl = ps.gen_smt(prog_id, instptr_list);
   // test block 2[3:4]
   std::cout << "test 1.1: check basic block 2[3:4]\n";
   // fmt: r_[prog_id]_[block_id]_[reg_id]_[version_id]
@@ -37,16 +40,18 @@ void test1() {
   print_test_res(is_smt_valid(post2 == ps.post[2][0]), "post condition");
 
   std::cout << "\ntest1.2: check basic block 2[2:3]\n";
-  inst p1[7] = {inst(JMPLT, 0, 1, 3),   // 0 [0:0]
-                inst(MOVXC, 0, 1),      // 1 [1:1]
-                inst(ADDXY, 0, 0),      // 2 [2:3]
-                inst(RETX, 0),          // 3
-                inst(ADDXY, 0, 0),      // 4 [4:5]
-                inst(JMPLT, 0, 1, -4),  // 5
-                inst(RETX, 0),          // 6 [6:6]
-               };
+  toy_isa_inst p1[7] = {toy_isa_inst(toy_isa::JMPLT, 0, 1, 3),   // 0 [0:0]
+                        toy_isa_inst(toy_isa::MOVXC, 0, 1),      // 1 [1:1]
+                        toy_isa_inst(toy_isa::ADDXY, 0, 0),      // 2 [2:3]
+                        toy_isa_inst(toy_isa::RETX, 0),          // 3
+                        toy_isa_inst(toy_isa::ADDXY, 0, 0),      // 4 [4:5]
+                        toy_isa_inst(toy_isa::JMPLT, 0, 1, -4),  // 5
+                        toy_isa_inst(toy_isa::RETX, 0),          // 6 [6:6]
+                       };
   prog_id = 1;
-  ps.gen_smt(prog_id, p1, 7);
+  instptr_list.resize(7);
+  p1->convert_to_pointers(instptr_list, p1);
+  ps.gen_smt(prog_id, instptr_list);
   // blocks: 0[0:0] 1[1:1] 2[2:3] 3[4:5] 4[6:6]
   // case0: 0 -> 1 -> 2; case1: 0 -> 3 -> 2
   // fmt: r_[prog_id]_[block_id]_[reg_id]_[version_id]
@@ -74,10 +79,12 @@ void test1() {
   print_test_res(is_smt_valid(post2 == ps.post[2][0]), "post condition");
 
   std::cout << "\ntest1.3: check program-end basic block 0[0:0] without RET instructions\n";
-  inst p2[1] = {inst(ADDXY, 0, 0),
-               };
+  toy_isa_inst p2[1] = {toy_isa_inst(toy_isa::ADDXY, 0, 0),
+                       };
   prog_id = 2;
-  ps.gen_smt(prog_id, p2, 1);
+  instptr_list.resize(1);
+  p2->convert_to_pointers(instptr_list, p2);
+  ps.gen_smt(prog_id, instptr_list);
   // fmt: r_[prog_id]_[block_id]_[reg_id]_[version_id]
   expr post0 = implies(v("true"), v("output" + to_string(prog_id)) == v("r_2_0_0_1"));
   print_test_res(is_smt_valid(post0 == ps.post[0][0]), "post condition");
@@ -85,26 +92,33 @@ void test1() {
 
 void test2() {
   std::cout << "\ntest2.1: check single instruction logic\n";
+  vector<inst*> instptr_list(1);
   // check instrcution MAXX logic
-  // case1: inst(MAXX, 0, 0); case2: inst(MAXX, 0, 1)
-  inst p[1] = {inst(MAXX, 0, 0)};
+  // case1: toy_isa_inst(toy_isa::MAXX, 0, 0); case2: toy_isa_inst(toy_isa::MAXX, 0, 1)
+  toy_isa_inst p[1] = {toy_isa_inst(toy_isa::MAXX, 0, 0)};
   smt_prog ps;
+  p->convert_to_pointers(instptr_list, p);
   unsigned int prog_id = 0;
-  ps.gen_smt(prog_id, p, 1);
+  ps.gen_smt(prog_id, instptr_list);
   expr bl_expected = v("r_0_0_0_1") == v("r_0_0_0_0");
   bool assert_res = is_smt_valid(bl_expected == ps.bl[0]);
-  inst p1[1] = {inst(MAXX, 0, 1)};
-  ps.gen_smt(prog_id, p1, 1);
+
+  toy_isa_inst p1[1] = {toy_isa_inst(toy_isa::MAXX, 0, 1)};
+  instptr_list.resize(1);
+  p1->convert_to_pointers(instptr_list, p1);
+  ps.gen_smt(prog_id, instptr_list);
   bl_expected = (v("r_0_0_0_0") >= v("r_0_0_1_0") && (v("r_0_0_0_1") == v("r_0_0_0_0"))) ||
                 (v("r_0_0_0_0") < v("r_0_0_1_0") && (v("r_0_0_0_1") == v("r_0_0_1_0")));
   assert_res = assert_res && is_smt_valid(bl_expected == ps.bl[0]);
   print_test_res(assert_res, "instruction MAXX logic");
 
   // check instruction JMP logic when jmp distance is 0
-  inst p2[2] = {inst(JMPEQ, 2, 0, 0),
-                inst(ADDXY, 0, 1),
-               };
-  expr pl = ps.gen_smt(prog_id, p2, 2);
+  toy_isa_inst p2[2] = {toy_isa_inst(toy_isa::JMPEQ, 2, 0, 0),
+                        toy_isa_inst(toy_isa::ADDXY, 0, 1),
+                       };
+  instptr_list.resize(2);
+  p2->convert_to_pointers(instptr_list, p2);
+  expr pl = ps.gen_smt(prog_id, instptr_list);
   expr pl_expected = (v("r_0_1_0_0") == v("r_0_0_0_0")) &&
                      (v("r_0_1_1_0") == v("r_0_0_1_0")) &&
                      (v("r_0_1_2_0") == v("r_0_0_2_0")) &&
@@ -116,14 +130,16 @@ void test2() {
 
 void test3() {
   std::cout << "\ntest3: check unconditional jmp program\n";
-  inst p1[4] = {inst(JMP, 1),
-                inst(ADDXY, 0, 0),
-                inst(ADDXY, 0, 0),
-                inst(RETX, 0),
-               };
+  toy_isa_inst p1[4] = {toy_isa_inst(toy_isa::JMP, 1),
+                        toy_isa_inst(toy_isa::ADDXY, 0, 0),
+                        toy_isa_inst(toy_isa::ADDXY, 0, 0),
+                        toy_isa_inst(toy_isa::RETX, 0),
+                       };
   int prog_id = 1;
   smt_prog ps;
-  ps.gen_smt(prog_id, p1, 4);
+  vector<inst*> instptr_list(4); 
+  p1->convert_to_pointers(instptr_list, p1);
+  ps.gen_smt(prog_id, instptr_list);
   expr pre_iv1_1 = (v("r_1_1_0_0") == v("r_1_0_0_0") && \
                     v("r_1_1_1_0") == v("r_1_0_1_0") && \
                     v("r_1_1_2_0") == v("r_1_0_2_0") && \

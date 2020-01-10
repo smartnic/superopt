@@ -1,57 +1,69 @@
 #include <iostream>
+#include <bitset>
 #include "../../../src/utils.h"
 #include "inst.h"
 
 /* r0 contains the input */
-inst instructions[6] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
-                        inst(ADDXY, 0, 2),  /* add r0, r2 */
-                        inst(MOVXC, 3, 15),  /* mov r3, 15  */
-                        inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                        inst(RETX, 3),      /* ret r3 */
-                        inst(RETX, 0),      /* else ret r0 */
-                       };
+toy_isa_inst instructions[6] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
+                                toy_isa_inst(toy_isa::ADDXY, 0, 2),  /* add r0, r2 */
+                                toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
+                                toy_isa_inst(toy_isa::JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                                toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
+                                toy_isa_inst(toy_isa::RETX, 0),      /* else ret r0 */
+                               };
 
-inst instructions2[4] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
-                         inst(ADDXY, 0, 2),     /* add r0, r2 */
-                         inst(MAXC, 0, 15),     /* max r0, 15 */
-                         inst(RETX, 0),         /* ret r0 */
-                        };
+toy_isa_inst instructions2[4] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),     /* mov r2, 4 */
+                                 toy_isa_inst(toy_isa::ADDXY, 0, 2),     /* add r0, r2 */
+                                 toy_isa_inst(toy_isa::MAXC, 0, 15),     /* max r0, 15 */
+                                 toy_isa_inst(toy_isa::RETX, 0),         /* ret r0 */
+                                };
 
-inst instructions3[2] = {inst(NOP), /* test no-op */
-                         inst(RETX, 0), /* ret r0 */
-                        };
+toy_isa_inst instructions3[2] = {toy_isa_inst(toy_isa::NOP), /* test no-op */
+                                 toy_isa_inst(toy_isa::RETX, 0), /* ret r0 */
+                                };
 
 /* test unconditional jmp */
-inst instructions4[3] = {inst(JMP, 1),
-                         inst(ADDXY, 0, 0),
-                         inst(RETX, 0),
-                        };
+toy_isa_inst instructions4[3] = {toy_isa_inst(toy_isa::JMP, 1),
+                                 toy_isa_inst(toy_isa::ADDXY, 0, 0),
+                                 toy_isa_inst(toy_isa::RETX, 0),
+                                };
 
 void test1(int input) {
-  prog_state ps;
+  toy_isa_prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
-  print_test_res(instructions->interpret(6, ps, input) == max(input + 4, 15),
+  vector<inst*> instptr_list(6);
+  instructions->convert_to_pointers(instptr_list, instructions);
+  print_test_res(instptr_list[0]->interpret(instptr_list, ps, input) == max(input + 4, 15),
                  "interpret program 1");
-  print_test_res(instructions2->interpret(4, ps, input) == max(input + 4, 15),
+
+  instptr_list.resize(4);
+  instructions2->convert_to_pointers(instptr_list, instructions2);
+  print_test_res(instptr_list[0]->interpret(instptr_list, ps, input) == max(input + 4, 15),
                  "interpret program 2");
-  print_test_res(instructions3->interpret(2, ps, input) == input,
+
+  instptr_list.resize(2);
+  instructions3->convert_to_pointers(instptr_list, instructions3);
+  print_test_res(instptr_list[0]->interpret(instptr_list, ps, input) == input,
                  "interpret program 3");
-  print_test_res(instructions4->interpret(3, ps, input) == input,
+
+  instptr_list.resize(3);
+  instructions4->convert_to_pointers(instptr_list, instructions4);
+  print_test_res(instptr_list[0]->interpret(instptr_list, ps, input) == input,
                  "interpret program 4");
 }
 
 void test2() {
   cout << "Test 2" << endl;
-  inst x = inst(MOVXC, 2, 4);
-  inst y = inst(MOVXC, 2, 4);
-  inst z = inst(MOVXC, 2, 3);
-  inst w = inst(RETX, 3);
+  toy_isa_inst x = toy_isa_inst(toy_isa::MOVXC, 2, 4);
+  toy_isa_inst y = toy_isa_inst(toy_isa::MOVXC, 2, 4);
+  toy_isa_inst z = toy_isa_inst(toy_isa::MOVXC, 2, 3);
+  toy_isa_inst w = toy_isa_inst(toy_isa::RETX, 3);
 
   cout << "Instruction operator== check" << endl;
   print_test_res((x == y) == true, "operator== 1");
-  print_test_res((inst(RETX, 3) == inst(RETC, 3)) == false, "operator== 2");
-  print_test_res((inst(RETX, 3) == inst(RETX, 2)) == false, "operator== 3");
-  print_test_res((inst(RETX, 3) == inst(RETX, 3)) == true, "operator== 4");
+  print_test_res((toy_isa_inst(toy_isa::RETX, 3) == toy_isa_inst(toy_isa::RETC, 3)) == false, "operator== 2");
+  print_test_res((toy_isa_inst(toy_isa::RETX, 3) == toy_isa_inst(toy_isa::RETX, 2)) == false, "operator== 3");
+  print_test_res((toy_isa_inst(toy_isa::RETX, 3) == toy_isa_inst(toy_isa::RETX, 3)) == true, "operator== 4");
 
   cout << "Instruction hash value check" << endl;
   print_test_res(instHash()(x) == 22, "hash value 1");
@@ -70,8 +82,8 @@ void test3() {
                            string("00011000000000000000");
   string bv_str = "";
   for (int i = 0; i < 6; i++) {
-    inst x = instructions[i];
-    bv_str += x.inst_to_abs_bv().to_string();
+    toy_isa_inst x = instructions[i];
+    bv_str += bitset<toy_isa::INST_NUM_BITS>(x.to_abs_bv()).to_string();
   }
   print_test_res(bv_str == expected_bv_str, "inst_to_abs_bv");
 }

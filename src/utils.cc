@@ -46,3 +46,16 @@ void split_string(const string& s, vector<string>& v, const string& c) {
   if (pos1 != s.length())
     v.push_back(s.substr(pos1));
 }
+
+
+/* Requires support for advanced bit manipulation (ABM) instructions on the
+ * architecture where this program is run. */
+unsigned int pop_count_asm(unsigned int x) {
+  unsigned int y = x;
+  unsigned int z;
+  asm ("popcnt %1, %0"
+       : "=a" (z)
+       : "b" (y)
+      );
+  return z;
+}

@@ -2,7 +2,7 @@
 
 #include "z3++.h"
 #include "../../src/inout.h"
-#include "../../src/isa/toy-isa/inst.h"
+#include "../../src/isa/inst.h"
 #include "smt_prog.h"
 
 using namespace z3;
@@ -55,16 +55,16 @@ class validator {
   expr _store_f = string_to_expr("true");
   /* store variables end */
   validator();
-  validator(inst* orig, int len);
+  validator(vector<inst*>& orig);
   validator(expr fx, expr input, expr output);
   ~validator();
   // calculate and store pre_orig, ps_orign
-  void set_orig(inst* orig, int len);
+  void set_orig(vector<inst*>& orig);
   // fx is the original FOL formula, input/output is the input/output variable of fx
   void set_orig(expr fx, expr input, expr output);
   // check whether synth is equal to orig
   // return 0: not equal; return 1: equal; return -1: synth is illegal
-  int is_equal_to(inst* synth, int len);
+  int is_equal_to(vector<inst*>& synth);
   // given input, return the output of the original
   int get_orig_output(int input, unsigned int num_regs);
   // move from `private` to `public` for testing time

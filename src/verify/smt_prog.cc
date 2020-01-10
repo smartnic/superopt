@@ -43,12 +43,11 @@ smt_prog::smt_prog() {}
 smt_prog::~smt_prog() {}
 
 // assume Block has no branch and is an ordered sequence of instructions
-void smt_prog::smt_block(expr& smt_b, inst* program, int length, smt_var& sv) {
-  inst* inst_lst = program;
+void smt_prog::smt_block(expr& smt_b, vector<inst*>& program, int start, int end, smt_var& sv) {
   expr p = string_to_expr("true");
-  for (size_t i = 0; i < length; i++) {
-    if (inst_lst[i].get_opcode_type() != OP_OTHERS) continue;
-    p = p and smt_inst(sv, inst_lst[i]);
+  for (size_t i = start; i <= end; i++) {
+    if (program[i]->get_opcode_type() != OP_OTHERS) continue;
+    p = p and program[i]->smt_inst(sv);
   }
   smt_b = p.simplify();
 }
@@ -102,11 +101,10 @@ void smt_prog::topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vecto
   blocks.push_back(cur_bid);
 }
 
-void smt_prog::gen_block_prog_logic(expr& e, smt_var& sv, size_t cur_bid, inst* inst_lst) {
-  inst* start = &inst_lst[g.nodes[cur_bid]._start];
-  int length = g.nodes[cur_bid]._end - g.nodes[cur_bid]._start + 1;
+// may need to modify
+void smt_prog::gen_block_prog_logic(expr& e, smt_var& sv, size_t cur_bid, vector<inst*>& inst_lst) {
   e = string_to_expr("true");
-  smt_block(e, start, length, sv);
+  smt_block(e, inst_lst, g.nodes[cur_bid]._start, g.nodes[cur_bid]._end, sv);
   bl[cur_bid] = e; // store
 }
 
@@ -165,7 +163,7 @@ void smt_prog::gen_post_path_con(smt_var& sv, size_t cur_bid, inst& inst_end) {
   // Why: according to the process of jmp path condition in function gen_all_edges_graph in cfg.cc
   // case 3 step 2
   vector<expr> c_inst_end;
-  expr e = smt_inst_jmp(sv, inst_end);
+  expr e = inst_end.smt_inst_jmp(sv);
   // keep order: insert no jmp first
   c_inst_end.push_back(!e); // no jmp
   c_inst_end.push_back(e);  // jmp
@@ -215,7 +213,7 @@ expr smt_prog::smt_end_block_inst(size_t cur_bid, inst& inst_end, unsigned int p
 
 // Set f_p_output to capture the output of the program (from return instructions/default register)
 // in the variable output[prog_id]
-void smt_prog::process_output(expr& f_p_output, inst* inst_lst, unsigned int prog_id) {
+void smt_prog::process_output(expr& f_p_output, vector<inst*>& inst_lst, unsigned int prog_id) {
   expr e = string_to_expr("true");
   // search all basic blocks for the basic blocks without outgoing edges
   for (size_t i = 0; i < g.nodes.size(); i++) {
@@ -223,7 +221,7 @@ void smt_prog::process_output(expr& f_p_output, inst* inst_lst, unsigned int pro
     // process END instruction
     expr c_in = string_to_expr("true");
     gen_block_c_in(c_in, i);
-    expr e1 = smt_end_block_inst(i, inst_lst[g.nodes[i]._end], prog_id);
+    expr e1 = smt_end_block_inst(i, *inst_lst[g.nodes[i]._end], prog_id);
     expr e2 = implies(c_in.simplify(), e1);
     e = e && e2;
     post[i][0] = e2; // store
@@ -231,18 +229,18 @@ void smt_prog::process_output(expr& f_p_output, inst* inst_lst, unsigned int pro
   f_p_output = e;
 }
 
-expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
+expr smt_prog::gen_smt(unsigned int prog_id, vector<inst*>& inst_lst) {
   try {
     // generate a cfg
     // illegal input would be detected: 1. program with loop
     // 2. program that goes to the invalid instruction
-    g.gen_graph(inst_lst, length);
+    g.gen_graph(inst_lst);
   } catch (const string err_msg) {
     throw (err_msg);
   }
   // init class variables
-  const unsigned int NUM_REGS = inst_lst->get_num_regs();
-  init(NUM_REGS);
+  const unsigned int num_regs = inst_lst[0]->get_num_regs();
+  init(num_regs);
 
   // blocks stores the block IDs in order after topological sorting
   vector<unsigned int> blocks;
@@ -257,7 +255,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   // process each basic block in order
   for (size_t i = 0; i < blocks.size(); i++) {
     unsigned int b = blocks[i];
-    smt_var sv(prog_id, b, NUM_REGS);
+    smt_var sv(prog_id, b, num_regs);
     // generate f_bl: the block program logic
     expr f_bl = string_to_expr("true");
     gen_block_prog_logic(f_bl, sv, b, inst_lst);
@@ -269,15 +267,15 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
       for (size_t j = 0; j < g.nodes_in[b].size(); j++) {
         // generate f_iv: the logic that the initial values are fed by the last basic block
         expr f_iv = string_to_expr("true");
-        get_init_val(f_iv, sv, g.nodes_in[b][j], NUM_REGS);
+        get_init_val(f_iv, sv, g.nodes_in[b][j], num_regs);
         reg_iv[b][j] = f_iv; // store
         f_block[b] = f_block[b] && implies(path_con[b][j], f_iv && f_bl);
       }
     }
     // store post iv for current basic block b
-    store_post_reg_val(sv, b, NUM_REGS);
+    store_post_reg_val(sv, b, num_regs);
     // update post path condtions "path_con" created by current basic block b
-    gen_post_path_con(sv, b, inst_lst[g.nodes[b]._end]);
+    gen_post_path_con(sv, b, *inst_lst[g.nodes[b]._end]);
   }
 
   // program FOL formula; f_prog = f_block[0] && ... && f_block[n]
