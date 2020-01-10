@@ -1,20 +1,16 @@
 #pragma once
 
 #include <iostream>
-#include <bitset>
 #include <vector>
 #include <unordered_map>
-#include "../../../src/isa/inst.h"
-#include "../../../src/isa/toy-isa/inst.h"
+#include "../../src/utils.h"
+#include "../../src/isa/inst.h"
 
 using namespace std;
 
-typedef bitset<toy_isa::MAX_PROG_LEN> rel_bv_prog;
-typedef bitset<toy_isa::MAX_PROG_LEN * INST_ABS_BIT_LEN> abs_bv_prog;
-
 class prog {
  public:
-  toy_isa_inst* inst_list = nullptr;
+  vector<inst*> instptr_list;
   int freq_count;
   double  _error_cost;
   double  _perf_cost;
@@ -27,16 +23,17 @@ class prog {
   void init_vals();
   void set_error_cost(double cost);
   void set_perf_cost(double cost);
-  rel_bv_prog prog_rel_bit_vec(const prog &p);
-  rel_bv_prog prog_rel_bit_vec(const vector<prog> &ps);
-  abs_bv_prog prog_abs_bit_vec() const;
+  int to_rel_bv(const prog &p) const;
+  int to_rel_bv(const vector<prog> &ps) const;
+  void to_abs_bv(vector<int>& bv) const;
   bool if_ret_exists(int start, int end) const;
   void update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const;
   void canonicalize();
   int num_real_instructions() const;
-  int get_max_prog_len() const {return inst_list->get_max_prog_len();}
-  int get_max_op_len() const {return inst_list->get_max_op_len();}
-  int get_num_instr() const {return inst_list->get_num_instr();}
+  int get_max_prog_len() const {return instptr_list[0]->get_max_prog_len();}
+  int get_max_op_len() const {return instptr_list[0]->get_max_op_len();}
+  int get_num_instr() const {return instptr_list[0]->get_num_instr();}
+  int interpret(prog_state &ps, int input) const;
 };
 
 struct progHash {

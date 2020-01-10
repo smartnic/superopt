@@ -1,5 +1,5 @@
 ./main.out \
--m -n 5000 --path_out "measure/" --bm 0 \
+--isa 0 -m -n 5000 --path_out "measure/" --bm 0 \
 --w_e 0.5 --w_p 1.5 \
 --st_ex 0 --st_eq 0 --st_avg 0 \
 --st_when_to_restart 1 --st_when_to_restart_niter 2000 \

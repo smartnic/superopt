@@ -33,15 +33,6 @@ string toy_isa_inst::opcode_to_str(int opcode) const {
   }
 }
 
-abs_bv_inst toy_isa_inst::inst_to_abs_bv() const {
-  int v = (_opcode << (OP_ABS_BIT_LEN * 3)) +
-          (_args[0] << (OP_ABS_BIT_LEN * 2)) +
-          (_args[1] << (OP_ABS_BIT_LEN * 1)) +
-          (_args[2]);
-  abs_bv_inst bv(v);
-  return bv;
-}
-
 toy_isa_inst& toy_isa_inst::operator=(const inst &rhs) {
   _opcode = rhs._opcode;
   _args[0] = rhs._args[0];
@@ -50,6 +41,7 @@ toy_isa_inst& toy_isa_inst::operator=(const inst &rhs) {
   return *this;
 }
 
+// For jmp opcode, it can only jump forward
 int toy_isa_inst::get_max_operand_val(int op_index, int inst_index) const {
   // max value for each operand type
   int max_val[4] = {
@@ -61,6 +53,32 @@ int toy_isa_inst::get_max_operand_val(int op_index, int inst_index) const {
   return max_val[TOY_ISA_OPTYPE(_opcode, op_index)];
 }
 
+void toy_isa_inst::make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const {
+  int num_inst = instptr_list.size();
+  toy_isa_inst* new_insts = new toy_isa_inst[num_inst];
+  for (int i = 0; i < num_inst; i++) {
+    new_insts[i] = *other[i];
+  }
+  for (int i = 0; i < num_inst; i++) {
+    instptr_list[i] = &new_insts[i];
+  }
+}
+
+void toy_isa_inst::make_insts(vector<inst*> &instptr_list, const inst* instruction) const {
+  int num_inst = instptr_list.size();
+  toy_isa_inst* new_insts = new toy_isa_inst[num_inst];
+  for (int i = 0; i < num_inst; i++) {
+    new_insts[i] = instruction[i];
+  }
+  for (int i = 0; i < num_inst; i++) {
+    instptr_list[i] = &new_insts[i];
+  }
+}
+
+void toy_isa_inst::clear_insts() {
+  delete []this;
+}
+
 int toy_isa_inst::get_jmp_dis() const {
   switch (get_opcode_type()) {
     case (OP_UNCOND_JMP): return _args[0];
@@ -69,11 +87,13 @@ int toy_isa_inst::get_jmp_dis() const {
   }
 }
 
-void toy_isa_inst::insert_jmp_opcodes(unordered_set<int>& jmp_sets) const {
-  for (enum toy_isa::OPCODES opcode = toy_isa::JMP; opcode <= toy_isa::JMPLE;
-       opcode = toy_isa::OPCODES(opcode + 1)) {
-    jmp_sets.insert(opcode);
-  }
+void toy_isa_inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
+  jmp_set.insert(toy_isa::JMP);
+  jmp_set.insert(toy_isa::JMPEQ);
+  jmp_set.insert(toy_isa::JMPGT);
+  jmp_set.insert(toy_isa::JMPGE);
+  jmp_set.insert(toy_isa::JMPLT);
+  jmp_set.insert(toy_isa::JMPLE);
 }
 
 int toy_isa_inst::inst_output_opcode_type() const {
@@ -103,11 +123,19 @@ bool toy_isa_inst::is_real_inst() const {
   return true;
 }
 
-int toy_isa_inst::interpret(int length, toy_isa_prog_state &ps, int input) {
+void toy_isa_inst::set_as_nop_inst() {
+  _opcode = toy_isa::NOP;
+  _args[0] = 0;
+  _args[1] = 0;
+  _args[2] = 0;
+}
+
+int toy_isa_inst::interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
-  inst *start = this;
-  inst *insn = this;
+  // inst *insn = this;
+  int insn = 0;
+  int length = instptr_list.size();
   ps.clear();
   ps.regs[0] = input;
 
@@ -127,19 +155,25 @@ int toy_isa_inst::interpret(int length, toy_isa_prog_state &ps, int input) {
     [toy_isa::MAXX] = && INSN_MAXX,
   };
 
+#undef CONT
 #define CONT { \
       insn++;                                                           \
-      if (insn < start + length) {                                    \
+      if (insn < length) {                                    \
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
-#define DST ps.regs[DSTREG(*insn)]
-#define SRC ps.regs[SRCREG(*insn)]
-#define IMM1 IMM1VAL(*insn)
-#define IMM2 IMM2VAL(*insn)
+
+#undef DST
+#undef SRC
+#undef IMM1
+#undef IMM2
+#define DST ps.regs[DSTREG(*instptr_list[insn])]
+#define SRC ps.regs[SRCREG(*instptr_list[insn])]
+#define IMM1 IMM1VAL(*instptr_list[insn])
+#define IMM2 IMM2VAL(*instptr_list[insn])
 
 select_insn:
-  goto *jumptable[insn->_opcode];
+  goto *jumptable[instptr_list[insn]->_opcode];
 
 INSN_NOP:
   CONT;
@@ -170,10 +204,11 @@ INSN_JMP:
   insn += IMM1;
   CONT;
 
+#undef COND_JMP
 #define COND_JMP(SUFFIX, OP)                    \
   INSN_JMP##SUFFIX:                             \
       if (DST OP SRC)                           \
-        insn += insn->_args[2];                 \
+        insn += instptr_list[insn]->_args[2];                 \
   CONT;
 
   COND_JMP(EQ, == )
@@ -190,6 +225,7 @@ out:
   //cout << "Error: program terminated without RET; returning R0" << endl;
   return ps.regs[0]; /* return default R0 value */
 }
+
 
 #undef IMM2
 #define CURSRC sv.get_cur_reg_var(SRCREG(*this))
@@ -237,10 +273,4 @@ z3::expr toy_isa_inst::smt_inst_jmp(smt_var& sv) const {
     case toy_isa::JMPLE: return (CURDST <= CURSRC);
     default: return string_to_expr("false");
   }
-}
-
-ostream& operator<<(ostream& out, abs_bv_inst& bv) {
-  for (size_t i = 0; i < bv.size(); i++)
-    out << bv[i];
-  return out;
 }

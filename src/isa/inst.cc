@@ -25,6 +25,16 @@ void inst::print() const {
   cout << endl;
 }
 
+int inst::to_abs_bv() const {
+  const int op_num_bits = get_op_num_bits();
+  const int num_args = _args.size();
+  int res = _opcode << (op_num_bits * num_args);
+  for (int i = 0; i < num_args; i++) {
+    res += _args[i] << (op_num_bits * (num_args - i - 1));
+  }
+  return res;
+}
+
 vector<int> inst::get_reg_list() const {
   vector<int> reg_list;
   for (int i = 0; i < get_insn_num_regs(); i++)
@@ -65,6 +75,12 @@ int inst::get_opcode() const {
 void inst::set_opcode(int op_value) {
   assert(op_value < get_num_instr());
   _opcode = op_value;
+}
+
+void inst::convert_to_pointers(vector<inst*> &instptr_list, inst* instruction) const {
+  for (int i = 0; i < instptr_list.size(); i++) {
+    instptr_list[i] = &instruction[i];
+  }
 }
 
 size_t instHash::operator()(const inst &x) const {

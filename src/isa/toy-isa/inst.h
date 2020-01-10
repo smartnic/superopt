@@ -8,15 +8,17 @@
 
 using namespace std;
 
-#define OP_ABS_BIT_LEN 5
-#define INST_ABS_BIT_LEN 20
-
 class toy_isa {
  public:
   static constexpr int NUM_REGS = 4;
   static constexpr int MAX_PROG_LEN = 7;
   // Max number of operands in one instruction
   static constexpr int MAX_OP_LEN = 3;
+
+  // Number of bits of a single opcode or operand
+  static constexpr int OP_NUM_BITS = 5;
+  // Number of bits of a single instruction
+  static constexpr int INST_NUM_BITS = 20;
 
   // Instruction opcodes
   enum OPCODES {
@@ -136,24 +138,28 @@ class toy_isa_inst: public inst {
     _args[1] = arg2;
     _args[2] = arg3;
   }
-  string opcode_to_str(int) const;
-  abs_bv_inst inst_to_abs_bv() const;
   toy_isa_inst& operator=(const inst &rhs);
+  string opcode_to_str(int) const;
   int get_max_operand_val(int op_index, int inst_index = 0) const;
+  void make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const;
+  void make_insts(vector<inst*> &instptr_list, const inst* instruction) const;
+  void clear_insts();
   int get_jmp_dis() const;
-  void insert_jmp_opcodes(unordered_set<int>& jmp_sets) const;
+  void insert_jmp_opcodes(unordered_set<int>& jmp_set) const;
   int inst_output_opcode_type() const;
   int inst_output() const;
   bool is_real_inst() const;
+  void set_as_nop_inst();
   // for class toy_isa
   int get_num_regs() const {return _isa.NUM_REGS;}
   int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}
   int get_max_op_len() const {return _isa.MAX_OP_LEN;}
+  int get_op_num_bits() const {return _isa.OP_NUM_BITS;}
   int get_num_instr() const {return _isa.NUM_INSTR;}
   int get_num_operands() const {return _isa.num_operands[_opcode];}
   int get_insn_num_regs() const {return _isa.insn_num_regs[_opcode];}
   int get_opcode_type() const {return _isa.opcode_type[_opcode];}
-  int interpret(int length, toy_isa_prog_state &ps, int input);
+  int interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const;
   // smt
   z3::expr smt_inst(smt_var& sv) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;

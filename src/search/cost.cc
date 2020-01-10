@@ -7,34 +7,37 @@
 
 #define ERROR_COST_MAX 100000
 
-/* Requires support for advanced bit manipulation (ABM) instructions on the
- * architecture where this program is run. */
-unsigned int pop_count_asm(unsigned int x) {
-  unsigned int y = x;
-  unsigned int z;
-  asm ("popcnt %1, %0"
-       : "=a" (z)
-       : "b" (y)
-      );
-  return z;
-}
-
 cost::cost() {}
 
 cost::~cost() {}
 
-void cost::init(prog* orig, int len, const vector<int> &input,
+prog_state* cost::make_prog_state() {
+  switch (_isa) {
+    case TOY_ISA: return (new toy_isa_prog_state);
+    default: cout << "unknown ISA type, return nullptr" << endl; return nullptr;
+  }
+}
+
+void cost::clear_prog_state(prog_state* ps) {
+  delete ps;
+  ps = nullptr;
+}
+
+void cost::init(int isa, prog* orig, int len, const vector<int> &input,
                 double w_e, double w_p,
                 int strategy_ex, int strategy_eq, int strategy_avg) {
+  _isa = isa;
   set_orig(orig, len);
   _examples.clear();
+  prog_state* ps = make_prog_state();
   for (size_t i = 0; i < input.size(); i++) {
-    toy_isa_prog_state ps;
-    int output = orig->inst_list->interpret(len, ps, input[i]);
+    ps->clear();
+    int output = orig->interpret(*ps, input[i]);
     inout example;
     example.set_in_out(input[i], output);
     _examples.insert(example);
   }
+  clear_prog_state(ps);
   _w_e = w_e;
   _w_p = w_p;
   _strategy_ex = strategy_ex;
@@ -45,7 +48,7 @@ void cost::init(prog* orig, int len, const vector<int> &input,
 
 void cost::set_orig(prog* orig, int len) {
   try {
-    _vld.set_orig(orig->inst_list, len);
+    _vld.set_orig(orig->instptr_list);
   } catch (const string err_msg) {
     cout << "ERROR: the original program is illegal. ";
     cerr << err_msg << endl;
@@ -116,21 +119,22 @@ double cost::get_final_error_cost(int exs_cost, int is_equal,
 double cost::error_cost(prog* synth, int len) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   double total_cost = 0;
-  toy_isa_prog_state ps;
   int output1, output2;
   int num_successful_ex = 0;
+  prog_state* ps = make_prog_state();
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
-    output2 = synth->inst_list->interpret(len, ps, _examples._exs[i].input);
+    output2 = synth->interpret(*ps, _examples._exs[i].input);
     int ex_cost = get_ex_error_cost(output1, output2);
     if (ex_cost == 0) num_successful_ex++;
     total_cost += ex_cost;
   }
+  clear_prog_state(ps);
   int is_equal = 0;
   int ex_set_size = _examples._exs.size();
   if (num_successful_ex == ex_set_size) {
-    is_equal = _vld.is_equal_to(synth->inst_list, len);
+    is_equal = _vld.is_equal_to(synth->instptr_list);
   }
 
   int avg_value = get_avg_value(ex_set_size);
