@@ -29,9 +29,6 @@ class prog_state {
   void clear();
 };
 
-prog_state* make_prog_state(int isa_type);
-void clear_prog_starte(prog_state* ps);
-
 class inst {
  public:
   int _opcode;
