@@ -227,7 +227,7 @@ void usage() {
        << "options and descriptions" << endl
        << left // set setw(.) as left-aligned
        << setw(W) << "-h" << ": display usage" << endl
-       << setw(W) << "-isa arg" << ": ISA type, `arg`: 0(toy_isa)" << endl
+       << setw(W) << "--isa arg" << ": ISA type, `arg`: 0(toy_isa)" << endl
        << setw(W) << "-n arg" << ": number of iterations" << endl
        << setw(W) << "-m" << ": turn on measurement" << endl
        << setw(W) << "--path_out arg" << ": output file path" << endl
