@@ -24,7 +24,7 @@ enum ISA_TYPES{
 class prog_state {
   int pc = 0; /* Assume only straight line code execution for now */
  public:
-  vector<int> regs; /* assume only registers for now */
+  vector<int64_t> regs; /* assume only registers for now */
   void print();
   void clear();
 };
@@ -32,7 +32,7 @@ class prog_state {
 class inst {
  public:
   int _opcode;
-  vector<int> _args;
+  vector<int64_t> _args;
   inst() {}
   void print() const;
   int to_abs_bv() const;
@@ -40,7 +40,7 @@ class inst {
   bool operator==(const inst &x) const;
   inst& operator=(const inst &rhs);
   int get_operand(int op_index) const;
-  void set_operand(int op_index, int op_value);
+  void set_operand(int op_index, int64_t op_value);
   int get_opcode() const;
   void set_opcode(int op_value);
   void convert_to_pointers(vector<inst*> &instptr_list, inst* instruction) const;
@@ -66,7 +66,7 @@ class inst {
   virtual int get_num_operands() const {return 0;}
   virtual int get_insn_num_regs() const {return 0;}
   virtual int get_opcode_type() const {return 0;}
-  virtual int interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const {return 0;}
+  virtual int64_t interpret(const vector<inst*> &instptr_list, prog_state &ps, int input = 0) const {return 0;}
   // smt
   // return SMT for the given OP_OTHERS type instruction, other types return false
   virtual z3::expr smt_inst(smt_var& sv) const {return string_to_expr("false");}

@@ -130,7 +130,7 @@ void toy_isa_inst::set_as_nop_inst() {
   _args[2] = 0;
 }
 
-int toy_isa_inst::interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const {
+int64_t toy_isa_inst::interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
   // inst *insn = this;

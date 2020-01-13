@@ -59,3 +59,10 @@ unsigned int pop_count_asm(unsigned int x) {
       );
   return z;
 }
+
+bool is_little_endian() {
+  int i = 1;
+  char *p = (char *)&i;
+  if (*p == 1) return true;
+  return false;
+}
