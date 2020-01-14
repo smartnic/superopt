@@ -207,7 +207,7 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int inp
 
 #define COND_JMP_REG(OPCODE, OP)                                   \
   INSN_##OPCODE:                                                   \
-    if (L32(DST) OP L32(SRC))                                      \
+    if (DST OP SRC)                                                \
     insn += COND_OFF16;                                            \
   CONT;
 
