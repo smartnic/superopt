@@ -160,49 +160,29 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int inp
       } else goto out;                                             \
   }
 
-#define ALU64_IMM(OPCODE, OPERATION)                               \
+#define ALU64_UNARY(OPCODE, OP, OPERAND)                           \
   INSN_##OPCODE:                                                   \
-    DST = compute_##OPERATION(DST, IMM2_32);                       \
+    DST = compute_##OP(OPERAND);                                   \
     CONT;
 
-#define ALU64_REG(OPCODE, OPERATION)                               \
+#define ALU64_BINARY(OPCODE, OP, OPERAND1, OPERAND2)               \
   INSN_##OPCODE:                                                   \
-    DST = compute_##OPERATION(DST, SRC);                           \
+    DST = compute_##OP(OPERAND1, OPERAND2);                        \
     CONT;
 
-#define ALU64_IMM_UNARY(OPCODE, OPERATION)                         \
+#define ALU32_UNARY(OPCODE, OP, OPERAND)                           \
   INSN_##OPCODE:                                                   \
-    DST = compute_##OPERATION(IMM2_32);                            \
+    DST = L32(compute_##OP(OPERAND));                              \
     CONT;
 
-#define ALU64_REG_UNARY(OPCODE, OPERATION)                         \
+#define ALU32_BINARY(OPCODE, OP, OPERAND1, OPERAND2)               \
   INSN_##OPCODE:                                                   \
-    DST = compute_##OPERATION(SRC);                                \
+    DST = L32(compute_##OP(OPERAND1, OPERAND2));                   \
     CONT;
 
-#define ALU32_IMM(OPCODE, OPERATION)                               \
+#define BYTESWAP(OPCODE, OP)                                       \
   INSN_##OPCODE:                                                   \
-    DST = L32(compute_##OPERATION(DST32, IMM2_32));                \
-    CONT;
-
-#define ALU32_REG(OPCODE, OPERATION)                               \
-  INSN_##OPCODE:                                                   \
-    DST = L32(compute_##OPERATION(DST32, SRC32));                  \
-    CONT;
-
-#define ALU32_IMM_UNARY(OPCODE, OPERATION)                         \
-  INSN_##OPCODE:                                                   \
-    DST = L32(compute_##OPERATION(IMM2_32));                       \
-    CONT;
-
-#define ALU32_REG_UNARY(OPCODE, OPERATION)                         \
-  INSN_##OPCODE:                                                   \
-    DST = L32(compute_##OPERATION(SRC32));                         \
-    CONT;
-
-#define BYTESWAP(OPCODE, OPERATION)                                \
-  INSN_##OPCODE:                                                   \
-    DST = compute_##OPERATION(DST);                                \
+    DST = compute_##OP(DST);                                       \
     CONT;
 
 #define COND_JMP_IMM(OPCODE, OP)                                   \
@@ -254,15 +234,15 @@ select_insn:
 INSN_NOP:
   CONT;
 
-  ALU64_IMM(ADD64XC, add)
-  ALU64_REG(ADD64XY, add)
-  ALU64_IMM_UNARY(MOV64XC, mov)
-  ALU64_REG_UNARY(MOV64XY, mov)
+  ALU64_UNARY(MOV64XC, mov, IMM2_32)
+  ALU64_UNARY(MOV64XY, mov, SRC)
+  ALU64_BINARY(ADD64XC, add, DST, IMM2_32)
+  ALU64_BINARY(ADD64XY, add, DST, SRC)
 
-  ALU32_IMM(ADD32XC, add)
-  ALU32_REG(ADD32XY, add)
-  ALU32_IMM_UNARY(MOV32XC, mov)
-  ALU32_REG_UNARY(MOV32XY, mov)
+  ALU32_UNARY(MOV32XC, mov, IMM2_32)
+  ALU32_UNARY(MOV32XY, mov, SRC32)
+  ALU32_BINARY(ADD32XC, add, DST32, IMM2_32)
+  ALU32_BINARY(ADD32XY, add, DST32, SRC32)
 
   BYTESWAP(LE16, le16)
   BYTESWAP(LE32, le32)
