@@ -37,8 +37,14 @@ string ebpf_inst::opcode_to_str(int opcode) const {
     case ebpf::ARSH64XY: return "arsh";
     case ebpf::ADD32XC: return "add32";
     case ebpf::ADD32XY: return "add32";
+    case ebpf::LSH32XC: return "lsh32";
+    case ebpf::LSH32XY: return "lsh32";
+    case ebpf::RSH32XC: return "rsh32";
+    case ebpf::RSH32XY: return "rsh32";
     case ebpf::MOV32XC: return "mov32";
     case ebpf::MOV32XY: return "mov32";
+    case ebpf::ARSH32XC: return "arsh32";
+    case ebpf::ARSH32XY: return "arsh32";
     case ebpf::LE16: return "le16";
     case ebpf::LE32: return "le32";
     case ebpf::LE64: return "le64";
@@ -146,8 +152,16 @@ void ebpf_inst::set_as_nop_inst() {
 int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int input) const {
 #define DST ps.regs[DSTREG(*insts[insn])]
 #define SRC ps.regs[SRCREG(*insts[insn])]
+#define DST_L5 L5(DST)
+#define DST_L6 L6(DST)
+#define SRC_L5 L5(SRC)
+#define SRC_L6 L6(SRC)
 #define DST32 (int32_t)L32(DST)
 #define SRC32 (int32_t)L32(SRC)
+#define DST32_L5 L5(DST32)
+#define DST32_L6 L6(DST32)
+#define SRC32_L5 L5(SRC32)
+#define SRC32_L6 L6(SRC32)
 #define IMM1_32 IMM1VAL32(*insts[insn])
 #define IMM2_32 IMM2VAL32(*insts[insn])
 #define UNCOND_OFF16 UNCOND_OFFVAL16(*insts[insn])
@@ -205,13 +219,25 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int inp
     [ebpf::NOP]      = && INSN_NOP,
     [ebpf::ADD64XC]  = && INSN_ADD64XC,
     [ebpf::ADD64XY]  = && INSN_ADD64XY,
+    [ebpf::LSH64XC]  = && INSN_LSH64XC,
+    [ebpf::LSH64XY]  = && INSN_LSH64XY,
+    [ebpf::RSH64XC]  = && INSN_RSH64XC,
+    [ebpf::RSH64XY]  = && INSN_RSH64XY,
     [ebpf::MOV64XC]  = && INSN_MOV64XC,
     [ebpf::MOV64XY]  = && INSN_MOV64XY,
+    [ebpf::ARSH64XC] = && INSN_ARSH64XC,
+    [ebpf::ARSH64XY] = && INSN_ARSH64XY,
 
     [ebpf::ADD32XC]  = && INSN_ADD32XC,
     [ebpf::ADD32XY]  = && INSN_ADD32XY,
+    [ebpf::LSH32XC]  = && INSN_LSH32XC,
+    [ebpf::LSH32XY]  = && INSN_LSH32XY,
+    [ebpf::RSH32XC]  = && INSN_RSH32XC,
+    [ebpf::RSH32XY]  = && INSN_RSH32XY,
     [ebpf::MOV32XC]  = && INSN_MOV32XC,
     [ebpf::MOV32XY]  = && INSN_MOV32XY,
+    [ebpf::ARSH32XC] = && INSN_ARSH32XC,
+    [ebpf::ARSH32XY] = && INSN_ARSH32XY,
 
     [ebpf::LE16]     = && INSN_LE16,
     [ebpf::LE32]     = && INSN_LE32,
@@ -238,11 +264,23 @@ INSN_NOP:
   ALU64_UNARY(MOV64XY, mov, SRC)
   ALU64_BINARY(ADD64XC, add, DST, IMM2_32)
   ALU64_BINARY(ADD64XY, add, DST, SRC)
+  ALU64_BINARY(LSH64XC, lsh, DST, IMM2_32)
+  ALU64_BINARY(LSH64XY, lsh, DST, SRC_L6)
+  ALU64_BINARY(RSH64XC, rsh, DST, IMM2_32)
+  ALU64_BINARY(RSH64XY, rsh, DST, SRC_L6)
+  ALU64_BINARY(ARSH64XC, arsh, DST, IMM2_32)
+  ALU64_BINARY(ARSH64XY, arsh, DST, SRC_L6)
 
   ALU32_UNARY(MOV32XC, mov, IMM2_32)
   ALU32_UNARY(MOV32XY, mov, SRC32)
   ALU32_BINARY(ADD32XC, add, DST32, IMM2_32)
   ALU32_BINARY(ADD32XY, add, DST32, SRC32)
+  ALU32_BINARY(LSH32XC, lsh, DST32, IMM2_32)
+  ALU32_BINARY(LSH32XY, lsh, DST32, SRC32_L5)
+  ALU32_BINARY(RSH32XC, rsh, DST32, IMM2_32)
+  ALU32_BINARY(RSH32XY, rsh, DST32, SRC32_L5)
+  ALU32_BINARY(ARSH32XC, arsh, DST32, IMM2_32)
+  ALU32_BINARY(ARSH32XY, arsh, DST32, SRC32_L5)
 
   BYTESWAP(LE16, le16)
   BYTESWAP(LE32, le32)

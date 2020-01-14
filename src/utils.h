@@ -10,6 +10,8 @@ using namespace std;
 
 #define H32(v) (0xffffffff00000000 & v)
 #define H48(v) (0xffffffffffff0000 & v)
+#define L5(v)  (0x000000000000001f & v)
+#define L6(v)  (0x000000000000003f & v)
 #define L16(v) (0x000000000000ffff & v)
 #define L32(v) (0x00000000ffffffff & v)
 

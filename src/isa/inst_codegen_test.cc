@@ -57,9 +57,35 @@ void test2() {
   print_test_res(compute_be64(a, b) == expected, "compute_be64");
 }
 
+void test3() {
+  cout << "Test 3" << endl;
+  int64_t expected64;
+  int32_t expected32;
+  int64_t a = 0xfffffffffffffffb, b = 1, c = 0; // a = -5
+
+  expected64 = 0xfffffffffffffff6; // expected64 = -10
+  expected32 = 0xfffffff6; // expected32 = -10
+  print_test_res(compute_lsh(a, b) == expected64, "compute_lsh 1");
+  print_test_res(compute_lsh(a, (int32_t)b) == expected64, "compute_lsh 2");
+  print_test_res(compute_lsh((int32_t)a, (int32_t)b) == expected32, "compute_lsh 3");
+
+  expected64 = 0x7ffffffffffffffd;
+  expected32 = 0x7ffffffd;
+  print_test_res(compute_rsh(a, b) == expected64, "compute_rsh 1");
+  print_test_res(compute_rsh(a, (int32_t)b) == expected64, "compute_rsh 2");
+  print_test_res(compute_rsh((int32_t)a, (int32_t)b) == expected32, "compute_rsh 3");
+
+  expected64 = 0xfffffffffffffffd; // expected64 = -3
+  expected32 = 0xfffffffd; // expected32 = -3
+  print_test_res(compute_arsh(a, b) == expected64, "compute_arsh 1");
+  print_test_res(compute_arsh(a, (int32_t)b) == expected64, "compute_arsh 2");
+  print_test_res(compute_arsh((int32_t)a, (int32_t)b) == expected32, "compute_arsh 3");
+}
+
 int main() {
   test1();
   test2();
+  test3();
 
   return 0;
 }

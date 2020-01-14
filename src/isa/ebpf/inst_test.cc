@@ -55,6 +55,40 @@ ebpf_inst instructions8[3] = {ebpf_inst(ebpf::MOV64XC, 0, 0x01234567), /* mov64 
                               ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
                              };
 
+ebpf_inst instructions9[6] = {ebpf_inst(ebpf::MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
+                              ebpf_inst(ebpf::LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
+                              ebpf_inst(ebpf::MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
+                              ebpf_inst(ebpf::ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
+                              ebpf_inst(ebpf::LE64, 0),                /* le64 r0 */
+                              ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
+                             };
+
+ebpf_inst instructions10[6] = {ebpf_inst(ebpf::MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
+                               ebpf_inst(ebpf::LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
+                               ebpf_inst(ebpf::MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
+                               ebpf_inst(ebpf::ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
+                               ebpf_inst(ebpf::BE64, 0),                /* be64 r0 */
+                               ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
+                              };
+
+ebpf_inst instructions11[7] = {ebpf_inst(ebpf::MOV64XC, 0, -1),         /* r0 = 0xffffffffffffffff */
+                               ebpf_inst(ebpf::RSH64XC, 0, 63),         /* r0 >> 63 */
+                               ebpf_inst(ebpf::JEQXC, 0, 1, 1),         /* if r0 != 0x1, exit */
+                               ebpf_inst(ebpf::EXIT),                   /* exit */
+                               ebpf_inst(ebpf::MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
+                               ebpf_inst(ebpf::RSH32XC, 0, 1),          /* r0 >>32 1 */
+                               ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
+                              };
+
+ebpf_inst instructions12[8] = {ebpf_inst(ebpf::MOV64XC, 0, -1),         /* r0 = 0xffffffffffffffff */
+                               ebpf_inst(ebpf::ARSH64XC, 0, 63),        /* r0 >> 63 */
+                               ebpf_inst(ebpf::MOV64XC, 1, -1),         /* r1 = 0xffffffffffffffff */
+                               ebpf_inst(ebpf::JEQXY, 0, 1, 1),         /* if r0 != r1, exit */
+                               ebpf_inst(ebpf::EXIT),                   /* exit */
+                               ebpf_inst(ebpf::MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
+                               ebpf_inst(ebpf::ARSH32XC, 0, 1),         /* r0 >>32 1 */
+                               ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
+                              };
 void test1() {
   ebpf_prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
@@ -94,6 +128,24 @@ void test1() {
   if (is_little_endian()) expected = 0x67452301;
   else expected = 0x01234567;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 8");
+
+  COVERT(insts, instructions9, 6);
+  if (is_little_endian()) expected = 0x0123456789abcdef;
+  else expected = 0xefcdab8967452301;
+  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 9");
+
+  COVERT(insts, instructions10, 6);
+  if (is_little_endian()) expected = 0xefcdab8967452301;
+  else expected = 0x0123456789abcdef;
+  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 10");
+
+  COVERT(insts, instructions11, 7);
+  expected = 0x7fffffff;
+  print_test_res(INTERPRET(insts, ps) == expected, "interpret rsh64 & rsh32");
+
+  COVERT(insts, instructions12, 8);
+  expected = 0xffffffff;
+  print_test_res(INTERPRET(insts, ps) == expected, "interpret arsh64 & arsh32");
 }
 
 int main(int argc, char *argv[]) {

@@ -74,6 +74,12 @@ ret_t compute_##func_name(para1_t a, para2_t b, para3_t c) {                    
   operation(a, b, c);                                                            \
   return c;                                                                      \
 }
+
+#define COMPUTE_RSH(func_name, operation, para1_t, para2_t, para3_t, ret_t)      \
+ret_t compute_##func_name(para1_t a, para2_t b, para3_t c) {                     \
+  operation((u##para1_t)a, b, c);                                                \
+  return c;                                                                      \
+}
                                                               
 COMPUTE_UNARY(mov, MOV_EXPR, int64_t, int64_t, int64_t)
 COMPUTE_UNARY(le16, LE16_EXPR, int64_t, int64_t, int64_t)
@@ -86,6 +92,19 @@ COMPUTE_UNARY(be64, BE64_EXPR, int64_t, int64_t, int64_t)
 COMPUTE_BINARY(add, ADD_EXPR, int64_t, int64_t, int64_t, int64_t)
 COMPUTE_BINARY(add, ADD_EXPR, int64_t, int32_t, int64_t, int64_t)
 COMPUTE_BINARY(add, ADD_EXPR, int32_t, int32_t, int32_t, int32_t)
+
+COMPUTE_BINARY(lsh, LSH_EXPR, int64_t, int64_t, int64_t, int64_t)
+COMPUTE_BINARY(lsh, LSH_EXPR, int64_t, int32_t, int64_t, int64_t)
+COMPUTE_BINARY(lsh, LSH_EXPR, int32_t, int32_t, int32_t, int32_t)
+
+COMPUTE_RSH(rsh, RSH_EXPR, int64_t, int64_t, int64_t, int64_t)
+COMPUTE_RSH(rsh, RSH_EXPR, int64_t, int32_t, int64_t, int64_t)
+COMPUTE_RSH(rsh, RSH_EXPR, int32_t, int32_t, int32_t, int32_t)
+
+COMPUTE_BINARY(arsh, RSH_EXPR, int64_t, int64_t, int64_t, int64_t)
+COMPUTE_BINARY(arsh, RSH_EXPR, int64_t, int32_t, int64_t, int64_t)
+COMPUTE_BINARY(arsh, RSH_EXPR, int32_t, int32_t, int32_t, int32_t)
+
 COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)
 
 #undef GENMODE
