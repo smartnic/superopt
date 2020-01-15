@@ -56,6 +56,8 @@ string ebpf_inst::opcode_to_str(int opcode) const {
     case ebpf::JEQXY: return "jeq";
     case ebpf::JGTXC: return "jgt";
     case ebpf::JGTXY: return "jgt";
+    case ebpf::JSGTXC: return "jsgt";
+    case ebpf::JSGTXY: return "jsgt";
     case ebpf::EXIT: return "exit";
     default: return "unknown opcode";
   }
@@ -199,16 +201,10 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int inp
     DST = compute_##OP(DST);                                       \
     CONT;
 
-#define COND_JMP_IMM(OPCODE, OP)                                   \
+#define COND_JMP(OPCODE, OP, OPERAND1, OPERAND2)                   \
   INSN_##OPCODE:                                                   \
-    if (L32(DST) OP L32(IMM2_32))                                  \
-    insn += COND_OFF16;                                            \
-  CONT;
-
-#define COND_JMP_REG(OPCODE, OP)                                   \
-  INSN_##OPCODE:                                                   \
-    if (DST OP SRC)                                                \
-    insn += COND_OFF16;                                            \
+    if (OPERAND1 OP OPERAND2)                                      \
+      insn += COND_OFF16;                                          \
   CONT;
 
   int insn = 0;
@@ -251,6 +247,8 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int inp
     [ebpf::JEQXY]    = && INSN_JEQXY,
     [ebpf::JGTXC]    = && INSN_JGTXC,
     [ebpf::JGTXY]    = && INSN_JGTXY,
+    [ebpf::JSGTXC]   = && INSN_JSGTXC,
+    [ebpf::JSGTXY]   = && INSN_JSGTXY,
     [ebpf::EXIT]     = && INSN_EXIT,
   };
 
@@ -293,10 +291,12 @@ INSN_JA:
   insn += UNCOND_OFF16;
   CONT;
 
-  COND_JMP_IMM(JEQXC, == )
-  COND_JMP_REG(JEQXY, == )
-  COND_JMP_IMM(JGTXC, > )
-  COND_JMP_REG(JGTXY, > )
+  COND_JMP(JEQXC, ==, DST, IMM2_32)
+  COND_JMP(JEQXY, ==, DST, SRC)
+  COND_JMP(JGTXC, >, (uint64_t)DST, (uint32_t)IMM2_32)
+  COND_JMP(JGTXY, >, (uint64_t)DST, (uint64_t)SRC)
+  COND_JMP(JSGTXC, >, DST, IMM2_32)
+  COND_JMP(JSGTXY, >, DST, SRC)
 
 INSN_EXIT:
   return ps.regs[0];

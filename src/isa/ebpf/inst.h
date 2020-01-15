@@ -59,6 +59,8 @@ class ebpf {
     JEQXY,
     JGTXC,
     JGTXY,
+    JSGTXC,
+    JSGTXY,
     // Exit
     EXIT,
     NUM_INSTR, // Number of opcode types
@@ -97,6 +99,8 @@ class ebpf {
     [JEQXY]    = 3,
     [JGTXC]    = 3,
     [JGTXY]    = 3,
+    [JSGTXC]   = 3,
+    [JSGTXY]   = 3,
     [EXIT]     = 0,
   };
 
@@ -133,6 +137,8 @@ class ebpf {
     [JEQXY]    = 2,
     [JGTXC]    = 1,
     [JGTXY]    = 2,
+    [JSGTXC]   = 1,
+    [JSGTXY]   = 2,
     [EXIT]     = 0,
   };
 
@@ -169,6 +175,8 @@ class ebpf {
     [JEQXY]    = OP_COND_JMP,
     [JGTXC]    = OP_COND_JMP,
     [JGTXY]    = OP_COND_JMP,
+    [JSGTXC]   = OP_COND_JMP,
+    [JSGTXY]   = OP_COND_JMP,
     [EXIT]     = OP_RET,
   };
 
@@ -228,6 +236,8 @@ class ebpf {
     [JEQXY]    = JMP_OPS_REG,
     [JGTXC]    = JMP_OPS_IMM,
     [JGTXY]    = JMP_OPS_REG,
+    [JSGTXC]   = JMP_OPS_IMM,
+    [JSGTXY]   = JMP_OPS_REG,
     [EXIT]     = UNUSED_OPS,
   };
 #undef FSTOP
