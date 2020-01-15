@@ -12,10 +12,10 @@ using namespace std;
 #define UNCOND_OFFVAL(inst_var) (inst_var)._args[0]
 #define COND_OFFVAL(inst_var) (inst_var)._args[2]
 
-#define IMM1VAL32(inst_var) (int32_t)L32(IMM1VAL(inst_var))
-#define IMM2VAL32(inst_var) (int32_t)L32(IMM2VAL(inst_var))
-#define UNCOND_OFFVAL16(inst_var) (int16_t)L16(UNCOND_OFFVAL(inst_var))
-#define COND_OFFVAL16(inst_var) (int16_t)L16(COND_OFFVAL(inst_var))
+#define IMM1VAL32(inst_var) (int32_t)(IMM1VAL(inst_var))
+#define IMM2VAL32(inst_var) (int32_t)(IMM2VAL(inst_var))
+#define UNCOND_OFFVAL16(inst_var) (int16_t)(UNCOND_OFFVAL(inst_var))
+#define COND_OFFVAL16(inst_var) (int16_t)(COND_OFFVAL(inst_var))
 
 constexpr int ebpf::num_operands[NUM_INSTR];
 constexpr int ebpf::insn_num_regs[NUM_INSTR];
@@ -152,16 +152,26 @@ void ebpf_inst::set_as_nop_inst() {
 }
 
 int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int input) const {
+// type: int64_t
 #define DST ps.regs[DSTREG(*insts[insn])]
 #define SRC ps.regs[SRCREG(*insts[insn])]
+#define IMM1 (int64_t)IMM1VAL32(*insts[insn])
+#define IMM2 (int64_t)IMM2VAL32(*insts[insn])
+// type: int32_t
+#define DST32 (int32_t)(DST)
+#define SRC32 (int32_t)(SRC)
+#define IMM1_32 (int32_t)IMM1
+#define IMM2_32 (int32_t)IMM2
+// type: uint64_t
+#define UDST (uint64_t)DST
+#define USRC (uint64_t)SRC
+#define UIMM1 (uint64_t)IMM1
+#define UIMM2 (uint64_t)IMM2
+
 #define DST_L6 L6(DST)
 #define SRC_L6 L6(SRC)
-#define DST32 (int32_t)L32(DST)
-#define SRC32 (int32_t)L32(SRC)
 #define DST32_L5 L5(DST32)
 #define SRC32_L5 L5(SRC32)
-#define IMM1_32 IMM1VAL32(*insts[insn])
-#define IMM2_32 IMM2VAL32(*insts[insn])
 #define UNCOND_OFF16 UNCOND_OFFVAL16(*insts[insn])
 #define COND_OFF16 COND_OFFVAL16(*insts[insn])
 
@@ -254,15 +264,15 @@ select_insn:
 INSN_NOP:
   CONT;
 
-  ALU64_UNARY(MOV64XC, mov, IMM2_32)
+  ALU64_UNARY(MOV64XC, mov, IMM2)
   ALU64_UNARY(MOV64XY, mov, SRC)
-  ALU64_BINARY(ADD64XC, add, DST, IMM2_32)
+  ALU64_BINARY(ADD64XC, add, DST, IMM2)
   ALU64_BINARY(ADD64XY, add, DST, SRC)
-  ALU64_BINARY(LSH64XC, lsh, DST, IMM2_32)
+  ALU64_BINARY(LSH64XC, lsh, DST, IMM2)
   ALU64_BINARY(LSH64XY, lsh, DST, SRC_L6)
-  ALU64_BINARY(RSH64XC, rsh, DST, IMM2_32)
+  ALU64_BINARY(RSH64XC, rsh, DST, IMM2)
   ALU64_BINARY(RSH64XY, rsh, DST, SRC_L6)
-  ALU64_BINARY(ARSH64XC, arsh, DST, IMM2_32)
+  ALU64_BINARY(ARSH64XC, arsh, DST, IMM2)
   ALU64_BINARY(ARSH64XY, arsh, DST, SRC_L6)
 
   ALU32_UNARY(MOV32XC, mov, IMM2_32)
@@ -287,11 +297,11 @@ INSN_JA:
   insn += UNCOND_OFF16;
   CONT;
 
-  COND_JMP(JEQXC, ==, DST, IMM2_32)
+  COND_JMP(JEQXC, ==, DST, IMM2)
   COND_JMP(JEQXY, ==, DST, SRC)
-  COND_JMP(JGTXC, >, (uint64_t)DST, (uint32_t)IMM2_32)
-  COND_JMP(JGTXY, >, (uint64_t)DST, (uint64_t)SRC)
-  COND_JMP(JSGTXC, >, DST, IMM2_32)
+  COND_JMP(JGTXC, >, UDST, UIMM2)
+  COND_JMP(JGTXY, >, UDST, USRC)
+  COND_JMP(JSGTXC, >, DST, IMM2)
   COND_JMP(JSGTXY, >, DST, SRC)
 
 INSN_EXIT:

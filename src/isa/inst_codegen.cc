@@ -97,19 +97,15 @@ COMPUTE_UNARY(be32, BE32_EXPR, int64_t, int64_t, int64_t)
 COMPUTE_UNARY(be64, BE64_EXPR, int64_t, int64_t, int64_t)
 
 COMPUTE_BINARY(add, ADD_EXPR, int64_t, int64_t, int64_t, int64_t)
-COMPUTE_BINARY(add, ADD_EXPR, int64_t, int32_t, int64_t, int64_t)
 COMPUTE_BINARY(add, ADD_EXPR, int32_t, int32_t, int32_t, int32_t)
 
 COMPUTE_BINARY(lsh, LSH_EXPR, int64_t, int64_t, int64_t, int64_t)
-COMPUTE_BINARY(lsh, LSH_EXPR, int64_t, int32_t, int64_t, int64_t)
 COMPUTE_BINARY(lsh, LSH_EXPR, int32_t, int32_t, int32_t, int32_t)
 
 COMPUTE_RSH(rsh, RSH_EXPR, int64_t, int64_t, int64_t, int64_t)
-COMPUTE_RSH(rsh, RSH_EXPR, int64_t, int32_t, int64_t, int64_t)
 COMPUTE_RSH(rsh, RSH_EXPR, int32_t, int32_t, int32_t, int32_t)
 
 COMPUTE_BINARY(arsh, RSH_EXPR, int64_t, int64_t, int64_t, int64_t)
-COMPUTE_BINARY(arsh, RSH_EXPR, int64_t, int32_t, int64_t, int64_t)
 COMPUTE_BINARY(arsh, RSH_EXPR, int32_t, int32_t, int32_t, int32_t)
 
 COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)

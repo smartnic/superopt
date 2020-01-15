@@ -66,20 +66,17 @@ void test3() {
   expected64 = 0xfffffffffffffff6; // expected64 = -10
   expected32 = 0xfffffff6; // expected32 = -10
   print_test_res(compute_lsh(a, b) == expected64, "compute_lsh 1");
-  print_test_res(compute_lsh(a, (int32_t)b) == expected64, "compute_lsh 2");
-  print_test_res(compute_lsh((int32_t)a, (int32_t)b) == expected32, "compute_lsh 3");
+  print_test_res(compute_lsh((int32_t)a, (int32_t)b) == expected32, "compute_lsh 2");
 
   expected64 = 0x7ffffffffffffffd;
   expected32 = 0x7ffffffd;
   print_test_res(compute_rsh(a, b) == expected64, "compute_rsh 1");
-  print_test_res(compute_rsh(a, (int32_t)b) == expected64, "compute_rsh 2");
-  print_test_res(compute_rsh((int32_t)a, (int32_t)b) == expected32, "compute_rsh 3");
+  print_test_res(compute_rsh((int32_t)a, (int32_t)b) == expected32, "compute_rsh 2");
 
   expected64 = 0xfffffffffffffffd; // expected64 = -3
   expected32 = 0xfffffffd; // expected32 = -3
   print_test_res(compute_arsh(a, b) == expected64, "compute_arsh 1");
-  print_test_res(compute_arsh(a, (int32_t)b) == expected64, "compute_arsh 2");
-  print_test_res(compute_arsh((int32_t)a, (int32_t)b) == expected32, "compute_arsh 3");
+  print_test_res(compute_arsh((int32_t)a, (int32_t)b) == expected32, "compute_arsh 2");
 }
 
 int main() {

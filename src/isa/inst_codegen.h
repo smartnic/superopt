@@ -16,16 +16,12 @@ int64_t compute_be64(int64_t a, int64_t b = 0);
 
 // return (c = a op b)
 int64_t compute_add(int64_t a, int64_t b, int64_t c = 0);
-int64_t compute_add(int64_t a, int32_t b, int64_t c = 0);
 int32_t compute_add(int32_t a, int32_t b, int32_t c = 0);
 int64_t compute_lsh(int64_t a, int64_t b, int64_t c = 0);
-int64_t compute_lsh(int64_t a, int32_t b, int64_t c = 0);
 int32_t compute_lsh(int32_t a, int32_t b, int32_t c = 0);
 int64_t compute_rsh(int64_t a, int64_t b, int64_t c = 0);
-int64_t compute_rsh(int64_t a, int32_t b, int64_t c = 0);
 int32_t compute_rsh(int32_t a, int32_t b, int32_t c = 0);
 int64_t compute_arsh(int64_t a, int64_t b, int64_t c = 0);
-int64_t compute_arsh(int64_t a, int32_t b, int64_t c = 0);
 int32_t compute_arsh(int32_t a, int32_t b, int32_t c = 0);
 // return max(a, b)
 int64_t compute_max(int64_t a, int64_t b, int64_t c = 0);

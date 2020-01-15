@@ -116,6 +116,12 @@ ebpf_inst instructions14[7] = {ebpf_inst(ebpf::MOV64XC, 0, -1),         /* r0 = 
                                ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
                               };
 
+ebpf_inst instructions15[4] = {ebpf_inst(ebpf::MOV32XC, 0, -1),         /* r0 = 0xffffffff */
+                               ebpf_inst(ebpf::JGTXC, 0, -2, 1),        /* if r0 > 0xfffffffffffffffe, ret r0 = 0xffffffff */
+                               ebpf_inst(ebpf::MOV64XC, 0, 0),          /* else ret r0 = 0 */
+                               ebpf_inst(ebpf::EXIT),
+                              };
+
 void test1() {
   ebpf_prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
@@ -181,6 +187,10 @@ void test1() {
   COVERT(insts, instructions14, 7);
   expected = 0;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret jsgt");
+
+  COVERT(insts, instructions15, 4);
+  expected = 0;
+  print_test_res(INTERPRET(insts, ps) == expected, "interpret jgt");
 }
 
 int main(int argc, char *argv[]) {
