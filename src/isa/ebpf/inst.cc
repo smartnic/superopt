@@ -154,16 +154,12 @@ void ebpf_inst::set_as_nop_inst() {
 int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int input) const {
 #define DST ps.regs[DSTREG(*insts[insn])]
 #define SRC ps.regs[SRCREG(*insts[insn])]
-#define DST_L5 L5(DST)
 #define DST_L6 L6(DST)
-#define SRC_L5 L5(SRC)
 #define SRC_L6 L6(SRC)
 #define DST32 (int32_t)L32(DST)
 #define SRC32 (int32_t)L32(SRC)
 #define DST32_L5 L5(DST32)
-#define DST32_L6 L6(DST32)
 #define SRC32_L5 L5(SRC32)
-#define SRC32_L6 L6(SRC32)
 #define IMM1_32 IMM1VAL32(*insts[insn])
 #define IMM2_32 IMM2VAL32(*insts[insn])
 #define UNCOND_OFF16 UNCOND_OFFVAL16(*insts[insn])
