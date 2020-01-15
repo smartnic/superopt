@@ -25,12 +25,6 @@ using namespace std;
 /* Inputs x, y must be side-effect-free expressions. */
 #define NEG_EXPR(x, y) (y GENMODE ~x)
 #define MOV_EXPR(x, y) (y GENMODE x)
-#define LE16_EXPR(x, y) if (! is_little_endian()) {y GENMODE SWAP_L16(x);} else {y GENMODE x;}
-#define LE32_EXPR(x, y) if (! is_little_endian()) {y GENMODE SWAP_L32(x);} else {y GENMODE x;}
-#define LE64_EXPR(x, y) if (! is_little_endian()) {y GENMODE SWAP_L64(x);} else {y GENMODE x;}
-#define BE16_EXPR(x, y) if (is_little_endian())   {y GENMODE SWAP_L16(x);} else {y GENMODE x;}
-#define BE32_EXPR(x, y) if (is_little_endian())   {y GENMODE SWAP_L32(x);} else {y GENMODE x;}
-#define BE64_EXPR(x, y) if (is_little_endian())   {y GENMODE SWAP_L64(x);} else {y GENMODE x;}
 /* Inputs x, y, z must be side-effect-free expressions. */
 #define ADD_EXPR(x, y, z) (z GENMODE x + y)
 #define SUB_EXPR(x, y, z) (z GENMODE x - y)
@@ -45,14 +39,27 @@ using namespace std;
 
 /* Predicate expressions capture instructions like MAX which have different
  * results on a register based on the evaluation of a predicate. */
+/* Inputs x, y, pred_if, pred_else must be side-effect-free. */
+#define PRED_UNARY_EXPR(x, y, pred_if, ret_if, ret_else) ({      \
+    IF_PRED_ACTION(pred_if, ret_if, y)                           \
+    CONNECTIFELSE                                                \
+    ELSE_PRED_ACTION(pred_if, ret_else, y);                      \
+  })
 /* Inputs x, y, z, pred_if, pred_else must be side-effect-free. */
-#define PRED_EXPR(x, y, z, pred_if, ret_if, ret_else) ({  \
-    IF_PRED_ACTION(pred_if, ret_if, z)                    \
-    CONNECTIFELSE                                         \
-    ELSE_PRED_ACTION(pred_if, ret_else, z);           \
+#define PRED_BINARY_EXPR(x, y, z, pred_if, ret_if, ret_else) ({  \
+    IF_PRED_ACTION(pred_if, ret_if, z)                           \
+    CONNECTIFELSE                                                \
+    ELSE_PRED_ACTION(pred_if, ret_else, z);                      \
   })
 
-#define MAX_EXPR(a, b, c) (PRED_EXPR(a, b, c, a > b, a, b))
+#define LE16_EXPR(a, b) (PRED_UNARY_EXPR(a, b, is_little_endian(), a, SWAP_L16(a)))
+#define LE32_EXPR(a, b) (PRED_UNARY_EXPR(a, b, is_little_endian(), a, SWAP_L32(a)))
+#define LE64_EXPR(a, b) (PRED_UNARY_EXPR(a, b, is_little_endian(), a, SWAP_L64(a)))
+#define BE16_EXPR(a, b) (PRED_UNARY_EXPR(a, b, is_little_endian(), SWAP_L16(a), a))
+#define BE32_EXPR(a, b) (PRED_UNARY_EXPR(a, b, is_little_endian(), SWAP_L32(a), a))
+#define BE64_EXPR(a, b) (PRED_UNARY_EXPR(a, b, is_little_endian(), SWAP_L64(a), a))
+
+#define MAX_EXPR(a, b, c) (PRED_BINARY_EXPR(a, b, c, a > b, a, b))
 
 #undef GENMODE
 #define GENMODE =
