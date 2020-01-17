@@ -339,8 +339,8 @@ out:
 #define CURSRC32_BV z3::int2bv(32, curSrc)
 #define IMM2_32_BV to_expr((int32_t)imm2, 32)
 
-#define CURSRC_L6_BV z3::concat(to_expr(0, 58), (CURSRC_BV).extract(5, 0))
-#define CURSRC32_L5_BV z3::concat(to_expr(0, 27), (CURSRC32_BV).extract(4, 0))
+#define CURSRC_L6_BV (CURSRC_BV & to_expr(0x3f, 64))
+#define CURSRC32_L5_BV (CURSRC32_BV & to_expr(0x1f, 32))
 
 z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
   // TODO: check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
