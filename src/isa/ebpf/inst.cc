@@ -316,15 +316,53 @@ out:
   return ps.regs[0]; /* return default R0 value */
 }
 
-
 #undef IMM2
-#define CURSRC sv.get_cur_reg_var(SRCREG(*this))
-#define CURDST sv.get_cur_reg_var(DSTREG(*this))
-#define NEWDST sv.update_reg_var(DSTREG(*this))
-#define IMM2 IMM2VAL(*this)
+#undef IMM2_32
+// int64_t
+#define NEWDST newDst
+#define CURDST curDst
+#define CURSRC curSrc
+#define IMM2 to_expr(imm2)
+// bv of int64_t
+#define NEWDST_BV z3::int2bv(64, newDst)
+#define CURDST_BV z3::int2bv(64, curDst)
+#define CURSRC_BV z3::int2bv(64, curSrc)
+#define IMM2_BV to_expr(imm2, 64)
+// int32_t
+#define NEWDST32 z3::bv2int(NEWDST32_BV, true)
+#define CURDST32 z3::bv2int(CURDST32_BV, true)
+#define CURSRC32 z3::bv2int(CURSRC32_BV, true)
+#define IMM2_32 to_expr((int32_t)imm2)
+// bv of int32_t
+#define NEWDST32_BV z3::int2bv(32, newDst)
+#define CURDST32_BV z3::int2bv(32, curDst)
+#define CURSRC32_BV z3::int2bv(32, curSrc)
+#define IMM2_32_BV to_expr((int32_t)imm2, 32)
+
+#define CURSRC_L6_BV z3::concat(to_expr(0, 58), (CURSRC_BV).extract(5, 0))
+#define CURSRC32_L5_BV z3::concat(to_expr(0, 27), (CURSRC32_BV).extract(4, 0))
 
 z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
+  // TODO: check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
+  // If opcode is valid, then define curDst, curSrc, imm2 and newDst
+  // Should get curDst before updating curDst
+  z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
+  z3::expr newDst = sv.update_reg_var(DSTREG(*this));
+  z3::expr curSrc = string_to_expr("false");
+  if (SRCREG(*this) < get_num_regs()) {
+    curSrc = sv.get_cur_reg_var(SRCREG(*this));
+  }
+  int64_t imm2 = (int64_t)IMM2VAL32(*this);
+
   switch (_opcode) {
+    case ebpf::ADD64XC: return predicate_add(CURDST, IMM2, NEWDST);
+    case ebpf::ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
+    case ebpf::ADD32XC: return predicate_add32(CURDST32, IMM2_32, NEWDST);
+    case ebpf::ADD32XY: return predicate_add32(CURDST32, CURSRC32, NEWDST);
+    case ebpf::RSH64XC: return predicate_rsh(CURDST_BV, IMM2_BV, NEWDST);
+    case ebpf::RSH64XY: return predicate_rsh(CURDST_BV, CURSRC_L6_BV, NEWDST);
+    case ebpf::RSH32XC: return predicate_rsh32(CURDST32_BV, IMM2_32_BV, NEWDST);
+    case ebpf::RSH32XY: return predicate_rsh32(CURDST32_BV, CURSRC32_L5_BV, NEWDST);
     default: return string_to_expr("false");
   }
 }

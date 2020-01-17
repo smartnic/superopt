@@ -20,8 +20,8 @@ proposals_test.out: proposals_z3.o $(ISA)inst_codegen.cc $(ISA)inst_codegen.h $(
 proposals_z3.o: $(SEARCH)proposals_test.cc
 	$(CXX) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(SEARCH)proposals_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(SEARCH)proposals_test.cc
 
-inst_codegen_test.out: inst_codegen_z3.o $(SRC)utils.cc $(SRC)utils.h $(ISA)inst_codegen.cc $(ISA)inst_codegen.h $(ISA)inst.cc $(ISA)inst.h
-	g++ -std=c++11 -fvisibility=hidden $(ISA)inst_codegen_z3.o $(SRC)utils.cc $(ISA)inst_codegen.cc $(ISA)inst.cc -o $(ISA)inst_codegen_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+inst_codegen_test.out: inst_codegen_z3.o $(SRC)utils.cc $(SRC)utils.h $(ISA)inst_codegen.cc $(ISA)inst_codegen.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h
+	g++ -std=c++11 -fvisibility=hidden $(ISA)inst_codegen_z3.o $(SRC)utils.cc $(ISA)inst_codegen.cc $(ISA)inst.cc $(VERIFY)smt_var.cc -o $(ISA)inst_codegen_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 inst_codegen_z3.o: $(ISA)inst_codegen_test.cc
 	$(CXX) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(ISA)inst_codegen_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(ISA)inst_codegen_test.cc
@@ -33,7 +33,7 @@ inst_z3.o: $(TOY_ISA)inst_test.cc
 	$(CXX) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(TOY_ISA)inst_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(TOY_ISA)inst_test.cc
 
 ebpf_inst_test.out: ebpf_inst_z3.o $(EBPF)inst.cc $(EBPF)inst.h $(SRC)utils.cc $(SRC)utils.h $(ISA)inst_codegen.cc $(ISA)inst_codegen.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h
-	g++ -std=c++11 $(EBPF)inst_z3.o $(EBPF)inst.cc $(SRC)utils.cc $(ISA)inst_codegen.cc $(ISA)inst.cc $(VERIFY)smt_var.cc -o $(EBPF)inst_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+	g++ -std=c++11 -fvisibility=hidden $(EBPF)inst_z3.o $(EBPF)inst.cc $(SRC)utils.cc $(ISA)inst_codegen.cc $(ISA)inst.cc $(VERIFY)smt_var.cc -o $(EBPF)inst_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 ebpf_inst_z3.o: $(EBPF)inst_test.cc
 	$(CXX) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(EBPF)inst_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(EBPF)inst_test.cc

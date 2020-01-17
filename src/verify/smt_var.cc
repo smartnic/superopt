@@ -45,3 +45,19 @@ z3::expr string_to_expr(string s) {
   }
   return smt_c.int_const(s.c_str());
 }
+
+z3::expr to_expr(int64_t x) {
+  return smt_c.int_val(x);
+}
+
+z3::expr to_expr(int32_t x) {
+  return smt_c.int_val(x);
+}
+
+z3::expr to_expr(string s, unsigned n) {
+  return smt_c.bv_const(s.c_str(), n);
+}
+
+z3::expr to_expr(int x, unsigned n) {
+  return smt_c.bv_val(x, n);
+}

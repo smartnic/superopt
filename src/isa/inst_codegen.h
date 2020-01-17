@@ -2,6 +2,7 @@
 
 #include "z3++.h"
 #include "../../src/utils.h"
+#include "../../src/verify/smt_var.h"
 
 using namespace std;
 
@@ -28,6 +29,9 @@ int32_t compute_arsh(int32_t a, int32_t b, int32_t c = 0);
 int64_t compute_max(int64_t a, int64_t b, int64_t c = 0);
 // return c == a + b
 z3::expr predicate_add(z3::expr a, z3::expr b, z3::expr c);
+z3::expr predicate_add32(z3::expr a, z3::expr b, z3::expr c);
+z3::expr predicate_rsh(z3::expr a, z3::expr b, z3::expr c);
+z3::expr predicate_rsh32(z3::expr a, z3::expr b, z3::expr c);
 //return b == a
 z3::expr predicate_mov(int a, z3::expr b);
 // return c == max(a, b)

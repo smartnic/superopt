@@ -193,8 +193,77 @@ void test1() {
   print_test_res(INTERPRET(insts, ps) == expected, "interpret jgt");
 }
 
+int64_t eval_output(z3::expr smt, z3::expr output) {
+  z3::solver s(smt_c);
+  s.add(smt);
+  if (s.check() == z3::sat) {
+    z3::model m = s.get_model();
+    return m.eval(output).get_numeral_int64();
+  }
+  cout << "ERROR: no output, return -1" << endl;
+  return -1;
+}
+
+void test2() {
+  cout << endl << "Test 2: instruction smt check" << endl;
+
+#define CURDST sv.get_cur_reg_var(insn._args[0])
+#define CURSRC sv.get_cur_reg_var(insn._args[1])
+  ebpf_inst insn = ebpf_inst(ebpf::ADD64XC, 0, 0xffffffff);
+  int prog_id = 0, node_id = 0, num_regs = insn.get_num_regs();
+  smt_var sv(prog_id, node_id, num_regs);
+  z3::expr smt = (CURDST == to_expr((int64_t)(0xffffffffffffffff))) &&
+                 insn.smt_inst(sv);
+  z3::expr output = CURDST;
+  print_test_res(eval_output(smt, output) == 0xfffffffffffffffe, "smt ADD64XC");
+
+  insn = ebpf_inst(ebpf::ADD64XY, 0, 1);
+  smt = (CURDST == to_expr((int64_t)0xffffffff)) &&
+        (CURSRC == to_expr((int64_t)0xffffffff)) &&
+        insn.smt_inst(sv);
+  output = CURDST;
+  print_test_res(eval_output(smt, output) == 0x1fffffffe, "smt ADD64XY");
+
+  insn = ebpf_inst(ebpf::ADD32XC, 0, 0xffffffff);
+  smt = (CURDST == to_expr((int64_t)0xffffffff)) && insn.smt_inst(sv);
+  output = CURDST;
+  print_test_res(eval_output(smt, output) == 0xfffffffe, "smt ADD32XC");
+
+  insn = ebpf_inst(ebpf::ADD32XY, 0, 1);
+  smt = (CURDST == to_expr((int64_t)0xffffffff)) &&
+        (CURSRC == to_expr((int64_t)0xffffffff)) &&
+        insn.smt_inst(sv);
+  output = CURDST;
+  print_test_res(eval_output(smt, output) == 0xfffffffe, "smt ADD32XY");
+
+  insn = ebpf_inst(ebpf::RSH64XC, 0, 63);
+  smt = (CURDST == to_expr((int64_t)0xffffffffffffffff)) && insn.smt_inst(sv);
+  output = CURDST;
+  print_test_res(eval_output(smt, output) == 1, "smt RSH64XC");
+
+  insn = ebpf_inst(ebpf::RSH64XY, 0, 1);
+  smt = (CURDST == to_expr((int64_t)0xffffffffffffffff)) &&
+        (CURSRC == to_expr((int64_t)63)) &&
+        insn.smt_inst(sv);
+  output = CURDST;
+  print_test_res(eval_output(smt, output) == 1, "smt RSH64XY");
+
+  insn = ebpf_inst(ebpf::RSH32XC, 0, 31);
+  smt = (CURDST == to_expr((int32_t)0xffffffff)) && insn.smt_inst(sv);
+  output = CURDST;
+  print_test_res(eval_output(smt, output) == 1, "smt RSH32XC");
+
+  insn = ebpf_inst(ebpf::RSH32XY, 0, 1);
+  smt = (CURDST == to_expr((int64_t)0xffffffffffffffff)) &&
+        (CURSRC == to_expr((int64_t)31)) &&
+        insn.smt_inst(sv);
+  output = CURDST;
+  print_test_res(eval_output(smt, output) == 1, "smt RSH32XY");
+}
+
 int main(int argc, char *argv[]) {
   test1();
+  test2();
 
   return 0;
 }

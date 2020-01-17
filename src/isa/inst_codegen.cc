@@ -33,9 +33,16 @@ using namespace std;
 #define OR_EXPR(x, y, z)  (z GENMODE x | y)
 #define AND_EXPR(x, y, z) (z GENMODE x & y)
 #define LSH_EXPR(x, y, z) (z GENMODE x << y)
-#define RSH_EXPR(x, y, z) (z GENMODE x >> y)
+#define RSH_EXPR(x, y, z) (z GENMODE RSH(x, y))
 #define MOD_EXPR(x, y, z) (z GENMODE x % y)
 #define XOR_EXPR(x, y, z) (z GENMODE x ^ y)
+#define ARSH_EXPR(x, y, z) (z GENMODE x >> y)
+// Expression for 32-bit `compute` and `predicate`
+// Inputs x, y are both z3 int of int32_t or both 32-bit bit vectors
+// z is z3 int of int64_t
+#define BIT32_EXPR_FMT(x, y, z, operation) (z == CONCAT_MODE(H32_EXPR, L32_EXPR(operation)))
+#define ADD32_EXPR(x, y, z) BIT32_EXPR_FMT(x, y, z, x + y)
+#define RSH32_EXPR(x, y, z) BIT32_EXPR_FMT(x, y, z, RSH32(x, y))
 
 /* Predicate expressions capture instructions like MAX which have different
  * results on a register based on the evaluation of a predicate. */
@@ -69,6 +76,8 @@ using namespace std;
 #define CONNECTIFELSE  ;
 #undef ELSE_PRED_ACTION
 #define ELSE_PRED_ACTION(pred, expr, var) else var GENMODE expr
+#undef RSH
+#define RSH(a, b) (a >> b)
 
 #define COMPUTE_UNARY(func_name, operation, para1_t, para2_t, ret_t)             \
 ret_t compute_##func_name(para1_t a, para2_t b) {                                \
@@ -87,7 +96,7 @@ ret_t compute_##func_name(para1_t a, para2_t b, para3_t c) {                    
   operation((u##para1_t)a, b, c);                                                \
   return c;                                                                      \
 }
-                                                              
+
 COMPUTE_UNARY(mov, MOV_EXPR, int64_t, int64_t, int64_t)
 COMPUTE_UNARY(mov, MOV_EXPR, int32_t, int32_t, int32_t)
 COMPUTE_UNARY(le16, LE16_EXPR, int64_t, int64_t, int64_t)
@@ -106,8 +115,8 @@ COMPUTE_BINARY(lsh, LSH_EXPR, int32_t, int32_t, int32_t, int32_t)
 COMPUTE_RSH(rsh, RSH_EXPR, int64_t, int64_t, int64_t, int64_t)
 COMPUTE_RSH(rsh, RSH_EXPR, int32_t, int32_t, int32_t, int32_t)
 
-COMPUTE_BINARY(arsh, RSH_EXPR, int64_t, int64_t, int64_t, int64_t)
-COMPUTE_BINARY(arsh, RSH_EXPR, int32_t, int32_t, int32_t, int32_t)
+COMPUTE_BINARY(arsh, ARSH_EXPR, int64_t, int64_t, int64_t, int64_t)
+COMPUTE_BINARY(arsh, ARSH_EXPR, int32_t, int32_t, int32_t, int32_t)
 
 COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)
 
@@ -119,13 +128,37 @@ COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)
 #define CONNECTIFELSE ||
 #undef ELSE_PRED_ACTION
 #define ELSE_PRED_ACTION(pred, expr, var) (!(pred) && (var GENMODE expr))
+#undef CONCAT_MODE
+#undef RSH
+#define RSH(a, b) z3::bv2int(z3::lshr(a, b), true)
+#define CONCAT_MODE(hi, lo) z3::bv2int(z3::concat(hi, lo), true)
+#undef H32_EXPR // 32-bit bv with zero
+#define H32_EXPR to_expr(0, 32)
+#undef L32_EXPR
+#define L32_EXPR(a) z3::int2bv(32, a)
+#undef RSH32
+#define RSH32(a, b) z3::lshr(a, b)
 
 z3::expr predicate_add(z3::expr a, z3::expr b, z3::expr c) {
   return ADD_EXPR(a, b, c);
 }
 
+z3::expr predicate_add32(z3::expr a, z3::expr b, z3::expr c) {
+  return ADD32_EXPR(a, b, c);
+}
+
 z3::expr predicate_mov(int a, z3::expr b) {
   return MOV_EXPR(a, b);
+}
+
+#undef L32_EXPR
+#define L32_EXPR(a) a
+z3::expr predicate_rsh(z3::expr a, z3::expr b, z3::expr c) {
+  return RSH_EXPR(a, b, c);
+}
+
+z3::expr predicate_rsh32(z3::expr a, z3::expr b, z3::expr c) {
+  return RSH32_EXPR(a, b, c);
 }
 
 z3::expr predicate_max(z3::expr a, int b, z3::expr c) {
