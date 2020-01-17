@@ -27,13 +27,15 @@ int64_t compute_arsh(int64_t a, int64_t b, int64_t c = 0);
 int32_t compute_arsh(int32_t a, int32_t b, int32_t c = 0);
 // return max(a, b)
 int64_t compute_max(int64_t a, int64_t b, int64_t c = 0);
-// return c == a + b
+
+// return (b == op a)
+z3::expr predicate_mov(z3::expr a, z3::expr b);
+// return (c == a op b)
 z3::expr predicate_add(z3::expr a, z3::expr b, z3::expr c);
 z3::expr predicate_add32(z3::expr a, z3::expr b, z3::expr c);
 z3::expr predicate_rsh(z3::expr a, z3::expr b, z3::expr c);
 z3::expr predicate_rsh32(z3::expr a, z3::expr b, z3::expr c);
-//return b == a
-z3::expr predicate_mov(int a, z3::expr b);
-// return c == max(a, b)
-z3::expr predicate_max(z3::expr a, int b, z3::expr c);
+z3::expr predicate_arsh(z3::expr a, z3::expr b, z3::expr c);
+z3::expr predicate_arsh32(z3::expr a, z3::expr b, z3::expr c);
+// return (c == max(a, b))
 z3::expr predicate_max(z3::expr a, z3::expr b, z3::expr c);

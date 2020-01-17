@@ -168,9 +168,7 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int inp
 #define UIMM1 (uint64_t)IMM1
 #define UIMM2 (uint64_t)IMM2
 
-#define DST_L6 L6(DST)
 #define SRC_L6 L6(SRC)
-#define DST32_L5 L5(DST32)
 #define SRC32_L5 L5(SRC32)
 #define UNCOND_OFF16 UNCOND_OFFVAL16(*insts[insn])
 #define COND_OFF16 COND_OFFVAL16(*insts[insn])
@@ -357,12 +355,16 @@ z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
   switch (_opcode) {
     case ebpf::ADD64XC: return predicate_add(CURDST, IMM2, NEWDST);
     case ebpf::ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
-    case ebpf::ADD32XC: return predicate_add32(CURDST32, IMM2_32, NEWDST);
-    case ebpf::ADD32XY: return predicate_add32(CURDST32, CURSRC32, NEWDST);
     case ebpf::RSH64XC: return predicate_rsh(CURDST_BV, IMM2_BV, NEWDST);
     case ebpf::RSH64XY: return predicate_rsh(CURDST_BV, CURSRC_L6_BV, NEWDST);
+    case ebpf::ARSH64XC: return predicate_arsh(CURDST_BV, IMM2_BV, NEWDST);
+    case ebpf::ARSH64XY: return predicate_arsh(CURDST_BV, CURSRC_L6_BV, NEWDST);
+    case ebpf::ADD32XC: return predicate_add32(CURDST32, IMM2_32, NEWDST);
+    case ebpf::ADD32XY: return predicate_add32(CURDST32, CURSRC32, NEWDST);
     case ebpf::RSH32XC: return predicate_rsh32(CURDST32_BV, IMM2_32_BV, NEWDST);
     case ebpf::RSH32XY: return predicate_rsh32(CURDST32_BV, CURSRC32_L5_BV, NEWDST);
+    case ebpf::ARSH32XC: return predicate_arsh32(CURDST32_BV, IMM2_32_BV, NEWDST);
+    case ebpf::ARSH32XY: return predicate_arsh32(CURDST32_BV, CURSRC32_L5_BV, NEWDST);
     default: return string_to_expr("false");
   }
 }

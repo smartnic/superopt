@@ -36,13 +36,14 @@ using namespace std;
 #define RSH_EXPR(x, y, z) (z GENMODE RSH(x, y))
 #define MOD_EXPR(x, y, z) (z GENMODE x % y)
 #define XOR_EXPR(x, y, z) (z GENMODE x ^ y)
-#define ARSH_EXPR(x, y, z) (z GENMODE x >> y)
+#define ARSH_EXPR(x, y, z) (z GENMODE ARSH(x, y))
 // Expression for 32-bit `compute` and `predicate`
 // Inputs x, y are both z3 int of int32_t or both 32-bit bit vectors
 // z is z3 int of int64_t
 #define BIT32_EXPR_FMT(x, y, z, operation) (z == CONCAT_MODE(H32_EXPR, L32_EXPR(operation)))
 #define ADD32_EXPR(x, y, z) BIT32_EXPR_FMT(x, y, z, x + y)
 #define RSH32_EXPR(x, y, z) BIT32_EXPR_FMT(x, y, z, RSH32(x, y))
+#define ARSH32_EXPR(x, y, z) BIT32_EXPR_FMT(x, y, z, ARSH32(x, y))
 
 /* Predicate expressions capture instructions like MAX which have different
  * results on a register based on the evaluation of a predicate. */
@@ -78,6 +79,8 @@ using namespace std;
 #define ELSE_PRED_ACTION(pred, expr, var) else var GENMODE expr
 #undef RSH
 #define RSH(a, b) (a >> b)
+#undef ARSH
+#define ARSH(a, b) (a >> b)
 
 #define COMPUTE_UNARY(func_name, operation, para1_t, para2_t, ret_t)             \
 ret_t compute_##func_name(para1_t a, para2_t b) {                                \
@@ -108,16 +111,12 @@ COMPUTE_UNARY(be64, BE64_EXPR, int64_t, int64_t, int64_t)
 
 COMPUTE_BINARY(add, ADD_EXPR, int64_t, int64_t, int64_t, int64_t)
 COMPUTE_BINARY(add, ADD_EXPR, int32_t, int32_t, int32_t, int32_t)
-
 COMPUTE_BINARY(lsh, LSH_EXPR, int64_t, int64_t, int64_t, int64_t)
 COMPUTE_BINARY(lsh, LSH_EXPR, int32_t, int32_t, int32_t, int32_t)
-
 COMPUTE_RSH(rsh, RSH_EXPR, int64_t, int64_t, int64_t, int64_t)
 COMPUTE_RSH(rsh, RSH_EXPR, int32_t, int32_t, int32_t, int32_t)
-
 COMPUTE_BINARY(arsh, ARSH_EXPR, int64_t, int64_t, int64_t, int64_t)
 COMPUTE_BINARY(arsh, ARSH_EXPR, int32_t, int32_t, int32_t, int32_t)
-
 COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)
 
 #undef GENMODE
@@ -129,42 +128,44 @@ COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)
 #undef ELSE_PRED_ACTION
 #define ELSE_PRED_ACTION(pred, expr, var) (!(pred) && (var GENMODE expr))
 #undef CONCAT_MODE
-#undef RSH
-#define RSH(a, b) z3::bv2int(z3::lshr(a, b), true)
 #define CONCAT_MODE(hi, lo) z3::bv2int(z3::concat(hi, lo), true)
 #undef H32_EXPR // 32-bit bv with zero
 #define H32_EXPR to_expr(0, 32)
+// For arithmetic operators and bitwise operators, experssions of L32_EXPR are different.
+// For arithmetic operators, need to convert z3 int expr into z3 32-bit bitvector expr
+// For bitwise operators, do not need the conversion
 #undef L32_EXPR
 #define L32_EXPR(a) z3::int2bv(32, a)
+#undef RSH
+#define RSH(a, b) z3::bv2int(z3::lshr(a, b), true)
+#undef ARSH
+#define ARSH(a, b) z3::bv2int(z3::ashr(a, b), true)
 #undef RSH32
 #define RSH32(a, b) z3::lshr(a, b)
+#undef ARSH32
+#define ARSH32(a, b) z3::ashr(a, b)
 
-z3::expr predicate_add(z3::expr a, z3::expr b, z3::expr c) {
-  return ADD_EXPR(a, b, c);
+#define PREDICATE_UNARY(func_name, operation)                           \
+z3::expr predicate_##func_name(z3::expr a, z3::expr b) {                \
+  return operation(a, b);                                               \
 }
 
-z3::expr predicate_add32(z3::expr a, z3::expr b, z3::expr c) {
-  return ADD32_EXPR(a, b, c);
+#define PREDICATE_BINARY(func_name, operation)                          \
+z3::expr predicate_##func_name(z3::expr a, z3::expr b, z3::expr c) {    \
+  return operation(a, b, c);                                            \
 }
 
-z3::expr predicate_mov(int a, z3::expr b) {
-  return MOV_EXPR(a, b);
-}
+PREDICATE_UNARY(mov, MOV_EXPR)
+PREDICATE_BINARY(add, ADD_EXPR)
+PREDICATE_BINARY(add32, ADD32_EXPR)
+PREDICATE_BINARY(rsh, RSH_EXPR)
+PREDICATE_BINARY(arsh, ARSH_EXPR)
+PREDICATE_BINARY(max, MAX_EXPR)
 
+/* bitwise operators for 32-bit bitvector start */
 #undef L32_EXPR
 #define L32_EXPR(a) a
-z3::expr predicate_rsh(z3::expr a, z3::expr b, z3::expr c) {
-  return RSH_EXPR(a, b, c);
-}
 
-z3::expr predicate_rsh32(z3::expr a, z3::expr b, z3::expr c) {
-  return RSH32_EXPR(a, b, c);
-}
-
-z3::expr predicate_max(z3::expr a, int b, z3::expr c) {
-  return MAX_EXPR(a, b, c);
-}
-
-z3::expr predicate_max(z3::expr a, z3::expr b, z3::expr c) {
-  return MAX_EXPR(a, b, c);
-}
+PREDICATE_BINARY(rsh32, RSH32_EXPR);
+PREDICATE_BINARY(arsh32, ARSH32_EXPR);
+/* bitwise operators for 32-bit bitvector end */

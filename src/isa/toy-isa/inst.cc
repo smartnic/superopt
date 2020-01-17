@@ -231,13 +231,13 @@ out:
 #define CURSRC sv.get_cur_reg_var(SRCREG(*this))
 #define CURDST sv.get_cur_reg_var(DSTREG(*this))
 #define NEWDST sv.update_reg_var(DSTREG(*this))
-#define IMM2 IMM2VAL(*this)
+#define IMM2 to_expr(IMM2VAL(*this))
 
 z3::expr toy_isa_inst::smt_inst(smt_var& sv) const {
   z3::expr curDst = string_to_expr("false");
   z3::expr curSrc = string_to_expr("false");
   z3::expr newDst = string_to_expr("false");
-  int imm;
+  z3::expr imm = string_to_expr("false");
   switch (_opcode) {
     case toy_isa::MAXX:
     case toy_isa::ADDXY:
