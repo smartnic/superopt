@@ -13,7 +13,7 @@ using namespace std;
 #define DIV_EXPR(x, y, z) (z GENMODE x / y)
 #define OR_EXPR(x, y, z)  (z GENMODE x | y)
 #define AND_EXPR(x, y, z) (z GENMODE x & y)
-#define LSH_EXPR(x, y, z) (z GENMODE x << y)
+#define LSH_EXPR(x, y, z) (z GENMODE LSH(x, y))
 #define RSH_EXPR(x, y, z) (z GENMODE RSH(x, y))
 #define MOD_EXPR(x, y, z) (z GENMODE x % y)
 #define XOR_EXPR(x, y, z) (z GENMODE x ^ y)
@@ -24,6 +24,7 @@ using namespace std;
 #define BIT32_EXPR_FMT(z, operation) (z == CONCAT_MODE(H32_EXPR, L32_EXPR(operation)))
 #define ADD32_EXPR(x, y, z) BIT32_EXPR_FMT(z, x + y)
 #define MOV32_EXPR(x, y) BIT32_EXPR_FMT(y, x)
+#define LSH32_EXPR(x, y, z) BIT32_EXPR_FMT(z, LSH32(x, y))
 #define RSH32_EXPR(x, y, z) BIT32_EXPR_FMT(z, RSH32(x, y))
 #define ARSH32_EXPR(x, y, z) BIT32_EXPR_FMT(z, ARSH32(x, y))
 
@@ -59,6 +60,8 @@ using namespace std;
 #define CONNECTIFELSE  ;
 #undef ELSE_PRED_ACTION
 #define ELSE_PRED_ACTION(pred, expr, var) else var GENMODE expr
+#undef LSH
+#define LSH(a, b) (a << b)
 #undef RSH
 #define RSH(a, b) (a >> b)
 #undef ARSH
@@ -136,10 +139,14 @@ COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)
 // For bitwise operators, do not need the conversion
 #undef L32_EXPR
 #define L32_EXPR(a) z3::int2bv(32, a)
+#undef LSH
+#define LSH(a, b) z3::bv2int(z3::shl(a, b), true)
 #undef RSH
 #define RSH(a, b) z3::bv2int(z3::lshr(a, b), true)
 #undef ARSH
 #define ARSH(a, b) z3::bv2int(z3::ashr(a, b), true)
+#undef LSH32
+#define LSH32(a, b) z3::shl(a, b)
 #undef RSH32
 #define RSH32(a, b) z3::lshr(a, b)
 #undef ARSH32
@@ -179,6 +186,7 @@ PREDICATE_UNARY(be32, BE32_EXPR)
 PREDICATE_UNARY(be64, BE64_EXPR)
 PREDICATE_BINARY(add, ADD_EXPR)
 PREDICATE_BINARY(add32, ADD32_EXPR)
+PREDICATE_BINARY(lsh, LSH_EXPR)
 PREDICATE_BINARY(rsh, RSH_EXPR)
 PREDICATE_BINARY(arsh, ARSH_EXPR)
 PREDICATE_BINARY(max, MAX_EXPR)
@@ -187,6 +195,7 @@ PREDICATE_BINARY(max, MAX_EXPR)
 #undef L32_EXPR
 #define L32_EXPR(a) a
 
+PREDICATE_BINARY(lsh32, LSH32_EXPR);
 PREDICATE_BINARY(rsh32, RSH32_EXPR);
 PREDICATE_BINARY(arsh32, ARSH32_EXPR);
 /* bitwise operators for 32-bit bitvector end */

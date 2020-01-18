@@ -40,6 +40,8 @@ z3::expr predicate_be64(z3::expr a, z3::expr b);
 // return (c == a op b)
 z3::expr predicate_add(z3::expr a, z3::expr b, z3::expr c);
 z3::expr predicate_add32(z3::expr a, z3::expr b, z3::expr c);
+z3::expr predicate_lsh(z3::expr a, z3::expr b, z3::expr c);
+z3::expr predicate_lsh32(z3::expr a, z3::expr b, z3::expr c);
 z3::expr predicate_rsh(z3::expr a, z3::expr b, z3::expr c);
 z3::expr predicate_rsh32(z3::expr a, z3::expr b, z3::expr c);
 z3::expr predicate_arsh(z3::expr a, z3::expr b, z3::expr c);

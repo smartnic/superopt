@@ -355,6 +355,8 @@ z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
   switch (_opcode) {
     case ebpf::ADD64XC: return predicate_add(CURDST, IMM2, NEWDST);
     case ebpf::ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
+    case ebpf::LSH64XC: return predicate_lsh(CURDST_BV, IMM2_BV, NEWDST);
+    case ebpf::LSH64XY: return predicate_lsh(CURDST_BV, CURSRC_L6_BV, NEWDST);
     case ebpf::RSH64XC: return predicate_rsh(CURDST_BV, IMM2_BV, NEWDST);
     case ebpf::RSH64XY: return predicate_rsh(CURDST_BV, CURSRC_L6_BV, NEWDST);
     case ebpf::MOV64XC: return predicate_mov(IMM2, NEWDST);
@@ -363,6 +365,8 @@ z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
     case ebpf::ARSH64XY: return predicate_arsh(CURDST_BV, CURSRC_L6_BV, NEWDST);
     case ebpf::ADD32XC: return predicate_add32(CURDST32, IMM2_32, NEWDST);
     case ebpf::ADD32XY: return predicate_add32(CURDST32, CURSRC32, NEWDST);
+    case ebpf::LSH32XC: return predicate_lsh32(CURDST32_BV, IMM2_32_BV, NEWDST);
+    case ebpf::LSH32XY: return predicate_lsh32(CURDST32_BV, CURSRC32_L5_BV, NEWDST);
     case ebpf::RSH32XC: return predicate_rsh32(CURDST32_BV, IMM2_32_BV, NEWDST);
     case ebpf::RSH32XY: return predicate_rsh32(CURDST32_BV, CURSRC32_L5_BV, NEWDST);
     case ebpf::MOV32XC: return predicate_mov32(IMM2_32, NEWDST);
