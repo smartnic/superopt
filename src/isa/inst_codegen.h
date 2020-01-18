@@ -30,6 +30,7 @@ int64_t compute_max(int64_t a, int64_t b, int64_t c = 0);
 
 // return (b == op a)
 z3::expr predicate_mov(z3::expr a, z3::expr b);
+z3::expr predicate_mov32(z3::expr a, z3::expr b);
 z3::expr predicate_le16(z3::expr a, z3::expr b);
 z3::expr predicate_le32(z3::expr a, z3::expr b);
 z3::expr predicate_le64(z3::expr a, z3::expr b);

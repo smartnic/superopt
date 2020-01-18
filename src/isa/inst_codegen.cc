@@ -21,10 +21,11 @@ using namespace std;
 // Expression for 32-bit `compute` and `predicate`
 // Inputs x, y are both z3 int of int32_t or both 32-bit bit vectors
 // z is z3 int of int64_t
-#define BIT32_EXPR_FMT(x, y, z, operation) (z == CONCAT_MODE(H32_EXPR, L32_EXPR(operation)))
-#define ADD32_EXPR(x, y, z) BIT32_EXPR_FMT(x, y, z, x + y)
-#define RSH32_EXPR(x, y, z) BIT32_EXPR_FMT(x, y, z, RSH32(x, y))
-#define ARSH32_EXPR(x, y, z) BIT32_EXPR_FMT(x, y, z, ARSH32(x, y))
+#define BIT32_EXPR_FMT(z, operation) (z == CONCAT_MODE(H32_EXPR, L32_EXPR(operation)))
+#define ADD32_EXPR(x, y, z) BIT32_EXPR_FMT(z, x + y)
+#define MOV32_EXPR(x, y) BIT32_EXPR_FMT(y, x)
+#define RSH32_EXPR(x, y, z) BIT32_EXPR_FMT(z, RSH32(x, y))
+#define ARSH32_EXPR(x, y, z) BIT32_EXPR_FMT(z, ARSH32(x, y))
 
 /* Predicate expressions capture instructions like MAX which have different
  * results on a register based on the evaluation of a predicate. */
@@ -169,6 +170,7 @@ z3::expr predicate_##func_name(z3::expr a, z3::expr b, z3::expr c) {    \
 }
 
 PREDICATE_UNARY(mov, MOV_EXPR)
+PREDICATE_UNARY(mov32, MOV32_EXPR)
 PREDICATE_UNARY(le16, LE16_EXPR)
 PREDICATE_UNARY(le32, LE32_EXPR)
 PREDICATE_UNARY(le64, LE64_EXPR)

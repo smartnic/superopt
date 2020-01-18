@@ -239,6 +239,18 @@ void test2() {
   insn = ebpf_inst(ebpf::ADD32XY, 0, 1);
   SMT_CHECK_XY((int64_t)0xffffffff, (int64_t)0xffffffff, (int64_t)0xfffffffe, "smt ADD32XY");
 
+  insn = ebpf_inst(ebpf::MOV64XC, 0, 0xfffffffe);
+  SMT_CHECK_XC((int64_t)0x0, 0xfffffffffffffffe, "smt MOV64XC");
+
+  insn = ebpf_inst(ebpf::MOV64XY, 0, 1);
+  SMT_CHECK_XY((int64_t)0x0, (int64_t)0x0123456789abcdef, (int64_t)0x0123456789abcdef, "smt MOV64XY");
+
+  insn = ebpf_inst(ebpf::MOV32XC, 0, 0xfffffffe);
+  SMT_CHECK_XC((int64_t)0xffffffff00000000, 0xfffffffe, "smt MOV32XC");
+
+  insn = ebpf_inst(ebpf::MOV32XY, 0, 1);
+  SMT_CHECK_XY((int64_t)0xffffffff00000000, (int64_t)0x0123456789abcdef, (int64_t)0x89abcdef, "smt MOV32XY");
+
   insn = ebpf_inst(ebpf::RSH64XC, 0, 63);
   SMT_CHECK_XC((int64_t)0xffffffffffffffff, 1, "smt RSH64XC");
 
