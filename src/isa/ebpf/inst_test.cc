@@ -209,17 +209,17 @@ void test2() {
 
 #define CURDST sv.get_cur_reg_var(insn._args[0])
 #define CURSRC sv.get_cur_reg_var(insn._args[1])
-#define SMT_CHECK_XC(dst_input, dst_expected, test_name)                \
-  smt = (CURDST == to_expr(dst_input)) && insn.smt_inst(sv);            \
-  output = CURDST;                                                      \
-  print_test_res(eval_output(smt, output) == dst_expected, test_name);  \
+#define SMT_CHECK_XC(dst_input, dst_expected, test_name)                         \
+  smt = (CURDST == to_expr((int64_t)dst_input)) && insn.smt_inst(sv);            \
+  output = CURDST;                                                               \
+  print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
-#define SMT_CHECK_XY(dst_input, src_input, dst_expected, test_name)     \
-  smt = (CURDST == to_expr(dst_input)) &&                               \
-        (CURSRC == to_expr(src_input)) &&                               \
-        insn.smt_inst(sv);                                              \
-  output = CURDST;                                                      \
-  print_test_res(eval_output(smt, output) == dst_expected, test_name);  \
+#define SMT_CHECK_XY(dst_input, src_input, dst_expected, test_name)              \
+  smt = (CURDST == to_expr((int64_t)dst_input)) &&                               \
+        (CURSRC == to_expr((int64_t)src_input)) &&                               \
+        insn.smt_inst(sv);                                                       \
+  output = CURDST;                                                               \
+  print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
   ebpf_inst insn = (ebpf::NOP);
   int prog_id = 0, node_id = 0, num_regs = insn.get_num_regs();
@@ -228,85 +228,83 @@ void test2() {
   z3::expr output = string_to_expr("false");
 
   insn = ebpf_inst(ebpf::ADD64XC, 0, 0xffffffff);
-  SMT_CHECK_XC((int64_t)0xffffffffffffffff, (int64_t)0xfffffffffffffffe, "smt ADD64XC");
+  SMT_CHECK_XC(0xffffffffffffffff, 0xfffffffffffffffe, "smt ADD64XC");
 
   insn = ebpf_inst(ebpf::ADD64XY, 0, 1);
-  SMT_CHECK_XY((int64_t)0xffffffff, (int64_t)0xffffffff, (int64_t)0x1fffffffe, "smt ADD64XY");
+  SMT_CHECK_XY(0xffffffff, 0xffffffff, 0x1fffffffe, "smt ADD64XY");
 
   insn = ebpf_inst(ebpf::ADD32XC, 0, 0xffffffff);
-  SMT_CHECK_XC((int64_t)0xffffffff, (int64_t)0xfffffffe, "smt ADD32XC");
+  SMT_CHECK_XC(0xffffffff, 0xfffffffe, "smt ADD32XC");
 
   insn = ebpf_inst(ebpf::ADD32XY, 0, 1);
-  SMT_CHECK_XY((int64_t)0xffffffff, (int64_t)0xffffffff, (int64_t)0xfffffffe, "smt ADD32XY");
+  SMT_CHECK_XY(0xffffffff, 0xffffffff, 0xfffffffe, "smt ADD32XY");
 
   insn = ebpf_inst(ebpf::MOV64XC, 0, 0xfffffffe);
-  SMT_CHECK_XC((int64_t)0x0, 0xfffffffffffffffe, "smt MOV64XC");
+  SMT_CHECK_XC(0x0, 0xfffffffffffffffe, "smt MOV64XC");
 
   insn = ebpf_inst(ebpf::MOV64XY, 0, 1);
-  SMT_CHECK_XY((int64_t)0x0, (int64_t)0x0123456789abcdef, (int64_t)0x0123456789abcdef, "smt MOV64XY");
+  SMT_CHECK_XY(0x0, 0x0123456789abcdef, 0x0123456789abcdef, "smt MOV64XY");
 
   insn = ebpf_inst(ebpf::MOV32XC, 0, 0xfffffffe);
-  SMT_CHECK_XC((int64_t)0xffffffff00000000, 0xfffffffe, "smt MOV32XC");
+  SMT_CHECK_XC(0xffffffff00000000, 0xfffffffe, "smt MOV32XC");
 
   insn = ebpf_inst(ebpf::MOV32XY, 0, 1);
-  SMT_CHECK_XY((int64_t)0xffffffff00000000, (int64_t)0x0123456789abcdef, (int64_t)0x89abcdef, "smt MOV32XY");
+  SMT_CHECK_XY(0xffffffff00000000, 0x0123456789abcdef, 0x89abcdef, "smt MOV32XY");
 
   insn = ebpf_inst(ebpf::RSH64XC, 0, 63);
-  SMT_CHECK_XC((int64_t)0xffffffffffffffff, 1, "smt RSH64XC");
+  SMT_CHECK_XC(0xffffffffffffffff, 1, "smt RSH64XC");
 
   insn = ebpf_inst(ebpf::RSH64XY, 0, 1);
-  SMT_CHECK_XY((int64_t)0xffffffffffffffff, (int64_t)63, 1, "smt RSH64XY");
+  SMT_CHECK_XY(0xffffffffffffffff, 63, 1, "smt RSH64XY");
 
   insn = ebpf_inst(ebpf::RSH32XC, 0, 31);
   SMT_CHECK_XC((int32_t)0xffffffff, 1, "smt RSH32XC");
 
   insn = ebpf_inst(ebpf::RSH32XY, 0, 1);
-  SMT_CHECK_XY((int64_t)0xffffffffffffffff, (int64_t)31, 1, "smt RSH32XY");
+  SMT_CHECK_XY(0xffffffffffffffff, 31, 1, "smt RSH32XY");
 
   insn = ebpf_inst(ebpf::ARSH64XC, 0, 0x1);
-  SMT_CHECK_XC((int64_t)0xfffffffffffffffe, 0xffffffffffffffff, "smt ARSH64XC");
+  SMT_CHECK_XC(0xfffffffffffffffe, 0xffffffffffffffff, "smt ARSH64XC");
 
   insn = ebpf_inst(ebpf::ARSH64XY, 0, 1);
-  SMT_CHECK_XY((int64_t)0x8000000000000000, (int64_t)63,
-               0xffffffffffffffff, "smt ARSH64XY");
+  SMT_CHECK_XY(0x8000000000000000, 63, 0xffffffffffffffff, "smt ARSH64XY");
 
   insn = ebpf_inst(ebpf::ARSH32XC, 0, 1);
-  SMT_CHECK_XC((int64_t)0xfffffffffffffffe, 0xffffffff, "smt ARSH32XC");
+  SMT_CHECK_XC(0xfffffffffffffffe, 0xffffffff, "smt ARSH32XC");
 
   insn = ebpf_inst(ebpf::ARSH32XY, 0, 1);
-  SMT_CHECK_XY((int64_t)0xfffffffffffffffe, (int64_t)31,
-               0xffffffff, "smt ARSH32XY");
+  SMT_CHECK_XY(0xfffffffffffffffe, 31, 0xffffffff, "smt ARSH32XY");
 
   int64_t expected;
   insn = ebpf_inst(ebpf::LE16, 0);
   if (is_little_endian()) expected = 0x0123456789abcdef;
   else expected = 0x2301456789abcdef;
-  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt LE16");
+  SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE16");
 
   insn = ebpf_inst(ebpf::LE32, 0);
   if (is_little_endian()) expected = 0x0123456789abcdef;
   else expected = 0x6745230189abcdef;
-  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt LE32");
+  SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE32");
 
   insn = ebpf_inst(ebpf::LE64, 0);
   if (is_little_endian()) expected = 0x0123456789abcdef;
   else expected = 0xefcdab8967452301;
-  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt LE64");
+  SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE64");
 
   insn = ebpf_inst(ebpf::BE16, 0);
   if (is_little_endian()) expected = 0x0123456789abefcd;
   else expected = 0x0123456789abcdef;
-  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt BE16");
+  SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE16");
 
   insn = ebpf_inst(ebpf::BE32, 0);
   if (is_little_endian()) expected = 0x01234567efcdab89;
   else expected = 0x0123456789abcdef;
-  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt BE32");
+  SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE32");
 
   insn = ebpf_inst(ebpf::BE64, 0);
   if (is_little_endian()) expected = 0xefcdab8967452301;
   else expected = 0x0123456789abcdef;
-  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt BE64");
+  SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE64");
 
 #undef CURDST
 #undef CURSRC
