@@ -341,8 +341,9 @@ out:
 #define CURSRC32_L5_BV (CURSRC32_BV & to_expr(0x1f, 32))
 
 z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
-  // TODO: check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
+  // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
   // If opcode is valid, then define curDst, curSrc, imm2 and newDst
+  if (get_opcode_type() != OP_OTHERS) return string_to_expr("false");
   // Should get curDst before updating curDst
   z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
   z3::expr newDst = sv.update_reg_var(DSTREG(*this));
