@@ -264,6 +264,38 @@ void test2() {
   insn = ebpf_inst(ebpf::ARSH32XY, 0, 1);
   SMT_CHECK_XY((int64_t)0xfffffffffffffffe, (int64_t)31,
                0xffffffff, "smt ARSH32XY");
+
+  int64_t expected;
+  insn = ebpf_inst(ebpf::LE16, 0);
+  if (is_little_endian()) expected = 0x0123456789abcdef;
+  else expected = 0x2301456789abcdef;
+  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt LE16");
+
+  insn = ebpf_inst(ebpf::LE32, 0);
+  if (is_little_endian()) expected = 0x0123456789abcdef;
+  else expected = 0x6745230189abcdef;
+  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt LE32");
+
+  insn = ebpf_inst(ebpf::LE64, 0);
+  if (is_little_endian()) expected = 0x0123456789abcdef;
+  else expected = 0xefcdab8967452301;
+  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt LE64");
+
+  insn = ebpf_inst(ebpf::BE16, 0);
+  if (is_little_endian()) expected = 0x0123456789abefcd;
+  else expected = 0x0123456789abcdef;
+  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt BE16");
+
+  insn = ebpf_inst(ebpf::BE32, 0);
+  if (is_little_endian()) expected = 0x01234567efcdab89;
+  else expected = 0x0123456789abcdef;
+  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt BE32");
+
+  insn = ebpf_inst(ebpf::BE64, 0);
+  if (is_little_endian()) expected = 0xefcdab8967452301;
+  else expected = 0x0123456789abcdef;
+  SMT_CHECK_XC((int64_t)0x0123456789abcdef, expected, "smt BE64");
+
 #undef CURDST
 #undef CURSRC
 #undef SMT_CHECK_XC

@@ -61,3 +61,7 @@ z3::expr to_expr(string s, unsigned n) {
 z3::expr to_expr(int x, unsigned n) {
   return smt_c.bv_val(x, n);
 }
+
+z3::expr to_expr(int64_t x, unsigned n) {
+  return smt_c.bv_val(x, n);
+}

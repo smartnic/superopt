@@ -365,6 +365,12 @@ z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
     case ebpf::RSH32XY: return predicate_rsh32(CURDST32_BV, CURSRC32_L5_BV, NEWDST);
     case ebpf::ARSH32XC: return predicate_arsh32(CURDST32_BV, IMM2_32_BV, NEWDST);
     case ebpf::ARSH32XY: return predicate_arsh32(CURDST32_BV, CURSRC32_L5_BV, NEWDST);
+    case ebpf::LE16: return predicate_le16(CURDST, NEWDST);
+    case ebpf::LE32: return predicate_le32(CURDST, NEWDST);
+    case ebpf::LE64: return predicate_le64(CURDST, NEWDST);
+    case ebpf::BE16: return predicate_be16(CURDST, NEWDST);
+    case ebpf::BE32: return predicate_be32(CURDST, NEWDST);
+    case ebpf::BE64: return predicate_be64(CURDST, NEWDST);
     default: return string_to_expr("false");
   }
 }

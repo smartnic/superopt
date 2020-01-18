@@ -39,3 +39,4 @@ z3::expr to_expr(int64_t x);
 z3::expr to_expr(int32_t x);
 z3::expr to_expr(string s, unsigned n);
 z3::expr to_expr(int x, unsigned n);
+z3::expr to_expr(int64_t x, unsigned n);

@@ -3,25 +3,6 @@
 
 using namespace std;
 
-#define SWAP16(v) ((((uint16_t)(v) & 0xff00) >> 8) | \
-                   (((uint16_t)(v) & 0x00ff) << 8) )
-#define SWAP32(v) ((((uint32_t)(v) & 0xff000000) >> 24) | \
-                   (((uint32_t)(v) & 0x00ff0000) >> 8 ) | \
-                   (((uint32_t)(v) & 0x0000ff00) << 8 ) | \
-                   (((uint32_t)(v) & 0x000000ff) << 24) )
-#define SWAP64(v) ((((uint64_t)(v) & 0xff00000000000000) >> 56) | \
-                   (((uint64_t)(v) & 0x00ff000000000000) >> 40) | \
-                   (((uint64_t)(v) & 0x0000ff0000000000) >> 24) | \
-                   (((uint64_t)(v) & 0x000000ff00000000) >> 8 ) | \
-                   (((uint64_t)(v) & 0x00000000ff000000) << 8 ) | \
-                   (((uint64_t)(v) & 0x0000000000ff0000) << 24) | \
-                   (((uint64_t)(v) & 0x000000000000ff00) << 40) | \
-                   (((uint64_t)(v) & 0x00000000000000ff) << 56) )
-
-#define SWAP_L16(v) (H48(v) | SWAP16(v))
-#define SWAP_L32(v) (H32(v) | SWAP32(v))
-#define SWAP_L64(v) SWAP64(v)
-
 /* Inputs x, y must be side-effect-free expressions. */
 #define NEG_EXPR(x, y) (y GENMODE ~x)
 #define MOV_EXPR(x, y) (y GENMODE x)
@@ -81,6 +62,24 @@ using namespace std;
 #define RSH(a, b) (a >> b)
 #undef ARSH
 #define ARSH(a, b) (a >> b)
+#define SWAP16(v) ((((uint16_t)(v) & 0xff00) >> 8) | \
+                   (((uint16_t)(v) & 0x00ff) << 8) )
+#define SWAP32(v) ((((uint32_t)(v) & 0xff000000) >> 24) | \
+                   (((uint32_t)(v) & 0x00ff0000) >> 8 ) | \
+                   (((uint32_t)(v) & 0x0000ff00) << 8 ) | \
+                   (((uint32_t)(v) & 0x000000ff) << 24) )
+#define SWAP64(v) ((((uint64_t)(v) & 0xff00000000000000) >> 56) | \
+                   (((uint64_t)(v) & 0x00ff000000000000) >> 40) | \
+                   (((uint64_t)(v) & 0x0000ff0000000000) >> 24) | \
+                   (((uint64_t)(v) & 0x000000ff00000000) >> 8 ) | \
+                   (((uint64_t)(v) & 0x00000000ff000000) << 8 ) | \
+                   (((uint64_t)(v) & 0x0000000000ff0000) << 24) | \
+                   (((uint64_t)(v) & 0x000000000000ff00) << 40) | \
+                   (((uint64_t)(v) & 0x00000000000000ff) << 56) )
+
+#define SWAP_L16(v) (H48(v) | SWAP16(v))
+#define SWAP_L32(v) (H32(v) | SWAP32(v))
+#define SWAP_L64(v) SWAP64(v)
 
 #define COMPUTE_UNARY(func_name, operation, para1_t, para2_t, ret_t)             \
 ret_t compute_##func_name(para1_t a, para2_t b) {                                \
@@ -144,6 +143,20 @@ COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)
 #define RSH32(a, b) z3::lshr(a, b)
 #undef ARSH32
 #define ARSH32(a, b) z3::ashr(a, b)
+#undef SWAP16
+#undef SWAP32
+#undef SWAP64
+#define SWAP16(v) z3::concat(v.extract(7, 0), v.extract(15, 8))
+#define SWAP32(v) z3::concat(SWAP16(v), z3::concat(v.extract(23, 16), v.extract(31, 24)))
+#define SWAP_BV_H32(v) z3::concat(z3::concat(v.extract(39, 32), v.extract(47, 40)), \
+                                  z3::concat(v.extract(55, 48), v.extract(63, 56)))
+#define SWAP64(v) z3::concat(SWAP32(v), SWAP_BV_H32(v))
+#undef SWAP_L16
+#undef SWAP_L32
+#undef SWAP_L64
+#define SWAP_L16(v) z3::bv2int(z3::concat(z3::int2bv(64, v).extract(63, 16), SWAP16(z3::int2bv(64, v))), true)
+#define SWAP_L32(v) z3::bv2int(z3::concat(z3::int2bv(64, v).extract(63, 32), SWAP32(z3::int2bv(64, v))), true)
+#define SWAP_L64(v) z3::bv2int(SWAP64(z3::int2bv(64, v)), true)
 
 #define PREDICATE_UNARY(func_name, operation)                           \
 z3::expr predicate_##func_name(z3::expr a, z3::expr b) {                \
@@ -156,6 +169,12 @@ z3::expr predicate_##func_name(z3::expr a, z3::expr b, z3::expr c) {    \
 }
 
 PREDICATE_UNARY(mov, MOV_EXPR)
+PREDICATE_UNARY(le16, LE16_EXPR)
+PREDICATE_UNARY(le32, LE32_EXPR)
+PREDICATE_UNARY(le64, LE64_EXPR)
+PREDICATE_UNARY(be16, BE16_EXPR)
+PREDICATE_UNARY(be32, BE32_EXPR)
+PREDICATE_UNARY(be64, BE64_EXPR)
 PREDICATE_BINARY(add, ADD_EXPR)
 PREDICATE_BINARY(add32, ADD32_EXPR)
 PREDICATE_BINARY(rsh, RSH_EXPR)
