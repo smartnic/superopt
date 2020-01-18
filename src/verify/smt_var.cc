@@ -46,6 +46,10 @@ z3::expr string_to_expr(string s) {
   return smt_c.int_const(s.c_str());
 }
 
+z3::expr to_bool_expr(string s) {
+  return smt_c.bool_const(s.c_str());
+}
+
 z3::expr to_expr(int64_t x) {
   return smt_c.int_val(x);
 }

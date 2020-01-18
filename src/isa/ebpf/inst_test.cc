@@ -204,6 +204,18 @@ int64_t eval_output(z3::expr smt, z3::expr output) {
   return -1;
 }
 
+bool is_valid(z3::expr smt) {
+  z3::solver s(smt_c);
+  s.add(smt);
+  switch (s.check()) {
+    case z3::unsat: return true;
+    case z3::sat: return false;
+    case z3::unknown:
+      cout << "ERROR: smt is_valid unknown, return false" << endl;
+      return false;
+  }
+}
+
 void test2() {
   cout << endl << "Test 2: instruction smt check" << endl;
 
@@ -318,10 +330,58 @@ void test2() {
   else expected = 0x0123456789abcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE64");
 
+#define SMT_JMP_CHECK_XC(dst_input, bool_expected, test_name)                        \
+  smt = z3::implies(CURDST == to_expr((int64_t)dst_input), insn.smt_inst_jmp(sv));   \
+  print_test_res(is_valid(!smt) == (bool)bool_expected, test_name);
+
+#define SMT_JMP_CHECK_XY(dst_input, src_input, bool_expected, test_name)             \
+  smt = (CURDST == to_expr((int64_t)dst_input)) &&                                   \
+        (CURSRC == to_expr((int64_t)src_input));                                     \
+  smt = z3::implies(smt, insn.smt_inst_jmp(sv));                                     \
+  print_test_res(is_valid(!smt) == (bool)bool_expected, test_name);
+
+  insn = ebpf_inst(ebpf::JEQXC, 0, 0xffffffff, 1);
+  SMT_JMP_CHECK_XC(0xffffffffffffffff, true, "smt JEQXC 1");
+
+  insn = ebpf_inst(ebpf::JEQXC, 0, 0xffffffff, 1);
+  SMT_JMP_CHECK_XC(0x00000000ffffffff, false, "smt JEQXC 2");
+
+  insn = ebpf_inst(ebpf::JEQXY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0xffffffffffffffff, 0xffffffffffffffff, true, "smt JEQXY 1");
+
+  insn = ebpf_inst(ebpf::JEQXY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0x00000000ffffffff, 0xffffffffffffffff, false, "smt JEQXY 2");
+
+  insn = ebpf_inst(ebpf::JGTXC, 0, 0x80000000, 1);
+  SMT_JMP_CHECK_XC(0xffffffff80000001, true, "smt JGTXC 1");
+
+  insn = ebpf_inst(ebpf::JGTXC, 0, 0x2, 1);
+  SMT_JMP_CHECK_XC(0x1, false, "smt JGTXC 2");
+
+  insn = ebpf_inst(ebpf::JGTXY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0xffffffffffffffff, 0x7fffffffffffffff, true, "smt JGTXY 1");
+
+  insn = ebpf_inst(ebpf::JGTXY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0x0, 0x2, false, "smt JGTXY 2");
+
+  insn = ebpf_inst(ebpf::JSGTXC, 0, 0x80000000, 1);
+  SMT_JMP_CHECK_XC(0x0, true, "smt JSGTXC 1");
+
+  insn = ebpf_inst(ebpf::JSGTXC, 0, 0x2, 1);
+  SMT_JMP_CHECK_XC(0x1, false, "smt JSGTXC 2");
+
+  insn = ebpf_inst(ebpf::JSGTXY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0x0, 0x8000000000000000, true, "smt JSGTXY 1");
+
+  insn = ebpf_inst(ebpf::JSGTXY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0x1, 0x2, false, "smt JSGTXY 2");
+
 #undef CURDST
 #undef CURSRC
 #undef SMT_CHECK_XC
 #undef SMT_CHECK_XY
+#undef SMT_JMP_CHECK_XC
+#undef SMT_JMP_CHECK_XY
 }
 
 int main(int argc, char *argv[]) {

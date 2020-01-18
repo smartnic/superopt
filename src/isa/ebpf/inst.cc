@@ -384,7 +384,22 @@ z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
 }
 
 z3::expr ebpf_inst::smt_inst_jmp(smt_var& sv) const {
+  // If opcode is valid, then define curDst, curSrc, imm2
+  if (get_opcode_type() != OP_COND_JMP) return string_to_expr("false");
+  z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
+  z3::expr curSrc = string_to_expr("false");
+  if (SRCREG(*this) < get_num_regs()) {
+    curSrc = sv.get_cur_reg_var(SRCREG(*this));
+  }
+  int64_t imm2 = (int64_t)IMM2VAL32(*this);
+
   switch (_opcode) {
+    case ebpf::JEQXC: return (CURDST == IMM2);
+    case ebpf::JEQXY: return (CURDST == CURSRC);
+    case ebpf::JGTXC: return (ugt(CURDST_BV, IMM2_BV));
+    case ebpf::JGTXY: return (ugt(CURDST_BV, CURSRC_BV));
+    case ebpf::JSGTXC: return (CURDST > IMM2);
+    case ebpf::JSGTXY: return (CURDST > CURSRC);
     default: return string_to_expr("false");
   }
 }

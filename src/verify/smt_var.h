@@ -35,6 +35,7 @@ class smt_var {
 // if e = "true"/"false" the type of e is bool_val
 // else the type of e is int_const
 z3::expr string_to_expr(string s);
+z3::expr to_bool_expr(string s);
 z3::expr to_expr(int64_t x);
 z3::expr to_expr(int32_t x);
 z3::expr to_expr(string s, unsigned n);
