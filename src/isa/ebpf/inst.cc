@@ -344,13 +344,13 @@ z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
   // If opcode is valid, then define curDst, curSrc, imm2 and newDst
   if (get_opcode_type() != OP_OTHERS) return string_to_expr("false");
-  // Should get curDst before updating curDst
+  // Should get curDst and curSrc before updating curDst (curSrc may be the same reg as curDst)
   z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
-  z3::expr newDst = sv.update_reg_var(DSTREG(*this));
   z3::expr curSrc = string_to_expr("false");
   if (SRCREG(*this) < get_num_regs()) {
     curSrc = sv.get_cur_reg_var(SRCREG(*this));
   }
+  z3::expr newDst = sv.update_reg_var(DSTREG(*this));
   int64_t imm2 = (int64_t)IMM2VAL32(*this);
 
   switch (_opcode) {
