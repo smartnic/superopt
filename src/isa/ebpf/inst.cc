@@ -78,7 +78,7 @@ int ebpf_inst::get_max_operand_val(int op_index, int inst_index) const {
     [ebpf::OP_UNUSED] = 0,
     [ebpf::OP_REG] = ebpf::NUM_REGS,
     [ebpf::OP_IMM] = ebpf::MAX_IMM,
-    [ebpf::OP_OFF] = max((int)ebpf::MAX_OFF, ebpf::MAX_PROG_LEN - inst_index - 1),
+    [ebpf::OP_OFF] = min((int)ebpf::MAX_OFF, ebpf::MAX_PROG_LEN - inst_index - 1),
   };
   return max_val[EBPF_OPTYPE(_opcode, op_index)];
 }
