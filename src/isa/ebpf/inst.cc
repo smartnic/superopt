@@ -111,8 +111,8 @@ void ebpf_inst::clear_insts() {
 
 int ebpf_inst::get_jmp_dis() const {
   switch (get_opcode_type()) {
-    case (OP_UNCOND_JMP): return _args[0];
-    case (OP_COND_JMP): return _args[2];
+    case (OP_UNCOND_JMP): return UNCOND_OFFVAL16(*this);
+    case (OP_COND_JMP): return COND_OFFVAL16(*this);
     default: cout << "Error: opcode is not jmp" << endl; return 0;
   }
 }
