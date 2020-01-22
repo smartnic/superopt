@@ -83,7 +83,11 @@ void test3() {
   string bv_str = "";
   for (int i = 0; i < 6; i++) {
     toy_isa_inst x = instructions[i];
-    bv_str += bitset<toy_isa::INST_NUM_BITS>(x.to_abs_bv()).to_string();
+    vector<int> abs_bv;
+    x.to_abs_bv(abs_bv);
+    for (int j = 0; j < abs_bv.size(); j++) {
+      bv_str += bitset<toy_isa::OP_NUM_BITS>(abs_bv[j]).to_string();
+    }
   }
   print_test_res(bv_str == expected_bv_str, "inst_to_abs_bv");
 }

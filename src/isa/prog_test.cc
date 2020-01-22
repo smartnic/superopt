@@ -121,7 +121,7 @@ void test5() {
   vector<int> bv;
   p1.to_abs_bv(bv);
   string str = "";
-  const int N = toy_isa::INST_NUM_BITS;
+  const int N = toy_isa::OP_NUM_BITS;
   for (size_t i = 0; i < bv.size(); i++) {
     str += bitset<N>(bv[i]).to_string();
   }

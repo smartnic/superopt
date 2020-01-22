@@ -54,7 +54,7 @@ string prog_abs_bv_to_str(vector<int>& v, int isa_type) {
   switch (isa_type) {
     case TOY_ISA: {
       for (size_t i = 0; i < v.size(); i++)
-        str += bitset<toy_isa::INST_NUM_BITS>(v[i]).to_string();
+        str += bitset<toy_isa::OP_NUM_BITS>(v[i]).to_string();
       return str;
     }
     default: cout << "unknown ISA type, return empty string" << endl; return "";

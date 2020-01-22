@@ -86,7 +86,7 @@ int prog::to_rel_bv(const vector<prog> &ps) const {
 
 void prog::to_abs_bv(vector<int>& bv) const {
   for (int i = 0; i < this->get_max_prog_len(); i++) {
-    bv.push_back(instptr_list[i]->to_abs_bv());
+    instptr_list[i]->to_abs_bv(bv);
   }
 }
 

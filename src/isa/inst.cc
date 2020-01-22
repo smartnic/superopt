@@ -25,14 +25,12 @@ void inst::print() const {
   cout << endl;
 }
 
-int inst::to_abs_bv() const {
-  const int op_num_bits = get_op_num_bits();
+void inst::to_abs_bv(vector<int>& abs_vec) const {
   const int num_args = _args.size();
-  int res = _opcode << (op_num_bits * num_args);
+  abs_vec.push_back(_opcode);
   for (int i = 0; i < num_args; i++) {
-    res += _args[i] << (op_num_bits * (num_args - i - 1));
+    abs_vec.push_back(_args[i]);
   }
-  return res;
 }
 
 vector<int> inst::get_reg_list() const {

@@ -35,7 +35,7 @@ class inst {
   vector<int64_t> _args;
   inst() {}
   void print() const;
-  int to_abs_bv() const;
+  void to_abs_bv(vector<int>& abs_vec) const;
   vector<int> get_reg_list() const;
   bool operator==(const inst &x) const;
   inst& operator=(const inst &rhs);
