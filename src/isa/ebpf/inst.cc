@@ -73,7 +73,7 @@ ebpf_inst& ebpf_inst::operator=(const inst &rhs) {
 
 // For jmp opcode, it can only jump forward
 int ebpf_inst::get_max_operand_val(int op_index, int inst_index) const {
-  // max value for each operand type
+  // max valufor each operand type
   int max_val[4] = {
     [ebpf::OP_UNUSED] = 0,
     [ebpf::OP_REG] = ebpf::NUM_REGS,
@@ -180,24 +180,14 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int inp
       } else goto out;                                             \
   }
 
-#define ALU64_UNARY(OPCODE, OP, OPERAND)                           \
+#define ALU_UNARY(OPCODE, OP, OPERAND)                             \
   INSN_##OPCODE:                                                   \
     DST = compute_##OP(OPERAND);                                   \
     CONT;
 
-#define ALU64_BINARY(OPCODE, OP, OPERAND1, OPERAND2)               \
+#define ALU_BINARY(OPCODE, OP, OPERAND1, OPERAND2)                 \
   INSN_##OPCODE:                                                   \
     DST = compute_##OP(OPERAND1, OPERAND2);                        \
-    CONT;
-
-#define ALU32_UNARY(OPCODE, OP, OPERAND)                           \
-  INSN_##OPCODE:                                                   \
-    DST = L32(compute_##OP(OPERAND));                              \
-    CONT;
-
-#define ALU32_BINARY(OPCODE, OP, OPERAND1, OPERAND2)               \
-  INSN_##OPCODE:                                                   \
-    DST = L32(compute_##OP(OPERAND1, OPERAND2));                   \
     CONT;
 
 #define BYTESWAP(OPCODE, OP)                                       \
@@ -262,27 +252,27 @@ select_insn:
 INSN_NOP:
   CONT;
 
-  ALU64_UNARY(MOV64XC, mov, IMM2)
-  ALU64_UNARY(MOV64XY, mov, SRC)
-  ALU64_BINARY(ADD64XC, add, DST, IMM2)
-  ALU64_BINARY(ADD64XY, add, DST, SRC)
-  ALU64_BINARY(LSH64XC, lsh, DST, IMM2)
-  ALU64_BINARY(LSH64XY, lsh, DST, SRC_L6)
-  ALU64_BINARY(RSH64XC, rsh, DST, IMM2)
-  ALU64_BINARY(RSH64XY, rsh, DST, SRC_L6)
-  ALU64_BINARY(ARSH64XC, arsh, DST, IMM2)
-  ALU64_BINARY(ARSH64XY, arsh, DST, SRC_L6)
+  ALU_UNARY(MOV64XC, mov, IMM2)
+  ALU_UNARY(MOV64XY, mov, SRC)
+  ALU_BINARY(ADD64XC, add, DST, IMM2)
+  ALU_BINARY(ADD64XY, add, DST, SRC)
+  ALU_BINARY(LSH64XC, lsh, DST, IMM2)
+  ALU_BINARY(LSH64XY, lsh, DST, SRC_L6)
+  ALU_BINARY(RSH64XC, rsh, DST, IMM2)
+  ALU_BINARY(RSH64XY, rsh, DST, SRC_L6)
+  ALU_BINARY(ARSH64XC, arsh, DST, IMM2)
+  ALU_BINARY(ARSH64XY, arsh, DST, SRC_L6)
 
-  ALU32_UNARY(MOV32XC, mov, IMM2_32)
-  ALU32_UNARY(MOV32XY, mov, SRC32)
-  ALU32_BINARY(ADD32XC, add, DST32, IMM2_32)
-  ALU32_BINARY(ADD32XY, add, DST32, SRC32)
-  ALU32_BINARY(LSH32XC, lsh, DST32, IMM2_32)
-  ALU32_BINARY(LSH32XY, lsh, DST32, SRC32_L5)
-  ALU32_BINARY(RSH32XC, rsh, DST32, IMM2_32)
-  ALU32_BINARY(RSH32XY, rsh, DST32, SRC32_L5)
-  ALU32_BINARY(ARSH32XC, arsh, DST32, IMM2_32)
-  ALU32_BINARY(ARSH32XY, arsh, DST32, SRC32_L5)
+  ALU_UNARY(MOV32XC, mov32, IMM2_32)
+  ALU_UNARY(MOV32XY, mov32, SRC32)
+  ALU_BINARY(ADD32XC, add32, DST32, IMM2_32)
+  ALU_BINARY(ADD32XY, add32, DST32, SRC32)
+  ALU_BINARY(LSH32XC, lsh32, DST32, IMM2_32)
+  ALU_BINARY(LSH32XY, lsh32, DST32, SRC32_L5)
+  ALU_BINARY(RSH32XC, rsh32, DST32, IMM2_32)
+  ALU_BINARY(RSH32XY, rsh32, DST32, SRC32_L5)
+  ALU_BINARY(ARSH32XC, arsh32, DST32, IMM2_32)
+  ALU_BINARY(ARSH32XY, arsh32, DST32, SRC32_L5)
 
   BYTESWAP(LE16, le16)
   BYTESWAP(LE32, le32)

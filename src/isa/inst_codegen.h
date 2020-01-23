@@ -7,9 +7,9 @@
 using namespace std;
 
 // return (b = op a)
-int64_t compute_mov_toy_isa(int32_t a, int32_t b = 0);
+int64_t compute_mov_toy_isa(int32_t a, int64_t b = 0);
 int64_t compute_mov(int64_t a, int64_t b = 0);
-int32_t compute_mov(int32_t a, int32_t b = 0);
+int64_t compute_mov32(int32_t a, int64_t b = 0);
 int64_t compute_le16(int64_t a, int64_t b = 0);
 int64_t compute_le32(int64_t a, int64_t b = 0);
 int64_t compute_le64(int64_t a, int64_t b = 0);
@@ -19,13 +19,13 @@ int64_t compute_be64(int64_t a, int64_t b = 0);
 
 // return (c = a op b)
 int64_t compute_add(int64_t a, int64_t b, int64_t c = 0);
-int32_t compute_add(int32_t a, int32_t b, int32_t c = 0);
+int64_t compute_add32(int32_t a, int32_t b, int64_t c = 0);
 int64_t compute_lsh(int64_t a, int64_t b, int64_t c = 0);
-int32_t compute_lsh(int32_t a, int32_t b, int32_t c = 0);
+int64_t compute_lsh32(int32_t a, int32_t b, int64_t c = 0);
 int64_t compute_rsh(int64_t a, int64_t b, int64_t c = 0);
-int32_t compute_rsh(int32_t a, int32_t b, int32_t c = 0);
+int64_t compute_rsh32(int32_t a, int32_t b, int64_t c = 0);
 int64_t compute_arsh(int64_t a, int64_t b, int64_t c = 0);
-int32_t compute_arsh(int32_t a, int32_t b, int32_t c = 0);
+int64_t compute_arsh32(int32_t a, int32_t b, int64_t c = 0);
 // return max(a, b)
 int64_t compute_max(int64_t a, int64_t b, int64_t c = 0);
 

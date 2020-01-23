@@ -21,7 +21,7 @@ using namespace std;
 // Expression for 32-bit `compute` and `predicate`
 // Inputs x, y are both z3 int of int32_t or both 32-bit bit vectors
 // z is z3 int of int64_t
-#define BIT32_EXPR_FMT(z, operation) (z == CONCAT_MODE(H32_EXPR, L32_EXPR(operation)))
+#define BIT32_EXPR_FMT(z, operation) (z GENMODE CONCAT_MODE(H32_EXPR, L32_EXPR(operation)))
 #define ADD32_EXPR(x, y, z) BIT32_EXPR_FMT(z, x + y)
 #define MOV32_EXPR(x, y) BIT32_EXPR_FMT(y, x)
 #define LSH32_EXPR(x, y, z) BIT32_EXPR_FMT(z, LSH32(x, y))
@@ -60,12 +60,24 @@ using namespace std;
 #define CONNECTIFELSE  ;
 #undef ELSE_PRED_ACTION
 #define ELSE_PRED_ACTION(pred, expr, var) else var GENMODE expr
+#undef CONCAT_MODE
+#define CONCAT_MODE(hi, lo) (hi | lo)
+#undef H32_EXPR // 32 bits with zero
+#define H32_EXPR 0
+#undef L32_EXPR
+#define L32_EXPR(a) L32(a)
 #undef LSH
 #define LSH(a, b) (a << b)
 #undef RSH
 #define RSH(a, b) (a >> b)
 #undef ARSH
 #define ARSH(a, b) (a >> b)
+#undef LSH32
+#define LSH32(a, b) (a << b)
+#undef RSH32
+#define RSH32(a, b) (a >> b)
+#undef ARSH32
+#define ARSH32(a, b) (a >> b)
 #define SWAP16(v) ((((uint16_t)(v) & 0xff00) >> 8) | \
                    (((uint16_t)(v) & 0x00ff) << 8) )
 #define SWAP32(v) ((((uint32_t)(v) & 0xff000000) >> 24) | \
@@ -103,9 +115,9 @@ ret_t compute_##func_name(para1_t a, para2_t b, para3_t c) {                    
   return c;                                                                      \
 }
 
-COMPUTE_UNARY(mov_toy_isa, MOV_EXPR, int32_t, int32_t, int64_t)
+COMPUTE_UNARY(mov_toy_isa, MOV_EXPR, int32_t, int64_t, int64_t)
 COMPUTE_UNARY(mov, MOV_EXPR, int64_t, int64_t, int64_t)
-COMPUTE_UNARY(mov, MOV_EXPR, int32_t, int32_t, int32_t)
+COMPUTE_UNARY(mov32, MOV32_EXPR, int32_t, int64_t, int64_t)
 COMPUTE_UNARY(le16, LE16_EXPR, int64_t, int64_t, int64_t)
 COMPUTE_UNARY(le32, LE32_EXPR, int64_t, int64_t, int64_t)
 COMPUTE_UNARY(le64, LE64_EXPR, int64_t, int64_t, int64_t)
@@ -114,13 +126,13 @@ COMPUTE_UNARY(be32, BE32_EXPR, int64_t, int64_t, int64_t)
 COMPUTE_UNARY(be64, BE64_EXPR, int64_t, int64_t, int64_t)
 
 COMPUTE_BINARY(add, ADD_EXPR, int64_t, int64_t, int64_t, int64_t)
-COMPUTE_BINARY(add, ADD_EXPR, int32_t, int32_t, int32_t, int32_t)
+COMPUTE_BINARY(add32, ADD32_EXPR, int32_t, int32_t, int64_t, int64_t)
 COMPUTE_BINARY(lsh, LSH_EXPR, int64_t, int64_t, int64_t, int64_t)
-COMPUTE_BINARY(lsh, LSH_EXPR, int32_t, int32_t, int32_t, int32_t)
+COMPUTE_BINARY(lsh32, LSH32_EXPR, int32_t, int32_t, int64_t, int64_t)
 COMPUTE_RSH(rsh, RSH_EXPR, int64_t, int64_t, int64_t, int64_t)
-COMPUTE_RSH(rsh, RSH_EXPR, int32_t, int32_t, int32_t, int32_t)
+COMPUTE_RSH(rsh32, RSH32_EXPR, int32_t, int32_t, int64_t, int64_t)
 COMPUTE_BINARY(arsh, ARSH_EXPR, int64_t, int64_t, int64_t, int64_t)
-COMPUTE_BINARY(arsh, ARSH_EXPR, int32_t, int32_t, int32_t, int32_t)
+COMPUTE_BINARY(arsh32, ARSH32_EXPR, int32_t, int32_t, int64_t, int64_t)
 COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)
 
 #undef GENMODE
