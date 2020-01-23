@@ -251,6 +251,25 @@ graph::graph() {}
 
 graph::~graph() {}
 
+string graph::graph_to_str() const {
+  string str = "nodes:";
+  for (size_t i = 0; i < nodes.size(); i++) {
+    str += to_string(nodes[i]._start) + "," + to_string(nodes[i]._end) + " ";
+  }
+  str += "edges:";
+  for (size_t i = 0; i < nodes.size(); i++) {
+    str += " " + to_string(i) + ":";
+    for (size_t j = 0; j < nodes_in[i].size(); j++) {
+      str += to_string(nodes_in[i][j]) + ",";
+    }
+    str += ";";
+    for (size_t j = 0; j < nodes_out[i].size(); j++) {
+      str += to_string(nodes_out[i][j]) + ",";
+    }
+  }
+  return str;
+}
+
 ostream& operator<<(ostream& out, const graph& g) {
   out << endl << "nodes:" << endl << " ";
   for (size_t i = 0; i < g.nodes.size(); i++) {

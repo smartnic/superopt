@@ -101,9 +101,9 @@ int validator::is_equal_to(vector<inst*>& synth) {
   return (int)is_smt_valid(smt);
 }
 
-int validator::get_orig_output(int input, unsigned int num_regs) {
+int validator::get_orig_output(int input, unsigned int num_regs, unsigned int input_reg) {
   smt_var sv(VLD_PROG_ID_ORIG, 0, num_regs);
-  expr input_logic = (sv.get_init_reg_var(0) == input);
+  expr input_logic = (sv.get_init_reg_var(input_reg) == input);
   solver s(smt_c);
   s.add(_pl_orig && input_logic);
   s.check();

@@ -278,6 +278,7 @@ class ebpf_inst: public inst {
   int inst_output() const;
   bool is_real_inst() const;
   void set_as_nop_inst();
+  unsigned int get_input_reg() const {return 1;}
   // for class ebpf
   int get_num_regs() const {return _isa.NUM_REGS;}
   int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}

@@ -42,5 +42,6 @@ class graph {
   graph(vector<inst*>& inst_lst);
   ~graph();
   void gen_graph(vector<inst*>& inst_lst);
+  string graph_to_str() const;
   friend ostream& operator<<(ostream& out, const graph& g);
 };

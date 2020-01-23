@@ -65,8 +65,8 @@ class validator {
   // check whether synth is equal to orig
   // return 0: not equal; return 1: equal; return -1: synth is illegal
   int is_equal_to(vector<inst*>& synth);
-  // given input, return the output of the original
-  int get_orig_output(int input, unsigned int num_regs);
+  // given input and register to store the input, return the output of the original
+  int get_orig_output(int input, unsigned int num_regs, unsigned int input_reg);
   // move from `private` to `public` for testing time
   bool is_smt_valid(expr& smt);
   void gen_counterex(model& m);

@@ -150,6 +150,8 @@ class toy_isa_inst: public inst {
   int inst_output() const;
   bool is_real_inst() const;
   void set_as_nop_inst();
+  // return the register for storing the given input
+  unsigned int get_input_reg() const {return 0;}
   // for class toy_isa
   int get_num_regs() const {return _isa.NUM_REGS;}
   int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}
