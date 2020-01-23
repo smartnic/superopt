@@ -1,4 +1,4 @@
-#include "common.h"
+#include "benchmark_toy-isa.h"
 
 using namespace std;
 

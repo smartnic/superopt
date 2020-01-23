@@ -10,7 +10,7 @@
 #include "../src/isa/inst.h"
 #include "../src/isa/prog.h"
 #include "../src/isa/toy-isa/inst.h"
-#include "common.h"
+#include "benchmark_toy-isa.h"
 #include "z3++.h"
 
 using namespace std;
@@ -68,7 +68,7 @@ void time_validator_get_orig_output() {
   vector<inst*> instptr_list(N);
   bm0->convert_to_pointers(instptr_list, bm0);
   vld.set_orig(instptr_list);
-  time_measure(vld.get_orig_output(i, bm0->get_num_regs()), 100,
+  time_measure(vld.get_orig_output(i, bm0->get_num_regs(), bm0->get_input_reg()), 100,
                "validator::get_orig_output: ");
 }
 

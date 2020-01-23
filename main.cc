@@ -9,7 +9,7 @@
 #include <iomanip>
 #include <getopt.h>
 #include <chrono>
-#include "measure/common.h"
+#include "measure/benchmark_toy-isa.h"
 #include "measure/meas_mh_bhv.h"
 #include "src/inout.h"
 #include "src/utils.h"
