@@ -71,7 +71,7 @@ int prog::to_rel_bv(const prog &p) const {
 }
 
 int prog::to_rel_bv(const vector<prog> &ps) const {
-  int best;
+  int best = 0;
   int count = 0;
   for (int i = 0; i < ps.size(); i++) {
     int bv = to_rel_bv(ps[i]);
