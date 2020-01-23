@@ -7,6 +7,7 @@
 using namespace std;
 
 // return (b = op a)
+int64_t compute_mov_toy_isa(int32_t a, int32_t b = 0);
 int64_t compute_mov(int64_t a, int64_t b = 0);
 int32_t compute_mov(int32_t a, int32_t b = 0);
 int64_t compute_le16(int64_t a, int64_t b = 0);

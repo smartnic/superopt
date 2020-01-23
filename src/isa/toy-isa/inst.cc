@@ -183,7 +183,7 @@ INSN_ADDXY:
   CONT;
 
 INSN_MOVXC:
-  DST = compute_mov(IMM2, DST);
+  DST = compute_mov_toy_isa(IMM2, DST);
   CONT;
 
 INSN_RETX:

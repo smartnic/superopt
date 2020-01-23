@@ -61,7 +61,7 @@ int inst::get_operand(int op_index) const {
   return _args[op_index];
 }
 
-void inst::set_operand(int op_index, int64_t op_value) {
+void inst::set_operand(int op_index, int32_t op_value) {
   assert(op_index < _args.size());
   _args[op_index] = op_value;
 }

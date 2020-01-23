@@ -32,7 +32,7 @@ class prog_state {
 class inst {
  public:
   int _opcode;
-  vector<int64_t> _args;
+  vector<int32_t> _args;
   inst() {}
   void print() const;
   void to_abs_bv(vector<int>& abs_vec) const;
@@ -40,7 +40,7 @@ class inst {
   bool operator==(const inst &x) const;
   inst& operator=(const inst &rhs);
   int get_operand(int op_index) const;
-  void set_operand(int op_index, int64_t op_value);
+  void set_operand(int op_index, int32_t op_value);
   int get_opcode() const;
   void set_opcode(int op_value);
   void convert_to_pointers(vector<inst*> &instptr_list, inst* instruction) const;

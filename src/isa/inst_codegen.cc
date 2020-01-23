@@ -103,6 +103,7 @@ ret_t compute_##func_name(para1_t a, para2_t b, para3_t c) {                    
   return c;                                                                      \
 }
 
+COMPUTE_UNARY(mov_toy_isa, MOV_EXPR, int32_t, int32_t, int64_t)
 COMPUTE_UNARY(mov, MOV_EXPR, int64_t, int64_t, int64_t)
 COMPUTE_UNARY(mov, MOV_EXPR, int32_t, int32_t, int32_t)
 COMPUTE_UNARY(le16, LE16_EXPR, int64_t, int64_t, int64_t)

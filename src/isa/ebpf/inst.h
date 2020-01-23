@@ -259,7 +259,7 @@ class ebpf_prog_state: public prog_state {
 class ebpf_inst: public inst {
  public:
   static ebpf _isa;
-  ebpf_inst(int64_t opcode = _isa.NOP, int64_t arg1 = 0, int64_t arg2 = 0, int64_t arg3 = 0) {
+  ebpf_inst(int opcode = _isa.NOP, int32_t arg1 = 0, int32_t arg2 = 0, int32_t arg3 = 0) {
     _args.resize(_isa.MAX_OP_LEN);
     _opcode  = opcode;
     _args[0] = arg1;

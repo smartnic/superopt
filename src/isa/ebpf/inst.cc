@@ -347,7 +347,7 @@ z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
   // Should get curDst and curSrc before updating curDst (curSrc may be the same reg as curDst)
   z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
   z3::expr curSrc = string_to_expr("false");
-  if (SRCREG(*this) < get_num_regs()) {
+  if (SRCREG(*this) < get_num_regs() && SRCREG(*this) >= 0) {
     curSrc = sv.get_cur_reg_var(SRCREG(*this));
   }
   z3::expr newDst = sv.update_reg_var(DSTREG(*this));
@@ -389,7 +389,7 @@ z3::expr ebpf_inst::smt_inst_jmp(smt_var& sv) const {
   if (get_opcode_type() != OP_COND_JMP) return string_to_expr("false");
   z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
   z3::expr curSrc = string_to_expr("false");
-  if (SRCREG(*this) < get_num_regs()) {
+  if (SRCREG(*this) < get_num_regs() && SRCREG(*this) >= 0) {
     curSrc = sv.get_cur_reg_var(SRCREG(*this));
   }
   int64_t imm2 = (int64_t)IMM2VAL32(*this);
