@@ -64,7 +64,7 @@ int prog::to_rel_bv(const prog &p) const {
   int bv = 0;
   for (int i = 0; i < max_prog_len; i++) {
     if (*instptr_list[i] == *p.instptr_list[i]) {
-      bv += 1 << (max_prog_len - 1 - i);
+      bv |= 1 << (max_prog_len - 1 - i);
     }
   }
   return bv;
