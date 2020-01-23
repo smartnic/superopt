@@ -181,10 +181,10 @@ class ebpf {
   };
 
   // Max and Min value for immediate number(32bits)、offset(16bits)
-  static constexpr int64_t MAX_IMM = 0x7fffffff;
-  static constexpr int64_t MIN_IMM = 0xffffffff80000000;
-  static constexpr int64_t MAX_OFF = 0x7fff;
-  static constexpr int64_t MIN_OFF = 0xffffffffffff8000;
+  static constexpr int32_t MAX_IMM = 0x7fffffff;
+  static constexpr int32_t MIN_IMM = 0x80000000;
+  static constexpr int32_t MAX_OFF = 0x7fff;
+  static constexpr int32_t MIN_OFF = 0xffff8000;
 
   // Operand types for instructions
   static constexpr int OP_UNUSED = 0;
