@@ -69,7 +69,7 @@ void test3() {
   expected64 = 0x7ffffffffffffffd;
   expected32 = 0x7ffffffd;
   print_test_res(compute_rsh(a, b) == expected64, "compute_rsh 1");
-  print_test_res(compute_rsh((int32_t)a, (int32_t)b) == expected32, "compute_rsh 2");
+  print_test_res(compute_rsh32((int32_t)a, (int32_t)b) == expected32, "compute_rsh 2");
 
   expected64 = 0xfffffffffffffffd; // expected64 = -3
   expected32 = 0xfffffffd; // expected32 = -3
