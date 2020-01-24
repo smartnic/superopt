@@ -11,13 +11,13 @@ using namespace std;
 
 class ebpf {
  public:
-  static constexpr int NUM_REGS = 10;
+  static constexpr int NUM_REGS = 11;
   static constexpr int MAX_PROG_LEN = 7;
   // Max number of operands in one instruction
   static constexpr int MAX_OP_LEN = 3;
 
   // Number of bits of a single opcode or operand
-  static constexpr int OP_NUM_BITS = 5;
+  static constexpr int OP_NUM_BITS = 32;
   // Number of bits of a single instruction
   static constexpr int INST_NUM_BITS = 20;
 
@@ -180,17 +180,22 @@ class ebpf {
     [EXIT]     = OP_RET,
   };
 
-  // Max and Min value for immediate number(32bits)、offset(16bits)
+  // Max and Min value for immediate number(32bits), offset(16bits)
+  // MAX value for immediate number of shift 32 and shift 64
   static constexpr int32_t MAX_IMM = 0x7fffffff;
   static constexpr int32_t MIN_IMM = 0x80000000;
   static constexpr int32_t MAX_OFF = 0x7fff;
   static constexpr int32_t MIN_OFF = 0xffff8000;
+  static constexpr int32_t MAX_IMM_SH32 = 31;
+  static constexpr int32_t MAX_IMM_SH64 = 63;
 
   // Operand types for instructions
   static constexpr int OP_UNUSED = 0;
   static constexpr int OP_REG = 1;
   static constexpr int OP_IMM = 2;
   static constexpr int OP_OFF = 3;
+  static constexpr int OP_IMM_SH32 = 4;
+  static constexpr int OP_IMM_SH64 = 5;
 
   /* The definitions below assume a minimum 16-bit integer data type */
 #define EBPF_OPTYPE(opcode, opindex) ((ebpf::optable[opcode] >> ((opindex) * 5)) & 31)
@@ -199,6 +204,8 @@ class ebpf {
 #define TRDOP(x) (x << 10)
 #define ALU_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED))
 #define ALU_OPS_REG (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED))
+#define SH32_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM_SH32) | TRDOP(OP_UNUSED))
+#define SH64_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM_SH64) | TRDOP(OP_UNUSED))
 #define BYTESWAP (FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 #define JMP_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_OFF))
 #define JMP_OPS_REG (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
@@ -207,23 +214,23 @@ class ebpf {
     [NOP]      = UNUSED_OPS,
     [ADD64XC]  = ALU_OPS_IMM,
     [ADD64XY]  = ALU_OPS_REG,
-    [LSH64XC]  = ALU_OPS_IMM,
+    [LSH64XC]  = SH64_OPS_IMM,
     [LSH64XY]  = ALU_OPS_REG,
-    [RSH64XC]  = ALU_OPS_IMM,
+    [RSH64XC]  = SH64_OPS_IMM,
     [RSH64XY]  = ALU_OPS_REG,
     [MOV64XC]  = ALU_OPS_IMM,
     [MOV64XY]  = ALU_OPS_REG,
-    [ARSH64XC] = ALU_OPS_IMM,
+    [ARSH64XC] = SH64_OPS_IMM,
     [ARSH64XY] = ALU_OPS_REG,
     [ADD32XC]  = ALU_OPS_IMM,
     [ADD32XY]  = ALU_OPS_REG,
-    [LSH32XC]  = ALU_OPS_IMM,
+    [LSH32XC]  = SH32_OPS_IMM,
     [LSH32XY]  = ALU_OPS_REG,
-    [RSH32XC]  = ALU_OPS_IMM,
+    [RSH32XC]  = SH32_OPS_IMM,
     [RSH32XY]  = ALU_OPS_REG,
     [MOV32XC]  = ALU_OPS_IMM,
     [MOV32XY]  = ALU_OPS_REG,
-    [ARSH32XC] = ALU_OPS_IMM,
+    [ARSH32XC] = SH32_OPS_IMM,
     [ARSH32XY] = ALU_OPS_REG,
     [LE16]     = BYTESWAP,
     [LE32]     = BYTESWAP,

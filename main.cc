@@ -10,6 +10,7 @@
 #include <getopt.h>
 #include <chrono>
 #include "measure/benchmark_toy-isa.h"
+#include "measure/benchmark_ebpf.h"
 #include "measure/meas_mh_bhv.h"
 #include "src/inout.h"
 #include "src/utils.h"
@@ -46,7 +47,7 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
   return out;
 }
 
-void init_benchmarks(vector<inst*> &bm_optis_orig, int bm_id) {
+void init_benchmarks_toy_isa(vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
       bm = bm0;
@@ -76,8 +77,28 @@ void init_benchmarks(vector<inst*> &bm_optis_orig, int bm_id) {
       bm_optis_orig.push_back(bm_opti27);
       return;
     default:
-      cout << "bm_id" + to_string(bm_id) + "is out of range {0, 1, 2}" << endl;
+      cout << "ERROR: toy-isa bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
       return;
+  }
+}
+
+void init_benchmarks_ebpf(vector<inst*> &bm_optis_orig, int bm_id) {
+  switch (bm_id) {
+    case 0:
+      bm = ebpf_bm0;
+      bm_optis_orig.push_back(ebpf_bm_opti00);
+      return;
+    default:
+      cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0}" << endl;
+      return;
+  }
+}
+
+void init_benchmarks(vector<inst*> &bm_optis_orig, int bm_id, int isa) {
+  if (isa == 0) {
+    init_benchmarks_toy_isa(bm_optis_orig, bm_id);
+  } else if (isa == 1) {
+    init_benchmarks_ebpf(bm_optis_orig, bm_id);
   }
 }
 
@@ -227,11 +248,11 @@ void usage() {
        << "options and descriptions" << endl
        << left // set setw(.) as left-aligned
        << setw(W) << "-h" << ": display usage" << endl
-       << setw(W) << "--isa arg" << ": ISA type, `arg`: 0(toy_isa)" << endl
+       << setw(W) << "--isa arg" << ": ISA type, `arg`: 0(toy_isa), 1(ebpf)" << endl
        << setw(W) << "-n arg" << ": number of iterations" << endl
        << setw(W) << "-m" << ": turn on measurement" << endl
        << setw(W) << "--path_out arg" << ": output file path" << endl
-       << setw(W) << "--bm arg" << ": benchmark ID" << endl
+       << setw(W) << "--bm arg" << ": benchmark ID. toy_isa: 0 - 2; ebpf: 0" << endl
        << setw(W) << "--w_e arg" << ": weight of error cost in cost function" << endl
        << setw(W) << "--w_p arg" << ": weight of performance cost in cost function" << endl
        << setw(W) << "--st_ex arg" << ": " +  para_st_ex_desc() << endl
@@ -332,7 +353,7 @@ int main(int argc, char* argv[]) {
   store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
   auto start = NOW;
-  init_benchmarks(bm_optis_orig, in_para.bm);
+  init_benchmarks(bm_optis_orig, in_para.bm, in_para.isa);
   inputs.resize(30);
   gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);

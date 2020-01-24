@@ -5,6 +5,7 @@
 #include "../../src/inout.h"
 #include "../../src/isa/prog.h"
 #include "../../src/isa/toy-isa/inst.h"
+#include "../../src/isa/ebpf/inst.h"
 #include "../../src/verify/validator.h"
 
 using namespace std;
@@ -19,9 +20,9 @@ using namespace std;
 class cost {
  private:
   int _num_real_orig;
-  int get_ex_error_cost(int output1, int output2);
+  double get_ex_error_cost(int output1, int output2);
   int get_avg_value(int ex_set_size);
-  double get_final_error_cost(int exs_cost, int is_equal,
+  double get_final_error_cost(double exs_cost, int is_equal,
                               int ex_set_size, int num_successful_ex,
                               int avg_value);
   prog_state* make_prog_state();

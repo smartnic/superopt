@@ -14,6 +14,7 @@ cost::~cost() {}
 prog_state* cost::make_prog_state() {
   switch (_isa) {
     case TOY_ISA: return (new toy_isa_prog_state);
+    case EBPF: return (new ebpf_prog_state);
     default: cout << "unknown ISA type, return nullptr" << endl; return nullptr;
   }
 }
@@ -58,7 +59,7 @@ void cost::set_orig(prog* orig, int len) {
   _num_real_orig = orig->num_real_instructions();
 }
 
-int cost::get_ex_error_cost(int output1, int output2) {
+double cost::get_ex_error_cost(int output1, int output2) {
   switch (_strategy_ex) {
     case ERROR_COST_STRATEGY_ABS: return abs(output1 - output2);
     case ERROR_COST_STRATEGY_POP: return pop_count_asm(output1 ^ output2);
@@ -78,7 +79,7 @@ int cost::get_avg_value(int ex_set_size) {
   }
 }
 
-double cost::get_final_error_cost(int exs_cost, int is_equal,
+double cost::get_final_error_cost(double exs_cost, int is_equal,
                                   int ex_set_size, int num_successful_ex,
                                   int avg_value) {
   switch (_strategy_eq) {
@@ -119,14 +120,14 @@ double cost::get_final_error_cost(int exs_cost, int is_equal,
 double cost::error_cost(prog* synth, int len) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   double total_cost = 0;
-  int output1, output2;
+  double output1, output2;
   int num_successful_ex = 0;
   prog_state* ps = make_prog_state();
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
     output2 = synth->interpret(*ps, _examples._exs[i].input);
-    int ex_cost = get_ex_error_cost(output1, output2);
+    double ex_cost = get_ex_error_cost(output1, output2);
     if (ex_cost == 0) num_successful_ex++;
     total_cost += ex_cost;
   }

@@ -45,7 +45,8 @@ void meas_mh_data::insert_examples(unsigned int iter_num, const inout &exs) {
 string prog_rel_bv_to_str(int v, int isa_type) {
   switch (isa_type) {
     case TOY_ISA: return bitset<toy_isa::MAX_PROG_LEN>(v).to_string();
-    default: cout << "unknown ISA type, return nullptr" << endl; return nullptr;
+    case EBPF: return bitset<ebpf::MAX_PROG_LEN>(v).to_string();
+    default: cout << "unknown ISA type, return empty string" << endl; return "";
   }
 }
 
@@ -55,6 +56,11 @@ string prog_abs_bv_to_str(vector<int>& v, int isa_type) {
     case TOY_ISA: {
       for (size_t i = 0; i < v.size(); i++)
         str += bitset<toy_isa::OP_NUM_BITS>(v[i]).to_string();
+      return str;
+    }
+    case EBPF: {
+      for (size_t i = 0; i < v.size(); i++)
+        str += bitset<ebpf::OP_NUM_BITS>(v[i]).to_string();
       return str;
     }
     default: cout << "unknown ISA type, return empty string" << endl; return "";

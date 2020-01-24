@@ -24,27 +24,27 @@ constexpr int ebpf::optable[NUM_INSTR];
 
 string ebpf_inst::opcode_to_str(int opcode) const {
   switch (opcode) {
-    case ebpf::NOP: return "";
-    case ebpf::ADD64XC: return "add";
-    case ebpf::ADD64XY: return "add";
-    case ebpf::LSH64XC: return "lsh";
-    case ebpf::LSH64XY: return "lsh";
-    case ebpf::RSH64XC: return "rsh";
-    case ebpf::RSH64XY: return "rsh";
-    case ebpf::MOV64XC: return "mov";
-    case ebpf::MOV64XY: return "mov";
-    case ebpf::ARSH64XC: return "arsh";
-    case ebpf::ARSH64XY: return "arsh";
-    case ebpf::ADD32XC: return "add32";
-    case ebpf::ADD32XY: return "add32";
-    case ebpf::LSH32XC: return "lsh32";
-    case ebpf::LSH32XY: return "lsh32";
-    case ebpf::RSH32XC: return "rsh32";
-    case ebpf::RSH32XY: return "rsh32";
-    case ebpf::MOV32XC: return "mov32";
-    case ebpf::MOV32XY: return "mov32";
-    case ebpf::ARSH32XC: return "arsh32";
-    case ebpf::ARSH32XY: return "arsh32";
+    case ebpf::NOP: return "nop";
+    case ebpf::ADD64XC: return "addxc";
+    case ebpf::ADD64XY: return "addxy";
+    case ebpf::LSH64XC: return "lshxc";
+    case ebpf::LSH64XY: return "lshxy";
+    case ebpf::RSH64XC: return "rshxc";
+    case ebpf::RSH64XY: return "rshxy";
+    case ebpf::MOV64XC: return "movxc";
+    case ebpf::MOV64XY: return "movxy";
+    case ebpf::ARSH64XC: return "arshxc";
+    case ebpf::ARSH64XY: return "arshxy";
+    case ebpf::ADD32XC: return "add32xc";
+    case ebpf::ADD32XY: return "add32xy";
+    case ebpf::LSH32XC: return "lsh32xc";
+    case ebpf::LSH32XY: return "lsh32xy";
+    case ebpf::RSH32XC: return "rsh32xc";
+    case ebpf::RSH32XY: return "rsh32xy";
+    case ebpf::MOV32XC: return "mov32xc";
+    case ebpf::MOV32XY: return "mov32xy";
+    case ebpf::ARSH32XC: return "arsh32xc";
+    case ebpf::ARSH32XY: return "arsh32xy";
     case ebpf::LE16: return "le16";
     case ebpf::LE32: return "le32";
     case ebpf::LE64: return "le64";
@@ -52,12 +52,12 @@ string ebpf_inst::opcode_to_str(int opcode) const {
     case ebpf::BE32: return "be32";
     case ebpf::BE64: return "be64";
     case ebpf::JA: return "ja";
-    case ebpf::JEQXC: return "jeq";
-    case ebpf::JEQXY: return "jeq";
-    case ebpf::JGTXC: return "jgt";
-    case ebpf::JGTXY: return "jgt";
-    case ebpf::JSGTXC: return "jsgt";
-    case ebpf::JSGTXY: return "jsgt";
+    case ebpf::JEQXC: return "jeqxc";
+    case ebpf::JEQXY: return "jeqxy";
+    case ebpf::JGTXC: return "jgtxc";
+    case ebpf::JGTXY: return "jgtxy";
+    case ebpf::JSGTXC: return "jsgtxc";
+    case ebpf::JSGTXY: return "jsgtxy";
     case ebpf::EXIT: return "exit";
     default: return "unknown opcode";
   }
@@ -74,11 +74,13 @@ ebpf_inst& ebpf_inst::operator=(const inst &rhs) {
 // For jmp opcode, it can only jump forward
 int ebpf_inst::get_max_operand_val(int op_index, int inst_index) const {
   // max valufor each operand type
-  int max_val[4] = {
+  int max_val[6] = {
     [ebpf::OP_UNUSED] = 0,
     [ebpf::OP_REG] = ebpf::NUM_REGS,
     [ebpf::OP_IMM] = ebpf::MAX_IMM,
     [ebpf::OP_OFF] = min((int)ebpf::MAX_OFF, ebpf::MAX_PROG_LEN - inst_index - 1),
+    [ebpf::OP_IMM_SH32] = ebpf::MAX_IMM_SH32,
+    [ebpf::OP_IMM_SH64] = ebpf::MAX_IMM_SH64,
   };
   return max_val[EBPF_OPTYPE(_opcode, op_index)];
 }
@@ -204,6 +206,7 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int inp
   int insn = 0;
   int length = insts.size();
   ps.clear();
+  ps.regs[1] = input;
 
   static void *jumptable[ebpf::NUM_INSTR] = {
     [ebpf::NOP]      = && INSN_NOP,

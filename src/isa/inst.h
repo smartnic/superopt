@@ -8,6 +8,7 @@ using namespace std;
 
 enum ISA_TYPES{
   TOY_ISA = 0,
+  EBPF,
 };
 
 // Opcode types for instructions

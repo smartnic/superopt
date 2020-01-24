@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 #include "../src/isa/toy-isa/inst.h"
+#include "../src/isa/ebpf/inst.h"
 #include "../src/isa/inst.h"
 #include "../src/isa/prog.h"
 #include "../src/utils.h"
