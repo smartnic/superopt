@@ -22,8 +22,8 @@ validator::~validator() {}
 void validator::gen_counterex(model& m) {
   expr input_orig = string_to_expr("input");
   expr output_orig = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
-  _last_counterex.set_in_out(m.eval(input_orig).get_numeral_int(), \
-                             m.eval(output_orig).get_numeral_int());
+  _last_counterex.set_in_out(m.eval(input_orig).get_numeral_int64(), \
+                             m.eval(output_orig).get_numeral_int64());
 }
 
 bool validator::is_smt_valid(expr& smt) {
