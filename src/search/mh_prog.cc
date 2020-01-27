@@ -157,7 +157,9 @@ mh_sampler::mh_sampler() {
 mh_sampler::~mh_sampler() {}
 
 double mh_sampler::cost_to_pi(double cost) {
-  return pow(_base, -1.0 * cost);
+  // TODO: _base value is not 2 in macos, but 2 in linux
+  // return pow(_base, -1.0 * cost);
+  return pow(2, -1.0 * cost);
 }
 
 /* compute acceptance function */

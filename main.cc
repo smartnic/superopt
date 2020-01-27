@@ -23,7 +23,7 @@ using namespace std;
 string FILE_CONFIG = "config";
 
 inst* bm;
-vector<int> inputs;
+vector<int64_t> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
 
 ostream& operator<<(ostream& out, const input_paras& ip) {

@@ -15,7 +15,7 @@ void print_test_res(bool res, string test_name) {
 default_random_engine gen_utils;
 uniform_real_distribution<double> unidist_utils(0.0, 1.0);
 
-void gen_random_input(vector<int>& inputs, int min, int max) {
+void gen_random_input(vector<int64_t>& inputs, int min, int max) {
   unordered_set<int> input_set;
   for (size_t i = 0; i < inputs.size();) {
     int input = min + (max - min) * unidist_utils(gen_utils);

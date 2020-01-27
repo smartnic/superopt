@@ -20,7 +20,7 @@ using namespace std;
 class cost {
  private:
   int _num_real_orig;
-  double get_ex_error_cost(int output1, int output2);
+  double get_ex_error_cost(int64_t output1, int64_t output2);
   int get_avg_value(int ex_set_size);
   double get_final_error_cost(double exs_cost, int is_equal,
                               int ex_set_size, int num_successful_ex,
@@ -39,7 +39,7 @@ class cost {
   int _strategy_avg = 0;
   cost();
   ~cost();
-  void init(int isa, prog* orig, int len, const vector<int> &input,
+  void init(int isa, prog* orig, int len, const vector<int64_t> &input,
             double w_e = 0.5, double w_p = 0.5,
             int strategy_ex = 0, int strategy_eq = 0, int strategy_avg = 0);
   void set_orig(prog* orig, int len);

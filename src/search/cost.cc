@@ -24,7 +24,7 @@ void cost::clear_prog_state(prog_state* ps) {
   ps = nullptr;
 }
 
-void cost::init(int isa, prog* orig, int len, const vector<int> &input,
+void cost::init(int isa, prog* orig, int len, const vector<int64_t> &input,
                 double w_e, double w_p,
                 int strategy_ex, int strategy_eq, int strategy_avg) {
   _isa = isa;
@@ -33,7 +33,7 @@ void cost::init(int isa, prog* orig, int len, const vector<int> &input,
   prog_state* ps = make_prog_state();
   for (size_t i = 0; i < input.size(); i++) {
     ps->clear();
-    int output = orig->interpret(*ps, input[i]);
+    int64_t output = orig->interpret(*ps, input[i]);
     inout example;
     example.set_in_out(input[i], output);
     _examples.insert(example);
@@ -59,10 +59,12 @@ void cost::set_orig(prog* orig, int len) {
   _num_real_orig = orig->num_real_instructions();
 }
 
-double cost::get_ex_error_cost(int output1, int output2) {
+double cost::get_ex_error_cost(int64_t output1, int64_t output2) {
   switch (_strategy_ex) {
     case ERROR_COST_STRATEGY_ABS: return abs(output1 - output2);
-    case ERROR_COST_STRATEGY_POP: return pop_count_asm(output1 ^ output2);
+    case ERROR_COST_STRATEGY_POP:
+      return (pop_count_asm((uint32_t)output1 ^ (uint32_t)output2) +
+              pop_count_asm((uint32_t)(output1 >> 32) ^ (uint32_t)(output2 >> 32)));
     default:
       cout << "ERROR: no error cost example strategy matches." << endl;
       return ERROR_COST_MAX;
@@ -120,7 +122,7 @@ double cost::get_final_error_cost(double exs_cost, int is_equal,
 double cost::error_cost(prog* synth, int len) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   double total_cost = 0;
-  double output1, output2;
+  int64_t output1, output2;
   int num_successful_ex = 0;
   prog_state* ps = make_prog_state();
   // process total_cost with example set

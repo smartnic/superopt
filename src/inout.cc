@@ -4,12 +4,12 @@ using namespace std;
 
 inout::inout() {}
 
-inout::inout(int in, int out) {
+inout::inout(int64_t in, int64_t out) {
   input = in;
   output = out;
 }
 
-void inout::set_in_out(int _input, int _output) {
+void inout::set_in_out(int64_t _input, int64_t _output) {
   input = _input;
   output = _output;
 }

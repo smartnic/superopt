@@ -82,7 +82,7 @@ void time_interpret() {
 void time_cost_init() {
   double w_e = 1.0;
   double w_p = 0.0;
-  vector<int> input = {10, 16, 11, 48, 1};
+  vector<int64_t> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
   time_measure(c.init(TOY_ISA, &orig, N, input, w_e, w_p), 100,
@@ -92,7 +92,7 @@ void time_cost_init() {
 void time_cost_error_cost() {
   double w_e = 1.0;
   double w_p = 0.0;
-  vector<int> input = {10, 16, 11, 48, 1};
+  vector<int64_t> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
   c.init(TOY_ISA, &orig, N, input, w_e, w_p);
@@ -107,7 +107,7 @@ void time_cost_error_cost() {
 void time_cost_perf_cost() {
   double w_e = 1.0;
   double w_p = 0.0;
-  vector<int> input = {10, 16, 11, 48, 1};
+  vector<int64_t> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
   c.init(TOY_ISA, &orig, N, input, w_e, w_p);
@@ -122,7 +122,7 @@ void time_mh_sampler() {
     int nrolls = 1000;
     double w_e = 0.45;
     double w_p = 1.55;
-    vector<int> inputs(30);
+    vector<int64_t> inputs(30);
     gen_random_input(inputs, 0, 50);
     mh_sampler mh;
     unordered_map<int, vector<prog*> > prog_freq;

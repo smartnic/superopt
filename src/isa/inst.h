@@ -68,7 +68,7 @@ class inst {
   virtual int get_num_operands() const {return 0;}
   virtual int get_insn_num_regs() const {return 0;}
   virtual int get_opcode_type() const {return 0;}
-  virtual int64_t interpret(const vector<inst*> &instptr_list, prog_state &ps, int input = 0) const {return 0;}
+  virtual int64_t interpret(const vector<inst*> &instptr_list, prog_state &ps, int64_t input = 0) const {return 0;}
   // smt
   // return SMT for the given OP_OTHERS type instruction, other types return false
   virtual z3::expr smt_inst(smt_var& sv) const {return string_to_expr("false");}

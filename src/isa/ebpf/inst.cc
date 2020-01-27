@@ -153,7 +153,7 @@ void ebpf_inst::set_as_nop_inst() {
   _args[2] = 0;
 }
 
-int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int input) const {
+int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int64_t input) const {
 // type: int64_t
 #define DST ps.regs[DSTREG(*insts[insn])]
 #define SRC ps.regs[SRCREG(*insts[insn])]

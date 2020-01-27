@@ -9,11 +9,11 @@ using namespace std;
    assumes a single integer input and a single integer output. */
 class inout {
  public:
-  int input;
-  int output;
+  int64_t input;
+  int64_t output;
   inout();
-  inout(int in, int out);
-  void set_in_out(int in, int out);
+  inout(int64_t in, int64_t out);
+  void set_in_out(int64_t in, int64_t out);
   friend ostream& operator<< (ostream& out, const inout &_inout);
   friend ostream& operator<< (ostream& out, const vector<inout> &_inout_vec);
 };
