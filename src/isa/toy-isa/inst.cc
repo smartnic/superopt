@@ -1,5 +1,4 @@
 #include <iostream>
-#include "../inst_codegen.h"
 #include "inst.h"
 
 using namespace std;
@@ -179,11 +178,11 @@ INSN_NOP:
   CONT;
 
 INSN_ADDXY:
-  DST = compute_add(DST, SRC, DST);
+  DST = toy_isa_compute_add(DST, SRC, DST);
   CONT;
 
 INSN_MOVXC:
-  DST = compute_mov_toy_isa(IMM2, DST);
+  DST = toy_isa_compute_mov(IMM2, DST);
   CONT;
 
 INSN_RETX:
@@ -193,11 +192,11 @@ INSN_RETC:
   return IMM1;
 
 INSN_MAXC:
-  DST = compute_max(DST, IMM2, DST);
+  DST = toy_isa_compute_max(DST, IMM2, DST);
   CONT;
 
 INSN_MAXX:
-  DST = compute_max(DST, SRC, DST);
+  DST = toy_isa_compute_max(DST, SRC, DST);
   CONT;
 
 INSN_JMP:
@@ -256,10 +255,10 @@ z3::expr toy_isa_inst::smt_inst(smt_var& sv) const {
       break;
   }
   switch (_opcode) {
-    case toy_isa::ADDXY: return predicate_add(curDst, curSrc, newDst);
-    case toy_isa::MOVXC: return predicate_mov(imm, newDst);
-    case toy_isa::MAXC: return predicate_max(curDst, imm, newDst);
-    case toy_isa::MAXX: return predicate_max(curDst, curSrc, newDst);
+    case toy_isa::ADDXY: return toy_isa_predicate_add(curDst, curSrc, newDst);
+    case toy_isa::MOVXC: return toy_isa_predicate_mov(imm, newDst);
+    case toy_isa::MAXC: return toy_isa_predicate_max(curDst, imm, newDst);
+    case toy_isa::MAXX: return toy_isa_predicate_max(curDst, curSrc, newDst);
     default: return string_to_expr("false");
   }
 }

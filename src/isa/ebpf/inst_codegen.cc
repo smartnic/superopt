@@ -50,8 +50,6 @@ using namespace std;
 #define BE32_EXPR(a, b) (PRED_UNARY_EXPR(a, b, is_little_endian(), SWAP_L32(a), a))
 #define BE64_EXPR(a, b) (PRED_UNARY_EXPR(a, b, is_little_endian(), SWAP_L64(a), a))
 
-#define MAX_EXPR(a, b, c) (PRED_BINARY_EXPR(a, b, c, a > b, a, b))
-
 #undef GENMODE
 #define GENMODE =
 #undef IF_PRED_ACTION
@@ -115,7 +113,6 @@ ret_t compute_##func_name(para1_t a, para2_t b, para3_t c) {                    
   return c;                                                                      \
 }
 
-COMPUTE_UNARY(mov_toy_isa, MOV_EXPR, int32_t, int64_t, int64_t)
 COMPUTE_UNARY(mov, MOV_EXPR, int64_t, int64_t, int64_t)
 COMPUTE_UNARY(mov32, MOV32_EXPR, int32_t, int64_t, int64_t)
 COMPUTE_UNARY(le16, LE16_EXPR, int64_t, int64_t, int64_t)
@@ -133,7 +130,6 @@ COMPUTE_RSH(rsh, RSH_EXPR, int64_t, int64_t, int64_t, int64_t)
 COMPUTE_RSH(rsh32, RSH32_EXPR, int32_t, int32_t, int64_t, int64_t)
 COMPUTE_BINARY(arsh, ARSH_EXPR, int64_t, int64_t, int64_t, int64_t)
 COMPUTE_BINARY(arsh32, ARSH32_EXPR, int32_t, int32_t, int64_t, int64_t)
-COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)
 
 #undef GENMODE
 #define GENMODE ==
@@ -202,7 +198,6 @@ PREDICATE_BINARY(add32, ADD32_EXPR)
 PREDICATE_BINARY(lsh, LSH_EXPR)
 PREDICATE_BINARY(rsh, RSH_EXPR)
 PREDICATE_BINARY(arsh, ARSH_EXPR)
-PREDICATE_BINARY(max, MAX_EXPR)
 
 /* bitwise operators for 32-bit bitvector start */
 #undef L32_EXPR

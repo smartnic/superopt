@@ -1,13 +1,12 @@
 #pragma once
 
 #include "z3++.h"
-#include "../../src/utils.h"
-#include "../../src/verify/smt_var.h"
+#include "../../../src/utils.h"
+#include "../../../src/verify/smt_var.h"
 
 using namespace std;
 
 // return (b = op a)
-int64_t compute_mov_toy_isa(int32_t a, int64_t b = 0);
 int64_t compute_mov(int64_t a, int64_t b = 0);
 int64_t compute_mov32(int32_t a, int64_t b = 0);
 int64_t compute_le16(int64_t a, int64_t b = 0);
@@ -26,8 +25,6 @@ int64_t compute_rsh(int64_t a, int64_t b, int64_t c = 0);
 int64_t compute_rsh32(int32_t a, int32_t b, int64_t c = 0);
 int64_t compute_arsh(int64_t a, int64_t b, int64_t c = 0);
 int64_t compute_arsh32(int32_t a, int32_t b, int64_t c = 0);
-// return max(a, b)
-int64_t compute_max(int64_t a, int64_t b, int64_t c = 0);
 
 // return (b == op a)
 z3::expr predicate_mov(z3::expr a, z3::expr b);

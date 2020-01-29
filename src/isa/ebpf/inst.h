@@ -6,6 +6,7 @@
 #include "../../../src/utils.h"
 #include "../../../src/verify/smt_var.h"
 #include "../../../src/isa/inst.h"
+#include "inst_codegen.h"
 
 using namespace std;
 
