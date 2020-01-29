@@ -3,7 +3,7 @@
 #include "../../../src/utils.h"
 #include "inst.h"
 
-#define COVNERT(inst_ptrs, insts, len) {  \
+#define CONVERT(inst_ptrs, insts, len) {  \
   inst_ptrs.resize(len);  \
   insts->convert_to_pointers(inst_ptrs, insts);  \
 }
@@ -126,69 +126,69 @@ void test1() {
   ebpf_prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
   vector<inst*> insts;
-  COVNERT(insts, instructions1, 3);
+  CONVERT(insts, instructions1, 3);
   int64_t expected = 0xfffffffffffffffe;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 1");
 
-  COVNERT(insts, instructions2, 3);
+  CONVERT(insts, instructions2, 3);
   expected = 0xfffffffe;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 2");
 
-  COVNERT(insts, instructions3, 9);
+  CONVERT(insts, instructions3, 9);
   expected = 0;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 3");
 
-  COVNERT(insts, instructions4, 9);
+  CONVERT(insts, instructions4, 9);
   expected = 0x100000001;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 4");
 
-  COVNERT(insts, instructions5, 3);
+  CONVERT(insts, instructions5, 3);
   if (is_little_endian()) expected = 0x01234567;
   else expected = 0x23014567;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 5");
 
-  COVNERT(insts, instructions6, 3);
+  CONVERT(insts, instructions6, 3);
   if (is_little_endian()) expected = 0x01234567;
   else expected = 0x67452301;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 6");
 
-  COVNERT(insts, instructions7, 3);
+  CONVERT(insts, instructions7, 3);
   if (is_little_endian()) expected = 0x01236745;
   else expected = 0x01234567;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 7");
 
-  COVNERT(insts, instructions8, 3);
+  CONVERT(insts, instructions8, 3);
   if (is_little_endian()) expected = 0x67452301;
   else expected = 0x01234567;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 8");
 
-  COVNERT(insts, instructions9, 6);
+  CONVERT(insts, instructions9, 6);
   if (is_little_endian()) expected = 0x0123456789abcdef;
   else expected = 0xefcdab8967452301;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 9");
 
-  COVNERT(insts, instructions10, 6);
+  CONVERT(insts, instructions10, 6);
   if (is_little_endian()) expected = 0xefcdab8967452301;
   else expected = 0x0123456789abcdef;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret program 10");
 
-  COVNERT(insts, instructions11, 7);
+  CONVERT(insts, instructions11, 7);
   expected = 0x7fffffff;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret rsh64 & rsh32");
 
-  COVNERT(insts, instructions12, 8);
+  CONVERT(insts, instructions12, 8);
   expected = 0xffffffff;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret arsh64 & arsh32");
 
-  COVNERT(insts, instructions13, 8);
+  CONVERT(insts, instructions13, 8);
   expected = 0;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret jgt");
 
-  COVNERT(insts, instructions14, 7);
+  CONVERT(insts, instructions14, 7);
   expected = 0;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret jsgt");
 
-  COVNERT(insts, instructions15, 4);
+  CONVERT(insts, instructions15, 4);
   expected = 0;
   print_test_res(INTERPRET(insts, ps) == expected, "interpret jgt");
 }

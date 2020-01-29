@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#define COVNERT(inst_ptrs, insts, len) {  \
+#define CONVERT(inst_ptrs, insts, len) {  \
   inst_ptrs.resize(len);  \
   insts->convert_to_pointers(inst_ptrs, insts);  \
 }
@@ -34,12 +34,12 @@ ebpf_inst instructions2[9] = {ebpf_inst(ebpf::MOV32XC, 0, -1),         /* r0 = 0
 void test1() {
   vector<inst*> insts;
   string expected;
-  COVNERT(insts, instructions1, 8);
+  CONVERT(insts, instructions1, 8);
   graph g1(insts);
   expected = "nodes:0,1 2,2 3,4 5,5 6,7 edges: 0:;1,2, 1:0,; 2:0,;3,4, 3:2,; 4:2,;";
   print_test_res(g1.graph_to_str() == expected, "program 1");
 
-  COVNERT(insts, instructions2, 9);
+  CONVERT(insts, instructions2, 9);
   graph g2(insts);
   expected = "nodes:0,3 4,5 6,6 8,8 7,7 edges: 0:;1,3, 1:0,;2,4, 2:1,;3, 3:2,4,0,; 4:1,;3,";
   print_test_res(g2.graph_to_str() == expected, "program 2");

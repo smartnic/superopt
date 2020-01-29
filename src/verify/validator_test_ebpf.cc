@@ -5,7 +5,7 @@
 
 using namespace z3;
 
-#define COVNERT(inst_ptrs, insts, len) {  \
+#define CONVERT(inst_ptrs, insts, len) {  \
   inst_ptrs.resize(len);  \
   insts->convert_to_pointers(inst_ptrs, insts);  \
 }
@@ -34,13 +34,13 @@ void test1() {
                                 ebpf_inst(ebpf::EXIT),
                                };
   vector<inst*> insts;
-  COVNERT(insts, instructions1, 9);
+  CONVERT(insts, instructions1, 9);
   validator vld(insts);
 
-  COVNERT(insts, instructions1, 9);
+  CONVERT(insts, instructions1, 9);
   print_test_res(vld.is_equal_to(insts), "instructions1 == instructions1");
 
-  COVNERT(insts, instructions2, 9);
+  CONVERT(insts, instructions2, 9);
   print_test_res(vld.is_equal_to(insts), "instructions1 == instructions2");
 }
 
