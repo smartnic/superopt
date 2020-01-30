@@ -4,24 +4,24 @@
 using namespace std;
 
 /* Inputs x, y must be side-effect-free expressions. */
-#define NEG_EXPR(x, y) (y GENMODE ~x)
-#define MOV_EXPR(x, y) (y GENMODE x)
+#define NEG_EXPR(x, y) (y EQ ~x)
+#define MOV_EXPR(x, y) (y EQ x)
 /* Inputs x, y, z must be side-effect-free expressions. */
-#define ADD_EXPR(x, y, z) (z GENMODE x + y)
-#define SUB_EXPR(x, y, z) (z GENMODE x - y)
-#define MUL_EXPR(x, y, z) (z GENMODE x * y)
-#define DIV_EXPR(x, y, z) (z GENMODE x / y)
-#define OR_EXPR(x, y, z)  (z GENMODE x | y)
-#define AND_EXPR(x, y, z) (z GENMODE x & y)
-#define LSH_EXPR(x, y, z) (z GENMODE LSH(x, y))
-#define RSH_EXPR(x, y, z) (z GENMODE RSH(x, y))
-#define MOD_EXPR(x, y, z) (z GENMODE x % y)
-#define XOR_EXPR(x, y, z) (z GENMODE x ^ y)
-#define ARSH_EXPR(x, y, z) (z GENMODE ARSH(x, y))
+#define ADD_EXPR(x, y, z) (z EQ x + y)
+#define SUB_EXPR(x, y, z) (z EQ x - y)
+#define MUL_EXPR(x, y, z) (z EQ x * y)
+#define DIV_EXPR(x, y, z) (z EQ x / y)
+#define OR_EXPR(x, y, z)  (z EQ x | y)
+#define AND_EXPR(x, y, z) (z EQ x & y)
+#define LSH_EXPR(x, y, z) (z EQ LSH(x, y))
+#define RSH_EXPR(x, y, z) (z EQ RSH(x, y))
+#define MOD_EXPR(x, y, z) (z EQ x % y)
+#define XOR_EXPR(x, y, z) (z EQ x ^ y)
+#define ARSH_EXPR(x, y, z) (z EQ ARSH(x, y))
 // Expression for 32-bit `compute` and `predicate`
 // Inputs x, y are both z3 int of int32_t or both 32-bit bit vectors
 // z is z3 int of int64_t
-#define BIT32_EXPR_FMT(z, operation) (z GENMODE CONCAT_MODE(H32_EXPR, L32_EXPR(operation)))
+#define BIT32_EXPR_FMT(z, operation) (z EQ CONCAT(H32_EXPR, L32_EXPR(operation)))
 #define ADD32_EXPR(x, y, z) BIT32_EXPR_FMT(z, x + y)
 #define MOV32_EXPR(x, y) BIT32_EXPR_FMT(y, x)
 #define LSH32_EXPR(x, y, z) BIT32_EXPR_FMT(z, LSH32(x, y))
@@ -50,16 +50,16 @@ using namespace std;
 #define BE32_EXPR(a, b) (PRED_UNARY_EXPR(a, b, is_little_endian(), SWAP_L32(a), a))
 #define BE64_EXPR(a, b) (PRED_UNARY_EXPR(a, b, is_little_endian(), SWAP_L64(a), a))
 
-#undef GENMODE
-#define GENMODE =
+#undef EQ
+#define EQ =
 #undef IF_PRED_ACTION
-#define IF_PRED_ACTION(pred, expr, var) if(pred) var GENMODE expr
+#define IF_PRED_ACTION(pred, expr, var) if(pred) var EQ expr
 #undef CONNECTIFELSE
 #define CONNECTIFELSE  ;
 #undef ELSE_PRED_ACTION
-#define ELSE_PRED_ACTION(pred, expr, var) else var GENMODE expr
-#undef CONCAT_MODE
-#define CONCAT_MODE(hi, lo) (hi | lo)
+#define ELSE_PRED_ACTION(pred, expr, var) else var EQ expr
+#undef CONCAT
+#define CONCAT(hi, lo) (hi | lo)
 #undef H32_EXPR // 32 bits with zero
 #define H32_EXPR 0
 #undef L32_EXPR
@@ -131,16 +131,16 @@ COMPUTE_RSH(rsh32, RSH32_EXPR, int32_t, int32_t, int64_t, int64_t)
 COMPUTE_BINARY(arsh, ARSH_EXPR, int64_t, int64_t, int64_t, int64_t)
 COMPUTE_BINARY(arsh32, ARSH32_EXPR, int32_t, int32_t, int64_t, int64_t)
 
-#undef GENMODE
-#define GENMODE ==
+#undef EQ
+#define EQ ==
 #undef IF_PRED_ACTION
-#define IF_PRED_ACTION(pred, expr, var) ((pred) && (var GENMODE expr))
+#define IF_PRED_ACTION(pred, expr, var) ((pred) && (var EQ expr))
 #undef CONNECTIFELSE
 #define CONNECTIFELSE ||
 #undef ELSE_PRED_ACTION
-#define ELSE_PRED_ACTION(pred, expr, var) (!(pred) && (var GENMODE expr))
-#undef CONCAT_MODE
-#define CONCAT_MODE(hi, lo) z3::bv2int(z3::concat(hi, lo), true)
+#define ELSE_PRED_ACTION(pred, expr, var) (!(pred) && (var EQ expr))
+#undef CONCAT
+#define CONCAT(hi, lo) z3::bv2int(z3::concat(hi, lo), true)
 #undef H32_EXPR // 32-bit bv with zero
 #define H32_EXPR to_expr(0, 32)
 // For arithmetic operators and bitwise operators, experssions of L32_EXPR are different.
