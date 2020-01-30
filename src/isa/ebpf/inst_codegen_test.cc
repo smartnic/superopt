@@ -22,11 +22,6 @@ void test1() {
   print_test_res(compute_mov(a, b) == a, "compute_mov");
   expected = (y == x);
   print_test_res(predicate_mov(x, y) == expected, "predicate_mov");
-
-  // check max
-  print_test_res(compute_max(a, b, c) == max(a, b), "compute_max");
-  expected = ((x > a) && (z == x)) || ((x <= a) && (z == a));
-  print_test_res(predicate_max(x, y, z) == expected, "predicate_max");
 }
 
 void test2() {

@@ -44,5 +44,3 @@ z3::expr predicate_rsh(z3::expr a, z3::expr b, z3::expr c);
 z3::expr predicate_rsh32(z3::expr a, z3::expr b, z3::expr c);
 z3::expr predicate_arsh(z3::expr a, z3::expr b, z3::expr c);
 z3::expr predicate_arsh32(z3::expr a, z3::expr b, z3::expr c);
-// return (c == max(a, b))
-z3::expr predicate_max(z3::expr a, z3::expr b, z3::expr c);
