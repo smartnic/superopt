@@ -30,7 +30,7 @@ inline int64_t compute_rsh32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_arsh(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_arsh32(int64_t in1, int64_t in2, int64_t out = 0);
 
-/* type of parameters (in, in1, in2, out) and return value is z3 64-bit bitvector */
+/* type of parameters (in, in1, in2, out) is z3 64-bit bitvector */
 // return (out == op in)
 inline z3::expr predicate_mov(z3::expr in, z3::expr out);
 inline z3::expr predicate_mov32(z3::expr in, z3::expr out);
