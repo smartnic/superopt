@@ -1,7 +1,7 @@
 #include <fstream>
 #include <cstdio>
 #include "meas_mh_bhv.h"
-#include "benchmark_toy-isa.h"
+#include "benchmark_toy_isa.h"
 
 using namespace std;
 

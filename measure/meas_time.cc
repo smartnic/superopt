@@ -10,7 +10,7 @@
 #include "../src/isa/inst.h"
 #include "../src/isa/prog.h"
 #include "../src/isa/toy-isa/inst.h"
-#include "benchmark_toy-isa.h"
+#include "benchmark_toy_isa.h"
 #include "z3++.h"
 
 using namespace std;
