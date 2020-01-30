@@ -22,12 +22,13 @@ validator::~validator() {}
 void validator::gen_counterex(model& m) {
   expr input_orig = string_to_expr("input");
   expr output_orig = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
-  _last_counterex.set_in_out(m.eval(input_orig).get_numeral_int64(), \
-                             m.eval(output_orig).get_numeral_int64());
+  _last_counterex.set_in_out((int64_t)m.eval(input_orig).get_numeral_uint64(), \
+                             (int64_t)m.eval(output_orig).get_numeral_uint64());
 }
 
 bool validator::is_smt_valid(expr& smt) {
-  solver s(smt_c);
+  tactic t = tactic(smt_c, "bv");
+  solver s = t.mk_solver();
   s.add(!smt);
   switch (s.check()) {
     case unsat: return true;

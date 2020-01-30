@@ -198,7 +198,8 @@ int64_t eval_output(z3::expr smt, z3::expr output) {
   s.add(smt);
   if (s.check() == z3::sat) {
     z3::model m = s.get_model();
-    return m.eval(output).get_numeral_int64();
+    // get_numeral_int64() fails when 64th bit value is 1
+    return m.eval(output).get_numeral_uint64();
   }
   cout << "ERROR: no output, return -1" << endl;
   return -1;
