@@ -124,6 +124,8 @@ void ebpf_inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
   jmp_set.insert(ebpf::JEQXY);
   jmp_set.insert(ebpf::JGTXC);
   jmp_set.insert(ebpf::JGTXY);
+  jmp_set.insert(ebpf::JSGTXC);
+  jmp_set.insert(ebpf::JSGTXY);
 }
 
 int ebpf_inst::inst_output_opcode_type() const {
