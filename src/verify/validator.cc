@@ -43,11 +43,11 @@ bool validator::is_smt_valid(expr& smt) {
 }
 
 // assgin input r0 "input", other registers 0
-void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs) {
+void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg) {
   smt_var sv(prog_id, 0, num_regs);
-  expr p = (sv.get_cur_reg_var(0) == string_to_expr("input"));
-  for (size_t i = 1; i < num_regs; i++) {
-    p = p and (sv.get_cur_reg_var(i) == 0);
+  expr p = (sv.get_cur_reg_var(input_reg) == string_to_expr("input"));
+  for (size_t i = 0; i < num_regs; i++) {
+    if (i != input_reg) p = p and (sv.get_cur_reg_var(i) == 0);
   }
   pre = p;
 }
@@ -63,7 +63,7 @@ void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2
 
 // calculate and store pre_orig, ps_orign
 void validator::set_orig(vector<inst*>& orig) {
-  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, orig[0]->get_num_regs());
+  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, orig[0]->get_num_regs(), orig[0]->get_input_reg());
   smt_prog ps_orig;
   try {
     _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig);
@@ -83,7 +83,7 @@ void validator::set_orig(expr fx, expr input, expr output) {
 
 int validator::is_equal_to(vector<inst*>& synth) {
   expr pre_synth = string_to_expr("true");
-  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, synth[0]->get_num_regs());
+  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, synth[0]->get_num_regs(), synth[0]->get_input_reg());
   smt_prog ps_synth;
   expr pl_synth = string_to_expr("true");
   try {

@@ -71,7 +71,7 @@ class validator {
   bool is_smt_valid(expr& smt);
   void gen_counterex(model& m);
   // set register 0 in basic block 0 as input[prog_id]
-  void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs);
+  void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg);
   // set the input variable of FOL formula as input[prog_id]
   void smt_pre(expr& pre, expr e);
   // setting outputs of two programs are equal
