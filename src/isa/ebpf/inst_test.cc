@@ -222,15 +222,20 @@ void test2() {
 
 #define CURDST sv.get_cur_reg_var(insn._args[0])
 #define CURSRC sv.get_cur_reg_var(insn._args[1])
+// Input FOL formulae (A) should set to `smt` first, then add instruction FOL formula (B),
+// Since getting instruction FOL formula will update dst register expression.
+// Also cannot add A and B together, such as smt = A && B, since some compilers
+// may compute B first.
 #define SMT_CHECK_XC(dst_input, dst_expected, test_name)                         \
-  smt = (CURDST == to_expr((int64_t)dst_input)) && insn.smt_inst(sv);            \
+  smt = (CURDST == to_expr((int64_t)dst_input));                                 \
+  smt = smt && insn.smt_inst(sv);                                                \
   output = CURDST;                                                               \
   print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
 #define SMT_CHECK_XY(dst_input, src_input, dst_expected, test_name)              \
   smt = (CURDST == to_expr((int64_t)dst_input)) &&                               \
-        (CURSRC == to_expr((int64_t)src_input)) &&                               \
-        insn.smt_inst(sv);                                                       \
+        (CURSRC == to_expr((int64_t)src_input));                                 \
+  smt = smt && insn.smt_inst(sv);                                                \
   output = CURDST;                                                               \
   print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
