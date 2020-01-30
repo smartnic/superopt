@@ -176,13 +176,6 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int64_t
 #define UNCOND_OFF16 UNCOND_OFFVAL16(*insts[insn])
 #define COND_OFF16 COND_OFFVAL16(*insts[insn])
 
-#define CONT {                                                     \
-      insn++;                                                      \
-      if (insn < length) {                                         \
-        goto select_insn;                                          \
-      } else goto out;                                             \
-  }
-
 #define ALU_UNARY(OPCODE, OP, OPERAND)                             \
   INSN_##OPCODE:                                                   \
     DST = compute_##OP(OPERAND);                                   \
@@ -249,6 +242,13 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int64_t
     [ebpf::JSGTXY]   = && INSN_JSGTXY,
     [ebpf::EXIT]     = && INSN_EXIT,
   };
+
+#define CONT {                                                     \
+      insn++;                                                      \
+      if (insn < length) {                                         \
+        goto *jumptable[insts[insn]->_opcode];                     \
+      } else goto out;                                             \
+  }
 
 select_insn:
   goto *jumptable[insts[insn]->_opcode];
