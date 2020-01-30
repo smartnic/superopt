@@ -43,29 +43,21 @@ z3::expr string_to_expr(string s) {
   } else if (s == "false") {
     return smt_c.bool_val(false);
   }
-  return smt_c.int_const(s.c_str());
+  return smt_c.bv_const(s.c_str(), 64);
 }
 
 z3::expr to_bool_expr(string s) {
   return smt_c.bool_const(s.c_str());
 }
 
-z3::expr to_expr(int64_t x) {
-  return smt_c.int_val(x);
+z3::expr to_expr(int64_t x, unsigned sz) {
+  return smt_c.bv_val(x, sz);
 }
 
-z3::expr to_expr(int32_t x) {
-  return smt_c.int_val(x);
+z3::expr to_expr(int32_t x, unsigned sz) {
+  return smt_c.bv_val(x, sz);
 }
 
-z3::expr to_expr(string s, unsigned n) {
-  return smt_c.bv_const(s.c_str(), n);
-}
-
-z3::expr to_expr(int x, unsigned n) {
-  return smt_c.bv_val(x, n);
-}
-
-z3::expr to_expr(int64_t x, unsigned n) {
-  return smt_c.bv_val(x, n);
+z3::expr to_expr(string s, unsigned sz) {
+  return smt_c.bv_const(s.c_str(), sz);
 }
