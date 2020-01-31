@@ -131,14 +131,14 @@ void ebpf_inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
 int ebpf_inst::inst_output_opcode_type() const {
   switch (_opcode) {
     case ebpf::EXIT: return RET_X;
-    default: cout << "Error: opcode is not EXIT" << endl; return RET_X;
+    default: /* cout << "Error: opcode is not EXIT" << endl; */ return RET_X;
   }
 }
 
 int ebpf_inst::inst_output() const {
   switch (_opcode) {
     case ebpf::EXIT: return 0;
-    default: cout << "Error: opcode is not EXIT" << endl; return 0;
+    default: /* cout << "Error: opcode is not EXIT" << endl; */ return 0;
   }
 }
 
