@@ -105,6 +105,8 @@ class ebpf {
     [EXIT]     = 0,
   };
 
+  // number of registers for each opcode
+  // e.g., for ADD64XY, two operands are registers
   static constexpr int insn_num_regs[NUM_INSTR] = {
     [NOP]      = 0,
     [ADD64XC]  = 1,
@@ -208,6 +210,7 @@ class ebpf {
 #define SH32_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM_SH32) | TRDOP(OP_UNUSED))
 #define SH64_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM_SH64) | TRDOP(OP_UNUSED))
 #define BYTESWAP (FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
+#define JA_OPS (FSTOP(OP_OFF) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 #define JMP_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_OFF))
 #define JMP_OPS_REG (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
 #define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
@@ -239,7 +242,7 @@ class ebpf {
     [BE16]     = BYTESWAP,
     [BE32]     = BYTESWAP,
     [BE64]     = BYTESWAP,
-    [JA]       = FSTOP(OP_OFF) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
+    [JA]       = JA_OPS,
     [JEQXC]    = JMP_OPS_IMM,
     [JEQXY]    = JMP_OPS_REG,
     [JGTXC]    = JMP_OPS_IMM,

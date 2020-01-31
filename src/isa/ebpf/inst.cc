@@ -316,9 +316,14 @@ z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
   // If opcode is valid, then define curDst, curSrc, imm2 and newDst
   if (get_opcode_type() != OP_OTHERS) return string_to_expr("false");
+  // Get curDst, curSrc, imm2 and newDst at the begining to avoid using switch case to
+  // get some of these values for different opcodes. So need to check whether the value is valid.
+  // E.g., for curSrc, the range of register is [0, get_num_regs()], for opcode ends up with XC,
+  // actually the value is an immediate number whose value may be out of register's range.
   // Should get curDst and curSrc before updating curDst (curSrc may be the same reg as curDst)
   z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
   z3::expr curSrc = string_to_expr("false");
+  // check whether the value is within the range of regisers, or function get_cur_reg_var() will raise exception
   if (SRCREG(*this) < get_num_regs() && SRCREG(*this) >= 0) {
     curSrc = sv.get_cur_reg_var(SRCREG(*this));
   }
