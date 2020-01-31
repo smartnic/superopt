@@ -63,27 +63,25 @@ inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
 #define LSH_EXPR(in1, in2, out) (out EQ LSH(in1, in2))
 #define RSH_EXPR(in1, in2, out) (out EQ RSH(in1, in2))
 #define ARSH_EXPR(in1, in2, out) (out EQ ARSH(in1, in2))
-// BIT32_EXPR_FMT makes sure that the higher 32-bit of `out` is 0,
-// and the lower 32-bit is the result of operation
-// For numerical number, the logic is: out = 0x0000000011111111 & operation
-// For z3 expression: out = bv32(0) concat (lower 32 bits of operation)
-#undef BIT32_EXPR_FMT
-#define BIT32_EXPR_FMT(out, operation) (out EQ SET_HIGHER32_ZERO(operation))
 #undef ADD32_EXPR
 #undef MOV32_EXPR
 #undef LSH32_EXPR
 #undef RSH32_EXPR
 #undef ARSH32_EXPR
-// make sure in, in1, in2 should convert to int32_t or z3 32-bit bitvector first.
-// For some cases, this conversion does not matter. But for ARSH32, it matters,
+// 1. XXX32_EXPRs express the logic EBPF 32-bit ALU instructions.
+// E.g., instruction [add32 dst, src]: dst = 0x00000000ffffffff & ((int32_t)dst + (int32_t)src)
+// 2. SET_HIGHER32_ZERO(a) makes sure that the higher 32-bit of output is 0,
+// and the lower 32-bit is the result of input experssion `a`
+// 3. make sure in, in1, in2 should convert to int32_t or z3 32-bit bitvector first, i.e., use INT32()
+// For some cases, this conversion does not matter. But for some, sucha as ARSH32, it matters,
 // since whether higher bits are 1 or 0 depend on the 32th bit but not the 64th bit
-// Why RSH(a, b) and RSH32(a, b): for numerical number,
+// 4. Why RSH(a, b) and RSH32(a, b): for numerical number,
 // need to convert a to unsigned according to its type: int32_t -> uint32_t, int64_t -> uint64_t
-#define ADD32_EXPR(in1, in2, out) BIT32_EXPR_FMT(out, INT32(in1) + INT32(in2))
-#define MOV32_EXPR(in, out) BIT32_EXPR_FMT(out, INT32(in))
-#define LSH32_EXPR(in1, in2, out) BIT32_EXPR_FMT(out, LSH(INT32(in1), INT32(in2)))
-#define RSH32_EXPR(in1, in2, out) BIT32_EXPR_FMT(out, RSH32(INT32(in1), INT32(in2)))
-#define ARSH32_EXPR(in1, in2, out) BIT32_EXPR_FMT(out, ARSH(INT32(in1), INT32(in2)))
+#define ADD32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) + INT32(in2)))
+#define MOV32_EXPR(in, out) (out EQ SET_HIGHER32_ZERO(INT32(in)))
+#define LSH32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(LSH(INT32(in1), INT32(in2))))
+#define RSH32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(RSH32(INT32(in1), INT32(in2))))
+#define ARSH32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(ARSH(INT32(in1), INT32(in2))))
 
 /* Predicate expressions capture instructions like MAX which have different
  * results on a register based on the evaluation of a predicate. */
