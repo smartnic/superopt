@@ -18,7 +18,7 @@ toy_isa_inst instructions[N] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 
                                 toy_isa_inst(),  /* control never reaches here */
                                };
 
-vector<int64_t> inputs;
+vector<reg_t> inputs;
 
 void mh_sampler_res_print(int nrolls,
                           unordered_map<int, vector<prog*> > prog_freq)  {

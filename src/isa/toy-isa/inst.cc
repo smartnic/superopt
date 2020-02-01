@@ -41,9 +41,9 @@ toy_isa_inst& toy_isa_inst::operator=(const inst &rhs) {
 }
 
 // For jmp opcode, it can only jump forward
-int toy_isa_inst::get_max_operand_val(int op_index, int inst_index) const {
+int32_t toy_isa_inst::get_max_operand_val(int op_index, int inst_index) const {
   // max value for each operand type
-  int max_val[4] = {
+  int32_t max_val[4] = {
     [toy_isa::OP_UNUSED] = 0,
     [toy_isa::OP_REG] = toy_isa::NUM_REGS,
     [toy_isa::OP_IMM] = toy_isa::MAX_CONST,

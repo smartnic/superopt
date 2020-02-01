@@ -279,7 +279,7 @@ class ebpf_inst: public inst {
   }
   ebpf_inst& operator=(const inst &rhs);
   string opcode_to_str(int) const;
-  int get_max_operand_val(int op_index, int inst_index = 0) const;
+  int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
   void make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const;
   void make_insts(vector<inst*> &instptr_list, const inst* instruction) const;
   void clear_insts();

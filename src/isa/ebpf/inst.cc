@@ -71,13 +71,13 @@ ebpf_inst& ebpf_inst::operator=(const inst &rhs) {
 }
 
 // For jmp opcode, it can only jump forward
-int ebpf_inst::get_max_operand_val(int op_index, int inst_index) const {
+int32_t ebpf_inst::get_max_operand_val(int op_index, int inst_index) const {
   // max valufor each operand type
-  int max_val[6] = {
+  int32_t max_val[6] = {
     [ebpf::OP_UNUSED] = 0,
     [ebpf::OP_REG] = ebpf::NUM_REGS,
     [ebpf::OP_IMM] = ebpf::MAX_IMM,
-    [ebpf::OP_OFF] = min((int)ebpf::MAX_OFF, ebpf::MAX_PROG_LEN - inst_index - 1),
+    [ebpf::OP_OFF] = min((int32_t)ebpf::MAX_OFF, ebpf::MAX_PROG_LEN - inst_index - 1),
     [ebpf::OP_IMM_SH32] = ebpf::MAX_IMM_SH32,
     [ebpf::OP_IMM_SH64] = ebpf::MAX_IMM_SH64,
   };

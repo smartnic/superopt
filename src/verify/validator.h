@@ -1,6 +1,7 @@
 #pragma once
 
 #include "z3++.h"
+#include "../../src/utils.h"
 #include "../../src/inout.h"
 #include "../../src/isa/inst.h"
 #include "smt_prog.h"
