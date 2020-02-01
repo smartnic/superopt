@@ -57,7 +57,6 @@ void test2() {
   cout << "test 2: error_cost check starts...\n";
   prog orig(instructions);
   cost c;
-  c._isa = TOY_ISA;
   c.set_orig(&orig, 7);
   c._examples.clear();
   for (size_t i = 0; i < ex_set.size(); i++) {

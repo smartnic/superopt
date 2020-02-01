@@ -12,11 +12,13 @@ cost::cost() {}
 cost::~cost() {}
 
 prog_state* cost::make_prog_state() {
-  switch (_isa) {
-    case TOY_ISA: return (new toy_isa_prog_state);
-    case EBPF: return (new ebpf_prog_state);
-    default: cout << "unknown ISA type, return nullptr" << endl; return nullptr;
-  }
+#if ISA_TOY_ISA
+  return (new toy_isa_prog_state);
+#elif ISA_EBPF
+  return (new ebpf_prog_state);
+#else
+  cout << "unknown ISA type, return nullptr" << endl; return nullptr;
+#endif
 }
 
 void cost::clear_prog_state(prog_state* ps) {
@@ -24,10 +26,9 @@ void cost::clear_prog_state(prog_state* ps) {
   ps = nullptr;
 }
 
-void cost::init(int isa, prog* orig, int len, const vector<reg_t> &input,
+void cost::init(prog* orig, int len, const vector<reg_t> &input,
                 double w_e, double w_p,
                 int strategy_ex, int strategy_eq, int strategy_avg) {
-  _isa = isa;
   set_orig(orig, len);
   _examples.clear();
   prog_state* ps = make_prog_state();

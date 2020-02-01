@@ -56,7 +56,7 @@ void test1(int nrolls, double w_e, double w_p)  {
   mh._next_proposal.set_probability(0.3, 0.5);
   std::unordered_map<int, vector<prog*> > prog_freq;
   prog orig(instructions);
-  mh._cost.init(TOY_ISA, &orig, N, inputs, w_e, w_p);
+  mh._cost.init(&orig, N, inputs, w_e, w_p);
   mh.mcmc_iter(nrolls, orig, prog_freq);
   mh_sampler_res_print(nrolls, prog_freq);
 }

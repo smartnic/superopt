@@ -85,7 +85,7 @@ void time_cost_init() {
   vector<reg_t> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
-  time_measure(c.init(TOY_ISA, &orig, N, input, w_e, w_p), 100,
+  time_measure(c.init(&orig, N, input, w_e, w_p), 100,
                "cost::init: ");
 }
 
@@ -95,7 +95,7 @@ void time_cost_error_cost() {
   vector<reg_t> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
-  c.init(TOY_ISA, &orig, N, input, w_e, w_p);
+  c.init(&orig, N, input, w_e, w_p);
   time_measure(c.error_cost(&orig, N);
                orig._error_cost = -1;
                orig._perf_cost = -1,
@@ -110,7 +110,7 @@ void time_cost_perf_cost() {
   vector<reg_t> input = {10, 16, 11, 48, 1};
   cost c;
   prog orig(bm0);
-  c.init(TOY_ISA, &orig, N, input, w_e, w_p);
+  c.init(&orig, N, input, w_e, w_p);
   time_measure(c.perf_cost(&orig, N), 1000,
                "cost::perf_cost: ");
 }
@@ -127,7 +127,7 @@ void time_mh_sampler() {
     mh_sampler mh;
     unordered_map<int, vector<prog*> > prog_freq;
     prog orig(bm0);
-    mh._cost.init(TOY_ISA, &orig, N, inputs, w_e, w_p);
+    mh._cost.init(&orig, N, inputs, w_e, w_p);
     mh.mcmc_iter(nrolls, orig, prog_freq);
   }
   auto end = NOW;

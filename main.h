@@ -5,7 +5,6 @@
 using namespace std;
 
 struct input_paras {
-  int isa;
   int niter;
   int bm;
   double w_e;

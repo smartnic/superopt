@@ -42,36 +42,35 @@ void meas_mh_data::insert_examples(unsigned int iter_num, const inout &exs) {
 }
 /* class meas_mh_data end */
 
-string prog_rel_bv_to_str(int v, int isa_type) {
-  switch (isa_type) {
-    case TOY_ISA: return bitset<toy_isa::MAX_PROG_LEN>(v).to_string();
-    case EBPF: return bitset<ebpf::MAX_PROG_LEN>(v).to_string();
-    default: cout << "unknown ISA type, return empty string" << endl; return "";
-  }
+string prog_rel_bv_to_str(int v) {
+#if ISA_TOY_ISA
+  return bitset<toy_isa::MAX_PROG_LEN>(v).to_string();
+#elif ISA_EBPF
+  return bitset<ebpf::MAX_PROG_LEN>(v).to_string();
+#else
+  cout << "unknown ISA type, return empty string" << endl; return "";
+#endif
 }
 
-string prog_abs_bv_to_str(vector<int>& v, int isa_type) {
+string prog_abs_bv_to_str(vector<int>& v) {
   string str = "";
-  switch (isa_type) {
-    case TOY_ISA: {
-      for (size_t i = 0; i < v.size(); i++)
-        str += bitset<toy_isa::OP_NUM_BITS>(v[i]).to_string();
-      return str;
-    }
-    case EBPF: {
-      for (size_t i = 0; i < v.size(); i++)
-        str += bitset<ebpf::OP_NUM_BITS>(v[i]).to_string();
-      return str;
-    }
-    default: cout << "unknown ISA type, return empty string" << endl; return "";
-  }
+#if ISA_TOY_ISA
+  for (size_t i = 0; i < v.size(); i++)
+    str += bitset<toy_isa::OP_NUM_BITS>(v[i]).to_string();
+  return str;
+#elif ISA_EBPF
+  for (size_t i = 0; i < v.size(); i++)
+    str += bitset<ebpf::OP_NUM_BITS>(v[i]).to_string();
+  return str;
+#else
+  cout << "unknown ISA type, return empty string" << endl; return "";
+#endif
 }
 
 // fmt: <accepted?> <error cost> <perf cost> <relative coding> <absolute coding>
 void store_proposals_to_file(string file_name,
                              const meas_mh_data &d,
-                             const vector<prog> &optimals,
-                             int isa_type) {
+                             const vector<prog> &optimals) {
   if (! d._mode) return;
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
@@ -83,8 +82,8 @@ void store_proposals_to_file(string file_name,
     fout << d._proposals[i].second << " "
          << p._error_cost << " "
          << p._perf_cost << " "
-         << prog_rel_bv_to_str(p.to_rel_bv(optimals), isa_type) << " "
-         << prog_abs_bv_to_str(bv, isa_type) << endl;
+         << prog_rel_bv_to_str(p.to_rel_bv(optimals)) << " "
+         << prog_abs_bv_to_str(bv) << endl;
   }
   fout.close();
 }
@@ -92,8 +91,7 @@ void store_proposals_to_file(string file_name,
 // fmt: <iter num> <error cost> <perf cost> <relative coding> <absolute coding>
 void store_programs_to_file(string file_name,
                             const meas_mh_data &d,
-                            const vector<prog> &optimals,
-                            int isa_type) {
+                            const vector<prog> &optimals) {
   if (! d._mode) return;
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
@@ -105,8 +103,8 @@ void store_programs_to_file(string file_name,
     fout << d._programs[i].first << " "
          << p._error_cost << " "
          << p._perf_cost << " "
-         << prog_rel_bv_to_str(p.to_rel_bv(optimals), isa_type) << " "
-         << prog_abs_bv_to_str(bv, isa_type) << endl;
+         << prog_rel_bv_to_str(p.to_rel_bv(optimals)) << " "
+         << prog_abs_bv_to_str(bv) << endl;
   }
   fout.close();
 }
@@ -127,8 +125,7 @@ void store_examples_to_file(string file_name,
 
 void store_optimals_to_file(string file_name,
                             const vector<prog> &optimals,
-                            bool measure_mode,
-                            int isa_type) {
+                            bool measure_mode) {
   if (! measure_mode) return;
   fstream fout;
   fout.open(file_name, ios::out | ios::trunc);
@@ -136,22 +133,22 @@ void store_optimals_to_file(string file_name,
   for (size_t i = 0; i < optimals.size(); i++) {
     vector<int> bv;
     optimals[i].to_abs_bv(bv);
-    fout << prog_abs_bv_to_str(bv, isa_type) << endl;
+    fout << prog_abs_bv_to_str(bv) << endl;
   }
   fout.close();
 }
 
 void meas_store_raw_data(meas_mh_data &d, string meas_path_out, string suffix,
-                         int meas_bm, vector<prog> &bm_optimals, int isa_type) {
+                         int meas_bm, vector<prog> &bm_optimals) {
   string file_raw_data_programs = meas_path_out + FILE_RAW_DATA_PROGRAMS + suffix;
   string file_raw_data_proposals = meas_path_out + FILE_RAW_DATA_PROPOSALS + suffix;
   string file_raw_data_examples = meas_path_out + FILE_RAW_DATA_EXAMPLES + suffix;
   string file_raw_data_optimals = meas_path_out + FILE_RAW_DATA_OPTIMALS;
   file_raw_data_optimals += "_" + to_string(meas_bm) + ".txt";
-  store_proposals_to_file(file_raw_data_proposals, d, bm_optimals, isa_type);
-  store_programs_to_file(file_raw_data_programs, d, bm_optimals, isa_type);
+  store_proposals_to_file(file_raw_data_proposals, d, bm_optimals);
+  store_programs_to_file(file_raw_data_programs, d, bm_optimals);
   store_examples_to_file(file_raw_data_examples, d);
-  store_optimals_to_file(file_raw_data_optimals, bm_optimals, d._mode, isa_type);
+  store_optimals_to_file(file_raw_data_optimals, bm_optimals, d._mode);
 }
 
 // return C_n^m
