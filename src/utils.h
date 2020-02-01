@@ -5,10 +5,20 @@
 
 using namespace std;
 
+#if ISA_TOY_ISA
 typedef int64_t reg_t;
 typedef int32_t op_t;
 // number of register bits, used by smt_var.h/cc
 #define NUM_REG_BITS 64
+#elif EBPF_ISA
+typedef int64_t reg_t;
+typedef int32_t op_t;
+#define NUM_REG_BITS 64
+#else
+typedef int64_t reg_t;
+typedef int32_t op_t;
+#define NUM_REG_BITS 64
+#endif
 
 #define NOW chrono::steady_clock::now()
 #define DUR(t1, t2) chrono::duration <double, micro> (t2 - t1).count()
