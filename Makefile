@@ -6,7 +6,7 @@ ISA=src/isa/
 TOY_ISA=src/isa/toy-isa/
 EBPF=src/isa/ebpf/
 TOY_ISA_FLAG=-D ISA_TOY_ISA
-EBPF_FLAG=-D EBPF_ISA
+EBPF_FLAG=-D ISA_EBPF
 
 all: main.out proposals_test.out inst_codegen_test_toy_isa.out inst_codegen_test_ebpf.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out cfg_test.out inout_test.out smt_prog_test.out ebpf_inst_test.out validator_test_ebpf.out cfg_test_ebpf.out
 

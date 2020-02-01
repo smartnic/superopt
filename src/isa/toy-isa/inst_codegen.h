@@ -8,11 +8,11 @@ using namespace std;
 
 /* APIs exposed to the externals start */
 // return (out = in)
-inline int64_t toy_isa_compute_mov(int64_t in, int64_t out = 0);
+inline int toy_isa_compute_mov(int in, int out = 0);
 // return (out = in1 + in2)
-inline int64_t toy_isa_compute_add(int64_t in1, int64_t in2, int64_t out = 0);
+inline int toy_isa_compute_add(int in1, int in2, int out = 0);
 // return (out = max(in1, in2))
-inline int64_t toy_isa_compute_max(int64_t in1, int64_t in2, int64_t out = 0);
+inline int toy_isa_compute_max(int in1, int in2, int out = 0);
 // return (out == in)
 inline z3::expr toy_isa_compute_mov(z3::expr in, z3::expr out);
 // return (out == in1 + in2)
@@ -69,9 +69,9 @@ inline ret_t toy_isa_compute_##func_name(para1_t in1, para2_t in2, para3_t out) 
   return out;                                                                       \
 }
 
-COMPUTE_UNARY(mov, MOV_EXPR, int64_t, int64_t, int64_t)
-COMPUTE_BINARY(add, ADD_EXPR, int64_t, int64_t, int64_t, int64_t)
-COMPUTE_BINARY(max, MAX_EXPR, int64_t, int64_t, int64_t, int64_t)
+COMPUTE_UNARY(mov, MOV_EXPR, int, int, int)
+COMPUTE_BINARY(add, ADD_EXPR, int, int, int, int)
+COMPUTE_BINARY(max, MAX_EXPR, int, int, int, int)
 // Functions for interpreter end
 /* Macros for interpreter end */
 

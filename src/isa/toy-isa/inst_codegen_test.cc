@@ -8,7 +8,7 @@ z3::context ctx;
 
 void test1() {
   cout << "Test 1" << endl;
-  int32_t a = 4, b = 5, c = 10;
+  int a = 4, b = 5, c = 10;
   z3::expr x = ctx.int_val(a);
   z3::expr y = ctx.int_val(b);
   z3::expr z = ctx.int_val(c);

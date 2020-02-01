@@ -6,18 +6,18 @@
 using namespace std;
 
 #if ISA_TOY_ISA
-typedef int64_t reg_t;
-typedef int32_t op_t;
+typedef int reg_t;
+typedef int op_t;
 // number of register bits, used by smt_var.h/cc
-#define NUM_REG_BITS 64
-#elif EBPF_ISA
+#define NUM_REG_BITS 32
+#elif ISA_EBPF
 typedef int64_t reg_t;
 typedef int32_t op_t;
 #define NUM_REG_BITS 64
 #else
-typedef int64_t reg_t;
-typedef int32_t op_t;
-#define NUM_REG_BITS 64
+typedef int reg_t;
+typedef int op_t;
+#define NUM_REG_BITS 32
 #endif
 
 #define NOW chrono::steady_clock::now()

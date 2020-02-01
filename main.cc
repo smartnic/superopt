@@ -9,13 +9,13 @@
 #include <iomanip>
 #include <getopt.h>
 #include <chrono>
+#include "src/utils.h"
+#include "src/inout.h"
+#include "src/search/mh_prog.h"
+#include "src/isa/prog.h"
 #include "measure/benchmark_toy_isa.h"
 #include "measure/benchmark_ebpf.h"
 #include "measure/meas_mh_bhv.h"
-#include "src/inout.h"
-#include "src/utils.h"
-#include "src/search/mh_prog.h"
-#include "src/isa/prog.h"
 #include "main.h"
 
 using namespace std;

@@ -141,7 +141,7 @@ class toy_isa_inst: public inst {
   }
   toy_isa_inst& operator=(const inst &rhs);
   string opcode_to_str(int) const;
-  int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
+  int get_max_operand_val(int op_index, int inst_index = 0) const;
   void make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const;
   void make_insts(vector<inst*> &instptr_list, const inst* instruction) const;
   void clear_insts();
@@ -162,7 +162,7 @@ class toy_isa_inst: public inst {
   int get_num_operands() const {return _isa.num_operands[_opcode];}
   int get_insn_num_regs() const {return _isa.insn_num_regs[_opcode];}
   int get_opcode_type() const {return _isa.opcode_type[_opcode];}
-  int64_t interpret(const vector<inst*> &instptr_list, prog_state &ps, int64_t input) const;
+  int interpret(const vector<inst*> &instptr_list, prog_state &ps, int input) const;
   // smt
   z3::expr smt_inst(smt_var& sv) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;

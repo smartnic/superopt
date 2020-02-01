@@ -63,8 +63,14 @@ double cost::get_ex_error_cost(reg_t output1, reg_t output2) {
   switch (_strategy_ex) {
     case ERROR_COST_STRATEGY_ABS: return abs(output1 - output2);
     case ERROR_COST_STRATEGY_POP:
+#if ISA_TOY_ISA
+      return pop_count_asm(output1 ^ output2);
+#elif ISA_EBPF
       return (pop_count_asm((uint32_t)output1 ^ (uint32_t)output2) +
               pop_count_asm((uint32_t)(output1 >> 32) ^ (uint32_t)(output2 >> 32)));
+#else
+      return ERROR_COST_MAX;
+#endif
     default:
       cout << "ERROR: no error cost example strategy matches." << endl;
       return ERROR_COST_MAX;
