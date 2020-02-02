@@ -43,16 +43,12 @@ class inst_base {
   void set_operand(int op_index, op_t op_value);
   int get_opcode() const;
   void set_opcode(int op_value);
-  void convert_to_pointers(vector<inst_base*> &instptr_list, inst_base* instruction) const;
 
   /* Functions class inst should support */
   // void print() const;
   // vector<int> get_reg_list() const;
   // virtual string opcode_to_str(int) const {return "";}
   // virtual op_t get_max_operand_val(int op_index, int inst_index = 0) const {return 0;}
-  // virtual void make_insts(vector<inst_base*> &instptr_list, const vector<inst_base*> &other) const {}
-  // virtual void make_insts(vector<inst_base*> &instptr_list, const inst_base* instruction) const {}
-  // virtual void clear_insts() {}
   // virtual int get_jmp_dis() const {return 0;}
   // // insert all jmp opcode in jmp_set, used by proposals.cc to 
   // // avoid jumps in the last line of the program

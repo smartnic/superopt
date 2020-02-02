@@ -10,195 +10,195 @@
 
 using namespace std;
 
-  static constexpr int NUM_REGS = 11;
-  static constexpr int MAX_PROG_LEN = 7;
-  // Max number of operands in one instruction
-  static constexpr int MAX_OP_LEN = 3;
+static constexpr int NUM_REGS = 11;
+static constexpr int MAX_PROG_LEN = 7;
+// Max number of operands in one instruction
+static constexpr int MAX_OP_LEN = 3;
 
-  // Number of bits of a single opcode or operand
-  static constexpr int OP_NUM_BITS = 32;
-  // Number of bits of a single instruction
-  static constexpr int INST_NUM_BITS = 20;
+// Number of bits of a single opcode or operand
+static constexpr int OP_NUM_BITS = 32;
+// Number of bits of a single instruction
+static constexpr int INST_NUM_BITS = 20;
 
-  // Instruction opcodes
-  enum OPCODES {
-    NOP = 0,
-    // ALU64
-    ADD64XC,
-    ADD64XY,
-    LSH64XC,
-    LSH64XY,
-    RSH64XC,
-    RSH64XY,
-    MOV64XC,
-    MOV64XY,
-    ARSH64XC,
-    ARSH64XY,
-    // ALU32
-    ADD32XC,
-    ADD32XY,
-    LSH32XC,
-    LSH32XY,
-    RSH32XC,
-    RSH32XY,
-    MOV32XC,
-    MOV32XY,
-    ARSH32XC,
-    ARSH32XY,
-    // Byteswap
-    LE16,
-    LE32,
-    LE64,
-    BE16,
-    BE32,
-    BE64,
-    // JMP
-    JA,
-    JEQXC,
-    JEQXY,
-    JGTXC,
-    JGTXY,
-    JSGTXC,
-    JSGTXY,
-    // Exit
-    EXIT,
-    NUM_INSTR, // Number of opcode types
-  };
+// Instruction opcodes
+enum OPCODES {
+  NOP = 0,
+  // ALU64
+  ADD64XC,
+  ADD64XY,
+  LSH64XC,
+  LSH64XY,
+  RSH64XC,
+  RSH64XY,
+  MOV64XC,
+  MOV64XY,
+  ARSH64XC,
+  ARSH64XY,
+  // ALU32
+  ADD32XC,
+  ADD32XY,
+  LSH32XC,
+  LSH32XY,
+  RSH32XC,
+  RSH32XY,
+  MOV32XC,
+  MOV32XY,
+  ARSH32XC,
+  ARSH32XY,
+  // Byteswap
+  LE16,
+  LE32,
+  LE64,
+  BE16,
+  BE32,
+  BE64,
+  // JMP
+  JA,
+  JEQXC,
+  JEQXY,
+  JGTXC,
+  JGTXY,
+  JSGTXC,
+  JSGTXY,
+  // Exit
+  EXIT,
+  NUM_INSTR, // Number of opcode types
+};
 
-  static constexpr int num_operands[NUM_INSTR] = {
-    [NOP]      = 0,
-    [ADD64XC]  = 2,
-    [ADD64XY]  = 2,
-    [LSH64XC]  = 2,
-    [LSH64XY]  = 2,
-    [RSH64XC]  = 2,
-    [RSH64XY]  = 2,
-    [MOV64XC]  = 2,
-    [MOV64XY]  = 2,
-    [ARSH64XC] = 2,
-    [ARSH64XY] = 2,
-    [ADD32XC]  = 2,
-    [ADD32XY]  = 2,
-    [LSH32XC]  = 2,
-    [LSH32XY]  = 2,
-    [RSH32XC]  = 2,
-    [RSH32XY]  = 2,
-    [MOV32XC]  = 2,
-    [MOV32XY]  = 2,
-    [ARSH32XC] = 2,
-    [ARSH32XY] = 2,
-    [LE16]     = 1,
-    [LE32]     = 1,
-    [LE64]     = 1,
-    [BE16]     = 1,
-    [BE32]     = 1,
-    [BE64]     = 1,
-    [JA]       = 1,
-    [JEQXC]    = 3,
-    [JEQXY]    = 3,
-    [JGTXC]    = 3,
-    [JGTXY]    = 3,
-    [JSGTXC]   = 3,
-    [JSGTXY]   = 3,
-    [EXIT]     = 0,
-  };
+static constexpr int num_operands[NUM_INSTR] = {
+  [NOP]      = 0,
+  [ADD64XC]  = 2,
+  [ADD64XY]  = 2,
+  [LSH64XC]  = 2,
+  [LSH64XY]  = 2,
+  [RSH64XC]  = 2,
+  [RSH64XY]  = 2,
+  [MOV64XC]  = 2,
+  [MOV64XY]  = 2,
+  [ARSH64XC] = 2,
+  [ARSH64XY] = 2,
+  [ADD32XC]  = 2,
+  [ADD32XY]  = 2,
+  [LSH32XC]  = 2,
+  [LSH32XY]  = 2,
+  [RSH32XC]  = 2,
+  [RSH32XY]  = 2,
+  [MOV32XC]  = 2,
+  [MOV32XY]  = 2,
+  [ARSH32XC] = 2,
+  [ARSH32XY] = 2,
+  [LE16]     = 1,
+  [LE32]     = 1,
+  [LE64]     = 1,
+  [BE16]     = 1,
+  [BE32]     = 1,
+  [BE64]     = 1,
+  [JA]       = 1,
+  [JEQXC]    = 3,
+  [JEQXY]    = 3,
+  [JGTXC]    = 3,
+  [JGTXY]    = 3,
+  [JSGTXC]   = 3,
+  [JSGTXY]   = 3,
+  [EXIT]     = 0,
+};
 
-  // number of registers for each opcode
-  // e.g., for ADD64XY, two operands are registers
-  static constexpr int insn_num_regs[NUM_INSTR] = {
-    [NOP]      = 0,
-    [ADD64XC]  = 1,
-    [ADD64XY]  = 2,
-    [LSH64XC]  = 1,
-    [LSH64XY]  = 2,
-    [RSH64XC]  = 1,
-    [RSH64XY]  = 2,
-    [MOV64XC]  = 1,
-    [MOV64XY]  = 2,
-    [ARSH64XC] = 1,
-    [ARSH64XY] = 2,
-    [ADD32XC]  = 1,
-    [ADD32XY]  = 2,
-    [LSH32XC]  = 1,
-    [LSH32XY]  = 2,
-    [RSH32XC]  = 1,
-    [RSH32XY]  = 2,
-    [MOV32XC]  = 1,
-    [MOV32XY]  = 2,
-    [ARSH32XC] = 1,
-    [ARSH32XY] = 2,
-    [LE16]     = 1,
-    [LE32]     = 1,
-    [LE64]     = 1,
-    [BE16]     = 1,
-    [BE32]     = 1,
-    [BE64]     = 1,
-    [JA]       = 0,
-    [JEQXC]    = 1,
-    [JEQXY]    = 2,
-    [JGTXC]    = 1,
-    [JGTXY]    = 2,
-    [JSGTXC]   = 1,
-    [JSGTXY]   = 2,
-    [EXIT]     = 0,
-  };
+// number of registers for each opcode
+// e.g., for ADD64XY, two operands are registers
+static constexpr int insn_num_regs[NUM_INSTR] = {
+  [NOP]      = 0,
+  [ADD64XC]  = 1,
+  [ADD64XY]  = 2,
+  [LSH64XC]  = 1,
+  [LSH64XY]  = 2,
+  [RSH64XC]  = 1,
+  [RSH64XY]  = 2,
+  [MOV64XC]  = 1,
+  [MOV64XY]  = 2,
+  [ARSH64XC] = 1,
+  [ARSH64XY] = 2,
+  [ADD32XC]  = 1,
+  [ADD32XY]  = 2,
+  [LSH32XC]  = 1,
+  [LSH32XY]  = 2,
+  [RSH32XC]  = 1,
+  [RSH32XY]  = 2,
+  [MOV32XC]  = 1,
+  [MOV32XY]  = 2,
+  [ARSH32XC] = 1,
+  [ARSH32XY] = 2,
+  [LE16]     = 1,
+  [LE32]     = 1,
+  [LE64]     = 1,
+  [BE16]     = 1,
+  [BE32]     = 1,
+  [BE64]     = 1,
+  [JA]       = 0,
+  [JEQXC]    = 1,
+  [JEQXY]    = 2,
+  [JGTXC]    = 1,
+  [JGTXY]    = 2,
+  [JSGTXC]   = 1,
+  [JSGTXY]   = 2,
+  [EXIT]     = 0,
+};
 
-  static constexpr int opcode_type[NUM_INSTR] = {
-    [NOP]      = OP_NOP,
-    [ADD64XC]  = OP_OTHERS,
-    [ADD64XY]  = OP_OTHERS,
-    [LSH64XC]  = OP_OTHERS,
-    [LSH64XY]  = OP_OTHERS,
-    [RSH64XC]  = OP_OTHERS,
-    [RSH64XY]  = OP_OTHERS,
-    [MOV64XC]  = OP_OTHERS,
-    [MOV64XY]  = OP_OTHERS,
-    [ARSH64XC] = OP_OTHERS,
-    [ARSH64XY] = OP_OTHERS,
-    [ADD32XC]  = OP_OTHERS,
-    [ADD32XY]  = OP_OTHERS,
-    [LSH32XC]  = OP_OTHERS,
-    [LSH32XY]  = OP_OTHERS,
-    [RSH32XC]  = OP_OTHERS,
-    [RSH32XY]  = OP_OTHERS,
-    [MOV32XC]  = OP_OTHERS,
-    [MOV32XY]  = OP_OTHERS,
-    [ARSH32XC] = OP_OTHERS,
-    [ARSH32XY] = OP_OTHERS,
-    [LE16]     = OP_OTHERS,
-    [LE32]     = OP_OTHERS,
-    [LE64]     = OP_OTHERS,
-    [BE16]     = OP_OTHERS,
-    [BE32]     = OP_OTHERS,
-    [BE64]     = OP_OTHERS,
-    [JA]       = OP_UNCOND_JMP,
-    [JEQXC]    = OP_COND_JMP,
-    [JEQXY]    = OP_COND_JMP,
-    [JGTXC]    = OP_COND_JMP,
-    [JGTXY]    = OP_COND_JMP,
-    [JSGTXC]   = OP_COND_JMP,
-    [JSGTXY]   = OP_COND_JMP,
-    [EXIT]     = OP_RET,
-  };
+static constexpr int opcode_type[NUM_INSTR] = {
+  [NOP]      = OP_NOP,
+  [ADD64XC]  = OP_OTHERS,
+  [ADD64XY]  = OP_OTHERS,
+  [LSH64XC]  = OP_OTHERS,
+  [LSH64XY]  = OP_OTHERS,
+  [RSH64XC]  = OP_OTHERS,
+  [RSH64XY]  = OP_OTHERS,
+  [MOV64XC]  = OP_OTHERS,
+  [MOV64XY]  = OP_OTHERS,
+  [ARSH64XC] = OP_OTHERS,
+  [ARSH64XY] = OP_OTHERS,
+  [ADD32XC]  = OP_OTHERS,
+  [ADD32XY]  = OP_OTHERS,
+  [LSH32XC]  = OP_OTHERS,
+  [LSH32XY]  = OP_OTHERS,
+  [RSH32XC]  = OP_OTHERS,
+  [RSH32XY]  = OP_OTHERS,
+  [MOV32XC]  = OP_OTHERS,
+  [MOV32XY]  = OP_OTHERS,
+  [ARSH32XC] = OP_OTHERS,
+  [ARSH32XY] = OP_OTHERS,
+  [LE16]     = OP_OTHERS,
+  [LE32]     = OP_OTHERS,
+  [LE64]     = OP_OTHERS,
+  [BE16]     = OP_OTHERS,
+  [BE32]     = OP_OTHERS,
+  [BE64]     = OP_OTHERS,
+  [JA]       = OP_UNCOND_JMP,
+  [JEQXC]    = OP_COND_JMP,
+  [JEQXY]    = OP_COND_JMP,
+  [JGTXC]    = OP_COND_JMP,
+  [JGTXY]    = OP_COND_JMP,
+  [JSGTXC]   = OP_COND_JMP,
+  [JSGTXY]   = OP_COND_JMP,
+  [EXIT]     = OP_RET,
+};
 
-  // Max and Min value for immediate number(32bits), offset(16bits)
-  // MAX value for immediate number of shift 32 and shift 64
-  static constexpr int32_t MAX_IMM = 0x7fffffff;
-  static constexpr int32_t MIN_IMM = 0x80000000;
-  static constexpr int32_t MAX_OFF = 0x7fff;
-  static constexpr int32_t MIN_OFF = 0xffff8000;
-  static constexpr int32_t MAX_IMM_SH32 = 31;
-  static constexpr int32_t MAX_IMM_SH64 = 63;
+// Max and Min value for immediate number(32bits), offset(16bits)
+// MAX value for immediate number of shift 32 and shift 64
+static constexpr int32_t MAX_IMM = 0x7fffffff;
+static constexpr int32_t MIN_IMM = 0x80000000;
+static constexpr int32_t MAX_OFF = 0x7fff;
+static constexpr int32_t MIN_OFF = 0xffff8000;
+static constexpr int32_t MAX_IMM_SH32 = 31;
+static constexpr int32_t MAX_IMM_SH64 = 63;
 
-  // Operand types for instructions
-  static constexpr int OP_UNUSED = 0;
-  static constexpr int OP_REG = 1;
-  static constexpr int OP_IMM = 2;
-  static constexpr int OP_OFF = 3;
-  static constexpr int OP_IMM_SH32 = 4;
-  static constexpr int OP_IMM_SH64 = 5;
+// Operand types for instructions
+static constexpr int OP_UNUSED = 0;
+static constexpr int OP_REG = 1;
+static constexpr int OP_IMM = 2;
+static constexpr int OP_OFF = 3;
+static constexpr int OP_IMM_SH32 = 4;
+static constexpr int OP_IMM_SH64 = 5;
 
-  /* The definitions below assume a minimum 16-bit integer data type */
+/* The definitions below assume a minimum 16-bit integer data type */
 #define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex) * 5)) & 31)
 #define FSTOP(x) (x)
 #define SNDOP(x) (x << 5)
@@ -212,43 +212,43 @@ using namespace std;
 #define JMP_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_OFF))
 #define JMP_OPS_REG (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
 #define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
-  static constexpr int optable[NUM_INSTR] = {
-    [NOP]      = UNUSED_OPS,
-    [ADD64XC]  = ALU_OPS_IMM,
-    [ADD64XY]  = ALU_OPS_REG,
-    [LSH64XC]  = SH64_OPS_IMM,
-    [LSH64XY]  = ALU_OPS_REG,
-    [RSH64XC]  = SH64_OPS_IMM,
-    [RSH64XY]  = ALU_OPS_REG,
-    [MOV64XC]  = ALU_OPS_IMM,
-    [MOV64XY]  = ALU_OPS_REG,
-    [ARSH64XC] = SH64_OPS_IMM,
-    [ARSH64XY] = ALU_OPS_REG,
-    [ADD32XC]  = ALU_OPS_IMM,
-    [ADD32XY]  = ALU_OPS_REG,
-    [LSH32XC]  = SH32_OPS_IMM,
-    [LSH32XY]  = ALU_OPS_REG,
-    [RSH32XC]  = SH32_OPS_IMM,
-    [RSH32XY]  = ALU_OPS_REG,
-    [MOV32XC]  = ALU_OPS_IMM,
-    [MOV32XY]  = ALU_OPS_REG,
-    [ARSH32XC] = SH32_OPS_IMM,
-    [ARSH32XY] = ALU_OPS_REG,
-    [LE16]     = BYTESWAP,
-    [LE32]     = BYTESWAP,
-    [LE64]     = BYTESWAP,
-    [BE16]     = BYTESWAP,
-    [BE32]     = BYTESWAP,
-    [BE64]     = BYTESWAP,
-    [JA]       = JA_OPS,
-    [JEQXC]    = JMP_OPS_IMM,
-    [JEQXY]    = JMP_OPS_REG,
-    [JGTXC]    = JMP_OPS_IMM,
-    [JGTXY]    = JMP_OPS_REG,
-    [JSGTXC]   = JMP_OPS_IMM,
-    [JSGTXY]   = JMP_OPS_REG,
-    [EXIT]     = UNUSED_OPS,
-  };
+static constexpr int optable[NUM_INSTR] = {
+  [NOP]      = UNUSED_OPS,
+  [ADD64XC]  = ALU_OPS_IMM,
+  [ADD64XY]  = ALU_OPS_REG,
+  [LSH64XC]  = SH64_OPS_IMM,
+  [LSH64XY]  = ALU_OPS_REG,
+  [RSH64XC]  = SH64_OPS_IMM,
+  [RSH64XY]  = ALU_OPS_REG,
+  [MOV64XC]  = ALU_OPS_IMM,
+  [MOV64XY]  = ALU_OPS_REG,
+  [ARSH64XC] = SH64_OPS_IMM,
+  [ARSH64XY] = ALU_OPS_REG,
+  [ADD32XC]  = ALU_OPS_IMM,
+  [ADD32XY]  = ALU_OPS_REG,
+  [LSH32XC]  = SH32_OPS_IMM,
+  [LSH32XY]  = ALU_OPS_REG,
+  [RSH32XC]  = SH32_OPS_IMM,
+  [RSH32XY]  = ALU_OPS_REG,
+  [MOV32XC]  = ALU_OPS_IMM,
+  [MOV32XY]  = ALU_OPS_REG,
+  [ARSH32XC] = SH32_OPS_IMM,
+  [ARSH32XY] = ALU_OPS_REG,
+  [LE16]     = BYTESWAP,
+  [LE32]     = BYTESWAP,
+  [LE64]     = BYTESWAP,
+  [BE16]     = BYTESWAP,
+  [BE32]     = BYTESWAP,
+  [BE64]     = BYTESWAP,
+  [JA]       = JA_OPS,
+  [JEQXC]    = JMP_OPS_IMM,
+  [JEQXY]    = JMP_OPS_REG,
+  [JGTXC]    = JMP_OPS_IMM,
+  [JGTXY]    = JMP_OPS_REG,
+  [JSGTXC]   = JMP_OPS_IMM,
+  [JSGTXY]   = JMP_OPS_REG,
+  [EXIT]     = UNUSED_OPS,
+};
 #undef FSTOP
 #undef SNDOP
 #undef TRDOP

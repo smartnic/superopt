@@ -62,32 +62,6 @@ vector<int> inst::get_reg_list() const {
   return reg_list;
 }
 
-void inst::make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const {
-  int num_inst = instptr_list.size();
-  inst* new_insts = new inst[num_inst];
-  for (int i = 0; i < num_inst; i++) {
-    new_insts[i] = *other[i];
-  }
-  for (int i = 0; i < num_inst; i++) {
-    instptr_list[i] = &new_insts[i];
-  }
-}
-
-void inst::make_insts(vector<inst*> &instptr_list, const inst* instruction) const {
-  int num_inst = instptr_list.size();
-  inst* new_insts = new inst[num_inst];
-  for (int i = 0; i < num_inst; i++) {
-    new_insts[i] = instruction[i];
-  }
-  for (int i = 0; i < num_inst; i++) {
-    instptr_list[i] = &new_insts[i];
-  }
-}
-
-void inst::clear_insts() {
-  delete []this;
-}
-
 int inst::get_jmp_dis() const {
   switch (get_opcode_type()) {
     case (OP_UNCOND_JMP): return _args[0];
