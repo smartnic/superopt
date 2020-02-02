@@ -10,8 +10,6 @@
 
 using namespace std;
 
-class ebpf {
- public:
   static constexpr int NUM_REGS = 11;
   static constexpr int MAX_PROG_LEN = 7;
   // Max number of operands in one instruction
@@ -201,7 +199,7 @@ class ebpf {
   static constexpr int OP_IMM_SH64 = 5;
 
   /* The definitions below assume a minimum 16-bit integer data type */
-#define EBPF_OPTYPE(opcode, opindex) ((ebpf::optable[opcode] >> ((opindex) * 5)) & 31)
+#define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex) * 5)) & 31)
 #define FSTOP(x) (x)
 #define SNDOP(x) (x << 5)
 #define TRDOP(x) (x << 10)
@@ -260,24 +258,22 @@ class ebpf {
 #undef JMP_OPS_IMM
 #undef JMP_OPS_REG
 #undef UNUSED_OPS
+
+class prog_state_t: public prog_state {
+ public:
+  prog_state_t() {regs.resize(NUM_REGS, 0);}
 };
 
-class ebpf_prog_state: public prog_state {
+class inst_t: public inst {
  public:
-  ebpf_prog_state() {regs.resize(ebpf::NUM_REGS, 0);}
-};
-
-class ebpf_inst: public inst {
- public:
-  static ebpf _isa;
-  ebpf_inst(int opcode = _isa.NOP, int32_t arg1 = 0, int32_t arg2 = 0, int32_t arg3 = 0) {
-    _args.resize(_isa.MAX_OP_LEN);
+  inst_t(int opcode = NOP, int32_t arg1 = 0, int32_t arg2 = 0, int32_t arg3 = 0) {
+    _args.resize(MAX_OP_LEN);
     _opcode  = opcode;
     _args[0] = arg1;
     _args[1] = arg2;
     _args[2] = arg3;
   }
-  ebpf_inst& operator=(const inst &rhs);
+  inst_t& operator=(const inst &rhs);
   string opcode_to_str(int) const;
   int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
   void make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const;
@@ -291,14 +287,14 @@ class ebpf_inst: public inst {
   void set_as_nop_inst();
   unsigned int get_input_reg() const {return 1;}
   // for class ebpf
-  int get_num_regs() const {return _isa.NUM_REGS;}
-  int get_max_prog_len() const {return _isa.MAX_PROG_LEN;}
-  int get_max_op_len() const {return _isa.MAX_OP_LEN;}
-  int get_op_num_bits() const {return _isa.OP_NUM_BITS;}
-  int get_num_instr() const {return _isa.NUM_INSTR;}
-  int get_num_operands() const {return _isa.num_operands[_opcode];}
-  int get_insn_num_regs() const {return _isa.insn_num_regs[_opcode];}
-  int get_opcode_type() const {return _isa.opcode_type[_opcode];}
+  int get_num_regs() const {return NUM_REGS;}
+  int get_max_prog_len() const {return MAX_PROG_LEN;}
+  int get_max_op_len() const {return MAX_OP_LEN;}
+  int get_op_num_bits() const {return OP_NUM_BITS;}
+  int get_num_instr() const {return NUM_INSTR;}
+  int get_num_operands() const {return num_operands[_opcode];}
+  int get_insn_num_regs() const {return insn_num_regs[_opcode];}
+  int get_opcode_type() const {return opcode_type[_opcode];}
   int64_t interpret(const vector<inst*> &instptr_list, prog_state &ps, int64_t input = 0) const;
   // smt
   z3::expr smt_inst(smt_var& sv) const;

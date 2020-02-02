@@ -46,7 +46,7 @@ string prog_rel_bv_to_str(int v) {
 #if ISA_TOY_ISA
   return bitset<MAX_PROG_LEN>(v).to_string();
 #elif ISA_EBPF
-  return bitset<ebpf::MAX_PROG_LEN>(v).to_string();
+  return bitset<MAX_PROG_LEN>(v).to_string();
 #else
   cout << "unknown ISA type, return empty string" << endl; return "";
 #endif
@@ -60,7 +60,7 @@ string prog_abs_bv_to_str(vector<int>& v) {
   return str;
 #elif ISA_EBPF
   for (size_t i = 0; i < v.size(); i++)
-    str += bitset<ebpf::OP_NUM_BITS>(v[i]).to_string();
+    str += bitset<OP_NUM_BITS>(v[i]).to_string();
   return str;
 #else
   cout << "unknown ISA type, return empty string" << endl; return "";

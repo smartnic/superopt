@@ -16,53 +16,48 @@ using namespace std;
 #define UNCOND_OFFVAL16(inst_var) (int16_t)(UNCOND_OFFVAL(inst_var))
 #define COND_OFFVAL16(inst_var) (int16_t)(COND_OFFVAL(inst_var))
 
-constexpr int ebpf::num_operands[NUM_INSTR];
-constexpr int ebpf::insn_num_regs[NUM_INSTR];
-constexpr int ebpf::opcode_type[NUM_INSTR];
-constexpr int ebpf::optable[NUM_INSTR];
-
-string ebpf_inst::opcode_to_str(int opcode) const {
+string inst_t::opcode_to_str(int opcode) const {
   switch (opcode) {
-    case ebpf::NOP: return "nop";
-    case ebpf::ADD64XC: return "addxc";
-    case ebpf::ADD64XY: return "addxy";
-    case ebpf::LSH64XC: return "lshxc";
-    case ebpf::LSH64XY: return "lshxy";
-    case ebpf::RSH64XC: return "rshxc";
-    case ebpf::RSH64XY: return "rshxy";
-    case ebpf::MOV64XC: return "movxc";
-    case ebpf::MOV64XY: return "movxy";
-    case ebpf::ARSH64XC: return "arshxc";
-    case ebpf::ARSH64XY: return "arshxy";
-    case ebpf::ADD32XC: return "add32xc";
-    case ebpf::ADD32XY: return "add32xy";
-    case ebpf::LSH32XC: return "lsh32xc";
-    case ebpf::LSH32XY: return "lsh32xy";
-    case ebpf::RSH32XC: return "rsh32xc";
-    case ebpf::RSH32XY: return "rsh32xy";
-    case ebpf::MOV32XC: return "mov32xc";
-    case ebpf::MOV32XY: return "mov32xy";
-    case ebpf::ARSH32XC: return "arsh32xc";
-    case ebpf::ARSH32XY: return "arsh32xy";
-    case ebpf::LE16: return "le16";
-    case ebpf::LE32: return "le32";
-    case ebpf::LE64: return "le64";
-    case ebpf::BE16: return "be16";
-    case ebpf::BE32: return "be32";
-    case ebpf::BE64: return "be64";
-    case ebpf::JA: return "ja";
-    case ebpf::JEQXC: return "jeqxc";
-    case ebpf::JEQXY: return "jeqxy";
-    case ebpf::JGTXC: return "jgtxc";
-    case ebpf::JGTXY: return "jgtxy";
-    case ebpf::JSGTXC: return "jsgtxc";
-    case ebpf::JSGTXY: return "jsgtxy";
-    case ebpf::EXIT: return "exit";
+    case NOP: return "nop";
+    case ADD64XC: return "addxc";
+    case ADD64XY: return "addxy";
+    case LSH64XC: return "lshxc";
+    case LSH64XY: return "lshxy";
+    case RSH64XC: return "rshxc";
+    case RSH64XY: return "rshxy";
+    case MOV64XC: return "movxc";
+    case MOV64XY: return "movxy";
+    case ARSH64XC: return "arshxc";
+    case ARSH64XY: return "arshxy";
+    case ADD32XC: return "add32xc";
+    case ADD32XY: return "add32xy";
+    case LSH32XC: return "lsh32xc";
+    case LSH32XY: return "lsh32xy";
+    case RSH32XC: return "rsh32xc";
+    case RSH32XY: return "rsh32xy";
+    case MOV32XC: return "mov32xc";
+    case MOV32XY: return "mov32xy";
+    case ARSH32XC: return "arsh32xc";
+    case ARSH32XY: return "arsh32xy";
+    case LE16: return "le16";
+    case LE32: return "le32";
+    case LE64: return "le64";
+    case BE16: return "be16";
+    case BE32: return "be32";
+    case BE64: return "be64";
+    case JA: return "ja";
+    case JEQXC: return "jeqxc";
+    case JEQXY: return "jeqxy";
+    case JGTXC: return "jgtxc";
+    case JGTXY: return "jgtxy";
+    case JSGTXC: return "jsgtxc";
+    case JSGTXY: return "jsgtxy";
+    case EXIT: return "exit";
     default: return "unknown opcode";
   }
 }
 
-ebpf_inst& ebpf_inst::operator=(const inst &rhs) {
+inst_t& inst_t::operator=(const inst &rhs) {
   _opcode = rhs._opcode;
   _args[0] = rhs._args[0];
   _args[1] = rhs._args[1];
@@ -71,22 +66,22 @@ ebpf_inst& ebpf_inst::operator=(const inst &rhs) {
 }
 
 // For jmp opcode, it can only jump forward
-int32_t ebpf_inst::get_max_operand_val(int op_index, int inst_index) const {
+int32_t inst_t::get_max_operand_val(int op_index, int inst_index) const {
   // max valufor each operand type
   int32_t max_val[6] = {
-    [ebpf::OP_UNUSED] = 0,
-    [ebpf::OP_REG] = ebpf::NUM_REGS,
-    [ebpf::OP_IMM] = ebpf::MAX_IMM,
-    [ebpf::OP_OFF] = min((int32_t)ebpf::MAX_OFF, ebpf::MAX_PROG_LEN - inst_index - 1),
-    [ebpf::OP_IMM_SH32] = ebpf::MAX_IMM_SH32,
-    [ebpf::OP_IMM_SH64] = ebpf::MAX_IMM_SH64,
+    [OP_UNUSED] = 0,
+    [OP_REG] = NUM_REGS,
+    [OP_IMM] = MAX_IMM,
+    [OP_OFF] = min((int32_t)MAX_OFF, MAX_PROG_LEN - inst_index - 1),
+    [OP_IMM_SH32] = MAX_IMM_SH32,
+    [OP_IMM_SH64] = MAX_IMM_SH64,
   };
-  return max_val[EBPF_OPTYPE(_opcode, op_index)];
+  return max_val[OPTYPE(_opcode, op_index)];
 }
 
-void ebpf_inst::make_insts(vector<inst*> &insts, const vector<inst*> &other) const {
+void inst_t::make_insts(vector<inst*> &insts, const vector<inst*> &other) const {
   int num_inst = insts.size();
-  ebpf_inst* new_insts = new ebpf_inst[num_inst];
+  inst_t* new_insts = new inst_t[num_inst];
   for (int i = 0; i < num_inst; i++) {
     new_insts[i] = *other[i];
   }
@@ -95,9 +90,9 @@ void ebpf_inst::make_insts(vector<inst*> &insts, const vector<inst*> &other) con
   }
 }
 
-void ebpf_inst::make_insts(vector<inst*> &insts, const inst* instruction) const {
+void inst_t::make_insts(vector<inst*> &insts, const inst* instruction) const {
   int num_inst = insts.size();
-  ebpf_inst* new_insts = new ebpf_inst[num_inst];
+  inst_t* new_insts = new inst_t[num_inst];
   for (int i = 0; i < num_inst; i++) {
     new_insts[i] = instruction[i];
   }
@@ -106,11 +101,11 @@ void ebpf_inst::make_insts(vector<inst*> &insts, const inst* instruction) const 
   }
 }
 
-void ebpf_inst::clear_insts() {
+void inst_t::clear_insts() {
   delete []this;
 }
 
-int ebpf_inst::get_jmp_dis() const {
+int inst_t::get_jmp_dis() const {
   switch (get_opcode_type()) {
     case (OP_UNCOND_JMP): return UNCOND_OFFVAL16(*this);
     case (OP_COND_JMP): return COND_OFFVAL16(*this);
@@ -118,43 +113,43 @@ int ebpf_inst::get_jmp_dis() const {
   }
 }
 
-void ebpf_inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
-  jmp_set.insert(ebpf::JA);
-  jmp_set.insert(ebpf::JEQXC);
-  jmp_set.insert(ebpf::JEQXY);
-  jmp_set.insert(ebpf::JGTXC);
-  jmp_set.insert(ebpf::JGTXY);
-  jmp_set.insert(ebpf::JSGTXC);
-  jmp_set.insert(ebpf::JSGTXY);
+void inst_t::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
+  jmp_set.insert(JA);
+  jmp_set.insert(JEQXC);
+  jmp_set.insert(JEQXY);
+  jmp_set.insert(JGTXC);
+  jmp_set.insert(JGTXY);
+  jmp_set.insert(JSGTXC);
+  jmp_set.insert(JSGTXY);
 }
 
-int ebpf_inst::inst_output_opcode_type() const {
+int inst_t::inst_output_opcode_type() const {
   switch (_opcode) {
-    case ebpf::EXIT: return RET_X;
+    case EXIT: return RET_X;
     default: /* cout << "Error: opcode is not EXIT" << endl; */ return RET_X;
   }
 }
 
-int ebpf_inst::inst_output() const {
+int inst_t::inst_output() const {
   switch (_opcode) {
-    case ebpf::EXIT: return 0;
+    case EXIT: return 0;
     default: /* cout << "Error: opcode is not EXIT" << endl; */ return 0;
   }
 }
 
-bool ebpf_inst::is_real_inst() const {
-  if (_opcode == ebpf::NOP) return false;
+bool inst_t::is_real_inst() const {
+  if (_opcode == NOP) return false;
   return true;
 }
 
-void ebpf_inst::set_as_nop_inst() {
-  _opcode = ebpf::NOP;
+void inst_t::set_as_nop_inst() {
+  _opcode = NOP;
   _args[0] = 0;
   _args[1] = 0;
   _args[2] = 0;
 }
 
-int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int64_t input) const {
+int64_t inst_t::interpret(const vector<inst*> &insts, prog_state &ps, int64_t input) const {
 // type: int64_t
 #define DST ps.regs[DSTREG(*insts[insn])]
 #define SRC ps.regs[SRCREG(*insts[insn])]
@@ -197,45 +192,45 @@ int64_t ebpf_inst::interpret(const vector<inst*> &insts, prog_state &ps, int64_t
   ps.clear();
   ps.regs[1] = input;
 
-  static void *jumptable[ebpf::NUM_INSTR] = {
-    [ebpf::NOP]      = && INSN_NOP,
-    [ebpf::ADD64XC]  = && INSN_ADD64XC,
-    [ebpf::ADD64XY]  = && INSN_ADD64XY,
-    [ebpf::LSH64XC]  = && INSN_LSH64XC,
-    [ebpf::LSH64XY]  = && INSN_LSH64XY,
-    [ebpf::RSH64XC]  = && INSN_RSH64XC,
-    [ebpf::RSH64XY]  = && INSN_RSH64XY,
-    [ebpf::MOV64XC]  = && INSN_MOV64XC,
-    [ebpf::MOV64XY]  = && INSN_MOV64XY,
-    [ebpf::ARSH64XC] = && INSN_ARSH64XC,
-    [ebpf::ARSH64XY] = && INSN_ARSH64XY,
+  static void *jumptable[NUM_INSTR] = {
+    [NOP]      = && INSN_NOP,
+    [ADD64XC]  = && INSN_ADD64XC,
+    [ADD64XY]  = && INSN_ADD64XY,
+    [LSH64XC]  = && INSN_LSH64XC,
+    [LSH64XY]  = && INSN_LSH64XY,
+    [RSH64XC]  = && INSN_RSH64XC,
+    [RSH64XY]  = && INSN_RSH64XY,
+    [MOV64XC]  = && INSN_MOV64XC,
+    [MOV64XY]  = && INSN_MOV64XY,
+    [ARSH64XC] = && INSN_ARSH64XC,
+    [ARSH64XY] = && INSN_ARSH64XY,
 
-    [ebpf::ADD32XC]  = && INSN_ADD32XC,
-    [ebpf::ADD32XY]  = && INSN_ADD32XY,
-    [ebpf::LSH32XC]  = && INSN_LSH32XC,
-    [ebpf::LSH32XY]  = && INSN_LSH32XY,
-    [ebpf::RSH32XC]  = && INSN_RSH32XC,
-    [ebpf::RSH32XY]  = && INSN_RSH32XY,
-    [ebpf::MOV32XC]  = && INSN_MOV32XC,
-    [ebpf::MOV32XY]  = && INSN_MOV32XY,
-    [ebpf::ARSH32XC] = && INSN_ARSH32XC,
-    [ebpf::ARSH32XY] = && INSN_ARSH32XY,
+    [ADD32XC]  = && INSN_ADD32XC,
+    [ADD32XY]  = && INSN_ADD32XY,
+    [LSH32XC]  = && INSN_LSH32XC,
+    [LSH32XY]  = && INSN_LSH32XY,
+    [RSH32XC]  = && INSN_RSH32XC,
+    [RSH32XY]  = && INSN_RSH32XY,
+    [MOV32XC]  = && INSN_MOV32XC,
+    [MOV32XY]  = && INSN_MOV32XY,
+    [ARSH32XC] = && INSN_ARSH32XC,
+    [ARSH32XY] = && INSN_ARSH32XY,
 
-    [ebpf::LE16]     = && INSN_LE16,
-    [ebpf::LE32]     = && INSN_LE32,
-    [ebpf::LE64]     = && INSN_LE64,
-    [ebpf::BE16]     = && INSN_BE16,
-    [ebpf::BE32]     = && INSN_BE32,
-    [ebpf::BE64]     = && INSN_BE64,
+    [LE16]     = && INSN_LE16,
+    [LE32]     = && INSN_LE32,
+    [LE64]     = && INSN_LE64,
+    [BE16]     = && INSN_BE16,
+    [BE32]     = && INSN_BE32,
+    [BE64]     = && INSN_BE64,
 
-    [ebpf::JA]       = && INSN_JA,
-    [ebpf::JEQXC]    = && INSN_JEQXC,
-    [ebpf::JEQXY]    = && INSN_JEQXY,
-    [ebpf::JGTXC]    = && INSN_JGTXC,
-    [ebpf::JGTXY]    = && INSN_JGTXY,
-    [ebpf::JSGTXC]   = && INSN_JSGTXC,
-    [ebpf::JSGTXY]   = && INSN_JSGTXY,
-    [ebpf::EXIT]     = && INSN_EXIT,
+    [JA]       = && INSN_JA,
+    [JEQXC]    = && INSN_JEQXC,
+    [JEQXY]    = && INSN_JEQXY,
+    [JGTXC]    = && INSN_JGTXC,
+    [JGTXY]    = && INSN_JGTXY,
+    [JSGTXC]   = && INSN_JSGTXC,
+    [JSGTXY]   = && INSN_JSGTXY,
+    [EXIT]     = && INSN_EXIT,
   };
 
 #define CONT {                                                     \
@@ -312,7 +307,7 @@ out:
 #define CURSRC_L6 (CURSRC & to_expr((int64_t)0x3f))
 #define CURSRC_L5 (CURSRC & to_expr((int64_t)0x1f))
 
-z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
+z3::expr inst_t::smt_inst(smt_var& sv) const {
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
   // If opcode is valid, then define curDst, curSrc, imm2 and newDst
   if (get_opcode_type() != OP_OTHERS) return string_to_expr("false");
@@ -331,37 +326,37 @@ z3::expr ebpf_inst::smt_inst(smt_var& sv) const {
   int64_t imm2 = (int64_t)IMM2VAL32(*this);
 
   switch (_opcode) {
-    case ebpf::ADD64XC: return predicate_add(CURDST, IMM2, NEWDST);
-    case ebpf::ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
-    case ebpf::LSH64XC: return predicate_lsh(CURDST, IMM2, NEWDST);
-    case ebpf::LSH64XY: return predicate_lsh(CURDST, CURSRC_L6, NEWDST);
-    case ebpf::RSH64XC: return predicate_rsh(CURDST, IMM2, NEWDST);
-    case ebpf::RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
-    case ebpf::MOV64XC: return predicate_mov(IMM2, NEWDST);
-    case ebpf::MOV64XY: return predicate_mov(CURSRC, NEWDST);
-    case ebpf::ARSH64XC: return predicate_arsh(CURDST, IMM2, NEWDST);
-    case ebpf::ARSH64XY: return predicate_arsh(CURDST, CURSRC_L6, NEWDST);
-    case ebpf::ADD32XC: return predicate_add32(CURDST, IMM2, NEWDST);
-    case ebpf::ADD32XY: return predicate_add32(CURDST, CURSRC, NEWDST);
-    case ebpf::LSH32XC: return predicate_lsh32(CURDST, IMM2, NEWDST);
-    case ebpf::LSH32XY: return predicate_lsh32(CURDST, CURSRC_L5, NEWDST);
-    case ebpf::RSH32XC: return predicate_rsh32(CURDST, IMM2, NEWDST);
-    case ebpf::RSH32XY: return predicate_rsh32(CURDST, CURSRC_L5, NEWDST);
-    case ebpf::MOV32XC: return predicate_mov32(IMM2, NEWDST);
-    case ebpf::MOV32XY: return predicate_mov32(CURSRC, NEWDST);
-    case ebpf::ARSH32XC: return predicate_arsh32(CURDST, IMM2, NEWDST);
-    case ebpf::ARSH32XY: return predicate_arsh32(CURDST, CURSRC_L5, NEWDST);
-    case ebpf::LE16: return predicate_le16(CURDST, NEWDST);
-    case ebpf::LE32: return predicate_le32(CURDST, NEWDST);
-    case ebpf::LE64: return predicate_le64(CURDST, NEWDST);
-    case ebpf::BE16: return predicate_be16(CURDST, NEWDST);
-    case ebpf::BE32: return predicate_be32(CURDST, NEWDST);
-    case ebpf::BE64: return predicate_be64(CURDST, NEWDST);
+    case ADD64XC: return predicate_add(CURDST, IMM2, NEWDST);
+    case ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
+    case LSH64XC: return predicate_lsh(CURDST, IMM2, NEWDST);
+    case LSH64XY: return predicate_lsh(CURDST, CURSRC_L6, NEWDST);
+    case RSH64XC: return predicate_rsh(CURDST, IMM2, NEWDST);
+    case RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
+    case MOV64XC: return predicate_mov(IMM2, NEWDST);
+    case MOV64XY: return predicate_mov(CURSRC, NEWDST);
+    case ARSH64XC: return predicate_arsh(CURDST, IMM2, NEWDST);
+    case ARSH64XY: return predicate_arsh(CURDST, CURSRC_L6, NEWDST);
+    case ADD32XC: return predicate_add32(CURDST, IMM2, NEWDST);
+    case ADD32XY: return predicate_add32(CURDST, CURSRC, NEWDST);
+    case LSH32XC: return predicate_lsh32(CURDST, IMM2, NEWDST);
+    case LSH32XY: return predicate_lsh32(CURDST, CURSRC_L5, NEWDST);
+    case RSH32XC: return predicate_rsh32(CURDST, IMM2, NEWDST);
+    case RSH32XY: return predicate_rsh32(CURDST, CURSRC_L5, NEWDST);
+    case MOV32XC: return predicate_mov32(IMM2, NEWDST);
+    case MOV32XY: return predicate_mov32(CURSRC, NEWDST);
+    case ARSH32XC: return predicate_arsh32(CURDST, IMM2, NEWDST);
+    case ARSH32XY: return predicate_arsh32(CURDST, CURSRC_L5, NEWDST);
+    case LE16: return predicate_le16(CURDST, NEWDST);
+    case LE32: return predicate_le32(CURDST, NEWDST);
+    case LE64: return predicate_le64(CURDST, NEWDST);
+    case BE16: return predicate_be16(CURDST, NEWDST);
+    case BE32: return predicate_be32(CURDST, NEWDST);
+    case BE64: return predicate_be64(CURDST, NEWDST);
     default: return string_to_expr("false");
   }
 }
 
-z3::expr ebpf_inst::smt_inst_jmp(smt_var& sv) const {
+z3::expr inst_t::smt_inst_jmp(smt_var& sv) const {
   // If opcode is valid, then define curDst, curSrc, imm2
   if (get_opcode_type() != OP_COND_JMP) return string_to_expr("false");
   z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
@@ -372,12 +367,12 @@ z3::expr ebpf_inst::smt_inst_jmp(smt_var& sv) const {
   int64_t imm2 = (int64_t)IMM2VAL32(*this);
 
   switch (_opcode) {
-    case ebpf::JEQXC: return (CURDST == IMM2);
-    case ebpf::JEQXY: return (CURDST == CURSRC);
-    case ebpf::JGTXC: return (ugt(CURDST, IMM2));
-    case ebpf::JGTXY: return (ugt(CURDST, CURSRC));
-    case ebpf::JSGTXC: return (CURDST > IMM2);
-    case ebpf::JSGTXY: return (CURDST > CURSRC);
+    case JEQXC: return (CURDST == IMM2);
+    case JEQXY: return (CURDST == CURSRC);
+    case JGTXC: return (ugt(CURDST, IMM2));
+    case JGTXY: return (ugt(CURDST, CURSRC));
+    case JSGTXC: return (CURDST > IMM2);
+    case JSGTXY: return (CURDST > CURSRC);
     default: return string_to_expr("false");
   }
 }
