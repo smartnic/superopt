@@ -16,7 +16,7 @@ using namespace std;
 #define UNCOND_OFFVAL16(inst_var) (int16_t)(UNCOND_OFFVAL(inst_var))
 #define COND_OFFVAL16(inst_var) (int16_t)(COND_OFFVAL(inst_var))
 
-string inst_t::opcode_to_str(int opcode) const {
+string inst::opcode_to_str(int opcode) const {
   switch (opcode) {
     case NOP: return "nop";
     case ADD64XC: return "addxc";
@@ -57,7 +57,22 @@ string inst_t::opcode_to_str(int opcode) const {
   }
 }
 
-inst_t& inst_t::operator=(const inst &rhs) {
+void inst::print() const {
+  cout << opcode_to_str(_opcode);
+  for (int i = 0; i < get_num_operands(); i++) {
+    cout << " " << _args[i];
+  }
+  cout << endl;
+}
+
+vector<int> inst::get_reg_list() const {
+  vector<int> reg_list;
+  for (int i = 0; i < get_insn_num_regs(); i++)
+    reg_list.push_back(_args[i]);
+  return reg_list;
+}
+
+inst& inst::operator=(const inst &rhs) {
   _opcode = rhs._opcode;
   _args[0] = rhs._args[0];
   _args[1] = rhs._args[1];
@@ -66,7 +81,7 @@ inst_t& inst_t::operator=(const inst &rhs) {
 }
 
 // For jmp opcode, it can only jump forward
-int32_t inst_t::get_max_operand_val(int op_index, int inst_index) const {
+int32_t inst::get_max_operand_val(int op_index, int inst_index) const {
   // max valufor each operand type
   int32_t max_val[6] = {
     [OP_UNUSED] = 0,
@@ -79,33 +94,7 @@ int32_t inst_t::get_max_operand_val(int op_index, int inst_index) const {
   return max_val[OPTYPE(_opcode, op_index)];
 }
 
-void inst_t::make_insts(vector<inst*> &insts, const vector<inst*> &other) const {
-  int num_inst = insts.size();
-  inst_t* new_insts = new inst_t[num_inst];
-  for (int i = 0; i < num_inst; i++) {
-    new_insts[i] = *other[i];
-  }
-  for (int i = 0; i < num_inst; i++) {
-    insts[i] = &new_insts[i];
-  }
-}
-
-void inst_t::make_insts(vector<inst*> &insts, const inst* instruction) const {
-  int num_inst = insts.size();
-  inst_t* new_insts = new inst_t[num_inst];
-  for (int i = 0; i < num_inst; i++) {
-    new_insts[i] = instruction[i];
-  }
-  for (int i = 0; i < num_inst; i++) {
-    insts[i] = &new_insts[i];
-  }
-}
-
-void inst_t::clear_insts() {
-  delete []this;
-}
-
-int inst_t::get_jmp_dis() const {
+int inst::get_jmp_dis() const {
   switch (get_opcode_type()) {
     case (OP_UNCOND_JMP): return UNCOND_OFFVAL16(*this);
     case (OP_COND_JMP): return COND_OFFVAL16(*this);
@@ -113,7 +102,7 @@ int inst_t::get_jmp_dis() const {
   }
 }
 
-void inst_t::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
+void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
   jmp_set.insert(JA);
   jmp_set.insert(JEQXC);
   jmp_set.insert(JEQXY);
@@ -123,42 +112,121 @@ void inst_t::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
   jmp_set.insert(JSGTXY);
 }
 
-int inst_t::inst_output_opcode_type() const {
+int inst::inst_output_opcode_type() const {
   switch (_opcode) {
     case EXIT: return RET_X;
     default: /* cout << "Error: opcode is not EXIT" << endl; */ return RET_X;
   }
 }
 
-int inst_t::inst_output() const {
+int inst::inst_output() const {
   switch (_opcode) {
     case EXIT: return 0;
     default: /* cout << "Error: opcode is not EXIT" << endl; */ return 0;
   }
 }
 
-bool inst_t::is_real_inst() const {
+bool inst::is_real_inst() const {
   if (_opcode == NOP) return false;
   return true;
 }
 
-void inst_t::set_as_nop_inst() {
+void inst::set_as_nop_inst() {
   _opcode = NOP;
   _args[0] = 0;
   _args[1] = 0;
   _args[2] = 0;
 }
 
-int64_t inst_t::interpret(const vector<inst*> &insts, prog_state &ps, int64_t input) const {
+// z3 64-bit bv
+#define NEWDST newDst
+#define CURDST curDst
+#define CURSRC curSrc
+#define IMM2 to_expr(imm2)
+#define CURSRC_L6 (CURSRC & to_expr((int64_t)0x3f))
+#define CURSRC_L5 (CURSRC & to_expr((int64_t)0x1f))
+
+z3::expr inst::smt_inst(smt_var& sv) const {
+  // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
+  // If opcode is valid, then define curDst, curSrc, imm2 and newDst
+  if (get_opcode_type() != OP_OTHERS) return string_to_expr("false");
+  // Get curDst, curSrc, imm2 and newDst at the begining to avoid using switch case to
+  // get some of these values for different opcodes. So need to check whether the value is valid.
+  // E.g., for curSrc, the range of register is [0, get_num_regs()], for opcode ends up with XC,
+  // actually the value is an immediate number whose value may be out of register's range.
+  // Should get curDst and curSrc before updating curDst (curSrc may be the same reg as curDst)
+  z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
+  z3::expr curSrc = string_to_expr("false");
+  // check whether the value is within the range of regisers, or function get_cur_reg_var() will raise exception
+  if (SRCREG(*this) < get_num_regs() && SRCREG(*this) >= 0) {
+    curSrc = sv.get_cur_reg_var(SRCREG(*this));
+  }
+  z3::expr newDst = sv.update_reg_var(DSTREG(*this));
+  int64_t imm2 = (int64_t)IMM2VAL32(*this);
+
+  switch (_opcode) {
+    case ADD64XC: return predicate_add(CURDST, IMM2, NEWDST);
+    case ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
+    case LSH64XC: return predicate_lsh(CURDST, IMM2, NEWDST);
+    case LSH64XY: return predicate_lsh(CURDST, CURSRC_L6, NEWDST);
+    case RSH64XC: return predicate_rsh(CURDST, IMM2, NEWDST);
+    case RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
+    case MOV64XC: return predicate_mov(IMM2, NEWDST);
+    case MOV64XY: return predicate_mov(CURSRC, NEWDST);
+    case ARSH64XC: return predicate_arsh(CURDST, IMM2, NEWDST);
+    case ARSH64XY: return predicate_arsh(CURDST, CURSRC_L6, NEWDST);
+    case ADD32XC: return predicate_add32(CURDST, IMM2, NEWDST);
+    case ADD32XY: return predicate_add32(CURDST, CURSRC, NEWDST);
+    case LSH32XC: return predicate_lsh32(CURDST, IMM2, NEWDST);
+    case LSH32XY: return predicate_lsh32(CURDST, CURSRC_L5, NEWDST);
+    case RSH32XC: return predicate_rsh32(CURDST, IMM2, NEWDST);
+    case RSH32XY: return predicate_rsh32(CURDST, CURSRC_L5, NEWDST);
+    case MOV32XC: return predicate_mov32(IMM2, NEWDST);
+    case MOV32XY: return predicate_mov32(CURSRC, NEWDST);
+    case ARSH32XC: return predicate_arsh32(CURDST, IMM2, NEWDST);
+    case ARSH32XY: return predicate_arsh32(CURDST, CURSRC_L5, NEWDST);
+    case LE16: return predicate_le16(CURDST, NEWDST);
+    case LE32: return predicate_le32(CURDST, NEWDST);
+    case LE64: return predicate_le64(CURDST, NEWDST);
+    case BE16: return predicate_be16(CURDST, NEWDST);
+    case BE32: return predicate_be32(CURDST, NEWDST);
+    case BE64: return predicate_be64(CURDST, NEWDST);
+    default: return string_to_expr("false");
+  }
+}
+
+z3::expr inst::smt_inst_jmp(smt_var& sv) const {
+  // If opcode is valid, then define curDst, curSrc, imm2
+  if (get_opcode_type() != OP_COND_JMP) return string_to_expr("false");
+  z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
+  z3::expr curSrc = string_to_expr("false");
+  if (SRCREG(*this) < get_num_regs() && SRCREG(*this) >= 0) {
+    curSrc = sv.get_cur_reg_var(SRCREG(*this));
+  }
+  int64_t imm2 = (int64_t)IMM2VAL32(*this);
+
+  switch (_opcode) {
+    case JEQXC: return (CURDST == IMM2);
+    case JEQXY: return (CURDST == CURSRC);
+    case JGTXC: return (ugt(CURDST, IMM2));
+    case JGTXY: return (ugt(CURDST, CURSRC));
+    case JSGTXC: return (CURDST > IMM2);
+    case JSGTXY: return (CURDST > CURSRC);
+    default: return string_to_expr("false");
+  }
+}
+
+int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
+#undef IMM2
 // type: int64_t
-#define DST ps.regs[DSTREG(*insts[insn])]
-#define SRC ps.regs[SRCREG(*insts[insn])]
-#define IMM1 (int64_t)IMM1VAL32(*insts[insn])
-#define IMM2 (int64_t)IMM2VAL32(*insts[insn])
+#define DST ps.regs[DSTREG(*insn)]
+#define SRC ps.regs[SRCREG(*insn)]
+#define IMM1 (int64_t)IMM1VAL32(*insn)
+#define IMM2 (int64_t)IMM2VAL32(*insn)
 #define SRC_L6 L6(SRC)
 #define SRC_L5 L5(SRC)
-#define UNCOND_OFF (int64_t)UNCOND_OFFVAL16(*insts[insn])
-#define COND_OFF (int64_t)COND_OFFVAL16(*insts[insn])
+#define UNCOND_OFF (int64_t)UNCOND_OFFVAL16(*insn)
+#define COND_OFF (int64_t)COND_OFFVAL16(*insn)
 
 // type: uint64_t
 #define UDST (uint64_t)DST
@@ -187,8 +255,7 @@ int64_t inst_t::interpret(const vector<inst*> &insts, prog_state &ps, int64_t in
       insn += COND_OFF;                                            \
   CONT;
 
-  int insn = 0;
-  int length = insts.size();
+  inst* insn = program;
   ps.clear();
   ps.regs[1] = input;
 
@@ -235,13 +302,13 @@ int64_t inst_t::interpret(const vector<inst*> &insts, prog_state &ps, int64_t in
 
 #define CONT {                                                     \
       insn++;                                                      \
-      if (insn < length) {                                         \
-        goto *jumptable[insts[insn]->_opcode];                     \
+      if (insn < program + length) {                               \
+        goto *jumptable[insn->_opcode];                            \
       } else goto out;                                             \
   }
 
 select_insn:
-  goto *jumptable[insts[insn]->_opcode];
+  goto *jumptable[insn->_opcode];
 
 INSN_NOP:
   CONT;
@@ -296,83 +363,4 @@ error_label:
 out:
   //cout << "Error: program terminated without RET; returning R0" << endl;
   return ps.regs[0]; /* return default R0 value */
-}
-
-#undef IMM2
-// z3 64-bit bv
-#define NEWDST newDst
-#define CURDST curDst
-#define CURSRC curSrc
-#define IMM2 to_expr(imm2)
-#define CURSRC_L6 (CURSRC & to_expr((int64_t)0x3f))
-#define CURSRC_L5 (CURSRC & to_expr((int64_t)0x1f))
-
-z3::expr inst_t::smt_inst(smt_var& sv) const {
-  // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
-  // If opcode is valid, then define curDst, curSrc, imm2 and newDst
-  if (get_opcode_type() != OP_OTHERS) return string_to_expr("false");
-  // Get curDst, curSrc, imm2 and newDst at the begining to avoid using switch case to
-  // get some of these values for different opcodes. So need to check whether the value is valid.
-  // E.g., for curSrc, the range of register is [0, get_num_regs()], for opcode ends up with XC,
-  // actually the value is an immediate number whose value may be out of register's range.
-  // Should get curDst and curSrc before updating curDst (curSrc may be the same reg as curDst)
-  z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
-  z3::expr curSrc = string_to_expr("false");
-  // check whether the value is within the range of regisers, or function get_cur_reg_var() will raise exception
-  if (SRCREG(*this) < get_num_regs() && SRCREG(*this) >= 0) {
-    curSrc = sv.get_cur_reg_var(SRCREG(*this));
-  }
-  z3::expr newDst = sv.update_reg_var(DSTREG(*this));
-  int64_t imm2 = (int64_t)IMM2VAL32(*this);
-
-  switch (_opcode) {
-    case ADD64XC: return predicate_add(CURDST, IMM2, NEWDST);
-    case ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
-    case LSH64XC: return predicate_lsh(CURDST, IMM2, NEWDST);
-    case LSH64XY: return predicate_lsh(CURDST, CURSRC_L6, NEWDST);
-    case RSH64XC: return predicate_rsh(CURDST, IMM2, NEWDST);
-    case RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
-    case MOV64XC: return predicate_mov(IMM2, NEWDST);
-    case MOV64XY: return predicate_mov(CURSRC, NEWDST);
-    case ARSH64XC: return predicate_arsh(CURDST, IMM2, NEWDST);
-    case ARSH64XY: return predicate_arsh(CURDST, CURSRC_L6, NEWDST);
-    case ADD32XC: return predicate_add32(CURDST, IMM2, NEWDST);
-    case ADD32XY: return predicate_add32(CURDST, CURSRC, NEWDST);
-    case LSH32XC: return predicate_lsh32(CURDST, IMM2, NEWDST);
-    case LSH32XY: return predicate_lsh32(CURDST, CURSRC_L5, NEWDST);
-    case RSH32XC: return predicate_rsh32(CURDST, IMM2, NEWDST);
-    case RSH32XY: return predicate_rsh32(CURDST, CURSRC_L5, NEWDST);
-    case MOV32XC: return predicate_mov32(IMM2, NEWDST);
-    case MOV32XY: return predicate_mov32(CURSRC, NEWDST);
-    case ARSH32XC: return predicate_arsh32(CURDST, IMM2, NEWDST);
-    case ARSH32XY: return predicate_arsh32(CURDST, CURSRC_L5, NEWDST);
-    case LE16: return predicate_le16(CURDST, NEWDST);
-    case LE32: return predicate_le32(CURDST, NEWDST);
-    case LE64: return predicate_le64(CURDST, NEWDST);
-    case BE16: return predicate_be16(CURDST, NEWDST);
-    case BE32: return predicate_be32(CURDST, NEWDST);
-    case BE64: return predicate_be64(CURDST, NEWDST);
-    default: return string_to_expr("false");
-  }
-}
-
-z3::expr inst_t::smt_inst_jmp(smt_var& sv) const {
-  // If opcode is valid, then define curDst, curSrc, imm2
-  if (get_opcode_type() != OP_COND_JMP) return string_to_expr("false");
-  z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
-  z3::expr curSrc = string_to_expr("false");
-  if (SRCREG(*this) < get_num_regs() && SRCREG(*this) >= 0) {
-    curSrc = sv.get_cur_reg_var(SRCREG(*this));
-  }
-  int64_t imm2 = (int64_t)IMM2VAL32(*this);
-
-  switch (_opcode) {
-    case JEQXC: return (CURDST == IMM2);
-    case JEQXY: return (CURDST == CURSRC);
-    case JGTXC: return (ugt(CURDST, IMM2));
-    case JGTXY: return (ugt(CURDST, CURSRC));
-    case JSGTXC: return (CURDST > IMM2);
-    case JSGTXY: return (CURDST > CURSRC);
-    default: return string_to_expr("false");
-  }
 }

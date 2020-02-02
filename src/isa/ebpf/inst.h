@@ -259,26 +259,25 @@ static constexpr int optable[NUM_INSTR] = {
 #undef JMP_OPS_REG
 #undef UNUSED_OPS
 
-class prog_state_t: public prog_state {
+class prog_state: public prog_state_base {
  public:
-  prog_state_t() {regs.resize(NUM_REGS, 0);}
+  prog_state() {regs.resize(NUM_REGS, 0);}
 };
 
-class inst_t: public inst {
+class inst: public inst_base {
  public:
-  inst_t(int opcode = NOP, int32_t arg1 = 0, int32_t arg2 = 0, int32_t arg3 = 0) {
+  inst(int opcode = NOP, int32_t arg1 = 0, int32_t arg2 = 0, int32_t arg3 = 0) {
     _args.resize(MAX_OP_LEN);
     _opcode  = opcode;
     _args[0] = arg1;
     _args[1] = arg2;
     _args[2] = arg3;
   }
-  inst_t& operator=(const inst &rhs);
+  inst& operator=(const inst &rhs);
   string opcode_to_str(int) const;
+  void print() const;
+  vector<int> get_reg_list() const;
   int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
-  void make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const;
-  void make_insts(vector<inst*> &instptr_list, const inst* instruction) const;
-  void clear_insts();
   int get_jmp_dis() const;
   void insert_jmp_opcodes(unordered_set<int>& jmp_set) const;
   int inst_output_opcode_type() const;
@@ -295,8 +294,9 @@ class inst_t: public inst {
   int get_num_operands() const {return num_operands[_opcode];}
   int get_insn_num_regs() const {return insn_num_regs[_opcode];}
   int get_opcode_type() const {return opcode_type[_opcode];}
-  int64_t interpret(const vector<inst*> &instptr_list, prog_state &ps, int64_t input = 0) const;
   // smt
   z3::expr smt_inst(smt_var& sv) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;
 };
+
+int64_t interpret(inst* program, int length, prog_state &ps, int64_t input = 0);
