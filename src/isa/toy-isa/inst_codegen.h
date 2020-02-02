@@ -8,17 +8,17 @@ using namespace std;
 
 /* APIs exposed to the externals start */
 // return (out = in)
-inline int toy_isa_compute_mov(int in, int out = 0);
+inline int compute_mov(int in, int out = 0);
 // return (out = in1 + in2)
-inline int toy_isa_compute_add(int in1, int in2, int out = 0);
+inline int compute_add(int in1, int in2, int out = 0);
 // return (out = max(in1, in2))
-inline int toy_isa_compute_max(int in1, int in2, int out = 0);
+inline int compute_max(int in1, int in2, int out = 0);
 // return (out == in)
-inline z3::expr toy_isa_compute_mov(z3::expr in, z3::expr out);
+inline z3::expr compute_mov(z3::expr in, z3::expr out);
 // return (out == in1 + in2)
-inline z3::expr toy_isa_compute_add(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr compute_add(z3::expr in1, z3::expr in2, z3::expr out);
 // return (out == max(in1, in2))
-inline z3::expr toy_isa_compute_max(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr compute_max(z3::expr in1, z3::expr in2, z3::expr out);
 /* APIs exposed to the externals end */
 
 /* Inputs in, out must be side-effect-free expressions. */
@@ -57,14 +57,14 @@ inline z3::expr toy_isa_compute_max(z3::expr in1, z3::expr in2, z3::expr out);
 // Functions for interpreter start
 #undef COMPUTE_UNARY
 #define COMPUTE_UNARY(func_name, operation, para1_t, para2_t, ret_t)                \
-inline ret_t toy_isa_compute_##func_name(para1_t in, para2_t out) {                 \
+inline ret_t compute_##func_name(para1_t in, para2_t out) {                         \
   operation(in, out);                                                               \
   return out;                                                                       \
 }
 
 #undef COMPUTE_BINARY
 #define COMPUTE_BINARY(func_name, operation, para1_t, para2_t, para3_t, ret_t)      \
-inline ret_t toy_isa_compute_##func_name(para1_t in1, para2_t in2, para3_t out) {   \
+inline ret_t compute_##func_name(para1_t in1, para2_t in2, para3_t out) {           \
   operation(in1, in2, out);                                                         \
   return out;                                                                       \
 }
@@ -90,12 +90,12 @@ COMPUTE_BINARY(max, MAX_EXPR, int, int, int, int)
 // Functions for validator start
 #undef PREDICATE_UNARY
 #define PREDICATE_UNARY(func_name, operation)                                              \
-inline z3::expr toy_isa_predicate_##func_name(z3::expr in, z3::expr out) {                 \
+inline z3::expr predicate_##func_name(z3::expr in, z3::expr out) {                         \
   return operation(in, out);                                                               \
 }
 #undef PREDICATE_BINARY
 #define PREDICATE_BINARY(func_name, operation)                                             \
-inline z3::expr toy_isa_predicate_##func_name(z3::expr in1, z3::expr in2, z3::expr out) {  \
+inline z3::expr predicate_##func_name(z3::expr in1, z3::expr in2, z3::expr out) {          \
   return operation(in1, in2, out);                                                         \
 }
 

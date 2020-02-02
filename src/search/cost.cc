@@ -13,7 +13,7 @@ cost::~cost() {}
 
 prog_state* cost::make_prog_state() {
 #if ISA_TOY_ISA
-  return (new toy_isa_prog_state);
+  return (new prog_state_t);
 #elif ISA_EBPF
   return (new ebpf_prog_state);
 #else

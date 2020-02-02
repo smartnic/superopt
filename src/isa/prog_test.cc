@@ -5,41 +5,41 @@
 
 using namespace std;
 
-toy_isa_inst instructions[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
-                                toy_isa_inst(toy_isa::ADDXY, 0, 2),  /* add r0, r2 */
-                                toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
-                                toy_isa_inst(toy_isa::JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                                toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
-                                toy_isa_inst(toy_isa::RETX, 0),      /* else ret r1 */
-                                toy_isa_inst(), /* nop */
-                               };
+inst_t instructions[7] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
+                          inst_t(ADDXY, 0, 2),  /* add r0, r2 */
+                          inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
+                          inst_t(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                          inst_t(RETX, 3),      /* ret r3 */
+                          inst_t(RETX, 0),      /* else ret r1 */
+                          inst_t(), /* nop */
+                         };
 
-toy_isa_inst instructions2[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
-                                 toy_isa_inst(toy_isa::ADDXY, 0, 2),  /* add r0, r2 */
-                                 toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
-                                 toy_isa_inst(toy_isa::JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                                 toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
-                                 toy_isa_inst(toy_isa::RETX, 0),      /* else ret r0 */
-                                 toy_isa_inst(), /* nop */
-                                };
+inst_t instructions2[7] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
+                           inst_t(ADDXY, 0, 2),  /* add r0, r2 */
+                           inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
+                           inst_t(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                           inst_t(RETX, 3),      /* ret r3 */
+                           inst_t(RETX, 0),      /* else ret r0 */
+                           inst_t(), /* nop */
+                          };
 
-toy_isa_inst instructions3[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
-                                 toy_isa_inst(toy_isa::ADDXY, 0, 2),  /* add r0, r2 */
-                                 toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
-                                 toy_isa_inst(toy_isa::JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                                 toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
-                                 toy_isa_inst(toy_isa::RETX, 2),      /* else ret r2 */
-                                 toy_isa_inst(), /* nop */
-                                };
+inst_t instructions3[7] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
+                           inst_t(ADDXY, 0, 2),  /* add r0, r2 */
+                           inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
+                           inst_t(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                           inst_t(RETX, 3),      /* ret r3 */
+                           inst_t(RETX, 2),      /* else ret r2 */
+                           inst_t(), /* nop */
+                          };
 
-toy_isa_inst instructions4[7] = {toy_isa_inst(toy_isa::NOP),
-                                 toy_isa_inst(toy_isa::RETC, 1),
-                                 toy_isa_inst(), /* nop */
-                                 toy_isa_inst(), /* nop */
-                                 toy_isa_inst(), /* nop */
-                                 toy_isa_inst(), /* nop */
-                                 toy_isa_inst(), /* nop */
-                                };
+inst_t instructions4[7] = {inst_t(NOP),
+                           inst_t(RETC, 1),
+                           inst_t(), /* nop */
+                           inst_t(), /* nop */
+                           inst_t(), /* nop */
+                           inst_t(), /* nop */
+                           inst_t(), /* nop */
+                          };
 
 int test1() {
   cout << "Test 1" << endl;
@@ -88,7 +88,7 @@ void test4() {
   prog p2(instructions2);
   prog p3(instructions3);
   prog p4(instructions4);
-  const int N = toy_isa::MAX_PROG_LEN;
+  const int N = MAX_PROG_LEN;
   print_test_res(bitset<N>(p1.to_rel_bv(p2)).to_string() == "1111111",
                  "program to_rel_bv(prog) 1");
   print_test_res(bitset<N>(p1.to_rel_bv(p3)).to_string() == "1111101",
@@ -121,7 +121,7 @@ void test5() {
   vector<int> bv;
   p1.to_abs_bv(bv);
   string str = "";
-  const int N = toy_isa::OP_NUM_BITS;
+  const int N = OP_NUM_BITS;
   for (size_t i = 0; i < bv.size(); i++) {
     str += bitset<N>(bv[i]).to_string();
   }
@@ -131,88 +131,88 @@ void test5() {
 void test6() {
   cout << endl << "Test 6 " << endl;
   // case 1: no reg used
-  toy_isa_inst insts1[7] = {toy_isa_inst(toy_isa::NOP),
-                            toy_isa_inst(),
-                            toy_isa_inst(),
-                            toy_isa_inst(),
-                            toy_isa_inst(),
-                            toy_isa_inst(),
-                            toy_isa_inst(),
-                           };
+  inst_t insts1[7] = {inst_t(NOP),
+                      inst_t(),
+                      inst_t(),
+                      inst_t(),
+                      inst_t(),
+                      inst_t(),
+                      inst_t(),
+                     };
   // case 2: do not use reg 0
-  toy_isa_inst insts2[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 15),
-                            toy_isa_inst(toy_isa::ADDXY, 2, 1),
-                            toy_isa_inst(toy_isa::ADDXY, 1, 2),
-                            toy_isa_inst(toy_isa::JMPGT, 1, 2, 1),
-                            toy_isa_inst(toy_isa::RETX, 1),
-                            toy_isa_inst(toy_isa::ADDXY, 1, 2),
-                            toy_isa_inst(toy_isa::RETC, 11),
-                           };
+  inst_t insts2[7] = {inst_t(MOVXC, 2, 15),
+                      inst_t(ADDXY, 2, 1),
+                      inst_t(ADDXY, 1, 2),
+                      inst_t(JMPGT, 1, 2, 1),
+                      inst_t(RETX, 1),
+                      inst_t(ADDXY, 1, 2),
+                      inst_t(RETC, 11),
+                     };
   // case 3: use reg 0, and other regs have been used before reg 0
-  toy_isa_inst insts3[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 15),
-                            toy_isa_inst(toy_isa::ADDXY, 2, 1),
-                            toy_isa_inst(toy_isa::ADDXY, 0, 2),
-                            toy_isa_inst(toy_isa::JMPGT, 1, 2, 1),
-                            toy_isa_inst(toy_isa::RETX, 1),
-                            toy_isa_inst(toy_isa::ADDXY, 1, 2),
-                            toy_isa_inst(toy_isa::RETC, 11),
-                           };
+  inst_t insts3[7] = {inst_t(MOVXC, 2, 15),
+                      inst_t(ADDXY, 2, 1),
+                      inst_t(ADDXY, 0, 2),
+                      inst_t(JMPGT, 1, 2, 1),
+                      inst_t(RETX, 1),
+                      inst_t(ADDXY, 1, 2),
+                      inst_t(RETC, 11),
+                     };
   // case 4: need implicit RETX 0 instruction, no reg0 usage, other regs are used
   // case 4.1: no RETs instruction: reg0 cannot be used
-  toy_isa_inst insts41[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 15),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                            };
+  inst_t insts41[7] = {inst_t(MOVXC, 2, 15),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                      };
   // case 4.2: RETs instruction with JMP: reg0 cannot be used
-  toy_isa_inst insts42[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 15),
-                             toy_isa_inst(toy_isa::JMPGT, 1, 2, 1),
-                             toy_isa_inst(toy_isa::RETC, 11),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                            };
+  inst_t insts42[7] = {inst_t(MOVXC, 2, 15),
+                       inst_t(JMPGT, 1, 2, 1),
+                       inst_t(RETC, 11),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                      };
   // case 5: already canonical
   // the canonical of insts2
-  toy_isa_inst insts5[7] = {toy_isa_inst(toy_isa::MOVXC, 0, 15),
-                            toy_isa_inst(toy_isa::ADDXY, 0, 1),
-                            toy_isa_inst(toy_isa::ADDXY, 1, 0),
-                            toy_isa_inst(toy_isa::JMPGT, 1, 0, 1),
-                            toy_isa_inst(toy_isa::RETX, 1),
-                            toy_isa_inst(toy_isa::ADDXY, 1, 0),
-                            toy_isa_inst(toy_isa::RETC, 11),
-                           };
+  inst_t insts5[7] = {inst_t(MOVXC, 0, 15),
+                      inst_t(ADDXY, 0, 1),
+                      inst_t(ADDXY, 1, 0),
+                      inst_t(JMPGT, 1, 0, 1),
+                      inst_t(RETX, 1),
+                      inst_t(ADDXY, 1, 0),
+                      inst_t(RETC, 11),
+                     };
   // the canonical of insts3
-  toy_isa_inst insts6[7] = {toy_isa_inst(toy_isa::MOVXC, 1, 15),
-                            toy_isa_inst(toy_isa::ADDXY, 1, 2),
-                            toy_isa_inst(toy_isa::ADDXY, 0, 1),
-                            toy_isa_inst(toy_isa::JMPGT, 2, 1, 1),
-                            toy_isa_inst(toy_isa::RETX, 2),
-                            toy_isa_inst(toy_isa::ADDXY, 2, 1),
-                            toy_isa_inst(toy_isa::RETC, 11),
-                           };
+  inst_t insts6[7] = {inst_t(MOVXC, 1, 15),
+                      inst_t(ADDXY, 1, 2),
+                      inst_t(ADDXY, 0, 1),
+                      inst_t(JMPGT, 2, 1, 1),
+                      inst_t(RETX, 2),
+                      inst_t(ADDXY, 2, 1),
+                      inst_t(RETC, 11),
+                     };
   // the canonical of insts40
-  toy_isa_inst insts71[7] = {toy_isa_inst(toy_isa::MOVXC, 1, 15),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                            };
+  inst_t insts71[7] = {inst_t(MOVXC, 1, 15),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                      };
   // the canonical of insts41
-  toy_isa_inst insts72[7] = {toy_isa_inst(toy_isa::MOVXC, 1, 15),
-                             toy_isa_inst(toy_isa::JMPGT, 2, 1, 1),
-                             toy_isa_inst(toy_isa::RETC, 11),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                             toy_isa_inst(),
-                            };
+  inst_t insts72[7] = {inst_t(MOVXC, 1, 15),
+                       inst_t(JMPGT, 2, 1, 1),
+                       inst_t(RETC, 11),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                       inst_t(),
+                      };
   // test case 1
   prog p1(insts1);
   prog p2(insts1);

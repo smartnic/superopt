@@ -73,7 +73,7 @@ void time_validator_get_orig_output() {
 }
 
 void time_interpret() {
-  toy_isa_prog_state ps;
+  prog_state_t ps;
   prog p(bm0);
   time_measure(p.interpret(ps, i), 10000,
                "interpret: ");

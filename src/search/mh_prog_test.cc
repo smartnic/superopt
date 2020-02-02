@@ -9,14 +9,14 @@
 using namespace std;
 
 #define N 7
-toy_isa_inst instructions[N] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
-                                toy_isa_inst(toy_isa::ADDXY, 0, 2),  /* add r0, r2 */
-                                toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
-                                toy_isa_inst(toy_isa::JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                                toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
-                                toy_isa_inst(toy_isa::RETX, 0),      /* else ret r0 */
-                                toy_isa_inst(),  /* control never reaches here */
-                               };
+inst_t instructions[N] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
+                          inst_t(ADDXY, 0, 2),  /* add r0, r2 */
+                          inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
+                          inst_t(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                          inst_t(RETX, 3),      /* ret r3 */
+                          inst_t(RETX, 0),      /* else ret r0 */
+                          inst_t(),  /* control never reaches here */
+                         };
 
 vector<reg_t> inputs;
 
