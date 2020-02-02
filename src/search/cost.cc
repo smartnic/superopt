@@ -11,16 +11,6 @@ cost::cost() {}
 
 cost::~cost() {}
 
-prog_state* cost::make_prog_state() {
-#if ISA_TOY_ISA
-  return (new prog_state_t);
-#elif ISA_EBPF
-  return (new prog_state_t);
-#else
-  cout << "unknown ISA type, return nullptr" << endl; return nullptr;
-#endif
-}
-
 void cost::clear_prog_state(prog_state* ps) {
   delete ps;
   ps = nullptr;
@@ -31,7 +21,7 @@ void cost::init(prog* orig, int len, const vector<reg_t> &input,
                 int strategy_ex, int strategy_eq, int strategy_avg) {
   set_orig(orig, len);
   _examples.clear();
-  prog_state* ps = make_prog_state();
+  prog_state* ps = new prog_state_t;
   for (size_t i = 0; i < input.size(); i++) {
     ps->clear();
     reg_t output = orig->interpret(*ps, input[i]);
@@ -131,7 +121,7 @@ double cost::error_cost(prog* synth, int len) {
   double total_cost = 0;
   reg_t output1, output2;
   int num_successful_ex = 0;
-  prog_state* ps = make_prog_state();
+  prog_state* ps = new prog_state_t;
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;

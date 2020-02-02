@@ -28,7 +28,6 @@ class cost {
   double get_final_error_cost(double exs_cost, int is_equal,
                               int ex_set_size, int num_successful_ex,
                               int avg_value);
-  prog_state* make_prog_state();
   void clear_prog_state(prog_state* ps);
  public:
   validator _vld;
