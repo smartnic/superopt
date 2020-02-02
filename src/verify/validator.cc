@@ -102,15 +102,17 @@ int validator::is_equal_to(vector<inst*>& synth) {
   return (int)is_smt_valid(smt);
 }
 
-int validator::get_orig_output(int input, unsigned int num_regs, unsigned int input_reg) {
-  smt_var sv(VLD_PROG_ID_ORIG, 0, num_regs);
-  expr input_logic = (sv.get_init_reg_var(input_reg) == input);
-  solver s(smt_c);
+reg_t validator::get_orig_output(reg_t input, unsigned int num_regs, unsigned int input_reg) {
+  expr input_logic = string_to_expr("false");
+  smt_pre(input_logic, VLD_PROG_ID_ORIG, num_regs, input_reg);
+  input_logic = (string_to_expr("input") == to_expr(input)) && input_logic;
+  tactic t = tactic(smt_c, "bv");
+  solver s = t.mk_solver();
   s.add(_pl_orig && input_logic);
   s.check();
   model m = s.get_model();
   expr output_expr = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
-  int output = m.eval(output_expr).get_numeral_int();
+  reg_t output = m.eval(output_expr).get_numeral_uint64();
   return output;
 }
 /* class validator end */
