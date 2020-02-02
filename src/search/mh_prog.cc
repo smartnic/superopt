@@ -226,7 +226,7 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
                            unordered_map<int, vector<prog*> > &prog_freq) {
   prog *curr, *next;
   curr = new prog(orig);
-  curr->init_vals();
+  curr->reset_vals();
   curr->canonicalize();
   for (int i = 0; i < niter; i++) {
     // check whether need restart, if need, update `start`

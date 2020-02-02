@@ -11,13 +11,13 @@
 #include <chrono>
 #include "src/utils.h"
 #include "src/inout.h"
-#include "src/search/mh_prog.h"
-#include "src/isa/prog.h"
 #if ISA_TOY_ISA
 #include "measure/benchmark_toy_isa.h"
 #elif ISA_EBPF
 #include "measure/benchmark_ebpf.h"
 #endif
+#include "src/isa/prog.h"
+#include "src/search/mh_prog.h"
 #include "measure/meas_mh_bhv.h"
 #include "main.h"
 

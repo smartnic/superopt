@@ -25,22 +25,6 @@ void inst_base::to_abs_bv(vector<int>& abs_vec) const {
   }
 }
 
-bool inst_base::operator==(const inst_base &x) const {
-  bool res = (_opcode  == x._opcode);
-  for (int i = 0; i < _args.size(); i++) {
-    res = res && (_args[i] == x._args[i]);
-  }
-  return res;
-}
-
-inst_base& inst_base::operator=(const inst_base &rhs) {
-  _opcode = rhs._opcode;
-  for (int i = 0; i < rhs._args.size(); i++) {
-    _args[i] = rhs._args[i];
-  }
-  return *this;
-}
-
 int inst_base::get_operand(int op_index) const {
   assert(op_index < _args.size());
   return _args[op_index];

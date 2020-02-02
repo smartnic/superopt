@@ -10,6 +10,6 @@ using namespace std;
 
 #undef NUM_ORIG
 #define NUM_ORIG 1
-extern inst_t bm0[N];
+extern inst bm0[N];
 
-extern inst_t bm_opti00[N];
+extern inst bm_opti00[N];

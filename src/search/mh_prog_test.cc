@@ -9,14 +9,14 @@
 using namespace std;
 
 #define N 7
-inst_t instructions[N] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
-                          inst_t(ADDXY, 0, 2),  /* add r0, r2 */
-                          inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
-                          inst_t(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                          inst_t(RETX, 3),      /* ret r3 */
-                          inst_t(RETX, 0),      /* else ret r0 */
-                          inst_t(),  /* control never reaches here */
-                         };
+inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                        inst(ADDXY, 0, 2),  /* add r0, r2 */
+                        inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                        inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                        inst(RETX, 3),      /* ret r3 */
+                        inst(RETX, 0),      /* else ret r0 */
+                        inst(),  /* control never reaches here */
+                       };
 
 vector<reg_t> inputs;
 

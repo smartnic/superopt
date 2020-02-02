@@ -81,7 +81,7 @@ void test3() {
       bv_str += bitset<OP_NUM_BITS>(abs_bv[j]).to_string();
     }
   }
-  print_test_res(bv_str == expected_bv_str, "insto_abs_bv");
+  print_test_res(bv_str == expected_bv_str, "inst_to_abs_bv");
 }
 
 int main(int argc, char *argv[]) {

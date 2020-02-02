@@ -37,14 +37,13 @@ class inst_base {
   vector<op_t> _args;
   inst_base() {}
   void to_abs_bv(vector<int>& abs_vec) const;
-  bool operator==(const inst_base &x) const;
-  inst_base& operator=(const inst_base &rhs);
   int get_operand(int op_index) const;
   void set_operand(int op_index, op_t op_value);
   int get_opcode() const;
   void set_opcode(int op_value);
 
   /* Functions class inst should support */
+  // bool operator==(const inst &x) const;
   // void print() const;
   // vector<int> get_reg_list() const;
   // virtual string opcode_to_str(int) const {return "";}

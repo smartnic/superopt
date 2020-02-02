@@ -186,12 +186,12 @@ void gen_optis_for_prog(const prog& p, const int& len,
   for (size_t i = 0; i < comb_set.size(); i++) {
     // set all instructions of this optimal program as NOP
     for (size_t j = 0; j < len; j++)
-      opti_set[i].instptr_list[j]->set_as_nop_inst();
+      opti_set[i].inst_list[j].set_as_nop_inst();
     // replace some NOP instructions with real instructions
     // according to the combination value
     for (size_t j = 0; j < comb_set[i].size(); j++) {
       size_t pos = comb_set[i][j];
-      *opti_set[i].instptr_list[pos] = *p.instptr_list[j];
+      opti_set[i].inst_list[pos] = p.inst_list[j];
     }
   }
 }

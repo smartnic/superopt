@@ -6,14 +6,14 @@
 int test1(int input) {
   cout << "Test 1" << endl;
 #define N 7
-  inst_t instructions[N] = {inst_t(MOVXC, 1, input), /* mov r1, input */
-                            inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
-                            inst_t(ADDXY, 1, 2),  /* add r1, r2 */
-                            inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
-                            inst_t(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
-                            inst_t(RETX, 3),      /* ret r3 */
-                            inst_t(RETX, 1),      /* else ret r1 */
-                           };
+  inst instructions[N] = {inst(MOVXC, 1, input), /* mov r1, input */
+                          inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                          inst(ADDXY, 1, 2),  /* add r1, r2 */
+                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                          inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                          inst(RETX, 3),      /* ret r3 */
+                          inst(RETX, 1),      /* else ret r1 */
+                         };
   prog p1(instructions);
   p1.print();
   prog* p[6];
@@ -31,14 +31,14 @@ int test1(int input) {
 int test2(int input) {
   cout << "Test 2" << endl;
 #define N 7
-  inst_t instructions[N] = {inst_t(MOVXC, 1, input), /* mov r1, input */
-                            inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
-                            inst_t(ADDXY, 1, 2),  /* add r1, r2 */
-                            inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
-                            inst_t(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
-                            inst_t(RETX, 3),      /* ret r3 */
-                            inst_t(RETX, 1),      /* else ret r1 */
-                           };
+  inst instructions[N] = {inst(MOVXC, 1, input), /* mov r1, input */
+                          inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                          inst(ADDXY, 1, 2),  /* add r1, r2 */
+                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                          inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                          inst(RETX, 3),      /* ret r3 */
+                          inst(RETX, 1),      /* else ret r1 */
+                         };
   prog p1(instructions);
   p1.print();
   prog* p[6];
@@ -51,14 +51,14 @@ int test2(int input) {
   bool assert_res = true;
   for (int i = 1; i < 6; i++) {
     for (int j = 0; j < N; j++) {
-      inst* ins = p[i]->instptr_list[j];
-      for (int k = ins->get_num_operands(); k < p[i]->get_max_op_len(); k++) {
-        bool res = (ins->get_operand(k) == 0);
+      inst ins = p[i]->inst_list[j];
+      for (int k = ins.get_num_operands(); k < p[i]->get_max_op_len(); k++) {
+        bool res = (ins.get_operand(k) == 0);
         if (! res) {
           assert_res = false;
           cout << "unused " << k << "th operand in ";
-          ins->print();
-          cout << "is not 0, but " << ins->get_operand(k) << endl;
+          ins.print();
+          cout << "is not 0, but " << ins.get_operand(k) << endl;
         }
       }
     }
@@ -74,14 +74,14 @@ int test2(int input) {
 int test3(int input) {
   cout << "Test 3" << endl;
 #define N 7
-  inst_t instructions[N] = {inst_t(MOVXC, 1, input), /* mov r1, input */
-                            inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
-                            inst_t(ADDXY, 1, 2),  /* add r1, r2 */
-                            inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
-                            inst_t(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
-                            inst_t(RETX, 3),      /* ret r3 */
-                            inst_t(RETX, 1),      /* else ret r1 */
-                           };
+  inst instructions[N] = {inst(MOVXC, 1, input), /* mov r1, input */
+                          inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                          inst(ADDXY, 1, 2),  /* add r1, r2 */
+                          inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                          inst(JMPGT, 1, 3, 1),  /* if r1 <= r3: */
+                          inst(RETX, 3),      /* ret r3 */
+                          inst(RETX, 1),      /* else ret r1 */
+                         };
   prog p1(instructions);
   p1.print();
   prog* p[6];

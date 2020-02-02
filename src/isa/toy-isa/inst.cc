@@ -43,6 +43,13 @@ inst& inst::operator=(const inst &rhs) {
   return *this;
 }
 
+bool inst::operator==(const inst &x) const {
+  return ((_opcode == x._opcode) &&
+          (_args[0] == x._args[0]) &&
+          (_args[1] == x._args[1]) &&
+          (_args[2] == x._args[2]));
+}
+
 // For jmp opcode, it can only jump forward
 int inst::get_max_operand_val(int op_index, int inst_index) const {
   // max value for each operand type

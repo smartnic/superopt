@@ -5,41 +5,41 @@
 
 using namespace std;
 
-inst_t instructions[7] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
-                          inst_t(ADDXY, 0, 2),  /* add r0, r2 */
-                          inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
-                          inst_t(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                          inst_t(RETX, 3),      /* ret r3 */
-                          inst_t(RETX, 0),      /* else ret r1 */
-                          inst_t(), /* nop */
-                         };
+inst instructions[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                        inst(ADDXY, 0, 2),  /* add r0, r2 */
+                        inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                        inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                        inst(RETX, 3),      /* ret r3 */
+                        inst(RETX, 0),      /* else ret r1 */
+                        inst(), /* nop */
+                       };
 
-inst_t instructions2[7] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
-                           inst_t(ADDXY, 0, 2),  /* add r0, r2 */
-                           inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
-                           inst_t(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                           inst_t(RETX, 3),      /* ret r3 */
-                           inst_t(RETX, 0),      /* else ret r0 */
-                           inst_t(), /* nop */
-                          };
+inst instructions2[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                         inst(ADDXY, 0, 2),  /* add r0, r2 */
+                         inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                         inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                         inst(RETX, 3),      /* ret r3 */
+                         inst(RETX, 0),      /* else ret r0 */
+                         inst(), /* nop */
+                        };
 
-inst_t instructions3[7] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
-                           inst_t(ADDXY, 0, 2),  /* add r0, r2 */
-                           inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
-                           inst_t(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                           inst_t(RETX, 3),      /* ret r3 */
-                           inst_t(RETX, 2),      /* else ret r2 */
-                           inst_t(), /* nop */
-                          };
+inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                         inst(ADDXY, 0, 2),  /* add r0, r2 */
+                         inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                         inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                         inst(RETX, 3),      /* ret r3 */
+                         inst(RETX, 2),      /* else ret r2 */
+                         inst(), /* nop */
+                        };
 
-inst_t instructions4[7] = {inst_t(NOP),
-                           inst_t(RETC, 1),
-                           inst_t(), /* nop */
-                           inst_t(), /* nop */
-                           inst_t(), /* nop */
-                           inst_t(), /* nop */
-                           inst_t(), /* nop */
-                          };
+inst instructions4[7] = {inst(NOP),
+                         inst(RETC, 1),
+                         inst(), /* nop */
+                         inst(), /* nop */
+                         inst(), /* nop */
+                         inst(), /* nop */
+                         inst(), /* nop */
+                        };
 
 int test1() {
   cout << "Test 1" << endl;
@@ -79,6 +79,7 @@ int test3() {
   p.print();
   q->print();
   delete q;
+
   return 0;
 }
 
@@ -131,88 +132,88 @@ void test5() {
 void test6() {
   cout << endl << "Test 6 " << endl;
   // case 1: no reg used
-  inst_t insts1[7] = {inst_t(NOP),
-                      inst_t(),
-                      inst_t(),
-                      inst_t(),
-                      inst_t(),
-                      inst_t(),
-                      inst_t(),
-                     };
+  inst insts1[7] = {inst(NOP),
+                    inst(),
+                    inst(),
+                    inst(),
+                    inst(),
+                    inst(),
+                    inst(),
+                   };
   // case 2: do not use reg 0
-  inst_t insts2[7] = {inst_t(MOVXC, 2, 15),
-                      inst_t(ADDXY, 2, 1),
-                      inst_t(ADDXY, 1, 2),
-                      inst_t(JMPGT, 1, 2, 1),
-                      inst_t(RETX, 1),
-                      inst_t(ADDXY, 1, 2),
-                      inst_t(RETC, 11),
-                     };
+  inst insts2[7] = {inst(MOVXC, 2, 15),
+                    inst(ADDXY, 2, 1),
+                    inst(ADDXY, 1, 2),
+                    inst(JMPGT, 1, 2, 1),
+                    inst(RETX, 1),
+                    inst(ADDXY, 1, 2),
+                    inst(RETC, 11),
+                   };
   // case 3: use reg 0, and other regs have been used before reg 0
-  inst_t insts3[7] = {inst_t(MOVXC, 2, 15),
-                      inst_t(ADDXY, 2, 1),
-                      inst_t(ADDXY, 0, 2),
-                      inst_t(JMPGT, 1, 2, 1),
-                      inst_t(RETX, 1),
-                      inst_t(ADDXY, 1, 2),
-                      inst_t(RETC, 11),
-                     };
+  inst insts3[7] = {inst(MOVXC, 2, 15),
+                    inst(ADDXY, 2, 1),
+                    inst(ADDXY, 0, 2),
+                    inst(JMPGT, 1, 2, 1),
+                    inst(RETX, 1),
+                    inst(ADDXY, 1, 2),
+                    inst(RETC, 11),
+                   };
   // case 4: need implicit RETX 0 instruction, no reg0 usage, other regs are used
   // case 4.1: no RETs instruction: reg0 cannot be used
-  inst_t insts41[7] = {inst_t(MOVXC, 2, 15),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                      };
+  inst insts41[7] = {inst(MOVXC, 2, 15),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                    };
   // case 4.2: RETs instruction with JMP: reg0 cannot be used
-  inst_t insts42[7] = {inst_t(MOVXC, 2, 15),
-                       inst_t(JMPGT, 1, 2, 1),
-                       inst_t(RETC, 11),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                      };
+  inst insts42[7] = {inst(MOVXC, 2, 15),
+                     inst(JMPGT, 1, 2, 1),
+                     inst(RETC, 11),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                    };
   // case 5: already canonical
   // the canonical of insts2
-  inst_t insts5[7] = {inst_t(MOVXC, 0, 15),
-                      inst_t(ADDXY, 0, 1),
-                      inst_t(ADDXY, 1, 0),
-                      inst_t(JMPGT, 1, 0, 1),
-                      inst_t(RETX, 1),
-                      inst_t(ADDXY, 1, 0),
-                      inst_t(RETC, 11),
-                     };
+  inst insts5[7] = {inst(MOVXC, 0, 15),
+                    inst(ADDXY, 0, 1),
+                    inst(ADDXY, 1, 0),
+                    inst(JMPGT, 1, 0, 1),
+                    inst(RETX, 1),
+                    inst(ADDXY, 1, 0),
+                    inst(RETC, 11),
+                   };
   // the canonical of insts3
-  inst_t insts6[7] = {inst_t(MOVXC, 1, 15),
-                      inst_t(ADDXY, 1, 2),
-                      inst_t(ADDXY, 0, 1),
-                      inst_t(JMPGT, 2, 1, 1),
-                      inst_t(RETX, 2),
-                      inst_t(ADDXY, 2, 1),
-                      inst_t(RETC, 11),
-                     };
+  inst insts6[7] = {inst(MOVXC, 1, 15),
+                    inst(ADDXY, 1, 2),
+                    inst(ADDXY, 0, 1),
+                    inst(JMPGT, 2, 1, 1),
+                    inst(RETX, 2),
+                    inst(ADDXY, 2, 1),
+                    inst(RETC, 11),
+                   };
   // the canonical of insts40
-  inst_t insts71[7] = {inst_t(MOVXC, 1, 15),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                      };
+  inst insts71[7] = {inst(MOVXC, 1, 15),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                    };
   // the canonical of insts41
-  inst_t insts72[7] = {inst_t(MOVXC, 1, 15),
-                       inst_t(JMPGT, 2, 1, 1),
-                       inst_t(RETC, 11),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                       inst_t(),
-                      };
+  inst insts72[7] = {inst(MOVXC, 1, 15),
+                     inst(JMPGT, 2, 1, 1),
+                     inst(RETC, 11),
+                     inst(),
+                     inst(),
+                     inst(),
+                     inst(),
+                    };
   // test case 1
   prog p1(insts1);
   prog p2(insts1);

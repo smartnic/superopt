@@ -4,41 +4,41 @@
 
 using namespace std;
 
-inst_t instructions[7] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
-                          inst_t(ADDXY, 0, 2),  /* add r0, r2 */
-                          inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
-                          inst_t(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                          inst_t(RETX, 3),      /* ret r3 */
-                          inst_t(RETX, 0),      /* else ret r0 */
-                          inst_t(), /* nop */
-                         };
+inst instructions[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                        inst(ADDXY, 0, 2),  /* add r0, r2 */
+                        inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                        inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                        inst(RETX, 3),      /* ret r3 */
+                        inst(RETX, 0),      /* else ret r0 */
+                        inst(), /* nop */
+                       };
 
-inst_t instructions2[7] = {inst_t(MOVXC, 2, 4),     /* mov r2, 4 */
-                           inst_t(ADDXY, 0, 2),     /* add r0, r2 */
-                           inst_t(MAXC, 0, 15),     /* max r0, 15 */
-                           inst_t(RETX, 0),         /* ret r0 */
-                           inst_t(), /* nop */
-                           inst_t(), /* nop */
-                           inst_t(), /* nop */
-                          };
+inst instructions2[7] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
+                         inst(ADDXY, 0, 2),     /* add r0, r2 */
+                         inst(MAXC, 0, 15),     /* max r0, 15 */
+                         inst(RETX, 0),         /* ret r0 */
+                         inst(), /* nop */
+                         inst(), /* nop */
+                         inst(), /* nop */
+                        };
 
-inst_t instructions3[7] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
-                           inst_t(ADDXY, 0, 2),  /* add r0, r2 */
-                           inst_t(MOVXC, 3, 15),  /* mov r3, 15  */
-                           inst_t(JMPEQ, 0, 3, 1),  /* if r0 != r3: */
-                           inst_t(RETX, 3),      /* ret r3 */
-                           inst_t(RETX, 0),      /* else ret r0 */
-                           inst_t(), /* nop */
-                          };
+inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                         inst(ADDXY, 0, 2),  /* add r0, r2 */
+                         inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                         inst(JMPEQ, 0, 3, 1),  /* if r0 != r3: */
+                         inst(RETX, 3),      /* ret r3 */
+                         inst(RETX, 0),      /* else ret r0 */
+                         inst(), /* nop */
+                        };
 
-inst_t instructions4[7] = {inst_t(MOVXC, 2, 4),  /* mov r2, 4  */
-                           inst_t(ADDXY, 0, 2),  /* add r0, r2 */
-                           inst_t(MOVXC, 3, 16),  /* mov r3, 16  */
-                           inst_t(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                           inst_t(RETC, 15),      /* ret 15 */
-                           inst_t(RETX, 0),      /* else ret r0 */
-                           inst_t(), /* nop */
-                          };
+inst instructions4[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                         inst(ADDXY, 0, 2),  /* add r0, r2 */
+                         inst(MOVXC, 3, 16),  /* mov r3, 16  */
+                         inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                         inst(RETC, 15),      /* ret 15 */
+                         inst(RETX, 0),      /* else ret r0 */
+                         inst(), /* nop */
+                        };
 
 vector<inout> ex_set(2);
 

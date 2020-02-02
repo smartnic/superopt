@@ -274,6 +274,7 @@ class inst: public inst_base {
     _args[2] = arg3;
   }
   inst& operator=(const inst &rhs);
+  bool operator==(const inst &x) const;
   string opcode_to_str(int) const;
   void print() const;
   vector<int> get_reg_list() const;
