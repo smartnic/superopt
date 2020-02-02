@@ -90,8 +90,8 @@ void init_benchmarks_toy_isa(vector<inst*> &bm_optis_orig, int bm_id) {
 void init_benchmarks_ebpf(vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
-      bm = ebpf_bm0;
-      bm_optis_orig.push_back(ebpf_bm_opti00);
+      bm = bm0;
+      bm_optis_orig.push_back(bm_opti00);
       return;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0}" << endl;
