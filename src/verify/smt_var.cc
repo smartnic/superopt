@@ -22,7 +22,7 @@ smt_var::~smt_var() {
 z3::expr smt_var::update_reg_var(unsigned int reg_id) {
   reg_cur_id[reg_id]++;
   string name = "r_" + _name + "_" + to_string(reg_id) \
-                     + "_" + to_string(reg_cur_id[reg_id]);
+                + "_" + to_string(reg_cur_id[reg_id]);
   reg_var[reg_id] = string_to_expr(name);
   return get_cur_reg_var(reg_id);
 }

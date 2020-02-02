@@ -13,26 +13,26 @@ using namespace z3;
 void test1() {
   std::cout << "test 1:" << endl;
   inst_t instructions1[9] = {inst_t(MOV32XC, 0, -1),         /* r0 = 0x00000000ffffffff */
-                                inst_t(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
-                                inst_t(MOV64XC, 1, 0x0),        /* r1 = 0 */
-                                inst_t(JEQXC, 0, 0, 4),         /* if r0 == 0, ret r0 = 0x100000000 */
-                                inst_t(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
-                                inst_t(JEQXC, 0, 0xffffffff, 1),/* if r0 == -1, ret r0 = 0 */
-                                inst_t(EXIT),                   /* else ret r0 = 0xffffffffffffffff */
-                                inst_t(MOV64XC, 0, 0),
-                                inst_t(EXIT),
-                               };
+                             inst_t(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
+                             inst_t(MOV64XC, 1, 0x0),        /* r1 = 0 */
+                             inst_t(JEQXC, 0, 0, 4),         /* if r0 == 0, ret r0 = 0x100000000 */
+                             inst_t(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
+                             inst_t(JEQXC, 0, 0xffffffff, 1),/* if r0 == -1, ret r0 = 0 */
+                             inst_t(EXIT),                   /* else ret r0 = 0xffffffffffffffff */
+                             inst_t(MOV64XC, 0, 0),
+                             inst_t(EXIT),
+                            };
 
   inst_t instructions2[9] = {inst_t(MOV32XC, 0, -1),         /* r0 = 0x00000000ffffffff */
-                                inst_t(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
-                                inst_t(MOV64XC, 1, 0x0),        /* r1 = 0 */
-                                inst_t(JEQXC, 0, 0, 4),         /* if r0 == 0, ret r0 = 0x100000000 */
-                                inst_t(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
-                                inst_t(JEQXC, 0, 0xffffffff, 1),/* if r0 == -1, ret r0 = 0 */
-                                inst_t(JA, 1),                  /* else ret r0 = 0xffffffffffffffff */
-                                inst_t(MOV64XC, 0, 0),
-                                inst_t(EXIT),
-                               };
+                             inst_t(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
+                             inst_t(MOV64XC, 1, 0x0),        /* r1 = 0 */
+                             inst_t(JEQXC, 0, 0, 4),         /* if r0 == 0, ret r0 = 0x100000000 */
+                             inst_t(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
+                             inst_t(JEQXC, 0, 0xffffffff, 1),/* if r0 == -1, ret r0 = 0 */
+                             inst_t(JA, 1),                  /* else ret r0 = 0xffffffffffffffff */
+                             inst_t(MOV64XC, 0, 0),
+                             inst_t(EXIT),
+                            };
   vector<inst*> insts;
   CONVERT(insts, instructions1, 9);
   validator vld(insts);

@@ -11,116 +11,116 @@
 #define INTERPRET(inst_ptrs, prog_state) inst_ptrs[0]->interpret(inst_ptrs, prog_state)
 
 inst_t instructions1[3] = {inst_t(MOV64XC, 0, 0xffffffff),  /* mov64 r0, 0xffffffff */
-                              inst_t(ADD64XY, 0, 0),           /* add64 r0, r0 */
-                              inst_t(EXIT),                    /* exit, return r0 */
-                             };
+                           inst_t(ADD64XY, 0, 0),           /* add64 r0, r0 */
+                           inst_t(EXIT),                    /* exit, return r0 */
+                          };
 
 inst_t instructions2[3] = {inst_t(MOV64XC, 0, 0xffffffff),  /* mov64 r0, 0xffffffff */
-                              inst_t(ADD32XY, 0, 0),           /* add32 r0, r0 */
-                              inst_t(EXIT),                    /* exit, return r0 */
-                             };
+                           inst_t(ADD32XY, 0, 0),           /* add32 r0, r0 */
+                           inst_t(EXIT),                    /* exit, return r0 */
+                          };
 /* test JEQXC */
 inst_t instructions3[9] = {inst_t(MOV32XC, 0, -1),         /* r0 = 0x00000000ffffffff */
-                              inst_t(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
-                              inst_t(MOV64XC, 1, 0x0),        /* r1 = 0 */
-                              inst_t(JEQXC, 0, 0, 4),         /* if r0 == 0, ret r0 = 0x100000000 */
-                              inst_t(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
-                              inst_t(JEQXC, 0, 0xffffffff, 1),/* if r0 == -1, ret r0 = 0 */
-                              inst_t(EXIT),                   /* else ret r0 = 0xffffffffffffffff */
-                              inst_t(MOV64XC, 0, 0),
-                              inst_t(EXIT),
-                             };
+                           inst_t(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
+                           inst_t(MOV64XC, 1, 0x0),        /* r1 = 0 */
+                           inst_t(JEQXC, 0, 0, 4),         /* if r0 == 0, ret r0 = 0x100000000 */
+                           inst_t(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
+                           inst_t(JEQXC, 0, 0xffffffff, 1),/* if r0 == -1, ret r0 = 0 */
+                           inst_t(EXIT),                   /* else ret r0 = 0xffffffffffffffff */
+                           inst_t(MOV64XC, 0, 0),
+                           inst_t(EXIT),
+                          };
 /* test JEQXY */
 inst_t instructions4[9] = {inst_t(MOV32XC, 0, 0xffffffff), /* r0 = 0x00000000ffffffff */
-                              inst_t(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
-                              inst_t(MOV64XC, 1, 0x0),        /* r1 = 0 */
-                              inst_t(JEQXY, 0, 1, 4),         /* if r0 == r1, ret r0 = 0x100000000 */
-                              inst_t(MOV64XY, 1, 0),          /* else r1 = r0 */
-                              inst_t(JEQXY, 0, 1, 1),         /* if r0 == r1, ret r0 = 0x100000001 */
-                              inst_t(EXIT),                   /* else ret r0 = 0x100000000 */
-                              inst_t(ADD64XC, 0, 0x1),
-                              inst_t(EXIT),
-                             };
+                           inst_t(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
+                           inst_t(MOV64XC, 1, 0x0),        /* r1 = 0 */
+                           inst_t(JEQXY, 0, 1, 4),         /* if r0 == r1, ret r0 = 0x100000000 */
+                           inst_t(MOV64XY, 1, 0),          /* else r1 = r0 */
+                           inst_t(JEQXY, 0, 1, 1),         /* if r0 == r1, ret r0 = 0x100000001 */
+                           inst_t(EXIT),                   /* else ret r0 = 0x100000000 */
+                           inst_t(ADD64XC, 0, 0x1),
+                           inst_t(EXIT),
+                          };
 
 inst_t instructions5[3] = {inst_t(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                              inst_t(LE16, 0),                /* le16 r0 */
-                              inst_t(EXIT),                   /* exit, return r0 */
-                             };
+                           inst_t(LE16, 0),                /* le16 r0 */
+                           inst_t(EXIT),                   /* exit, return r0 */
+                          };
 
 inst_t instructions6[3] = {inst_t(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                              inst_t(LE32, 0),                /* le32 r0 */
-                              inst_t(EXIT),                   /* exit, return r0 */
-                             };
+                           inst_t(LE32, 0),                /* le32 r0 */
+                           inst_t(EXIT),                   /* exit, return r0 */
+                          };
 
 inst_t instructions7[3] = {inst_t(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                              inst_t(BE16, 0),                /* be16 r0 */
-                              inst_t(EXIT),                   /* exit, return r0 */
-                             };
+                           inst_t(BE16, 0),                /* be16 r0 */
+                           inst_t(EXIT),                   /* exit, return r0 */
+                          };
 
 inst_t instructions8[3] = {inst_t(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                              inst_t(BE32, 0),                /* be32 r0 */
-                              inst_t(EXIT),                   /* exit, return r0 */
-                             };
+                           inst_t(BE32, 0),                /* be32 r0 */
+                           inst_t(EXIT),                   /* exit, return r0 */
+                          };
 
 inst_t instructions9[6] = {inst_t(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                              inst_t(LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
-                              inst_t(MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
-                              inst_t(ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
-                              inst_t(LE64, 0),                /* le64 r0 */
-                              inst_t(EXIT),                   /* exit, return r0 */
-                             };
+                           inst_t(LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
+                           inst_t(MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
+                           inst_t(ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
+                           inst_t(LE64, 0),                /* le64 r0 */
+                           inst_t(EXIT),                   /* exit, return r0 */
+                          };
 
 inst_t instructions10[6] = {inst_t(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                               inst_t(LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
-                               inst_t(MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
-                               inst_t(ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
-                               inst_t(BE64, 0),                /* be64 r0 */
-                               inst_t(EXIT),                   /* exit, return r0 */
-                              };
+                            inst_t(LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
+                            inst_t(MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
+                            inst_t(ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
+                            inst_t(BE64, 0),                /* be64 r0 */
+                            inst_t(EXIT),                   /* exit, return r0 */
+                           };
 
 inst_t instructions11[7] = {inst_t(MOV64XC, 0, -1),         /* r0 = 0xffffffffffffffff */
-                               inst_t(RSH64XC, 0, 63),         /* r0 >> 63 */
-                               inst_t(JEQXC, 0, 1, 1),         /* if r0 != 0x1, exit */
-                               inst_t(EXIT),                   /* exit */
-                               inst_t(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
-                               inst_t(RSH32XC, 0, 1),          /* r0 >>32 1 */
-                               inst_t(EXIT),                   /* exit, return r0 */
-                              };
+                            inst_t(RSH64XC, 0, 63),         /* r0 >> 63 */
+                            inst_t(JEQXC, 0, 1, 1),         /* if r0 != 0x1, exit */
+                            inst_t(EXIT),                   /* exit */
+                            inst_t(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
+                            inst_t(RSH32XC, 0, 1),          /* r0 >>32 1 */
+                            inst_t(EXIT),                   /* exit, return r0 */
+                           };
 
 inst_t instructions12[8] = {inst_t(MOV64XC, 0, -1),         /* r0 = 0xffffffffffffffff */
-                               inst_t(ARSH64XC, 0, 63),        /* r0 >> 63 */
-                               inst_t(MOV64XC, 1, -1),         /* r1 = 0xffffffffffffffff */
-                               inst_t(JEQXY, 0, 1, 1),         /* if r0 != r1, exit */
-                               inst_t(EXIT),                   /* exit */
-                               inst_t(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
-                               inst_t(ARSH32XC, 0, 1),         /* r0 >>32 1 */
-                               inst_t(EXIT),                   /* exit, return r0 */
-                              };
+                            inst_t(ARSH64XC, 0, 63),        /* r0 >> 63 */
+                            inst_t(MOV64XC, 1, -1),         /* r1 = 0xffffffffffffffff */
+                            inst_t(JEQXY, 0, 1, 1),         /* if r0 != r1, exit */
+                            inst_t(EXIT),                   /* exit */
+                            inst_t(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
+                            inst_t(ARSH32XC, 0, 1),         /* r0 >>32 1 */
+                            inst_t(EXIT),                   /* exit, return r0 */
+                           };
 
 inst_t instructions13[8] = {inst_t(MOV32XC, 0, -1),         /* r0 = 0xffffffff */
-                               inst_t(JGTXC, 0, 0, 1),         /* if r0 <= 0, ret r0 = 0xffffffff */
-                               inst_t(EXIT),
-                               inst_t(MOV64XC, 1, -1),         /* else r1 = 0xffffffffffffffff */
-                               inst_t(JGTXY, 1, 0, 1),         /* if r1 <= r0, ret r0 = 0xffffffff */
-                               inst_t(EXIT),
-                               inst_t(MOV64XC, 0, 0),          /* else r0 = 0 */
-                               inst_t(EXIT),                   /* exit, return r0 */
-                              };
+                            inst_t(JGTXC, 0, 0, 1),         /* if r0 <= 0, ret r0 = 0xffffffff */
+                            inst_t(EXIT),
+                            inst_t(MOV64XC, 1, -1),         /* else r1 = 0xffffffffffffffff */
+                            inst_t(JGTXY, 1, 0, 1),         /* if r1 <= r0, ret r0 = 0xffffffff */
+                            inst_t(EXIT),
+                            inst_t(MOV64XC, 0, 0),          /* else r0 = 0 */
+                            inst_t(EXIT),                   /* exit, return r0 */
+                           };
 
 inst_t instructions14[7] = {inst_t(MOV64XC, 0, -1),         /* r0 = -1 */
-                               inst_t(JSGTXC, 0, 0, 4),        /* if r0 s>= 0, ret r0 = -1 */
-                               inst_t(JSGTXC, 0, 0xffffffff, 3),/* elif r1 s> 0xffffffff, ret r0 = -1 */
-                               inst_t(MOV64XC, 1, 0),          /* r1 = 0 */
-                               inst_t(JSGTXY, 0, 1),           /* if r0 s> r1, ret r0 = -1 */
-                               inst_t(MOV64XC, 0, 0),          /* else r0 = 0 */
-                               inst_t(EXIT),                   /* exit, return r0 */
-                              };
+                            inst_t(JSGTXC, 0, 0, 4),        /* if r0 s>= 0, ret r0 = -1 */
+                            inst_t(JSGTXC, 0, 0xffffffff, 3),/* elif r1 s> 0xffffffff, ret r0 = -1 */
+                            inst_t(MOV64XC, 1, 0),          /* r1 = 0 */
+                            inst_t(JSGTXY, 0, 1),           /* if r0 s> r1, ret r0 = -1 */
+                            inst_t(MOV64XC, 0, 0),          /* else r0 = 0 */
+                            inst_t(EXIT),                   /* exit, return r0 */
+                           };
 
 inst_t instructions15[4] = {inst_t(MOV32XC, 0, -1),         /* r0 = 0xffffffff */
-                               inst_t(JGTXC, 0, -2, 1),        /* if r0 > 0xfffffffffffffffe, ret r0 = 0xffffffff */
-                               inst_t(MOV64XC, 0, 0),          /* else ret r0 = 0 */
-                               inst_t(EXIT),
-                              };
+                            inst_t(JGTXC, 0, -2, 1),        /* if r0 > 0xfffffffffffffffe, ret r0 = 0xffffffff */
+                            inst_t(MOV64XC, 0, 0),          /* else ret r0 = 0 */
+                            inst_t(EXIT),
+                           };
 
 void test1() {
   prog_state_t ps;
