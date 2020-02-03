@@ -4,7 +4,6 @@
 #include <vector>
 #include "../src/utils.h"
 #include "../src/inout.h"
-#include "../src/isa/inst.h"
 #if ISA_TOY_ISA
 #include "../src/isa/toy-isa/inst.h"
 #elif ISA_EBPF

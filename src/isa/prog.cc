@@ -23,27 +23,10 @@ prog::prog(inst* instructions) {
   _perf_cost = -1;
 }
 
-prog* prog::make_prog(const prog &other) {
-  prog* new_prog = new prog;
-  new_prog->inst_list = new inst[MAX_PROG_LEN];
-  for (int i = 0; i < MAX_PROG_LEN; i++) {
-    new_prog->inst_list[i] = other.inst_list[i];
-  }
-  new_prog->freq_count = other.freq_count;
-  new_prog->_error_cost = other._error_cost;
-  new_prog->_perf_cost = other._perf_cost;
-  return new_prog;
-}
-
 void prog::reset_vals() {
   freq_count = 0;
   _error_cost = -1;
   _perf_cost = -1;
-}
-
-void prog::clear_prog(prog* p) {
-  delete []p->inst_list;
-  delete p;
 }
 
 prog::prog() {

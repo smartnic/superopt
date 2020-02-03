@@ -4,7 +4,6 @@
 #include <vector>
 #include <unordered_map>
 #include "../../src/utils.h"
-#include "../../src/isa/inst.h"
 #if ISA_TOY_ISA
 #include "../../src/isa/toy-isa/inst.h"
 #elif ISA_EBPF
@@ -25,8 +24,6 @@ class prog {
   void print() const;
   ~prog();
   bool operator==(const prog &x) const;
-  static prog* make_prog(const prog &other);
-  static void clear_prog(prog* p);
   void reset_vals();
   void set_error_cost(double cost);
   void set_perf_cost(double cost);

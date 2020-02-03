@@ -4,7 +4,7 @@
 #include <unordered_set>
 #include "z3++.h"
 #include "../../../src/verify/smt_var.h"
-#include "../inst.h"
+#include "../../../src/isa/inst.h"
 #include "inst_codegen.h"
 
 using namespace std;
