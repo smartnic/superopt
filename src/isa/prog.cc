@@ -103,7 +103,7 @@ int prog::to_rel_bv(const vector<prog> &ps) const {
   return best;
 }
 
-void prog::to_abs_bv(vector<int>& bv) const {
+void prog::to_abs_bv(vector<op_t>& bv) const {
   for (int i = 0; i < MAX_PROG_LEN; i++) {
     inst_list[i].to_abs_bv(bv);
   }

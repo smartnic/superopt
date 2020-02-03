@@ -36,7 +36,7 @@ class inst_base {
   int _opcode;
   vector<op_t> _args;
   inst_base() {}
-  void to_abs_bv(vector<int>& abs_vec) const;
+  void to_abs_bv(vector<op_t>& abs_vec) const;
   int get_operand(int op_index) const;
   void set_operand(int op_index, op_t op_value);
   int get_opcode() const;

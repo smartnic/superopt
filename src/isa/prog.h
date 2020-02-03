@@ -32,7 +32,7 @@ class prog {
   void set_perf_cost(double cost);
   int to_rel_bv(const prog &p) const;
   int to_rel_bv(const vector<prog> &ps) const;
-  void to_abs_bv(vector<int>& bv) const;
+  void to_abs_bv(vector<op_t>& bv) const;
   bool if_ret_exists(int start, int end) const;
   void update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const;
   void canonicalize();

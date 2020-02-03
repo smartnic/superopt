@@ -17,7 +17,7 @@ void prog_state_base::clear() {
   }
 };
 
-void inst_base::to_abs_bv(vector<int>& abs_vec) const {
+void inst_base::to_abs_bv(vector<op_t>& abs_vec) const {
   const int num_args = _args.size();
   abs_vec.push_back(_opcode);
   for (int i = 0; i < num_args; i++) {

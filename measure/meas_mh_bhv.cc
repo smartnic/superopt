@@ -63,7 +63,7 @@ void store_proposals_to_file(string file_name,
   fout << "<accepted?> <error cost> <perf cost> <relative coding> <absolute coding>" << endl;
   for (size_t i = 0; i < d._proposals.size(); i++) {
     prog p(d._proposals[i].first);
-    vector<int> bv;
+    vector<op_t> bv;
     p.to_abs_bv(bv);
     fout << d._proposals[i].second << " "
          << p._error_cost << " "
@@ -84,7 +84,7 @@ void store_programs_to_file(string file_name,
   fout << "<iter num> <error cost> <perf cost> <relative coding> <absolute coding>" << endl;
   for (size_t i = 0; i < d._programs.size(); i++) {
     prog p(d._programs[i].second);
-    vector<int> bv;
+    vector<op_t> bv;
     p.to_abs_bv(bv);
     fout << d._programs[i].first << " "
          << p._error_cost << " "
@@ -117,7 +117,7 @@ void store_optimals_to_file(string file_name,
   fout.open(file_name, ios::out | ios::trunc);
   fout << "<absolute coding>" << endl;
   for (size_t i = 0; i < optimals.size(); i++) {
-    vector<int> bv;
+    vector<op_t> bv;
     optimals[i].to_abs_bv(bv);
     fout << prog_abs_bv_to_str(bv) << endl;
   }
