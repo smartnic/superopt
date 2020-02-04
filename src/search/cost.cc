@@ -44,18 +44,22 @@ void cost::set_orig(prog* orig, int len) {
   _num_real_orig = orig->num_real_instructions();
 }
 
+unsigned int pop_count_outputs(reg_t output1, reg_t output2) {
+  int gap = 32;
+  unsigned int count = 0;
+  int n = 1 + (NUM_REG_BITS - 1) / gap;
+  for (int i = 0; i < n; i++) {
+    count += pop_count_asm((uint32_t)output1 ^ (uint32_t)output2);
+    output1 >>= gap;
+    output2 >>= gap;
+  }
+  return count;
+}
+
 double cost::get_ex_error_cost(reg_t output1, reg_t output2) {
   switch (_strategy_ex) {
     case ERROR_COST_STRATEGY_ABS: return abs(output1 - output2);
-    case ERROR_COST_STRATEGY_POP:
-#if ISA_TOY_ISA
-      return pop_count_asm(output1 ^ output2);
-#elif ISA_EBPF
-      return (pop_count_asm((uint32_t)output1 ^ (uint32_t)output2) +
-              pop_count_asm((uint32_t)(output1 >> 32) ^ (uint32_t)(output2 >> 32)));
-#else
-      return ERROR_COST_MAX;
-#endif
+    case ERROR_COST_STRATEGY_POP: return pop_count_outputs(output1, output2);
     default:
       cout << "ERROR: no error cost example strategy matches." << endl;
       return ERROR_COST_MAX;

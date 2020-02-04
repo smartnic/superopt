@@ -6,9 +6,11 @@
 using namespace std;
 
 #if ISA_TOY_ISA
+// register type, also used as input/output type
+// since input/output are assigned to/from registers
 typedef int reg_t;
 typedef int op_t;
-// number of register bits, used by smt_var.h/cc
+// number of register bits, used by smt_var.h/cc, cost.cc
 #define NUM_REG_BITS 32
 #elif ISA_EBPF
 typedef int64_t reg_t;

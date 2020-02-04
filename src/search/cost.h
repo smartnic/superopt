@@ -47,3 +47,5 @@ class cost {
   double perf_cost(prog* synth, int len);
   double total_prog_cost(prog* synth, int len);
 };
+
+unsigned int pop_count_outputs(int64_t output1, int64_t output2);
