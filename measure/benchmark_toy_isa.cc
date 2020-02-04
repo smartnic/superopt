@@ -191,7 +191,6 @@ inst bm_opti27[N] = {inst(ADDXY, 0, 0),
                     };
 
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
-  cout << "toy_isa init_benchmarks" << endl;
   switch (bm_id) {
     case 0:
       *bm = bm0;
