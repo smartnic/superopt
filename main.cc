@@ -12,8 +12,10 @@
 #include "src/utils.h"
 #include "src/inout.h"
 #if ISA_TOY_ISA
+#include "src/isa/toy-isa/inst.h"
 #include "measure/benchmark_toy_isa.h"
 #elif ISA_EBPF
+#include "src/isa/ebpf/inst.h"
 #include "measure/benchmark_ebpf.h"
 #endif
 #include "src/isa/prog.h"
@@ -47,65 +49,6 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
       << "p_inst_operand:" << ip.p_inst_operand << endl
       << "p_inst:" << ip.p_inst << endl;
   return out;
-}
-
-#if ISA_TOY_ISA
-void init_benchmarks_toy_isa(vector<inst*> &bm_optis_orig, int bm_id) {
-  switch (bm_id) {
-    case 0:
-      bm = bm0;
-      bm_optis_orig.push_back(bm_opti00);
-      bm_optis_orig.push_back(bm_opti01);
-      bm_optis_orig.push_back(bm_opti02);
-      bm_optis_orig.push_back(bm_opti03);
-      bm_optis_orig.push_back(bm_opti04);
-      bm_optis_orig.push_back(bm_opti05);
-      return;
-    case 1:
-      bm = bm1;
-      bm_optis_orig.push_back(bm_opti10);
-      bm_optis_orig.push_back(bm_opti11);
-      bm_optis_orig.push_back(bm_opti12);
-      bm_optis_orig.push_back(bm_opti13);
-      return;
-    case 2:
-      bm = bm2;
-      bm_optis_orig.push_back(bm_opti20);
-      bm_optis_orig.push_back(bm_opti21);
-      bm_optis_orig.push_back(bm_opti22);
-      bm_optis_orig.push_back(bm_opti23);
-      bm_optis_orig.push_back(bm_opti24);
-      bm_optis_orig.push_back(bm_opti25);
-      bm_optis_orig.push_back(bm_opti26);
-      bm_optis_orig.push_back(bm_opti27);
-      return;
-    default:
-      cout << "ERROR: toy-isa bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
-      return;
-  }
-}
-#endif
-
-#if ISA_EBPF
-void init_benchmarks_ebpf(vector<inst*> &bm_optis_orig, int bm_id) {
-  switch (bm_id) {
-    case 0:
-      bm = bm0;
-      bm_optis_orig.push_back(bm_opti00);
-      return;
-    default:
-      cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0}" << endl;
-      return;
-  }
-}
-#endif
-
-void init_benchmarks(vector<inst*> &bm_optis_orig, int bm_id) {
-#if ISA_TOY_ISA
-  init_benchmarks_toy_isa(bm_optis_orig, bm_id);
-#elif ISA_EBPF
-  init_benchmarks_ebpf(bm_optis_orig, bm_id);
-#endif
 }
 
 // eg. "1.1100" -> "1.11"; "1.000" -> "1"
@@ -355,7 +298,7 @@ int main(int argc, char* argv[]) {
   store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
   auto start = NOW;
-  init_benchmarks(bm_optis_orig, in_para.bm);
+  init_benchmarks(&bm, bm_optis_orig, in_para.bm);
   inputs.resize(30);
   gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);

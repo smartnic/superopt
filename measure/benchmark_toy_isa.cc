@@ -189,3 +189,39 @@ inst bm_opti27[N] = {inst(ADDXY, 0, 0),
                      inst(),
                      inst(),
                     };
+
+void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
+  cout << "toy_isa init_benchmarks" << endl;
+  switch (bm_id) {
+    case 0:
+      *bm = bm0;
+      bm_optis_orig.push_back(bm_opti00);
+      bm_optis_orig.push_back(bm_opti01);
+      bm_optis_orig.push_back(bm_opti02);
+      bm_optis_orig.push_back(bm_opti03);
+      bm_optis_orig.push_back(bm_opti04);
+      bm_optis_orig.push_back(bm_opti05);
+      return;
+    case 1:
+      *bm = bm1;
+      bm_optis_orig.push_back(bm_opti10);
+      bm_optis_orig.push_back(bm_opti11);
+      bm_optis_orig.push_back(bm_opti12);
+      bm_optis_orig.push_back(bm_opti13);
+      return;
+    case 2:
+      *bm = bm2;
+      bm_optis_orig.push_back(bm_opti20);
+      bm_optis_orig.push_back(bm_opti21);
+      bm_optis_orig.push_back(bm_opti22);
+      bm_optis_orig.push_back(bm_opti23);
+      bm_optis_orig.push_back(bm_opti24);
+      bm_optis_orig.push_back(bm_opti25);
+      bm_optis_orig.push_back(bm_opti26);
+      bm_optis_orig.push_back(bm_opti27);
+      return;
+    default:
+      cout << "ERROR: toy-isa bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
+      return;
+  }
+}

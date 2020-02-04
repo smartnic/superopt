@@ -39,3 +39,5 @@ extern inst bm_opti24[N];
 extern inst bm_opti25[N];
 extern inst bm_opti26[N];
 extern inst bm_opti27[N];
+
+void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id);
