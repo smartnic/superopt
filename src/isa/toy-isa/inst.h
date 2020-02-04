@@ -149,12 +149,6 @@ class inst: public inst_base {
   void set_as_nop_inst();
   // return the register for storing the given input
   unsigned int get_input_reg() const {return 0;}
-  // for class toy_isa
-  int get_num_regs() const {return NUM_REGS;}
-  int get_max_prog_len() const {return MAX_PROG_LEN;}
-  int get_max_op_len() const {return MAX_OP_LEN;}
-  int get_op_num_bits() const {return OP_NUM_BITS;}
-  int get_num_instr() const {return NUM_INSTR;}
   int get_num_operands() const {return num_operands[_opcode];}
   int get_insn_num_regs() const {return insn_num_regs[_opcode];}
   int get_opcode_type() const {return opcode_type[_opcode];}

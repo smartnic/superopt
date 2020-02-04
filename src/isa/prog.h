@@ -34,9 +34,6 @@ class prog {
   void update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const;
   void canonicalize();
   int num_real_instructions() const;
-  int get_max_prog_len() const {return inst_list->get_max_prog_len();}
-  int get_max_op_len() const {return inst_list->get_max_op_len();}
-  int get_num_instr() const {return inst_list->get_num_instr();}
   reg_t interpret(prog_state &ps, reg_t input) const;
 };
 

@@ -174,7 +174,7 @@ void prog::canonicalize() {
 
 int prog::num_real_instructions() const {
   int count = 0;
-  for (int i = 0; i < get_max_prog_len(); i++) {
+  for (int i = 0; i < MAX_PROG_LEN; i++) {
     count += inst_list[i].is_real_inst();
   }
   return count;
@@ -186,7 +186,7 @@ reg_t prog::interpret(prog_state &ps, reg_t input) const {
 
 size_t progHash::operator()(const prog &x) const {
   size_t hval = 0;
-  for (int i = 0; i < x.get_max_prog_len(); i++) {
+  for (int i = 0; i < MAX_PROG_LEN; i++) {
     hval = hval ^ (instHash()(x.inst_list[i]) << (i % 4));
   }
   return hval;

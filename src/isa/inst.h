@@ -58,11 +58,6 @@ class inst_base {
   // virtual void set_as_nop_inst() {}
   // virtual unsigned int get_input_reg() const {return 0;}
   // // for class toy_isa
-  // virtual int get_num_regs() const {return 0;}
-  // virtual int get_max_prog_len() const {return 0;}
-  // virtual int get_max_op_len() const {return 0;}
-  // virtual int get_op_num_bits() const {return 0;}
-  // virtual int get_num_instr() const {return 0;}
   // virtual int get_num_operands() const {return 0;}
   // virtual int get_insn_num_regs() const {return 0;}
   // virtual int get_opcode_type() const {return 0;}

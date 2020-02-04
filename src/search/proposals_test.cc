@@ -52,7 +52,7 @@ int test2(int input) {
   for (int i = 1; i < 6; i++) {
     for (int j = 0; j < N; j++) {
       inst ins = p[i]->inst_list[j];
-      for (int k = ins.get_num_operands(); k < p[i]->get_max_op_len(); k++) {
+      for (int k = ins.get_num_operands(); k < MAX_OP_LEN; k++) {
         bool res = (ins.get_operand(k) == 0);
         if (! res) {
           assert_res = false;

@@ -56,7 +56,7 @@ void time_validator_is_smt_valid() {
 void time_validator_get_orig_output() {
   validator vld;
   vld.set_orig(bm0, MAX_PROG_LEN);
-  time_measure(vld.get_orig_output(i, bm0->get_num_regs(), bm0->get_input_reg()), 100,
+  time_measure(vld.get_orig_output(i, NUM_REGS, bm0->get_input_reg()), 100,
                "validator::get_orig_output: ");
 }
 

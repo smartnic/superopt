@@ -219,8 +219,8 @@ void test2() {
   print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
   inst insn = (NOP);
-  int prog_id = 0, node_id = 0, num_regs = insn.get_num_regs();
-  smt_var sv(prog_id, node_id, num_regs);
+  int prog_id = 0, node_id = 0;
+  smt_var sv(prog_id, node_id, NUM_REGS);
   z3::expr smt = string_to_expr("false");
   z3::expr output = string_to_expr("false");
 

@@ -178,7 +178,7 @@ void test5() {
   vector<int> ex_set = {1, 10, 11, 12, 20};
   vector<int> expected = {11, 11, 11, 12, 20};
   for (size_t i = 0; i < ex_set.size(); i++) {
-    int output = vld.get_orig_output(ex_set[i], orig->get_num_regs(), orig->get_input_reg());
+    int output = vld.get_orig_output(ex_set[i], NUM_REGS, orig->get_input_reg());
     print_test_res(output == expected[i], to_string(i));
   }
 }
