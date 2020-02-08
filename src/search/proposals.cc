@@ -92,7 +92,8 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   } else {
     exceptions = {old_opcode};
   }
-  int new_opcode = sample_int_with_exceptions(NUM_INSTR, exceptions);
+  int new_opcode_idx = sample_int_with_exceptions(NUM_INSTR, exceptions);
+  int new_opcode = sel_inst->get_opcode_by_idx(new_opcode_idx);
   sel_inst->set_opcode(new_opcode);
   for (int i = 0; i < sel_inst->get_num_operands(); i++) {
     int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, i, -1);

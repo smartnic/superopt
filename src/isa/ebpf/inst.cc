@@ -16,6 +16,10 @@ using namespace std;
 #define UNCOND_OFFVAL16(inst_var) (int16_t)(UNCOND_OFFVAL(inst_var))
 #define COND_OFFVAL16(inst_var) (int16_t)(COND_OFFVAL(inst_var))
 
+int inst::get_opcode_by_idx(int idx) const {
+  return IDX_2_OPCODE[idx];
+}
+
 void inst::set_operand(int op_index, op_t op_value) {
   // if it is the second operand of LE or BE, the op_value is the type index
   if ((op_index == 1) && ((_opcode == LE) || (_opcode == BE))) {
@@ -151,6 +155,37 @@ void inst::set_as_nop_inst() {
   _args[0] = 0;
   _args[1] = 0;
   _args[2] = 0;
+}
+
+int inst::get_num_operands() const {
+  auto it = num_operands.find(_opcode);
+  if (it != num_operands.end()) {
+    return it->second;
+  } else {
+    cout << "Error: cannot find num_operands for instruction: ";
+    print();
+    return 0;
+  }
+}
+int inst::get_insn_num_regs() const {
+  auto it = insn_num_regs.find(_opcode);
+  if (it != num_operands.end()) {
+    return it->second;
+  } else {
+    cout << "Error: cannot find insn_num_regs for instruction: ";
+    print();
+    return 0;
+  }
+}
+int inst::get_opcode_type() const {
+  auto it = opcode_type.find(_opcode);
+  if (it != num_operands.end()) {
+    return it->second;
+  } else {
+    cout << "Error: cannot find opcode_type for instruction: ";
+    print();
+    return 0;
+  }
 }
 
 // z3 64-bit bv
@@ -291,52 +326,49 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
   ps.clear();
   ps.regs[1] = input;
 
-  static void *jumptable[NUM_INSTR] = {
-    [NOP]      = && INSN_NOP,
-    [ADD64XC]  = && INSN_ADD64XC,
-    [ADD64XY]  = && INSN_ADD64XY,
-    [LSH64XC]  = && INSN_LSH64XC,
-    [LSH64XY]  = && INSN_LSH64XY,
-    [RSH64XC]  = && INSN_RSH64XC,
-    [RSH64XY]  = && INSN_RSH64XY,
-    [MOV64XC]  = && INSN_MOV64XC,
-    [MOV64XY]  = && INSN_MOV64XY,
-    [ARSH64XC] = && INSN_ARSH64XC,
-    [ARSH64XY] = && INSN_ARSH64XY,
-
-    [ADD32XC]  = && INSN_ADD32XC,
-    [ADD32XY]  = && INSN_ADD32XY,
-    [LSH32XC]  = && INSN_LSH32XC,
-    [LSH32XY]  = && INSN_LSH32XY,
-    [RSH32XC]  = && INSN_RSH32XC,
-    [RSH32XY]  = && INSN_RSH32XY,
-    [MOV32XC]  = && INSN_MOV32XC,
-    [MOV32XY]  = && INSN_MOV32XY,
-    [ARSH32XC] = && INSN_ARSH32XC,
-    [ARSH32XY] = && INSN_ARSH32XY,
-
-    [LE]       = && INSN_LE,
-    [BE]       = && INSN_BE,
-
-    [JA]       = && INSN_JA,
-    [JEQXC]    = && INSN_JEQXC,
-    [JEQXY]    = && INSN_JEQXY,
-    [JGTXC]    = && INSN_JGTXC,
-    [JGTXY]    = && INSN_JGTXY,
-    [JSGTXC]   = && INSN_JSGTXC,
-    [JSGTXY]   = && INSN_JSGTXY,
-    [EXIT]     = && INSN_EXIT,
+  static unordered_map<int, void*> jumptable = {
+    {NOP,      && INSN_NOP},
+    {ADD64XC,  && INSN_ADD64XC},
+    {ADD64XY,  && INSN_ADD64XY},
+    {LSH64XC,  && INSN_LSH64XC},
+    {LSH64XY,  && INSN_LSH64XY},
+    {RSH64XC,  && INSN_RSH64XC},
+    {RSH64XY,  && INSN_RSH64XY},
+    {MOV64XC,  && INSN_MOV64XC},
+    {MOV64XY,  && INSN_MOV64XY},
+    {ARSH64XC, && INSN_ARSH64XC},
+    {ARSH64XY, && INSN_ARSH64XY},
+    {ADD32XC,  && INSN_ADD32XC},
+    {ADD32XY,  && INSN_ADD32XY},
+    {LSH32XC,  && INSN_LSH32XC},
+    {LSH32XY,  && INSN_LSH32XY},
+    {RSH32XC,  && INSN_RSH32XC},
+    {RSH32XY,  && INSN_RSH32XY},
+    {MOV32XC,  && INSN_MOV32XC},
+    {MOV32XY,  && INSN_MOV32XY},
+    {ARSH32XC, && INSN_ARSH32XC},
+    {ARSH32XY, && INSN_ARSH32XY},
+    {LE,       && INSN_LE},
+    {BE,       && INSN_BE},
+    {JA,       && INSN_JA},
+    {JEQXC,    && INSN_JEQXC},
+    {JEQXY,    && INSN_JEQXY},
+    {JGTXC,    && INSN_JGTXC},
+    {JGTXY,    && INSN_JGTXY},
+    {JSGTXC,   && INSN_JSGTXC},
+    {JSGTXY,   && INSN_JSGTXY},
+    {EXIT,     && INSN_EXIT},
   };
 
 #define CONT {                                                     \
       insn++;                                                      \
       if (insn < program + length) {                               \
-        goto *jumptable[insn->_opcode];                            \
+        goto *jumptable.find(insn->_opcode)->second;               \
       } else goto out;                                             \
   }
 
 select_insn:
-  goto *jumptable[insn->_opcode];
+  goto *jumptable.find(insn->_opcode)->second;
 
 INSN_NOP:
   CONT;
