@@ -46,12 +46,8 @@ enum OPCODES {
   ARSH32XC,
   ARSH32XY,
   // Byteswap
-  LE16,
-  LE32,
-  LE64,
-  BE16,
-  BE32,
-  BE64,
+  LE,
+  BE,
   // JMP
   JA,
   JEQXC,
@@ -87,12 +83,8 @@ static constexpr int num_operands[NUM_INSTR] = {
   [MOV32XY]  = 2,
   [ARSH32XC] = 2,
   [ARSH32XY] = 2,
-  [LE16]     = 1,
-  [LE32]     = 1,
-  [LE64]     = 1,
-  [BE16]     = 1,
-  [BE32]     = 1,
-  [BE64]     = 1,
+  [LE]       = 2,
+  [BE]       = 2,
   [JA]       = 1,
   [JEQXC]    = 3,
   [JEQXY]    = 3,
@@ -127,12 +119,8 @@ static constexpr int insn_num_regs[NUM_INSTR] = {
   [MOV32XY]  = 2,
   [ARSH32XC] = 1,
   [ARSH32XY] = 2,
-  [LE16]     = 1,
-  [LE32]     = 1,
-  [LE64]     = 1,
-  [BE16]     = 1,
-  [BE32]     = 1,
-  [BE64]     = 1,
+  [LE]       = 1,
+  [BE]       = 1,
   [JA]       = 0,
   [JEQXC]    = 1,
   [JEQXY]    = 2,
@@ -165,12 +153,8 @@ static constexpr int opcode_type[NUM_INSTR] = {
   [MOV32XY]  = OP_OTHERS,
   [ARSH32XC] = OP_OTHERS,
   [ARSH32XY] = OP_OTHERS,
-  [LE16]     = OP_OTHERS,
-  [LE32]     = OP_OTHERS,
-  [LE64]     = OP_OTHERS,
-  [BE16]     = OP_OTHERS,
-  [BE32]     = OP_OTHERS,
-  [BE64]     = OP_OTHERS,
+  [LE]       = OP_OTHERS,
+  [BE]       = OP_OTHERS,
   [JA]       = OP_UNCOND_JMP,
   [JEQXC]    = OP_COND_JMP,
   [JEQXY]    = OP_COND_JMP,
@@ -189,6 +173,9 @@ static constexpr int32_t MAX_OFF = 0x7fff;
 static constexpr int32_t MIN_OFF = 0xffff8000;
 static constexpr int32_t MAX_IMM_SH32 = 31;
 static constexpr int32_t MAX_IMM_SH64 = 63;
+// 3 types of OP_IMM_ENDIAN: 16, 32, 64
+// type counts from 0
+static constexpr int32_t TYPES_IMM_ENDIAN = 2;
 
 // Operand types for instructions
 static constexpr int OP_UNUSED = 0;
@@ -197,6 +184,7 @@ static constexpr int OP_IMM = 2;
 static constexpr int OP_OFF = 3;
 static constexpr int OP_IMM_SH32 = 4;
 static constexpr int OP_IMM_SH64 = 5;
+static constexpr int OP_IMM_ENDIAN = 6;
 
 /* The definitions below assume a minimum 16-bit integer data type */
 #define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex) * 5)) & 31)
@@ -207,7 +195,7 @@ static constexpr int OP_IMM_SH64 = 5;
 #define ALU_OPS_REG (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED))
 #define SH32_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM_SH32) | TRDOP(OP_UNUSED))
 #define SH64_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM_SH64) | TRDOP(OP_UNUSED))
-#define BYTESWAP (FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
+#define BYTESWAP (FSTOP(OP_REG) | SNDOP(OP_IMM_ENDIAN) | TRDOP(OP_UNUSED))
 #define JA_OPS (FSTOP(OP_OFF) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 #define JMP_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_OFF))
 #define JMP_OPS_REG (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
@@ -234,12 +222,8 @@ static constexpr int optable[NUM_INSTR] = {
   [MOV32XY]  = ALU_OPS_REG,
   [ARSH32XC] = SH32_OPS_IMM,
   [ARSH32XY] = ALU_OPS_REG,
-  [LE16]     = BYTESWAP,
-  [LE32]     = BYTESWAP,
-  [LE64]     = BYTESWAP,
-  [BE16]     = BYTESWAP,
-  [BE32]     = BYTESWAP,
-  [BE64]     = BYTESWAP,
+  [LE]       = BYTESWAP,
+  [BE]       = BYTESWAP,
   [JA]       = JA_OPS,
   [JEQXC]    = JMP_OPS_IMM,
   [JEQXY]    = JMP_OPS_REG,
@@ -273,6 +257,7 @@ class inst: public inst_base {
     _args[1] = arg2;
     _args[2] = arg3;
   }
+  void set_operand(int op_index, op_t op_value);
   inst& operator=(const inst &rhs);
   bool operator==(const inst &x) const;
   string opcode_to_str(int) const;

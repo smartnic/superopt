@@ -36,22 +36,22 @@ inst instructions4[9] = {inst(MOV32XC, 0, 0xffffffff), /* r0 = 0x00000000fffffff
                         };
 
 inst instructions5[3] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                         inst(LE16, 0),                /* le16 r0 */
+                         inst(LE, 0, 16),                /* le16 r0 */
                          inst(EXIT),                   /* exit, return r0 */
                         };
 
 inst instructions6[3] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                         inst(LE32, 0),                /* le32 r0 */
+                         inst(LE, 0, 32),                /* le32 r0 */
                          inst(EXIT),                   /* exit, return r0 */
                         };
 
 inst instructions7[3] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                         inst(BE16, 0),                /* be16 r0 */
+                         inst(BE, 0, 16),                /* be16 r0 */
                          inst(EXIT),                   /* exit, return r0 */
                         };
 
 inst instructions8[3] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                         inst(BE32, 0),                /* be32 r0 */
+                         inst(BE, 0, 32),                /* be32 r0 */
                          inst(EXIT),                   /* exit, return r0 */
                         };
 
@@ -59,7 +59,7 @@ inst instructions9[6] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 *
                          inst(LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
                          inst(MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
                          inst(ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
-                         inst(LE64, 0),                /* le64 r0 */
+                         inst(LE, 0, 64),                /* le64 r0 */
                          inst(EXIT),                   /* exit, return r0 */
                         };
 
@@ -67,7 +67,7 @@ inst instructions10[6] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 
                           inst(LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
                           inst(MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
                           inst(ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
-                          inst(BE64, 0),                /* be64 r0 */
+                          inst(BE, 0, 64),                /* be64 r0 */
                           inst(EXIT),                   /* exit, return r0 */
                          };
 
@@ -286,32 +286,32 @@ void test2() {
 
   int64_t expected;
   bool is_le = is_little_endian();
-  insn = inst(LE16, 0);
+  insn = inst(LE, 0, 16);
   if (is_le) expected = 0x0123456789abcdef;
   else expected = 0x2301456789abcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE16");
 
-  insn = inst(LE32, 0);
+  insn = inst(LE, 0, 32);
   if (is_le) expected = 0x0123456789abcdef;
   else expected = 0x6745230189abcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE32");
 
-  insn = inst(LE64, 0);
+  insn = inst(LE, 0, 64);
   if (is_le) expected = 0x0123456789abcdef;
   else expected = 0xefcdab8967452301;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE64");
 
-  insn = inst(BE16, 0);
+  insn = inst(BE, 0, 16);
   if (is_le) expected = 0x0123456789abefcd;
   else expected = 0x0123456789abcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE16");
 
-  insn = inst(BE32, 0);
+  insn = inst(BE, 0, 32);
   if (is_le) expected = 0x01234567efcdab89;
   else expected = 0x0123456789abcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE32");
 
-  insn = inst(BE64, 0);
+  insn = inst(BE, 0, 64);
   if (is_le) expected = 0xefcdab8967452301;
   else expected = 0x0123456789abcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE64");

@@ -16,6 +16,16 @@ using namespace std;
 #define UNCOND_OFFVAL16(inst_var) (int16_t)(UNCOND_OFFVAL(inst_var))
 #define COND_OFFVAL16(inst_var) (int16_t)(COND_OFFVAL(inst_var))
 
+void inst::set_operand(int op_index, op_t op_value) {
+  // if it is the second operand of LE or BE, the op_value is the type index
+  if ((op_index == 1) && ((_opcode == LE) || (_opcode == BE))) {
+    int value_map[3] = {16, 32, 64};
+    _args[op_index] = value_map[op_value];
+  } else {
+    _args[op_index] = op_value;
+  }
+}
+
 string inst::opcode_to_str(int opcode) const {
   switch (opcode) {
     case NOP: return "nop";
@@ -39,12 +49,8 @@ string inst::opcode_to_str(int opcode) const {
     case MOV32XY: return "mov32xy";
     case ARSH32XC: return "arsh32xc";
     case ARSH32XY: return "arsh32xy";
-    case LE16: return "le16";
-    case LE32: return "le32";
-    case LE64: return "le64";
-    case BE16: return "be16";
-    case BE32: return "be32";
-    case BE64: return "be64";
+    case LE: return "le";
+    case BE: return "be";
     case JA: return "ja";
     case JEQXC: return "jeqxc";
     case JEQXY: return "jeqxy";
@@ -88,15 +94,17 @@ bool inst::operator==(const inst &x) const {
 }
 
 // For jmp opcode, it can only jump forward
+// TODO: modify the name
 int32_t inst::get_max_operand_val(int op_index, int inst_index) const {
-  // max valufor each operand type
-  int32_t max_val[6] = {
+  // max value for each operand type
+  int32_t max_val[7] = {
     [OP_UNUSED] = 0,
     [OP_REG] = NUM_REGS,
     [OP_IMM] = MAX_IMM,
     [OP_OFF] = min((int32_t)MAX_OFF, MAX_PROG_LEN - inst_index - 1),
     [OP_IMM_SH32] = MAX_IMM_SH32,
     [OP_IMM_SH64] = MAX_IMM_SH64,
+    [OP_IMM_ENDIAN] = TYPES_IMM_ENDIAN,
   };
   return max_val[OPTYPE(_opcode, op_index)];
 }
@@ -192,12 +200,22 @@ z3::expr inst::smt_inst(smt_var& sv) const {
     case MOV32XY: return predicate_mov32(CURSRC, NEWDST);
     case ARSH32XC: return predicate_arsh32(CURDST, IMM2, NEWDST);
     case ARSH32XY: return predicate_arsh32(CURDST, CURSRC_L5, NEWDST);
-    case LE16: return predicate_le16(CURDST, NEWDST);
-    case LE32: return predicate_le32(CURDST, NEWDST);
-    case LE64: return predicate_le64(CURDST, NEWDST);
-    case BE16: return predicate_be16(CURDST, NEWDST);
-    case BE32: return predicate_be32(CURDST, NEWDST);
-    case BE64: return predicate_be64(CURDST, NEWDST);
+    case LE:
+      switch (imm2) {
+        case 16: return predicate_le16(CURDST, NEWDST);
+        case 32: return predicate_le32(CURDST, NEWDST);
+        case 64: return predicate_le64(CURDST, NEWDST);
+        default: cout << "Error: imm2 " << imm2 << " is not 16, 32, 64" << endl;
+          return string_to_expr("false");
+      }
+    case BE:
+      switch (imm2) {
+        case 16: return predicate_be16(CURDST, NEWDST);
+        case 32: return predicate_be32(CURDST, NEWDST);
+        case 64: return predicate_be64(CURDST, NEWDST);
+        default: cout << "Error: imm2 " << imm2 << " is not 16, 32, 64" << endl;
+          return string_to_expr("false");
+      }
     default: return string_to_expr("false");
   }
 }
@@ -253,7 +271,14 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 
 #define BYTESWAP(OPCODE, OP)                                       \
   INSN_##OPCODE:                                                   \
-    DST = compute_##OP(DST);                                       \
+    switch (IMM2) {                                                \
+      case 16: DST = compute_##OP##16(DST);break;                  \
+      case 32: DST = compute_##OP##32(DST);break;                  \
+      case 64: DST = compute_##OP##64(DST);break;                  \
+      default: cout << "[Error] imm2 " << IMM2                     \
+                    << " is not 16, 32, 64" << endl;               \
+               break;                                              \
+    }                                                              \
     CONT;
 
 #define COND_JMP(OPCODE, OP, OPERAND1, OPERAND2)                   \
@@ -290,12 +315,8 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
     [ARSH32XC] = && INSN_ARSH32XC,
     [ARSH32XY] = && INSN_ARSH32XY,
 
-    [LE16]     = && INSN_LE16,
-    [LE32]     = && INSN_LE32,
-    [LE64]     = && INSN_LE64,
-    [BE16]     = && INSN_BE16,
-    [BE32]     = && INSN_BE32,
-    [BE64]     = && INSN_BE64,
+    [LE]       = && INSN_LE,
+    [BE]       = && INSN_BE,
 
     [JA]       = && INSN_JA,
     [JEQXC]    = && INSN_JEQXC,
@@ -342,12 +363,8 @@ INSN_NOP:
   ALU_BINARY(ARSH32XC, arsh32, DST, IMM2)
   ALU_BINARY(ARSH32XY, arsh32, DST, SRC_L5)
 
-  BYTESWAP(LE16, le16)
-  BYTESWAP(LE32, le32)
-  BYTESWAP(LE64, le64)
-  BYTESWAP(BE16, be16)
-  BYTESWAP(BE32, be32)
-  BYTESWAP(BE64, be64)
+  BYTESWAP(LE, le)
+  BYTESWAP(BE, be)
 
 INSN_JA:
   insn += UNCOND_OFF;
