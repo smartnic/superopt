@@ -364,4 +364,5 @@ class inst: public inst_base {
   z3::expr smt_inst_jmp(smt_var& sv) const;
 };
 
+int opcode_2_idx(int opcode);
 int64_t interpret(inst* program, int length, prog_state &ps, int64_t input = 0);

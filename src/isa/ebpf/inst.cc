@@ -276,6 +276,43 @@ z3::expr inst::smt_inst_jmp(smt_var& sv) const {
   }
 }
 
+int opcode_2_idx(int opcode) {
+  switch (opcode) {
+    case NOP: return IDX_NOP;
+    case ADD64XC: return IDX_ADD64XC;
+    case ADD64XY: return IDX_ADD64XY;
+    case LSH64XC: return IDX_LSH64XC;
+    case LSH64XY: return IDX_LSH64XY;
+    case RSH64XC: return IDX_RSH64XC;
+    case RSH64XY: return IDX_RSH64XY;
+    case MOV64XC: return IDX_MOV64XC;
+    case MOV64XY: return IDX_MOV64XY;
+    case ARSH64XC: return IDX_ARSH64XC;
+    case ARSH64XY: return IDX_ARSH64XY;
+    case ADD32XC: return IDX_ADD32XC;
+    case ADD32XY: return IDX_ADD32XY;
+    case LSH32XC: return IDX_LSH32XC;
+    case LSH32XY: return IDX_LSH32XY;
+    case RSH32XC: return IDX_RSH32XC;
+    case RSH32XY: return IDX_RSH32XY;
+    case MOV32XC: return IDX_MOV32XC;
+    case MOV32XY: return IDX_MOV32XY;
+    case ARSH32XC: return IDX_ARSH32XC;
+    case ARSH32XY: return IDX_ARSH32XY;
+    case LE: return IDX_LE;
+    case BE: return IDX_BE;
+    case JA: return IDX_JA;
+    case JEQXC: return IDX_JEQXC;
+    case JEQXY: return IDX_JEQXY;
+    case JGTXC: return IDX_JGTXC;
+    case JGTXY: return IDX_JGTXY;
+    case JSGTXC: return IDX_JSGTXC;
+    case JSGTXY: return IDX_JSGTXY;
+    case EXIT: return IDX_EXIT;
+    default: cout << "unknown opcode" << endl; return 0;
+  }
+}
+
 int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 #undef IMM2
 // type: int64_t
@@ -326,49 +363,49 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
   ps.clear();
   ps.regs[1] = input;
 
-  static unordered_map<int, void*> jumptable = {
-    {NOP,      && INSN_NOP},
-    {ADD64XC,  && INSN_ADD64XC},
-    {ADD64XY,  && INSN_ADD64XY},
-    {LSH64XC,  && INSN_LSH64XC},
-    {LSH64XY,  && INSN_LSH64XY},
-    {RSH64XC,  && INSN_RSH64XC},
-    {RSH64XY,  && INSN_RSH64XY},
-    {MOV64XC,  && INSN_MOV64XC},
-    {MOV64XY,  && INSN_MOV64XY},
-    {ARSH64XC, && INSN_ARSH64XC},
-    {ARSH64XY, && INSN_ARSH64XY},
-    {ADD32XC,  && INSN_ADD32XC},
-    {ADD32XY,  && INSN_ADD32XY},
-    {LSH32XC,  && INSN_LSH32XC},
-    {LSH32XY,  && INSN_LSH32XY},
-    {RSH32XC,  && INSN_RSH32XC},
-    {RSH32XY,  && INSN_RSH32XY},
-    {MOV32XC,  && INSN_MOV32XC},
-    {MOV32XY,  && INSN_MOV32XY},
-    {ARSH32XC, && INSN_ARSH32XC},
-    {ARSH32XY, && INSN_ARSH32XY},
-    {LE,       && INSN_LE},
-    {BE,       && INSN_BE},
-    {JA,       && INSN_JA},
-    {JEQXC,    && INSN_JEQXC},
-    {JEQXY,    && INSN_JEQXY},
-    {JGTXC,    && INSN_JGTXC},
-    {JGTXY,    && INSN_JGTXY},
-    {JSGTXC,   && INSN_JSGTXC},
-    {JSGTXY,   && INSN_JSGTXY},
-    {EXIT,     && INSN_EXIT},
+  static void *jumptable[NUM_INSTR] = {
+    [IDX_NOP]      = && INSN_NOP,
+    [IDX_ADD64XC]  = && INSN_ADD64XC,
+    [IDX_ADD64XY]  = && INSN_ADD64XY,
+    [IDX_LSH64XC]  = && INSN_LSH64XC,
+    [IDX_LSH64XY]  = && INSN_LSH64XY,
+    [IDX_RSH64XC]  = && INSN_RSH64XC,
+    [IDX_RSH64XY]  = && INSN_RSH64XY,
+    [IDX_MOV64XC]  = && INSN_MOV64XC,
+    [IDX_MOV64XY]  = && INSN_MOV64XY,
+    [IDX_ARSH64XC] = && INSN_ARSH64XC,
+    [IDX_ARSH64XY] = && INSN_ARSH64XY,
+    [IDX_ADD32XC]  = && INSN_ADD32XC,
+    [IDX_ADD32XY]  = && INSN_ADD32XY,
+    [IDX_LSH32XC]  = && INSN_LSH32XC,
+    [IDX_LSH32XY]  = && INSN_LSH32XY,
+    [IDX_RSH32XC]  = && INSN_RSH32XC,
+    [IDX_RSH32XY]  = && INSN_RSH32XY,
+    [IDX_MOV32XC]  = && INSN_MOV32XC,
+    [IDX_MOV32XY]  = && INSN_MOV32XY,
+    [IDX_ARSH32XC] = && INSN_ARSH32XC,
+    [IDX_ARSH32XY] = && INSN_ARSH32XY,
+    [IDX_LE]       = && INSN_LE,
+    [IDX_BE]       = && INSN_BE,
+    [IDX_JA]       = && INSN_JA,
+    [IDX_JEQXC]    = && INSN_JEQXC,
+    [IDX_JEQXY]    = && INSN_JEQXY,
+    [IDX_JGTXC]    = && INSN_JGTXC,
+    [IDX_JGTXY]    = && INSN_JGTXY,
+    [IDX_JSGTXC]   = && INSN_JSGTXC,
+    [IDX_JSGTXY]   = && INSN_JSGTXY,
+    [IDX_EXIT]     = && INSN_EXIT,
   };
 
 #define CONT {                                                     \
       insn++;                                                      \
       if (insn < program + length) {                               \
-        goto *jumptable.find(insn->_opcode)->second;               \
+        goto *jumptable[opcode_2_idx(insn->_opcode)];              \
       } else goto out;                                             \
   }
 
 select_insn:
-  goto *jumptable.find(insn->_opcode)->second;
+  goto *jumptable[opcode_2_idx(insn->_opcode)];
 
 INSN_NOP:
   CONT;
