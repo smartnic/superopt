@@ -111,6 +111,7 @@ enum OPCODES {
   EXIT     = OPCODE_BPF_EXIT_INSN,
 };
 
+int opcode_2_idx(int opcode);
 static const int IDX_2_OPCODE[NUM_INSTR] = {
   [IDX_NOP] = NOP,
   [IDX_ADD64XC] = ADD64XC,
@@ -145,108 +146,108 @@ static const int IDX_2_OPCODE[NUM_INSTR] = {
   [IDX_EXIT] = EXIT,
 };
 
-static const unordered_map<int, int> num_operands = {
-  {NOP, 0},
-  {ADD64XC, 2},
-  {ADD64XY, 2},
-  {LSH64XC, 2},
-  {LSH64XY, 2},
-  {RSH64XC, 2},
-  {RSH64XY, 2},
-  {MOV64XC, 2},
-  {MOV64XY, 2},
-  {ARSH64XC, 2},
-  {ARSH64XY, 2},
-  {ADD32XC, 2},
-  {ADD32XY, 2},
-  {LSH32XC, 2},
-  {LSH32XY, 2},
-  {RSH32XC, 2},
-  {RSH32XY, 2},
-  {MOV32XC, 2},
-  {MOV32XY, 2},
-  {ARSH32XC, 2},
-  {ARSH32XY, 2},
-  {LE, 2},
-  {BE, 2},
-  {JA, 1},
-  {JEQXC, 3},
-  {JEQXY, 3},
-  {JGTXC, 3},
-  {JGTXY, 3},
-  {JSGTXC, 3},
-  {JSGTXY, 3},
-  {EXIT, 0},
+static const int num_operands[NUM_INSTR] = {
+  [IDX_NOP]      = 0,
+  [IDX_ADD64XC]  = 2,
+  [IDX_ADD64XY]  = 2,
+  [IDX_LSH64XC]  = 2,
+  [IDX_LSH64XY]  = 2,
+  [IDX_RSH64XC]  = 2,
+  [IDX_RSH64XY]  = 2,
+  [IDX_MOV64XC]  = 2,
+  [IDX_MOV64XY]  = 2,
+  [IDX_ARSH64XC] = 2,
+  [IDX_ARSH64XY] = 2,
+  [IDX_ADD32XC]  = 2,
+  [IDX_ADD32XY]  = 2,
+  [IDX_LSH32XC]  = 2,
+  [IDX_LSH32XY]  = 2,
+  [IDX_RSH32XC]  = 2,
+  [IDX_RSH32XY]  = 2,
+  [IDX_MOV32XC]  = 2,
+  [IDX_MOV32XY]  = 2,
+  [IDX_ARSH32XC] = 2,
+  [IDX_ARSH32XY] = 2,
+  [IDX_LE]       = 2,
+  [IDX_BE]       = 2,
+  [IDX_JA]       = 1,
+  [IDX_JEQXC]    = 3,
+  [IDX_JEQXY]    = 3,
+  [IDX_JGTXC]    = 3,
+  [IDX_JGTXY]    = 3,
+  [IDX_JSGTXC]   = 3,
+  [IDX_JSGTXY]   = 3,
+  [IDX_EXIT]     = 0,
 };
 
 // number of registers for each opcode
 // e.g., for ADD64XY, two operands are registers
-static const unordered_map<int, int> insn_num_regs = {
-  {NOP, 0},
-  {ADD64XC, 1},
-  {ADD64XY, 2},
-  {LSH64XC, 1},
-  {LSH64XY, 2},
-  {RSH64XC, 1},
-  {RSH64XY, 2},
-  {MOV64XC, 1},
-  {MOV64XY, 2},
-  {ARSH64XC, 1},
-  {ARSH64XY, 2},
-  {ADD32XC, 1},
-  {ADD32XY, 2},
-  {LSH32XC, 1},
-  {LSH32XY, 2},
-  {RSH32XC, 1},
-  {RSH32XY, 2},
-  {MOV32XC, 1},
-  {MOV32XY, 2},
-  {ARSH32XC, 1},
-  {ARSH32XY, 2},
-  {LE, 1},
-  {BE, 1},
-  {JA, 0},
-  {JEQXC, 1},
-  {JEQXY, 2},
-  {JGTXC, 1},
-  {JGTXY, 2},
-  {JSGTXC, 1},
-  {JSGTXY, 2},
-  {EXIT, 0},
+static const int insn_num_regs[NUM_INSTR] = {
+  [IDX_NOP]      = 0,
+  [IDX_ADD64XC]  = 1,
+  [IDX_ADD64XY]  = 2,
+  [IDX_LSH64XC]  = 1,
+  [IDX_LSH64XY]  = 2,
+  [IDX_RSH64XC]  = 1,
+  [IDX_RSH64XY]  = 2,
+  [IDX_MOV64XC]  = 1,
+  [IDX_MOV64XY]  = 2,
+  [IDX_ARSH64XC] = 1,
+  [IDX_ARSH64XY] = 2,
+  [IDX_ADD32XC]  = 1,
+  [IDX_ADD32XY]  = 2,
+  [IDX_LSH32XC]  = 1,
+  [IDX_LSH32XY]  = 2,
+  [IDX_RSH32XC]  = 1,
+  [IDX_RSH32XY]  = 2,
+  [IDX_MOV32XC]  = 1,
+  [IDX_MOV32XY]  = 2,
+  [IDX_ARSH32XC] = 1,
+  [IDX_ARSH32XY] = 2,
+  [IDX_LE]       = 1,
+  [IDX_BE]       = 1,
+  [IDX_JA]       = 0,
+  [IDX_JEQXC]    = 1,
+  [IDX_JEQXY]    = 2,
+  [IDX_JGTXC]    = 1,
+  [IDX_JGTXY]    = 2,
+  [IDX_JSGTXC]   = 1,
+  [IDX_JSGTXY]   = 2,
+  [IDX_EXIT]     = 0,
 };
 
-static const unordered_map<int, int> opcode_type = {
-  {NOP, OP_NOP},
-  {ADD64XC, OP_OTHERS},
-  {ADD64XY, OP_OTHERS},
-  {LSH64XC, OP_OTHERS},
-  {LSH64XY, OP_OTHERS},
-  {RSH64XC, OP_OTHERS},
-  {RSH64XY, OP_OTHERS},
-  {MOV64XC, OP_OTHERS},
-  {MOV64XY, OP_OTHERS},
-  {ARSH64XC, OP_OTHERS},
-  {ARSH64XY, OP_OTHERS},
-  {ADD32XC, OP_OTHERS},
-  {ADD32XY, OP_OTHERS},
-  {LSH32XC, OP_OTHERS},
-  {LSH32XY, OP_OTHERS},
-  {RSH32XC, OP_OTHERS},
-  {RSH32XY, OP_OTHERS},
-  {MOV32XC, OP_OTHERS},
-  {MOV32XY, OP_OTHERS},
-  {ARSH32XC, OP_OTHERS},
-  {ARSH32XY, OP_OTHERS},
-  {LE, OP_OTHERS},
-  {BE, OP_OTHERS},
-  {JA, OP_UNCOND_JMP},
-  {JEQXC, OP_COND_JMP},
-  {JEQXY, OP_COND_JMP},
-  {JGTXC, OP_COND_JMP},
-  {JGTXY, OP_COND_JMP},
-  {JSGTXC, OP_COND_JMP},
-  {JSGTXY, OP_COND_JMP},
-  {EXIT, OP_RET},
+static const int opcode_type[NUM_INSTR] = {
+  [IDX_NOP]      = OP_NOP,
+  [IDX_ADD64XC]  = OP_OTHERS,
+  [IDX_ADD64XY]  = OP_OTHERS,
+  [IDX_LSH64XC]  = OP_OTHERS,
+  [IDX_LSH64XY]  = OP_OTHERS,
+  [IDX_RSH64XC]  = OP_OTHERS,
+  [IDX_RSH64XY]  = OP_OTHERS,
+  [IDX_MOV64XC]  = OP_OTHERS,
+  [IDX_MOV64XY]  = OP_OTHERS,
+  [IDX_ARSH64XC] = OP_OTHERS,
+  [IDX_ARSH64XY] = OP_OTHERS,
+  [IDX_ADD32XC]  = OP_OTHERS,
+  [IDX_ADD32XY]  = OP_OTHERS,
+  [IDX_LSH32XC]  = OP_OTHERS,
+  [IDX_LSH32XY]  = OP_OTHERS,
+  [IDX_RSH32XC]  = OP_OTHERS,
+  [IDX_RSH32XY]  = OP_OTHERS,
+  [IDX_MOV32XC]  = OP_OTHERS,
+  [IDX_MOV32XY]  = OP_OTHERS,
+  [IDX_ARSH32XC] = OP_OTHERS,
+  [IDX_ARSH32XY] = OP_OTHERS,
+  [IDX_LE]       = OP_OTHERS,
+  [IDX_BE]       = OP_OTHERS,
+  [IDX_JA]       = OP_UNCOND_JMP,
+  [IDX_JEQXC]    = OP_COND_JMP,
+  [IDX_JEQXY]    = OP_COND_JMP,
+  [IDX_JGTXC]    = OP_COND_JMP,
+  [IDX_JGTXY]    = OP_COND_JMP,
+  [IDX_JSGTXC]   = OP_COND_JMP,
+  [IDX_JSGTXY]   = OP_COND_JMP,
+  [IDX_EXIT]     = OP_RET,
 };
 
 // Max and Min value for immediate number(32bits), offset(16bits)
@@ -262,60 +263,58 @@ static constexpr int32_t MAX_IMM_SH64 = 63;
 static constexpr int32_t TYPES_IMM_ENDIAN = 2;
 
 // Operand types for instructions
-static constexpr int OP_UNUSED = 0;
-static constexpr int OP_REG = 1;
-static constexpr int OP_IMM = 2;
-static constexpr int OP_OFF = 3;
-static constexpr int OP_IMM_SH32 = 4;
-static constexpr int OP_IMM_SH64 = 5;
-static constexpr int OP_IMM_ENDIAN = 6;
+enum OPERANDS {
+  OP_UNUSED = 0,
+  OP_DST_REG,
+  OP_SRC_REG,
+  OP_OFF,
+  OP_IMM,
+};
 
 /* The definitions below assume a minimum 16-bit integer data type */
-#define OPTYPE(opcode, opindex) ((optable.find(opcode)->second >> ((opindex) * 5)) & 31)
+#define OPTYPE(opcode, opindex) ((optable[opcode_2_idx(opcode)] >> ((opindex) * 5)) & 31)
 #define FSTOP(x) (x)
 #define SNDOP(x) (x << 5)
 #define TRDOP(x) (x << 10)
-#define ALU_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED))
-#define ALU_OPS_REG (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED))
-#define SH32_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM_SH32) | TRDOP(OP_UNUSED))
-#define SH64_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM_SH64) | TRDOP(OP_UNUSED))
-#define BYTESWAP (FSTOP(OP_REG) | SNDOP(OP_IMM_ENDIAN) | TRDOP(OP_UNUSED))
+#define ALU_OPS_IMM (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED))
+#define ALU_OPS_REG (FSTOP(OP_DST_REG) | SNDOP(OP_SRC_REG) | TRDOP(OP_UNUSED))
+#define BYTESWAP (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED))
 #define JA_OPS (FSTOP(OP_OFF) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
-#define JMP_OPS_IMM (FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_OFF))
-#define JMP_OPS_REG (FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_OFF))
+#define JMP_OPS_IMM (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_OFF))
+#define JMP_OPS_REG (FSTOP(OP_DST_REG) | SNDOP(OP_SRC_REG) | TRDOP(OP_OFF))
 #define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
-static const unordered_map<int, int> optable = {
-  {NOP, UNUSED_OPS},
-  {ADD64XC, ALU_OPS_IMM},
-  {ADD64XY, ALU_OPS_REG},
-  {LSH64XC, SH64_OPS_IMM},
-  {LSH64XY, ALU_OPS_REG},
-  {RSH64XC, SH64_OPS_IMM},
-  {RSH64XY, ALU_OPS_REG},
-  {MOV64XC, ALU_OPS_IMM},
-  {MOV64XY, ALU_OPS_REG},
-  {ARSH64XC, SH64_OPS_IMM},
-  {ARSH64XY, ALU_OPS_REG},
-  {ADD32XC, ALU_OPS_IMM},
-  {ADD32XY, ALU_OPS_REG},
-  {LSH32XC, SH32_OPS_IMM},
-  {LSH32XY, ALU_OPS_REG},
-  {RSH32XC, SH32_OPS_IMM},
-  {RSH32XY, ALU_OPS_REG},
-  {MOV32XC, ALU_OPS_IMM},
-  {MOV32XY, ALU_OPS_REG},
-  {ARSH32XC, SH32_OPS_IMM},
-  {ARSH32XY, ALU_OPS_REG},
-  {LE,  BYTESWAP},
-  {BE,  BYTESWAP},
-  {JA,  JA_OPS},
-  {JEQXC, JMP_OPS_IMM},
-  {JEQXY, JMP_OPS_REG},
-  {JGTXC, JMP_OPS_IMM},
-  {JGTXY, JMP_OPS_REG},
-  {JSGTXC,  JMP_OPS_IMM},
-  {JSGTXY,  JMP_OPS_REG},
-  {EXIT,  UNUSED_OPS},
+static const int optable[NUM_INSTR] = {
+  [IDX_NOP]      = UNUSED_OPS,
+  [IDX_ADD64XC]  = ALU_OPS_IMM,
+  [IDX_ADD64XY]  = ALU_OPS_REG,
+  [IDX_LSH64XC]  = ALU_OPS_IMM,
+  [IDX_LSH64XY]  = ALU_OPS_REG,
+  [IDX_RSH64XC]  = ALU_OPS_IMM,
+  [IDX_RSH64XY]  = ALU_OPS_REG,
+  [IDX_MOV64XC]  = ALU_OPS_IMM,
+  [IDX_MOV64XY]  = ALU_OPS_REG,
+  [IDX_ARSH64XC] = ALU_OPS_IMM,
+  [IDX_ARSH64XY] = ALU_OPS_REG,
+  [IDX_ADD32XC]  = ALU_OPS_IMM,
+  [IDX_ADD32XY]  = ALU_OPS_REG,
+  [IDX_LSH32XC]  = ALU_OPS_IMM,
+  [IDX_LSH32XY]  = ALU_OPS_REG,
+  [IDX_RSH32XC]  = ALU_OPS_IMM,
+  [IDX_RSH32XY]  = ALU_OPS_REG,
+  [IDX_MOV32XC]  = ALU_OPS_IMM,
+  [IDX_MOV32XY]  = ALU_OPS_REG,
+  [IDX_ARSH32XC] = ALU_OPS_IMM,
+  [IDX_ARSH32XY] = ALU_OPS_REG,
+  [IDX_LE]       = BYTESWAP,
+  [IDX_BE]       = BYTESWAP,
+  [IDX_JA]       = JA_OPS,
+  [IDX_JEQXC]    = JMP_OPS_IMM,
+  [IDX_JEQXY]    = JMP_OPS_REG,
+  [IDX_JGTXC]    = JMP_OPS_IMM,
+  [IDX_JGTXY]    = JMP_OPS_REG,
+  [IDX_JSGTXC]   = JMP_OPS_IMM,
+  [IDX_JSGTXY]   = JMP_OPS_REG,
+  [IDX_EXIT]     = UNUSED_OPS,
 };
 #undef FSTOP
 #undef SNDOP
@@ -333,16 +332,26 @@ class prog_state: public prog_state_base {
 };
 
 class inst: public inst_base {
+ private:
+  void set_imm(int op_value);
+  int32_t get_max_imm() const;
  public:
-  inst(int opcode = NOP, int32_t arg1 = 0, int32_t arg2 = 0, int32_t arg3 = 0) {
-    _args.resize(MAX_OP_LEN);
+  int32_t _dst_reg;
+  int32_t _src_reg;
+  int32_t _imm;
+  int16_t _off;
+  inst(int opcode, int32_t dst_reg, int32_t src_reg, int32_t imm, int16_t off) {
     _opcode  = opcode;
-    _args[0] = arg1;
-    _args[1] = arg2;
-    _args[2] = arg3;
+    _dst_reg = dst_reg;
+    _src_reg = src_reg;
+    _imm = imm;
+    _off = off;
   }
-  int get_opcode_by_idx(int idx) const;
+  inst(int opcode = NOP, int32_t arg1 = 0, int32_t arg2 = 0, int32_t arg3 = 0);
+  void to_abs_bv(vector<op_t>& abs_vec) const;
+  int get_operand(int op_index) const;
   void set_operand(int op_index, op_t op_value);
+  int get_opcode_by_idx(int idx) const;
   inst& operator=(const inst &rhs);
   bool operator==(const inst &x) const;
   string opcode_to_str(int) const;
@@ -356,13 +365,12 @@ class inst: public inst_base {
   bool is_real_inst() const;
   void set_as_nop_inst();
   unsigned int get_input_reg() const {return 1;}
-  int get_num_operands() const;
-  int get_insn_num_regs() const;
-  int get_opcode_type() const;
+  int get_num_operands() const {return num_operands[opcode_2_idx(_opcode)];}
+  int get_insn_num_regs() const {return insn_num_regs[opcode_2_idx(_opcode)];}
+  int get_opcode_type() const {return opcode_type[opcode_2_idx(_opcode)];}
   // smt
   z3::expr smt_inst(smt_var& sv) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;
 };
 
-int opcode_2_idx(int opcode);
 int64_t interpret(inst* program, int length, prog_state &ps, int64_t input = 0);

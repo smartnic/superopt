@@ -127,7 +127,7 @@ void test1() {
 
   expected = 0;
   print_test_res(interpret(instructions3, 9, ps) == expected, "interpret program 3");
-
+  cout << interpret(instructions3, 9, ps) << endl;
   expected = 0x100000001;
   print_test_res(interpret(instructions4, 9, ps) == expected, "interpret program 4");
 
@@ -199,8 +199,8 @@ bool is_valid(z3::expr smt) {
 void test2() {
   cout << endl << "Test 2: instruction smt check" << endl;
 
-#define CURDST sv.get_cur_reg_var(insn._args[0])
-#define CURSRC sv.get_cur_reg_var(insn._args[1])
+#define CURDST sv.get_cur_reg_var(insn._dst_reg)
+#define CURSRC sv.get_cur_reg_var(insn._src_reg)
 // Input FOL formulae (A) should set to `smt` first, then add instruction FOL formula (B),
 // Since getting instruction FOL formula will update dst register expression.
 // Also cannot add A and B together, such as smt = A && B, since some compilers

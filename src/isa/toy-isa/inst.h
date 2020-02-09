@@ -135,7 +135,6 @@ class inst: public inst_base {
     _args[1] = arg2;
     _args[2] = arg3;
   }
-  void get_opcode_by_idx(int idx) const {return _opcode;}
   inst& operator=(const inst &rhs);
   bool operator==(const inst &x) const;
   string opcode_to_str(int) const;

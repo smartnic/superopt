@@ -4,29 +4,119 @@
 
 using namespace std;
 
-#define DSTREG(inst_var) (inst_var)._args[0]
-#define SRCREG(inst_var) (inst_var)._args[1]
-#define IMM1VAL(inst_var) (inst_var)._args[0]
-#define IMM2VAL(inst_var) (inst_var)._args[1]
-#define UNCOND_OFFVAL(inst_var) (inst_var)._args[0]
-#define COND_OFFVAL(inst_var) (inst_var)._args[2]
+inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
+  int32_t dst_reg = 0, src_reg = 0, imm = 0, off = 0;
+  switch (opcode) {
+    case NOP:
+    case EXIT: dst_reg = 0; src_reg = 0; imm = 0; off = 0; break;
+    case ADD64XC:
+    case LSH64XC:
+    case RSH64XC:
+    case MOV64XC:
+    case ARSH64XC:
+    case ADD32XC:
+    case LSH32XC:
+    case RSH32XC:
+    case MOV32XC:
+    case ARSH32XC: dst_reg = arg1; src_reg = 0; imm = arg2; off = 0; break;
+    case ADD64XY:
+    case LSH64XY:
+    case RSH64XY:
+    case MOV64XY:
+    case ARSH64XY:
+    case ADD32XY:
+    case LSH32XY:
+    case RSH32XY:
+    case MOV32XY:
+    case ARSH32XY: dst_reg = arg1; src_reg = arg2; imm = 0; off = 0; break;
+    case LE:
+    case BE: dst_reg = arg1; src_reg = 0; imm = arg2; off = 0; break;
+    case JA: dst_reg = 0; src_reg = 0; imm = 0; off = arg1; break;
+    case JEQXC:
+    case JGTXC:
+    case JSGTXC: dst_reg = arg1; src_reg = 0; imm = arg2; off = arg3; break;
+    case JEQXY:
+    case JGTXY:
+    case JSGTXY: dst_reg = arg1; src_reg = arg2; imm = 0; off = arg3; break;
+    default: cout << "unknown opcode" << endl;
+  }
+  _opcode = opcode;
+  _dst_reg = dst_reg;
+  _src_reg = src_reg;
+  _imm = imm;
+  _off = off;
+}
 
-#define IMM1VAL32(inst_var) (int32_t)(IMM1VAL(inst_var))
-#define IMM2VAL32(inst_var) (int32_t)(IMM2VAL(inst_var))
-#define UNCOND_OFFVAL16(inst_var) (int16_t)(UNCOND_OFFVAL(inst_var))
-#define COND_OFFVAL16(inst_var) (int16_t)(COND_OFFVAL(inst_var))
+void inst::to_abs_bv(vector<op_t>& abs_vec) const {
+  abs_vec.push_back(_opcode);
+  abs_vec.push_back(_dst_reg);
+  abs_vec.push_back(_src_reg);
+  abs_vec.push_back(_off);
+  abs_vec.push_back(_imm);
+}
 
 int inst::get_opcode_by_idx(int idx) const {
   return IDX_2_OPCODE[idx];
 }
 
-void inst::set_operand(int op_index, op_t op_value) {
+int inst::get_operand(int op_index) const {
+  assert(op_index < MAX_OP_LEN);
+  int operand_type = OPTYPE(_opcode, op_index);
+  switch (operand_type) {
+    case OP_DST_REG: return _dst_reg;
+    case OP_SRC_REG: return _src_reg;
+    case OP_OFF: return _off;
+    case OP_IMM: return _imm;
+    default: cout << "Error: get_operand cannot find operand_type for instruction: ";
+      print();
+      return 0;
+  }
+}
+
+void inst::set_imm(int op_value) {
   // if it is the second operand of LE or BE, the op_value is the type index
-  if ((op_index == 1) && ((_opcode == LE) || (_opcode == BE))) {
+  if ((_opcode == LE) || (_opcode == BE)) {
     int value_map[3] = {16, 32, 64};
-    _args[op_index] = value_map[op_value];
+    _imm = value_map[op_value];
   } else {
-    _args[op_index] = op_value;
+    _imm = op_value;
+  }
+}
+
+int32_t inst::get_max_imm() const {
+  switch (_opcode) {
+    case ADD64XC:
+    case MOV64XC:
+    case ADD32XC:
+    case MOV32XC:
+    case JEQXC:
+    case JGTXC:
+    case JSGTXC: return MAX_IMM;
+    case LSH64XC:
+    case RSH64XC:
+    case ARSH64XC: return MAX_IMM_SH64;
+    case LSH32XC:
+    case RSH32XC:
+    case ARSH32XC: return MAX_IMM_SH32;
+    case LE:
+    case BE: return TYPES_IMM_ENDIAN;
+    default: cout << "Error: no imm in instruction: ";
+      print();
+      return 0;
+  }
+}
+
+void inst::set_operand(int op_index, op_t op_value) {
+  assert(op_index < MAX_OP_LEN);
+  int operand_type = OPTYPE(_opcode, op_index);
+  switch (operand_type) {
+    case OP_DST_REG: _dst_reg = op_value; return;
+    case OP_SRC_REG: _src_reg = op_value; return;
+    case OP_OFF: _off = op_value; return;
+    case OP_IMM: set_imm(op_value); return;
+    default: cout << "Error: set_operand cannot find operand_type for instruction: ";
+      print();
+      return;
   }
 }
 
@@ -70,53 +160,56 @@ string inst::opcode_to_str(int opcode) const {
 void inst::print() const {
   cout << opcode_to_str(_opcode);
   for (int i = 0; i < get_num_operands(); i++) {
-    cout << " " << _args[i];
+    cout << " " << get_operand(i);
   }
   cout << endl;
 }
 
 vector<int> inst::get_reg_list() const {
   vector<int> reg_list;
+  // Here assume registers are the first operands in one instruction
   for (int i = 0; i < get_insn_num_regs(); i++)
-    reg_list.push_back(_args[i]);
+    reg_list.push_back(get_operand(i));
   return reg_list;
 }
 
 inst& inst::operator=(const inst &rhs) {
   _opcode = rhs._opcode;
-  _args[0] = rhs._args[0];
-  _args[1] = rhs._args[1];
-  _args[2] = rhs._args[2];
+  _dst_reg = rhs._dst_reg;
+  _src_reg = rhs._src_reg;
+  _off = rhs._off;
+  _imm = rhs._imm;
   return *this;
 }
 
 bool inst::operator==(const inst &x) const {
   return ((_opcode == x._opcode) &&
-          (_args[0] == x._args[0]) &&
-          (_args[1] == x._args[1]) &&
-          (_args[2] == x._args[2]));
+          (_dst_reg == x._dst_reg) &&
+          (_src_reg == x._src_reg) &&
+          (_off == x._off) &&
+          (_imm == x._imm));
 }
 
 // For jmp opcode, it can only jump forward
 // TODO: modify the name
 int32_t inst::get_max_operand_val(int op_index, int inst_index) const {
-  // max value for each operand type
-  int32_t max_val[7] = {
-    [OP_UNUSED] = 0,
-    [OP_REG] = NUM_REGS,
-    [OP_IMM] = MAX_IMM,
-    [OP_OFF] = min((int32_t)MAX_OFF, MAX_PROG_LEN - inst_index - 1),
-    [OP_IMM_SH32] = MAX_IMM_SH32,
-    [OP_IMM_SH64] = MAX_IMM_SH64,
-    [OP_IMM_ENDIAN] = TYPES_IMM_ENDIAN,
-  };
-  return max_val[OPTYPE(_opcode, op_index)];
+  int operand_type = OPTYPE(_opcode, op_index);
+  switch (operand_type) {
+    case OP_UNUSED: return 0;
+    case OP_DST_REG: return NUM_REGS;
+    case OP_SRC_REG: return NUM_REGS;
+    case OP_OFF: return min((int32_t)MAX_OFF, MAX_PROG_LEN - inst_index - 1);
+    case OP_IMM: return get_max_imm();
+    default: cout << "Error: cannot find operand_type for instruction: ";
+      // print();
+      return 0;
+  }
 }
 
 int inst::get_jmp_dis() const {
   switch (get_opcode_type()) {
-    case (OP_UNCOND_JMP): return UNCOND_OFFVAL16(*this);
-    case (OP_COND_JMP): return COND_OFFVAL16(*this);
+    case (OP_UNCOND_JMP): return _off;
+    case (OP_COND_JMP): return _off;
     default: cout << "Error: opcode is not jmp" << endl; return 0;
   }
 }
@@ -152,103 +245,73 @@ bool inst::is_real_inst() const {
 
 void inst::set_as_nop_inst() {
   _opcode = NOP;
-  _args[0] = 0;
-  _args[1] = 0;
-  _args[2] = 0;
-}
-
-int inst::get_num_operands() const {
-  auto it = num_operands.find(_opcode);
-  if (it != num_operands.end()) {
-    return it->second;
-  } else {
-    cout << "Error: cannot find num_operands for instruction: ";
-    print();
-    return 0;
-  }
-}
-int inst::get_insn_num_regs() const {
-  auto it = insn_num_regs.find(_opcode);
-  if (it != num_operands.end()) {
-    return it->second;
-  } else {
-    cout << "Error: cannot find insn_num_regs for instruction: ";
-    print();
-    return 0;
-  }
-}
-int inst::get_opcode_type() const {
-  auto it = opcode_type.find(_opcode);
-  if (it != num_operands.end()) {
-    return it->second;
-  } else {
-    cout << "Error: cannot find opcode_type for instruction: ";
-    print();
-    return 0;
-  }
+  _dst_reg = 0;
+  _src_reg = 0;
+  _off = 0;
+  _imm = 0;
 }
 
 // z3 64-bit bv
 #define NEWDST newDst
 #define CURDST curDst
 #define CURSRC curSrc
-#define IMM2 to_expr(imm2)
+#define IMM to_expr(imm)
 #define CURSRC_L6 (CURSRC & to_expr((int64_t)0x3f))
 #define CURSRC_L5 (CURSRC & to_expr((int64_t)0x1f))
 
 z3::expr inst::smt_inst(smt_var& sv) const {
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
-  // If opcode is valid, then define curDst, curSrc, imm2 and newDst
+  // If opcode is valid, then define curDst, curSrc, imm and newDst
   if (get_opcode_type() != OP_OTHERS) return string_to_expr("false");
-  // Get curDst, curSrc, imm2 and newDst at the begining to avoid using switch case to
+  // Get curDst, curSrc, imm and newDst at the begining to avoid using switch case to
   // get some of these values for different opcodes. So need to check whether the value is valid.
   // E.g., for curSrc, the range of register is [0, NUM_REGS], for opcode ends up with XC,
   // actually the value is an immediate number whose value may be out of register's range.
   // Should get curDst and curSrc before updating curDst (curSrc may be the same reg as curDst)
-  z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
+  z3::expr curDst = sv.get_cur_reg_var(_dst_reg);
   z3::expr curSrc = string_to_expr("false");
   // check whether the value is within the range of regisers, or function get_cur_reg_var() will raise exception
-  if (SRCREG(*this) < NUM_REGS && SRCREG(*this) >= 0) {
-    curSrc = sv.get_cur_reg_var(SRCREG(*this));
+  if (_src_reg < NUM_REGS && _src_reg >= 0) {
+    curSrc = sv.get_cur_reg_var(_src_reg);
   }
-  z3::expr newDst = sv.update_reg_var(DSTREG(*this));
-  int64_t imm2 = (int64_t)IMM2VAL32(*this);
+  z3::expr newDst = sv.update_reg_var(_dst_reg);
+  int64_t imm = (int64_t)_imm;
 
   switch (_opcode) {
-    case ADD64XC: return predicate_add(CURDST, IMM2, NEWDST);
+    case ADD64XC: return predicate_add(CURDST, IMM, NEWDST);
     case ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
-    case LSH64XC: return predicate_lsh(CURDST, IMM2, NEWDST);
+    case LSH64XC: return predicate_lsh(CURDST, IMM, NEWDST);
     case LSH64XY: return predicate_lsh(CURDST, CURSRC_L6, NEWDST);
-    case RSH64XC: return predicate_rsh(CURDST, IMM2, NEWDST);
+    case RSH64XC: return predicate_rsh(CURDST, IMM, NEWDST);
     case RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
-    case MOV64XC: return predicate_mov(IMM2, NEWDST);
+    case MOV64XC: return predicate_mov(IMM, NEWDST);
     case MOV64XY: return predicate_mov(CURSRC, NEWDST);
-    case ARSH64XC: return predicate_arsh(CURDST, IMM2, NEWDST);
+    case ARSH64XC: return predicate_arsh(CURDST, IMM, NEWDST);
     case ARSH64XY: return predicate_arsh(CURDST, CURSRC_L6, NEWDST);
-    case ADD32XC: return predicate_add32(CURDST, IMM2, NEWDST);
+    case ADD32XC: return predicate_add32(CURDST, IMM, NEWDST);
     case ADD32XY: return predicate_add32(CURDST, CURSRC, NEWDST);
-    case LSH32XC: return predicate_lsh32(CURDST, IMM2, NEWDST);
+    case LSH32XC: return predicate_lsh32(CURDST, IMM, NEWDST);
     case LSH32XY: return predicate_lsh32(CURDST, CURSRC_L5, NEWDST);
-    case RSH32XC: return predicate_rsh32(CURDST, IMM2, NEWDST);
+    case RSH32XC: return predicate_rsh32(CURDST, IMM, NEWDST);
     case RSH32XY: return predicate_rsh32(CURDST, CURSRC_L5, NEWDST);
-    case MOV32XC: return predicate_mov32(IMM2, NEWDST);
+    case MOV32XC: return predicate_mov32(IMM, NEWDST);
     case MOV32XY: return predicate_mov32(CURSRC, NEWDST);
-    case ARSH32XC: return predicate_arsh32(CURDST, IMM2, NEWDST);
+    case ARSH32XC: return predicate_arsh32(CURDST, IMM, NEWDST);
     case ARSH32XY: return predicate_arsh32(CURDST, CURSRC_L5, NEWDST);
     case LE:
-      switch (imm2) {
+      switch (imm) {
         case 16: return predicate_le16(CURDST, NEWDST);
         case 32: return predicate_le32(CURDST, NEWDST);
         case 64: return predicate_le64(CURDST, NEWDST);
-        default: cout << "Error: imm2 " << imm2 << " is not 16, 32, 64" << endl;
+        default: cout << "Error: imm " << imm << " is not 16, 32, 64" << endl;
           return string_to_expr("false");
       }
     case BE:
-      switch (imm2) {
+      switch (imm) {
         case 16: return predicate_be16(CURDST, NEWDST);
         case 32: return predicate_be32(CURDST, NEWDST);
         case 64: return predicate_be64(CURDST, NEWDST);
-        default: cout << "Error: imm2 " << imm2 << " is not 16, 32, 64" << endl;
+        default: cout << "Error: imm " << imm << " is not 16, 32, 64" << endl;
           return string_to_expr("false");
       }
     default: return string_to_expr("false");
@@ -256,21 +319,21 @@ z3::expr inst::smt_inst(smt_var& sv) const {
 }
 
 z3::expr inst::smt_inst_jmp(smt_var& sv) const {
-  // If opcode is valid, then define curDst, curSrc, imm2
+  // If opcode is valid, then define curDst, curSrc, imm
   if (get_opcode_type() != OP_COND_JMP) return string_to_expr("false");
-  z3::expr curDst = sv.get_cur_reg_var(DSTREG(*this));
+  z3::expr curDst = sv.get_cur_reg_var(_dst_reg);
   z3::expr curSrc = string_to_expr("false");
-  if (SRCREG(*this) < NUM_REGS && SRCREG(*this) >= 0) {
-    curSrc = sv.get_cur_reg_var(SRCREG(*this));
+  if (_src_reg < NUM_REGS && _src_reg >= 0) {
+    curSrc = sv.get_cur_reg_var(_src_reg);
   }
-  int64_t imm2 = (int64_t)IMM2VAL32(*this);
+  int64_t imm = (int64_t)_imm;
 
   switch (_opcode) {
-    case JEQXC: return (CURDST == IMM2);
+    case JEQXC: return (CURDST == IMM);
     case JEQXY: return (CURDST == CURSRC);
-    case JGTXC: return (ugt(CURDST, IMM2));
+    case JGTXC: return (ugt(CURDST, IMM));
     case JGTXY: return (ugt(CURDST, CURSRC));
-    case JSGTXC: return (CURDST > IMM2);
+    case JSGTXC: return (CURDST > IMM);
     case JSGTXY: return (CURDST > CURSRC);
     default: return string_to_expr("false");
   }
@@ -314,22 +377,19 @@ int opcode_2_idx(int opcode) {
 }
 
 int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
-#undef IMM2
+#undef IMM
 // type: int64_t
-#define DST ps.regs[DSTREG(*insn)]
-#define SRC ps.regs[SRCREG(*insn)]
-#define IMM1 (int64_t)IMM1VAL32(*insn)
-#define IMM2 (int64_t)IMM2VAL32(*insn)
+#define DST ps.regs[insn->_dst_reg]
+#define SRC ps.regs[insn->_src_reg]
+#define IMM (int64_t)insn->_imm
 #define SRC_L6 L6(SRC)
 #define SRC_L5 L5(SRC)
-#define UNCOND_OFF (int64_t)UNCOND_OFFVAL16(*insn)
-#define COND_OFF (int64_t)COND_OFFVAL16(*insn)
+#define OFF (int64_t)insn->_off
 
 // type: uint64_t
 #define UDST (uint64_t)DST
 #define USRC (uint64_t)SRC
-#define UIMM1 (uint64_t)IMM1
-#define UIMM2 (uint64_t)IMM2
+#define UIMM (uint64_t)IMM
 
 #define ALU_UNARY(OPCODE, OP, OPERAND)                             \
   INSN_##OPCODE:                                                   \
@@ -343,11 +403,11 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 
 #define BYTESWAP(OPCODE, OP)                                       \
   INSN_##OPCODE:                                                   \
-    switch (IMM2) {                                                \
+    switch (IMM) {                                                 \
       case 16: DST = compute_##OP##16(DST);break;                  \
       case 32: DST = compute_##OP##32(DST);break;                  \
       case 64: DST = compute_##OP##64(DST);break;                  \
-      default: cout << "[Error] imm2 " << IMM2                     \
+      default: cout << "[Error] imm " << IMM                       \
                     << " is not 16, 32, 64" << endl;               \
                break;                                              \
     }                                                              \
@@ -356,7 +416,7 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 #define COND_JMP(OPCODE, OP, OPERAND1, OPERAND2)                   \
   INSN_##OPCODE:                                                   \
     if (OPERAND1 OP OPERAND2)                                      \
-      insn += COND_OFF;                                            \
+      insn += OFF;                                                 \
   CONT;
 
   inst* insn = program;
@@ -410,40 +470,40 @@ select_insn:
 INSN_NOP:
   CONT;
 
-  ALU_UNARY(MOV64XC, mov, IMM2)
+  ALU_UNARY(MOV64XC, mov, IMM)
   ALU_UNARY(MOV64XY, mov, SRC)
-  ALU_BINARY(ADD64XC, add, DST, IMM2)
+  ALU_BINARY(ADD64XC, add, DST, IMM)
   ALU_BINARY(ADD64XY, add, DST, SRC)
-  ALU_BINARY(LSH64XC, lsh, DST, IMM2)
+  ALU_BINARY(LSH64XC, lsh, DST, IMM)
   ALU_BINARY(LSH64XY, lsh, DST, SRC_L6)
-  ALU_BINARY(RSH64XC, rsh, DST, IMM2)
+  ALU_BINARY(RSH64XC, rsh, DST, IMM)
   ALU_BINARY(RSH64XY, rsh, DST, SRC_L6)
-  ALU_BINARY(ARSH64XC, arsh, DST, IMM2)
+  ALU_BINARY(ARSH64XC, arsh, DST, IMM)
   ALU_BINARY(ARSH64XY, arsh, DST, SRC_L6)
 
-  ALU_UNARY(MOV32XC, mov32, IMM2)
+  ALU_UNARY(MOV32XC, mov32, IMM)
   ALU_UNARY(MOV32XY, mov32, SRC)
-  ALU_BINARY(ADD32XC, add32, DST, IMM2)
+  ALU_BINARY(ADD32XC, add32, DST, IMM)
   ALU_BINARY(ADD32XY, add32, DST, SRC)
-  ALU_BINARY(LSH32XC, lsh32, DST, IMM2)
+  ALU_BINARY(LSH32XC, lsh32, DST, IMM)
   ALU_BINARY(LSH32XY, lsh32, DST, SRC_L5)
-  ALU_BINARY(RSH32XC, rsh32, DST, IMM2)
+  ALU_BINARY(RSH32XC, rsh32, DST, IMM)
   ALU_BINARY(RSH32XY, rsh32, DST, SRC_L5)
-  ALU_BINARY(ARSH32XC, arsh32, DST, IMM2)
+  ALU_BINARY(ARSH32XC, arsh32, DST, IMM)
   ALU_BINARY(ARSH32XY, arsh32, DST, SRC_L5)
 
   BYTESWAP(LE, le)
   BYTESWAP(BE, be)
 
 INSN_JA:
-  insn += UNCOND_OFF;
+  insn += OFF;
   CONT;
 
-  COND_JMP(JEQXC, ==, DST, IMM2)
+  COND_JMP(JEQXC, ==, DST, IMM)
   COND_JMP(JEQXY, ==, DST, SRC)
-  COND_JMP(JGTXC, >, UDST, UIMM2)
+  COND_JMP(JGTXC, >, UDST, UIMM)
   COND_JMP(JGTXY, >, UDST, USRC)
-  COND_JMP(JSGTXC, >, DST, IMM2)
+  COND_JMP(JSGTXC, >, DST, IMM)
   COND_JMP(JSGTXY, >, DST, SRC)
 
 INSN_EXIT:

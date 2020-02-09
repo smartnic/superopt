@@ -40,7 +40,7 @@ int inst_base::get_opcode() const {
 }
 
 int inst_base::get_opcode_by_idx(int idx) const {
-  return _opcode;
+  return idx;
 }
 
 void inst_base::set_opcode(int op_value) {
