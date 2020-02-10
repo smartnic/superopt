@@ -370,9 +370,40 @@ void test2() {
 #undef SMT_JMP_CHECK_XY
 }
 
+// test3 is to check whether the ebpf inst is the same as linux bpf
+void test3() {
+  cout << endl << "Test 3: ebpf bytecode check" << endl;
+  // this has been checked by bpf-step
+  inst prog[] = {inst(MOV64XY, 6, 1),
+                 inst(MOV64XY, 2, 10),
+                 inst(ADD64XC, 2, -4),
+                 inst(MOV64XC, 1, 0x10),
+                 inst(JGTXC, 1, -1, 1),
+                 inst(MOV64XC, 1, 1),
+                 inst(JEQXC, 0, 0, 1),
+                 inst(MOV64XC, 0, 1),
+                 inst(EXIT),
+                };
+  string expected = "{191, 6, 1, 0, 0},"\
+                    "{191, 2, 10, 0, 0},"\
+                    "{7, 2, 0, 0, -4},"\
+                    "{183, 1, 0, 0, 16},"\
+                    "{37, 1, 0, 1, -1},"\
+                    "{183, 1, 0, 0, 1},"\
+                    "{21, 0, 0, 1, 0},"\
+                    "{183, 0, 0, 0, 1},"\
+                    "{149, 0, 0, 0, 0},";
+  string prog_bytecode = "";
+  for (int i = 0; i < 9; i++) {
+    prog_bytecode += prog[i].get_bytecode_str() + ",";
+  }
+  print_test_res(prog_bytecode == expected, "ebpf bytecode 1");
+}
+
 int main(int argc, char *argv[]) {
   test1();
   test2();
+  test3();
 
   return 0;
 }

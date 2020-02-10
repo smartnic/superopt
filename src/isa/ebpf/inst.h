@@ -371,6 +371,8 @@ class inst: public inst_base {
   // smt
   z3::expr smt_inst(smt_var& sv) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;
+
+  string get_bytecode_str() const;
 };
 
 int64_t interpret(inst* program, int length, prog_state &ps, int64_t input = 0);

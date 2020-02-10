@@ -376,6 +376,14 @@ int opcode_2_idx(int opcode) {
   }
 }
 
+string inst::get_bytecode_str() const {
+  return ("{"
+          + to_string(_opcode) + ", " + to_string(_dst_reg) + ", "
+          + to_string(_src_reg) + ", " + to_string(_off) + ", "
+          + to_string(_imm)
+          + "}");
+}
+
 int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 #undef IMM
 // type: int64_t
