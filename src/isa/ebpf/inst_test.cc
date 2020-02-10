@@ -127,7 +127,7 @@ void test1() {
 
   expected = 0;
   print_test_res(interpret(instructions3, 9, ps) == expected, "interpret program 3");
-  cout << interpret(instructions3, 9, ps) << endl;
+
   expected = 0x100000001;
   print_test_res(interpret(instructions4, 9, ps) == expected, "interpret program 4");
 
