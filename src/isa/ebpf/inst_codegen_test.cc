@@ -57,7 +57,7 @@ void test2() {
   if (is_le) expected = 0xcdef;
   else expected = 0xefcd;
   print_test_res(b == expected, "compute_le16");
-  print_test_res(is_valid(predicate_le16(v(a), v(b))), "predicate_le16 match predicate_le16");
+  print_test_res(is_valid(predicate_le16(v(a), v(b))), "predicate_le16 match compute_le16");
 
   b = compute_le32(a);
   if (is_le) expected = 0x89abcdef;
