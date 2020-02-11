@@ -468,10 +468,25 @@ void test3() {
   print_test_res(prog_bytecode == expected, "ebpf bytecode 2");
 }
 
+void test4() {
+  cout << endl << "Test 3: ebpf opcode and idx conversion check" << endl;
+  bool check_res = true;
+  for (int idx = 0; idx < NUM_INSTR; idx++) {
+    if (opcode_2_idx(idx_2_opcode[idx]) != idx) {
+      print_test_res(false, "idx:" + to_string(idx) + " opcode conversion");
+      check_res = false;
+    }
+  }
+  if (check_res) {
+    print_test_res(true, "opcode and idx conversion");
+  }
+}
+
 int main(int argc, char *argv[]) {
   test1();
   test2();
   test3();
+  test4();
 
   return 0;
 }
