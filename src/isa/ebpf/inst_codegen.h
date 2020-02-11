@@ -43,8 +43,8 @@ inline z3::expr predicate_be64(z3::expr in, z3::expr out);
 // return (out == in1 op in2)
 inline z3::expr predicate_add(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_add32(z3::expr in1, z3::expr in2, z3::expr out);
-inline z3::expr predicatesh(z3::expr in1, z3::expr in2, z3::expr out);
-inline z3::expr predicatesh32(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_lsh(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_lsh32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_rsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_rsh32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh(z3::expr in1, z3::expr in2, z3::expr out);
