@@ -56,7 +56,7 @@ void inst::to_abs_bv(vector<op_t>& abs_vec) const {
 }
 
 int inst::get_opcode_by_idx(int idx) const {
-  return IDX_2_OPCODE[idx];
+  return idx_2_opcode[idx];
 }
 
 int inst::get_operand(int op_index) const {

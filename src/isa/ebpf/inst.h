@@ -112,7 +112,7 @@ enum OPCODES {
 };
 
 int opcode_2_idx(int opcode);
-static const int IDX_2_OPCODE[NUM_INSTR] = {
+static const int idx_2_opcode[NUM_INSTR] = {
   [IDX_NOP] = NOP,
   [IDX_ADD64XC] = ADD64XC,
   [IDX_ADD64XY] = ADD64XY,
