@@ -398,6 +398,74 @@ void test3() {
     prog_bytecode += prog[i].get_bytecode_str() + ",";
   }
   print_test_res(prog_bytecode == expected, "ebpf bytecode 1");
+
+  // test all opcodes
+  inst prog2[30] = {inst(ADD64XC, 3, 1),
+                    inst(ADD64XY, 3, 1),
+                    inst(LSH64XC, 3, 1),
+                    inst(LSH64XY, 3, 1),
+                    inst(RSH64XC, 3, 1),
+                    inst(RSH64XY, 3, 1),
+                    inst(MOV64XC, 3, 1),
+                    inst(MOV64XY, 3, 1),
+                    inst(ARSH64XC, 3, 1),
+                    inst(ARSH64XY, 3, 1),
+                    inst(ADD32XC, 3, 1),
+                    inst(ADD32XY, 3, 1),
+                    inst(LSH32XC, 3, 1),
+                    inst(LSH32XY, 3, 1),
+                    inst(RSH32XC, 3, 1),
+                    inst(RSH32XY, 3, 1),
+                    inst(MOV32XC, 3, 1),
+                    inst(MOV32XY, 3, 1),
+                    inst(ARSH32XC, 3, 1),
+                    inst(ARSH32XY, 3, 1),
+                    inst(LE, 3, 16),
+                    inst(BE, 3, 16),
+                    inst(JA, 1),
+                    inst(JEQXC, 3, 1, 2),
+                    inst(JEQXY, 3, 1, 2),
+                    inst(JGTXC, 3, 1, 2),
+                    inst(JGTXY, 3, 1, 2),
+                    inst(JSGTXC, 3, 1, 2),
+                    inst(JSGTXY, 3, 1, 2),
+                    inst(EXIT),
+                   };
+  expected = "{7, 3, 0, 0, 1},"\
+             "{15, 3, 1, 0, 0},"\
+             "{103, 3, 0, 0, 1},"\
+             "{111, 3, 1, 0, 0},"\
+             "{119, 3, 0, 0, 1},"\
+             "{127, 3, 1, 0, 0},"\
+             "{183, 3, 0, 0, 1},"\
+             "{191, 3, 1, 0, 0},"\
+             "{199, 3, 0, 0, 1},"\
+             "{207, 3, 1, 0, 0},"\
+             "{4, 3, 0, 0, 1},"\
+             "{12, 3, 1, 0, 0},"\
+             "{100, 3, 0, 0, 1},"\
+             "{108, 3, 1, 0, 0},"\
+             "{116, 3, 0, 0, 1},"\
+             "{124, 3, 1, 0, 0},"\
+             "{180, 3, 0, 0, 1},"\
+             "{188, 3, 1, 0, 0},"\
+             "{196, 3, 0, 0, 1},"\
+             "{204, 3, 1, 0, 0},"\
+             "{212, 3, 0, 0, 16},"\
+             "{220, 3, 0, 0, 16},"\
+             "{5, 0, 0, 1, 0},"\
+             "{21, 3, 0, 2, 1},"\
+             "{29, 3, 1, 2, 0},"\
+             "{37, 3, 0, 2, 1},"\
+             "{45, 3, 1, 2, 0},"\
+             "{101, 3, 0, 2, 1},"\
+             "{109, 3, 1, 2, 0},"\
+             "{149, 0, 0, 0, 0},";
+  prog_bytecode = "";
+  for (int i = 0; i < 30; i++) {
+    prog_bytecode += prog2[i].get_bytecode_str() + ",";
+  }
+  print_test_res(prog_bytecode == expected, "ebpf bytecode 2");
 }
 
 int main(int argc, char *argv[]) {
