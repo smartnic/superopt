@@ -132,16 +132,16 @@ void test1() {
   print_test_res(interpret(instructions4, 9, ps) == expected, "interpret program 4");
 
   bool is_le = is_little_endian();
-  if (is_le) expected = 0x01234567;
-  else expected = 0x23014567;
+  if (is_le) expected = 0x4567;
+  else expected = 0x6745;
   print_test_res(interpret(instructions5, 3, ps) == expected, "interpret program 5");
 
   if (is_le) expected = 0x01234567;
   else expected = 0x67452301;
   print_test_res(interpret(instructions6, 3, ps) == expected, "interpret program 6");
 
-  if (is_le) expected = 0x01236745;
-  else expected = 0x01234567;
+  if (is_le) expected = 0x6745;
+  else expected = 0x4567;
   print_test_res(interpret(instructions7, 3, ps) == expected, "interpret program 7");
 
   if (is_le) expected = 0x67452301;
@@ -287,13 +287,13 @@ void test2() {
   int64_t expected;
   bool is_le = is_little_endian();
   insn = inst(LE, 0, 16);
-  if (is_le) expected = 0x0123456789abcdef;
-  else expected = 0x2301456789abcdef;
+  if (is_le) expected = 0xcdef;
+  else expected = 0xefcd;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE16");
 
   insn = inst(LE, 0, 32);
-  if (is_le) expected = 0x0123456789abcdef;
-  else expected = 0x6745230189abcdef;
+  if (is_le) expected = 0x89abcdef;
+  else expected = 0xefcdab89;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE32");
 
   insn = inst(LE, 0, 64);
@@ -302,13 +302,13 @@ void test2() {
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE64");
 
   insn = inst(BE, 0, 16);
-  if (is_le) expected = 0x0123456789abefcd;
-  else expected = 0x0123456789abcdef;
+  if (is_le) expected = 0xefcd;
+  else expected = 0xcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE16");
 
   insn = inst(BE, 0, 32);
-  if (is_le) expected = 0x01234567efcdab89;
-  else expected = 0x0123456789abcdef;
+  if (is_le) expected = 0xefcdab89;
+  else expected = 0x89abcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE32");
 
   insn = inst(BE, 0, 64);
