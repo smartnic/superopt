@@ -9,8 +9,8 @@ using namespace z3;
 validator::validator() {
 }
 
-validator::validator(vector<inst*>& orig) {
-  set_orig(orig);
+validator::validator(inst* orig, int length) {
+  set_orig(orig, length);
 }
 
 validator::validator(expr fx, expr input, expr output) {
@@ -22,12 +22,13 @@ validator::~validator() {}
 void validator::gen_counterex(model& m) {
   expr input_orig = string_to_expr("input");
   expr output_orig = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
-  _last_counterex.set_in_out(m.eval(input_orig).get_numeral_int64(), \
-                             m.eval(output_orig).get_numeral_int64());
+  _last_counterex.set_in_out((reg_t)m.eval(input_orig).get_numeral_uint64(), \
+                             (reg_t)m.eval(output_orig).get_numeral_uint64());
 }
 
 bool validator::is_smt_valid(expr& smt) {
-  solver s(smt_c);
+  tactic t = tactic(smt_c, "bv");
+  solver s = t.mk_solver();
   s.add(!smt);
   switch (s.check()) {
     case unsat: return true;
@@ -42,11 +43,11 @@ bool validator::is_smt_valid(expr& smt) {
 }
 
 // assgin input r0 "input", other registers 0
-void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs) {
+void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg) {
   smt_var sv(prog_id, 0, num_regs);
-  expr p = (sv.get_cur_reg_var(0) == string_to_expr("input"));
-  for (size_t i = 1; i < num_regs; i++) {
-    p = p and (sv.get_cur_reg_var(i) == 0);
+  expr p = (sv.get_cur_reg_var(input_reg) == string_to_expr("input"));
+  for (size_t i = 0; i < num_regs; i++) {
+    if (i != input_reg) p = p and (sv.get_cur_reg_var(i) == 0);
   }
   pre = p;
 }
@@ -61,11 +62,11 @@ void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2
 }
 
 // calculate and store pre_orig, ps_orign
-void validator::set_orig(vector<inst*>& orig) {
-  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, orig[0]->get_num_regs());
+void validator::set_orig(inst* orig, int length) {
+  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg());
   smt_prog ps_orig;
   try {
-    _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig);
+    _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, length);
   } catch (const string err_msg) {
     throw (err_msg);
     return;
@@ -80,13 +81,13 @@ void validator::set_orig(expr fx, expr input, expr output) {
   // no storing store_ps_orig here
 }
 
-int validator::is_equal_to(vector<inst*>& synth) {
+int validator::is_equal_to(inst* synth, int length) {
   expr pre_synth = string_to_expr("true");
-  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, synth[0]->get_num_regs());
+  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg());
   smt_prog ps_synth;
   expr pl_synth = string_to_expr("true");
   try {
-    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth);
+    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length);
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
     // cerr << err_msg << endl;
@@ -101,15 +102,17 @@ int validator::is_equal_to(vector<inst*>& synth) {
   return (int)is_smt_valid(smt);
 }
 
-int validator::get_orig_output(int input, unsigned int num_regs, unsigned int input_reg) {
-  smt_var sv(VLD_PROG_ID_ORIG, 0, num_regs);
-  expr input_logic = (sv.get_init_reg_var(input_reg) == input);
-  solver s(smt_c);
+reg_t validator::get_orig_output(reg_t input, unsigned int num_regs, unsigned int input_reg) {
+  expr input_logic = string_to_expr("false");
+  smt_pre(input_logic, VLD_PROG_ID_ORIG, num_regs, input_reg);
+  input_logic = (string_to_expr("input") == to_expr(input)) && input_logic;
+  tactic t = tactic(smt_c, "bv");
+  solver s = t.mk_solver();
   s.add(_pl_orig && input_logic);
   s.check();
   model m = s.get_model();
   expr output_expr = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
-  int output = m.eval(output_expr).get_numeral_int();
+  reg_t output = m.eval(output_expr).get_numeral_uint64();
   return output;
 }
 /* class validator end */

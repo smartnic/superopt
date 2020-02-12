@@ -3,9 +3,12 @@
 #include <vector>
 #include "../../src/utils.h"
 #include "../../src/inout.h"
-#include "../../src/isa/prog.h"
+#if ISA_TOY_ISA
 #include "../../src/isa/toy-isa/inst.h"
+#elif ISA_EBPF
 #include "../../src/isa/ebpf/inst.h"
+#endif
+#include "../../src/isa/prog.h"
 #include "../../src/verify/validator.h"
 
 using namespace std;
@@ -20,15 +23,12 @@ using namespace std;
 class cost {
  private:
   int _num_real_orig;
-  double get_ex_error_cost(int64_t output1, int64_t output2);
+  double get_ex_error_cost(reg_t output1, reg_t output2);
   int get_avg_value(int ex_set_size);
   double get_final_error_cost(double exs_cost, int is_equal,
                               int ex_set_size, int num_successful_ex,
                               int avg_value);
-  prog_state* make_prog_state();
-  void clear_prog_state(prog_state* ps);
  public:
-  int _isa; // ISA type
   validator _vld;
   examples _examples;
   bool _meas_new_counterex_gened;
@@ -39,7 +39,7 @@ class cost {
   int _strategy_avg = 0;
   cost();
   ~cost();
-  void init(int isa, prog* orig, int len, const vector<int64_t> &input,
+  void init(prog* orig, int len, const vector<reg_t> &input,
             double w_e = 0.5, double w_p = 0.5,
             int strategy_ex = 0, int strategy_eq = 0, int strategy_avg = 0);
   void set_orig(prog* orig, int len);
@@ -47,3 +47,5 @@ class cost {
   double perf_cost(prog* synth, int len);
   double total_prog_cost(prog* synth, int len);
 };
+
+unsigned int pop_count_outputs(int64_t output1, int64_t output2);

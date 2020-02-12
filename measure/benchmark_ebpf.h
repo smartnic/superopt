@@ -1,15 +1,18 @@
 #pragma once
 
+#include <vector>
 #include "../src/isa/ebpf/inst.h"
 
 using namespace std;
 
-// instruction_list set 
+// instruction_list set
 #undef N
-#define N ebpf::MAX_PROG_LEN
+#define N MAX_PROG_LEN
 
 #undef NUM_ORIG
 #define NUM_ORIG 1
-extern ebpf_inst ebpf_bm0[N];
+extern inst bm0[N];
 
-extern ebpf_inst ebpf_bm_opti00[N];
+extern inst bm_opti00[N];
+
+void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id);

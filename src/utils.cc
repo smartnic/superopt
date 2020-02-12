@@ -15,10 +15,10 @@ void print_test_res(bool res, string test_name) {
 default_random_engine gen_utils;
 uniform_real_distribution<double> unidist_utils(0.0, 1.0);
 
-void gen_random_input(vector<int64_t>& inputs, int min, int max) {
-  unordered_set<int> input_set;
+void gen_random_input(vector<reg_t>& inputs, reg_t min, reg_t max) {
+  unordered_set<reg_t> input_set;
   for (size_t i = 0; i < inputs.size();) {
-    int input = min + (max - min) * unidist_utils(gen_utils);
+    reg_t input = min + (max - min) * unidist_utils(gen_utils);
     if (input_set.find(input) == input_set.end()) {
       input_set.insert(input);
       inputs[i] = input;

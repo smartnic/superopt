@@ -11,34 +11,19 @@ cost::cost() {}
 
 cost::~cost() {}
 
-prog_state* cost::make_prog_state() {
-  switch (_isa) {
-    case TOY_ISA: return (new toy_isa_prog_state);
-    case EBPF: return (new ebpf_prog_state);
-    default: cout << "unknown ISA type, return nullptr" << endl; return nullptr;
-  }
-}
-
-void cost::clear_prog_state(prog_state* ps) {
-  delete ps;
-  ps = nullptr;
-}
-
-void cost::init(int isa, prog* orig, int len, const vector<int64_t> &input,
+void cost::init(prog* orig, int len, const vector<reg_t> &input,
                 double w_e, double w_p,
                 int strategy_ex, int strategy_eq, int strategy_avg) {
-  _isa = isa;
   set_orig(orig, len);
   _examples.clear();
-  prog_state* ps = make_prog_state();
+  prog_state ps;
   for (size_t i = 0; i < input.size(); i++) {
-    ps->clear();
-    int64_t output = orig->interpret(*ps, input[i]);
+    ps.clear();
+    reg_t output = orig->interpret(ps, input[i]);
     inout example;
     example.set_in_out(input[i], output);
     _examples.insert(example);
   }
-  clear_prog_state(ps);
   _w_e = w_e;
   _w_p = w_p;
   _strategy_ex = strategy_ex;
@@ -49,7 +34,7 @@ void cost::init(int isa, prog* orig, int len, const vector<int64_t> &input,
 
 void cost::set_orig(prog* orig, int len) {
   try {
-    _vld.set_orig(orig->instptr_list);
+    _vld.set_orig(orig->inst_list, len);
   } catch (const string err_msg) {
     cout << "ERROR: the original program is illegal. ";
     cerr << err_msg << endl;
@@ -59,12 +44,22 @@ void cost::set_orig(prog* orig, int len) {
   _num_real_orig = orig->num_real_instructions();
 }
 
-double cost::get_ex_error_cost(int64_t output1, int64_t output2) {
+unsigned int pop_count_outputs(reg_t output1, reg_t output2) {
+  int gap = 32;
+  unsigned int count = 0;
+  int n = 1 + (NUM_REG_BITS - 1) / gap;
+  for (int i = 0; i < n; i++) {
+    count += pop_count_asm((uint32_t)output1 ^ (uint32_t)output2);
+    output1 >>= gap;
+    output2 >>= gap;
+  }
+  return count;
+}
+
+double cost::get_ex_error_cost(reg_t output1, reg_t output2) {
   switch (_strategy_ex) {
     case ERROR_COST_STRATEGY_ABS: return abs(output1 - output2);
-    case ERROR_COST_STRATEGY_POP:
-      return (pop_count_asm((uint32_t)output1 ^ (uint32_t)output2) +
-              pop_count_asm((uint32_t)(output1 >> 32) ^ (uint32_t)(output2 >> 32)));
+    case ERROR_COST_STRATEGY_POP: return pop_count_outputs(output1, output2);
     default:
       cout << "ERROR: no error cost example strategy matches." << endl;
       return ERROR_COST_MAX;
@@ -122,22 +117,21 @@ double cost::get_final_error_cost(double exs_cost, int is_equal,
 double cost::error_cost(prog* synth, int len) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   double total_cost = 0;
-  int64_t output1, output2;
+  reg_t output1, output2;
   int num_successful_ex = 0;
-  prog_state* ps = make_prog_state();
+  prog_state ps;
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
-    output2 = synth->interpret(*ps, _examples._exs[i].input);
+    output2 = synth->interpret(ps, _examples._exs[i].input);
     double ex_cost = get_ex_error_cost(output1, output2);
     if (ex_cost == 0) num_successful_ex++;
     total_cost += ex_cost;
   }
-  clear_prog_state(ps);
   int is_equal = 0;
   int ex_set_size = _examples._exs.size();
   if (num_successful_ex == ex_set_size) {
-    is_equal = _vld.is_equal_to(synth->instptr_list);
+    is_equal = _vld.is_equal_to(synth->inst_list, len);
   }
 
   int avg_value = get_avg_value(ex_set_size);
@@ -163,7 +157,7 @@ double cost::error_cost(prog* synth, int len) {
 
 double cost::perf_cost(prog* synth, int len) {
   if (synth->_perf_cost != -1) return synth->_perf_cost;
-  int total_cost =  synth->get_max_prog_len() - _num_real_orig +
+  int total_cost =  MAX_PROG_LEN - _num_real_orig +
                     synth->num_real_instructions();
   synth->set_perf_cost(total_cost);
   return total_cost;

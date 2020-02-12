@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "z3++.h"
+#include "../../src/utils.h"
 
 using namespace std;
 
@@ -36,8 +37,6 @@ class smt_var {
 // else the type of e is int_const
 z3::expr string_to_expr(string s);
 z3::expr to_bool_expr(string s);
-z3::expr to_expr(int64_t x);
-z3::expr to_expr(int32_t x);
-z3::expr to_expr(string s, unsigned n);
-z3::expr to_expr(int x, unsigned n);
-z3::expr to_expr(int64_t x, unsigned n);
+z3::expr to_expr(int64_t x, unsigned sz = NUM_REG_BITS);
+z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
+z3::expr to_expr(string s, unsigned sz);

@@ -1,5 +1,4 @@
 #include <iostream>
-#include "../inst_codegen.h"
 #include "inst.h"
 
 using namespace std;
@@ -9,31 +8,34 @@ using namespace std;
 #define IMM1VAL(inst_var) (inst_var)._args[0]
 #define IMM2VAL(inst_var) (inst_var)._args[1]
 
-constexpr int toy_isa::num_operands[NUM_INSTR];
-constexpr int toy_isa::insn_num_regs[NUM_INSTR];
-constexpr int toy_isa::opcode_type[NUM_INSTR];
-constexpr int toy_isa::optable[NUM_INSTR];
-
-string toy_isa_inst::opcode_to_str(int opcode) const {
+string inst::opcode_to_str(int opcode) const {
   switch (opcode) {
-    case toy_isa::NOP: return "NOP";
-    case toy_isa::ADDXY: return "ADDXY";
-    case toy_isa::MOVXC: return "MOVXC";
-    case toy_isa::RETX: return "RETX";
-    case toy_isa::RETC: return "RETC";
-    case toy_isa::JMP: return "JMP";
-    case toy_isa::JMPEQ: return "JMPEQ";
-    case toy_isa::JMPGT: return "JMPGT";
-    case toy_isa::JMPGE: return "JMPGE";
-    case toy_isa::JMPLT: return "JMPLT";
-    case toy_isa::JMPLE: return "JMPLE";
-    case toy_isa::MAXC: return "MAXC";
-    case toy_isa::MAXX: return "MAXX";
+    case NOP: return "NOP";
+    case ADDXY: return "ADDXY";
+    case MOVXC: return "MOVXC";
+    case RETX: return "RETX";
+    case RETC: return "RETC";
+    case JMP: return "JMP";
+    case JMPEQ: return "JMPEQ";
+    case JMPGT: return "JMPGT";
+    case JMPGE: return "JMPGE";
+    case JMPLT: return "JMPLT";
+    case JMPLE: return "JMPLE";
+    case MAXC: return "MAXC";
+    case MAXX: return "MAXX";
     default: return "unknown opcode";
   }
 }
 
-toy_isa_inst& toy_isa_inst::operator=(const inst &rhs) {
+void inst::print() const {
+  cout << opcode_to_str(_opcode);
+  for (int i = 0; i < get_num_operands(); i++) {
+    cout << " " << _args[i];
+  }
+  cout << endl;
+}
+
+inst& inst::operator=(const inst &rhs) {
   _opcode = rhs._opcode;
   _args[0] = rhs._args[0];
   _args[1] = rhs._args[1];
@@ -41,45 +43,33 @@ toy_isa_inst& toy_isa_inst::operator=(const inst &rhs) {
   return *this;
 }
 
+bool inst::operator==(const inst &x) const {
+  return ((_opcode == x._opcode) &&
+          (_args[0] == x._args[0]) &&
+          (_args[1] == x._args[1]) &&
+          (_args[2] == x._args[2]));
+}
+
 // For jmp opcode, it can only jump forward
-int toy_isa_inst::get_max_operand_val(int op_index, int inst_index) const {
+int inst::get_max_operand_val(int op_index, int inst_index) const {
   // max value for each operand type
   int max_val[4] = {
-    [toy_isa::OP_UNUSED] = 0,
-    [toy_isa::OP_REG] = toy_isa::NUM_REGS,
-    [toy_isa::OP_IMM] = toy_isa::MAX_CONST,
-    [toy_isa::OP_OFF] = toy_isa::MAX_PROG_LEN - inst_index - 1,
+    [OP_UNUSED] = 0,
+    [OP_REG] = NUM_REGS,
+    [OP_IMM] = MAX_CONST,
+    [OP_OFF] = MAX_PROG_LEN - inst_index - 1,
   };
-  return max_val[TOY_ISA_OPTYPE(_opcode, op_index)];
+  return max_val[OPTYPE(_opcode, op_index)];
 }
 
-void toy_isa_inst::make_insts(vector<inst*> &instptr_list, const vector<inst*> &other) const {
-  int num_inst = instptr_list.size();
-  toy_isa_inst* new_insts = new toy_isa_inst[num_inst];
-  for (int i = 0; i < num_inst; i++) {
-    new_insts[i] = *other[i];
-  }
-  for (int i = 0; i < num_inst; i++) {
-    instptr_list[i] = &new_insts[i];
-  }
+vector<int> inst::get_reg_list() const {
+  vector<int> reg_list;
+  for (int i = 0; i < get_insn_num_regs(); i++)
+    reg_list.push_back(_args[i]);
+  return reg_list;
 }
 
-void toy_isa_inst::make_insts(vector<inst*> &instptr_list, const inst* instruction) const {
-  int num_inst = instptr_list.size();
-  toy_isa_inst* new_insts = new toy_isa_inst[num_inst];
-  for (int i = 0; i < num_inst; i++) {
-    new_insts[i] = instruction[i];
-  }
-  for (int i = 0; i < num_inst; i++) {
-    instptr_list[i] = &new_insts[i];
-  }
-}
-
-void toy_isa_inst::clear_insts() {
-  delete []this;
-}
-
-int toy_isa_inst::get_jmp_dis() const {
+int inst::get_jmp_dis() const {
   switch (get_opcode_type()) {
     case (OP_UNCOND_JMP): return _args[0];
     case (OP_COND_JMP): return _args[2];
@@ -87,78 +77,124 @@ int toy_isa_inst::get_jmp_dis() const {
   }
 }
 
-void toy_isa_inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
-  jmp_set.insert(toy_isa::JMP);
-  jmp_set.insert(toy_isa::JMPEQ);
-  jmp_set.insert(toy_isa::JMPGT);
-  jmp_set.insert(toy_isa::JMPGE);
-  jmp_set.insert(toy_isa::JMPLT);
-  jmp_set.insert(toy_isa::JMPLE);
+void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
+  jmp_set.insert(JMP);
+  jmp_set.insert(JMPEQ);
+  jmp_set.insert(JMPGT);
+  jmp_set.insert(JMPGE);
+  jmp_set.insert(JMPLT);
+  jmp_set.insert(JMPLE);
 }
 
-int toy_isa_inst::inst_output_opcode_type() const {
+int inst::inst_output_opcode_type() const {
   switch (_opcode) {
-    case toy_isa::RETX:
+    case RETX:
       return RET_X;
-    case toy_isa::RETC:
+    case RETC:
       return RET_C;
     default: // no RET, return register 0
       return RET_X;
   }
 }
 
-int toy_isa_inst::inst_output() const {
+int inst::inst_output() const {
   switch (_opcode) {
-    case toy_isa::RETX:
+    case RETX:
       return DSTREG(*this);
-    case toy_isa::RETC:
+    case RETC:
       return IMM1VAL(*this);
     default: // no RET, return register 0
       return 0;
   }
 }
 
-bool toy_isa_inst::is_real_inst() const {
-  if (_opcode == toy_isa::NOP) return false;
+bool inst::is_real_inst() const {
+  if (_opcode == NOP) return false;
   return true;
 }
 
-void toy_isa_inst::set_as_nop_inst() {
-  _opcode = toy_isa::NOP;
+void inst::set_as_nop_inst() {
+  _opcode = NOP;
   _args[0] = 0;
   _args[1] = 0;
   _args[2] = 0;
 }
 
-int64_t toy_isa_inst::interpret(const vector<inst*> &instptr_list, prog_state &ps, int64_t input) const {
+#undef IMM2
+#define CURSRC sv.get_cur_reg_var(SRCREG(*this))
+#define CURDST sv.get_cur_reg_var(DSTREG(*this))
+#define NEWDST sv.update_reg_var(DSTREG(*this))
+#define IMM2 to_expr(IMM2VAL(*this))
+
+z3::expr inst::smt_inst(smt_var& sv) const {
+  z3::expr curDst = string_to_expr("false");
+  z3::expr curSrc = string_to_expr("false");
+  z3::expr newDst = string_to_expr("false");
+  z3::expr imm = string_to_expr("false");
+  switch (_opcode) {
+    case MAXX:
+    case ADDXY:
+      curDst = CURDST;
+      curSrc = CURSRC;
+      newDst = NEWDST;
+      break;
+    case MOVXC:
+      imm = IMM2;
+      newDst = NEWDST;
+      break;
+    case MAXC:
+      curDst = CURDST;
+      imm = IMM2;
+      newDst = NEWDST;
+      break;
+  }
+  switch (_opcode) {
+    case ADDXY: return predicate_add(curDst, curSrc, newDst);
+    case MOVXC: return predicate_mov(imm, newDst);
+    case MAXC: return predicate_max(curDst, imm, newDst);
+    case MAXX: return predicate_max(curDst, curSrc, newDst);
+    default: return string_to_expr("false");
+  }
+}
+
+z3::expr inst::smt_inst_jmp(smt_var& sv) const {
+  switch (_opcode) {
+    case JMPEQ: return (CURDST == CURSRC);
+    case JMPGT: return (CURDST > CURSRC);
+    case JMPGE: return (CURDST >= CURSRC);
+    case JMPLT: return (CURDST < CURSRC);
+    case JMPLE: return (CURDST <= CURSRC);
+    default: return string_to_expr("false");
+  }
+}
+
+int interpret(inst* program, int length, prog_state &ps, int input) {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
-  // inst *insn = this;
-  int insn = 0;
-  int length = instptr_list.size();
+  inst *insn = program;
   ps.clear();
   ps.regs[0] = input;
 
-  static void *jumptable[toy_isa::NUM_INSTR] = {
-    [toy_isa::NOP]   = && INSN_NOP,
-    [toy_isa::ADDXY] = && INSN_ADDXY,
-    [toy_isa::MOVXC] = && INSN_MOVXC,
-    [toy_isa::RETX] = && INSN_RETX,
-    [toy_isa::RETC] = && INSN_RETC,
-    [toy_isa::JMP] = && INSN_JMP,
-    [toy_isa::JMPEQ] = && INSN_JMPEQ,
-    [toy_isa::JMPGT] = && INSN_JMPGT,
-    [toy_isa::JMPGE] = && INSN_JMPGE,
-    [toy_isa::JMPLT] = && INSN_JMPLT,
-    [toy_isa::JMPLE] = && INSN_JMPLE,
-    [toy_isa::MAXC] = && INSN_MAXC,
-    [toy_isa::MAXX] = && INSN_MAXX,
+  static void *jumptable[NUM_INSTR] = {
+    [NOP]   = && INSN_NOP,
+    [ADDXY] = && INSN_ADDXY,
+    [MOVXC] = && INSN_MOVXC,
+    [RETX] = && INSN_RETX,
+    [RETC] = && INSN_RETC,
+    [JMP] = && INSN_JMP,
+    [JMPEQ] = && INSN_JMPEQ,
+    [JMPGT] = && INSN_JMPGT,
+    [JMPGE] = && INSN_JMPGE,
+    [JMPLT] = && INSN_JMPLT,
+    [JMPLE] = && INSN_JMPLE,
+    [MAXC] = && INSN_MAXC,
+    [MAXX] = && INSN_MAXX,
   };
 
 #undef CONT
 #define CONT { \
       insn++;                                                           \
-      if (insn < length) {                                    \
+      if (insn < program + length) {                                    \
         goto select_insn;                                               \
       } else goto out;                                                  \
   }
@@ -167,13 +203,13 @@ int64_t toy_isa_inst::interpret(const vector<inst*> &instptr_list, prog_state &p
 #undef SRC
 #undef IMM1
 #undef IMM2
-#define DST ps.regs[DSTREG(*instptr_list[insn])]
-#define SRC ps.regs[SRCREG(*instptr_list[insn])]
-#define IMM1 IMM1VAL(*instptr_list[insn])
-#define IMM2 IMM2VAL(*instptr_list[insn])
+#define DST ps.regs[DSTREG(*insn)]
+#define SRC ps.regs[SRCREG(*insn)]
+#define IMM1 IMM1VAL(*insn)
+#define IMM2 IMM2VAL(*insn)
 
 select_insn:
-  goto *jumptable[instptr_list[insn]->_opcode];
+  goto *jumptable[insn->_opcode];
 
 INSN_NOP:
   CONT;
@@ -183,7 +219,7 @@ INSN_ADDXY:
   CONT;
 
 INSN_MOVXC:
-  DST = compute_mov_toy_isa(IMM2, DST);
+  DST = compute_mov(IMM2, DST);
   CONT;
 
 INSN_RETX:
@@ -208,7 +244,7 @@ INSN_JMP:
 #define COND_JMP(SUFFIX, OP)                    \
   INSN_JMP##SUFFIX:                             \
       if (DST OP SRC)                           \
-        insn += instptr_list[insn]->_args[2];                 \
+        insn += insn->_args[2];                 \
   CONT;
 
   COND_JMP(EQ, == )
@@ -224,53 +260,4 @@ error_label:
 out:
   //cout << "Error: program terminated without RET; returning R0" << endl;
   return ps.regs[0]; /* return default R0 value */
-}
-
-
-#undef IMM2
-#define CURSRC sv.get_cur_reg_var(SRCREG(*this))
-#define CURDST sv.get_cur_reg_var(DSTREG(*this))
-#define NEWDST sv.update_reg_var(DSTREG(*this))
-#define IMM2 to_expr(IMM2VAL(*this))
-
-z3::expr toy_isa_inst::smt_inst(smt_var& sv) const {
-  z3::expr curDst = string_to_expr("false");
-  z3::expr curSrc = string_to_expr("false");
-  z3::expr newDst = string_to_expr("false");
-  z3::expr imm = string_to_expr("false");
-  switch (_opcode) {
-    case toy_isa::MAXX:
-    case toy_isa::ADDXY:
-      curDst = CURDST;
-      curSrc = CURSRC;
-      newDst = NEWDST;
-      break;
-    case toy_isa::MOVXC:
-      imm = IMM2;
-      newDst = NEWDST;
-      break;
-    case toy_isa::MAXC:
-      curDst = CURDST;
-      imm = IMM2;
-      newDst = NEWDST;
-      break;
-  }
-  switch (_opcode) {
-    case toy_isa::ADDXY: return predicate_add(curDst, curSrc, newDst);
-    case toy_isa::MOVXC: return predicate_mov(imm, newDst);
-    case toy_isa::MAXC: return predicate_max(curDst, imm, newDst);
-    case toy_isa::MAXX: return predicate_max(curDst, curSrc, newDst);
-    default: return string_to_expr("false");
-  }
-}
-
-z3::expr toy_isa_inst::smt_inst_jmp(smt_var& sv) const {
-  switch (_opcode) {
-    case toy_isa::JMPEQ: return (CURDST == CURSRC);
-    case toy_isa::JMPGT: return (CURDST > CURSRC);
-    case toy_isa::JMPGE: return (CURDST >= CURSRC);
-    case toy_isa::JMPLT: return (CURDST < CURSRC);
-    case toy_isa::JMPLE: return (CURDST <= CURSRC);
-    default: return string_to_expr("false");
-  }
 }
