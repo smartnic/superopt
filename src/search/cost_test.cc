@@ -4,41 +4,41 @@
 
 using namespace std;
 
-toy_isa_inst instructions[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
-                                toy_isa_inst(toy_isa::ADDXY, 0, 2),  /* add r0, r2 */
-                                toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
-                                toy_isa_inst(toy_isa::JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                                toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
-                                toy_isa_inst(toy_isa::RETX, 0),      /* else ret r0 */
-                                toy_isa_inst(), /* nop */
-                               };
+inst instructions[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                        inst(ADDXY, 0, 2),  /* add r0, r2 */
+                        inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                        inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                        inst(RETX, 3),      /* ret r3 */
+                        inst(RETX, 0),      /* else ret r0 */
+                        inst(), /* nop */
+                       };
 
-toy_isa_inst instructions2[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),     /* mov r2, 4 */
-                                 toy_isa_inst(toy_isa::ADDXY, 0, 2),     /* add r0, r2 */
-                                 toy_isa_inst(toy_isa::MAXC, 0, 15),     /* max r0, 15 */
-                                 toy_isa_inst(toy_isa::RETX, 0),         /* ret r0 */
-                                 toy_isa_inst(), /* nop */
-                                 toy_isa_inst(), /* nop */
-                                 toy_isa_inst(), /* nop */
-                                };
+inst instructions2[7] = {inst(MOVXC, 2, 4),     /* mov r2, 4 */
+                         inst(ADDXY, 0, 2),     /* add r0, r2 */
+                         inst(MAXC, 0, 15),     /* max r0, 15 */
+                         inst(RETX, 0),         /* ret r0 */
+                         inst(), /* nop */
+                         inst(), /* nop */
+                         inst(), /* nop */
+                        };
 
-toy_isa_inst instructions3[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
-                                 toy_isa_inst(toy_isa::ADDXY, 0, 2),  /* add r0, r2 */
-                                 toy_isa_inst(toy_isa::MOVXC, 3, 15),  /* mov r3, 15  */
-                                 toy_isa_inst(toy_isa::JMPEQ, 0, 3, 1),  /* if r0 != r3: */
-                                 toy_isa_inst(toy_isa::RETX, 3),      /* ret r3 */
-                                 toy_isa_inst(toy_isa::RETX, 0),      /* else ret r0 */
-                                 toy_isa_inst(), /* nop */
-                                };
+inst instructions3[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                         inst(ADDXY, 0, 2),  /* add r0, r2 */
+                         inst(MOVXC, 3, 15),  /* mov r3, 15  */
+                         inst(JMPEQ, 0, 3, 1),  /* if r0 != r3: */
+                         inst(RETX, 3),      /* ret r3 */
+                         inst(RETX, 0),      /* else ret r0 */
+                         inst(), /* nop */
+                        };
 
-toy_isa_inst instructions4[7] = {toy_isa_inst(toy_isa::MOVXC, 2, 4),  /* mov r2, 4  */
-                                 toy_isa_inst(toy_isa::ADDXY, 0, 2),  /* add r0, r2 */
-                                 toy_isa_inst(toy_isa::MOVXC, 3, 16),  /* mov r3, 16  */
-                                 toy_isa_inst(toy_isa::JMPGT, 0, 3, 1),  /* if r0 <= r3: */
-                                 toy_isa_inst(toy_isa::RETC, 15),      /* ret 15 */
-                                 toy_isa_inst(toy_isa::RETX, 0),      /* else ret r0 */
-                                 toy_isa_inst(), /* nop */
-                                };
+inst instructions4[7] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
+                         inst(ADDXY, 0, 2),  /* add r0, r2 */
+                         inst(MOVXC, 3, 16),  /* mov r3, 16  */
+                         inst(JMPGT, 0, 3, 1),  /* if r0 <= r3: */
+                         inst(RETC, 15),      /* ret 15 */
+                         inst(RETX, 0),      /* else ret r0 */
+                         inst(), /* nop */
+                        };
 
 vector<inout> ex_set(2);
 
@@ -57,7 +57,6 @@ void test2() {
   cout << "test 2: error_cost check starts...\n";
   prog orig(instructions);
   cost c;
-  c._isa = TOY_ISA;
   c.set_orig(&orig, 7);
   c._examples.clear();
   for (size_t i = 0; i < ex_set.size(); i++) {

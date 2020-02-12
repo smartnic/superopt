@@ -97,7 +97,7 @@ prog* mh_sampler_restart::next_start_prog(prog* curr) {
     case MH_SAMPLER_ST_NEXT_START_PROG_ORIG:
       return curr;
     case MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS:
-      return mod_random_k_cont_insts(*curr, (*curr).get_max_prog_len());
+      return mod_random_k_cont_insts(*curr, MAX_PROG_LEN);
     case MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS:
       return mod_random_cont_insts(*curr);
     default:
@@ -162,8 +162,8 @@ double mh_sampler::cost_to_pi(double cost) {
 
 /* compute acceptance function */
 double mh_sampler::alpha(prog* curr, prog* next) {
-  double curr_cost = _cost.total_prog_cost(curr, (*curr).get_max_prog_len());
-  double next_cost = _cost.total_prog_cost(next, (*next).get_max_prog_len());
+  double curr_cost = _cost.total_prog_cost(curr, MAX_PROG_LEN);
+  double next_cost = _cost.total_prog_cost(next, MAX_PROG_LEN);
   return min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
 }
 
@@ -224,7 +224,7 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
                            unordered_map<int, vector<prog*> > &prog_freq) {
   prog *curr, *next;
   curr = new prog(orig);
-  curr->init_vals();
+  curr->reset_vals();
   curr->canonicalize();
   for (int i = 0; i < niter; i++) {
     // check whether need restart, if need, update `start`

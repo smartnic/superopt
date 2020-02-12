@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "z3++.h"
+#include "../../src/utils.h"
 
 using namespace std;
 
@@ -35,3 +36,7 @@ class smt_var {
 // if e = "true"/"false" the type of e is bool_val
 // else the type of e is int_const
 z3::expr string_to_expr(string s);
+z3::expr to_bool_expr(string s);
+z3::expr to_expr(int64_t x, unsigned sz = NUM_REG_BITS);
+z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
+z3::expr to_expr(string s, unsigned sz);

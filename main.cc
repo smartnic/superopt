@@ -9,12 +9,18 @@
 #include <iomanip>
 #include <getopt.h>
 #include <chrono>
-#include "measure/common.h"
-#include "measure/meas_mh_bhv.h"
-#include "src/inout.h"
 #include "src/utils.h"
-#include "src/search/mh_prog.h"
+#include "src/inout.h"
+#if ISA_TOY_ISA
+#include "src/isa/toy-isa/inst.h"
+#include "measure/benchmark_toy_isa.h"
+#elif ISA_EBPF
+#include "src/isa/ebpf/inst.h"
+#include "measure/benchmark_ebpf.h"
+#endif
 #include "src/isa/prog.h"
+#include "src/search/mh_prog.h"
+#include "measure/meas_mh_bhv.h"
 #include "main.h"
 
 using namespace std;
@@ -22,12 +28,11 @@ using namespace std;
 string FILE_CONFIG = "config";
 
 inst* bm;
-vector<int> inputs;
+vector<reg_t> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
 
 ostream& operator<<(ostream& out, const input_paras& ip) {
-  out << "isa:" << ip.isa << endl
-      << "meas_mode:" << ip.meas_mode << endl
+  out << "meas_mode:" << ip.meas_mode << endl
       << "path_out:" << ip.path_out << endl
       << "bm:" << ip.bm << endl
       << "niter:" << ip.niter << endl
@@ -44,41 +49,6 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
       << "p_inst_operand:" << ip.p_inst_operand << endl
       << "p_inst:" << ip.p_inst << endl;
   return out;
-}
-
-void init_benchmarks(vector<inst*> &bm_optis_orig, int bm_id) {
-  switch (bm_id) {
-    case 0:
-      bm = bm0;
-      bm_optis_orig.push_back(bm_opti00);
-      bm_optis_orig.push_back(bm_opti01);
-      bm_optis_orig.push_back(bm_opti02);
-      bm_optis_orig.push_back(bm_opti03);
-      bm_optis_orig.push_back(bm_opti04);
-      bm_optis_orig.push_back(bm_opti05);
-      return;
-    case 1:
-      bm = bm1;
-      bm_optis_orig.push_back(bm_opti10);
-      bm_optis_orig.push_back(bm_opti11);
-      bm_optis_orig.push_back(bm_opti12);
-      bm_optis_orig.push_back(bm_opti13);
-      return;
-    case 2:
-      bm = bm2;
-      bm_optis_orig.push_back(bm_opti20);
-      bm_optis_orig.push_back(bm_opti21);
-      bm_optis_orig.push_back(bm_opti22);
-      bm_optis_orig.push_back(bm_opti23);
-      bm_optis_orig.push_back(bm_opti24);
-      bm_optis_orig.push_back(bm_opti25);
-      bm_optis_orig.push_back(bm_opti26);
-      bm_optis_orig.push_back(bm_opti27);
-      return;
-    default:
-      cout << "bm_id" + to_string(bm_id) + "is out of range {0, 1, 2}" << endl;
-      return;
-  }
 }
 
 // eg. "1.1100" -> "1.11"; "1.000" -> "1"
@@ -122,7 +92,7 @@ void run_mh_sampler(const input_paras &in_para, vector<inst*> &bm_optis_orig) {
   if (in_para.meas_mode) mh.turn_on_measure();
   prog orig(bm);
   orig.print();
-  mh._cost.init(in_para.isa, &orig, orig.get_max_prog_len(), inputs,
+  mh._cost.init(&orig, MAX_PROG_LEN, inputs,
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
                 in_para.st_avg);
@@ -133,7 +103,7 @@ void run_mh_sampler(const input_paras &in_para, vector<inst*> &bm_optis_orig) {
     // get all optimal programs from the original ones
     gen_optis_for_progs(bm_optis_orig, bm_optimals);
     meas_store_raw_data(mh._meas_data, in_para.path_out,
-                        suffix, in_para.bm, bm_optimals, in_para.isa);
+                        suffix, in_para.bm, bm_optimals);
     mh.turn_off_measure();
   }
 }
@@ -227,11 +197,10 @@ void usage() {
        << "options and descriptions" << endl
        << left // set setw(.) as left-aligned
        << setw(W) << "-h" << ": display usage" << endl
-       << setw(W) << "--isa arg" << ": ISA type, `arg`: 0(toy_isa)" << endl
        << setw(W) << "-n arg" << ": number of iterations" << endl
        << setw(W) << "-m" << ": turn on measurement" << endl
        << setw(W) << "--path_out arg" << ": output file path" << endl
-       << setw(W) << "--bm arg" << ": benchmark ID" << endl
+       << setw(W) << "--bm arg" << ": benchmark ID. toy_isa: 0 - 2; ebpf: 0" << endl
        << setw(W) << "--w_e arg" << ": weight of error cost in cost function" << endl
        << setw(W) << "--w_p arg" << ": weight of performance cost in cost function" << endl
        << setw(W) << "--st_ex arg" << ": " +  para_st_ex_desc() << endl
@@ -273,7 +242,6 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"restart_w_p_list", required_argument, nullptr, 11},
     {"p_inst_operand", required_argument, nullptr, 12},
     {"p_inst", required_argument, nullptr, 13},
-    {"isa", required_argument, nullptr, 14},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -297,7 +265,6 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 11: set_w_list(in_para.restart_w_p_list, optarg); break;
       case 12: in_para.p_inst_operand = stod(optarg); break;
       case 13: in_para.p_inst = stod(optarg); break;
-      case 14: in_para.isa = stoi(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -321,7 +288,6 @@ void set_default_para_vals(input_paras &in_para) {
   in_para.restart_w_p_list = {0};
   in_para.p_inst_operand = 1.0 / 3.0;
   in_para.p_inst = 1.0 / 3.0;
-  in_para.isa = 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -332,7 +298,7 @@ int main(int argc, char* argv[]) {
   store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
   auto start = NOW;
-  init_benchmarks(bm_optis_orig, in_para.bm);
+  init_benchmarks(&bm, bm_optis_orig, in_para.bm);
   inputs.resize(30);
   gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);

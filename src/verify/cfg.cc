@@ -39,20 +39,20 @@ void graph::insert_node_start(int cur_index, int d, int length, set<size_t>& nod
   }
 }
 
-void graph::gen_node_starts(vector<inst*>& inst_lst, set<size_t>& node_starts) {
+void graph::gen_node_starts(inst* inst_lst, int length, set<size_t>& node_starts) {
   node_starts.insert(0);
-  for (size_t i = 0; i < inst_lst.size(); i++) {
+  for (size_t i = 0; i < length; i++) {
     vector<int> distances;
-    int opcode = inst_lst[i]->get_opcode_type();
+    int opcode = inst_lst[i].get_opcode_type();
     if (opcode == OP_UNCOND_JMP) {
-      distances.push_back(inst_lst[i]->get_jmp_dis());
+      distances.push_back(inst_lst[i].get_jmp_dis());
     } else if (opcode == OP_COND_JMP) {
       distances.push_back(0);
-      distances.push_back(inst_lst[i]->get_jmp_dis());
+      distances.push_back(inst_lst[i].get_jmp_dis());
     }
     for (size_t j = 0; j < distances.size(); j++) {
       try {
-        insert_node_start(i, distances[j], inst_lst.size(), node_starts);
+        insert_node_start(i, distances[j], length, node_starts);
       } catch (const string err_msg) {
         throw err_msg;
       }
@@ -61,9 +61,9 @@ void graph::gen_node_starts(vector<inst*>& inst_lst, set<size_t>& node_starts) {
 }
 
 // return end instruction ID in [start: end]
-size_t graph::get_end_inst_id(vector<inst*>& inst_lst, size_t start, size_t end) {
+size_t graph::get_end_inst_id(inst* inst_lst, size_t start, size_t end) {
   for (size_t i = start; i < end; i++) {
-    int opcode = inst_lst[i]->get_opcode_type();
+    int opcode = inst_lst[i].get_opcode_type();
     if ((opcode == OP_RET) || (opcode == OP_UNCOND_JMP)) {
       return i;
     }
@@ -71,7 +71,7 @@ size_t graph::get_end_inst_id(vector<inst*>& inst_lst, size_t start, size_t end)
   return end;
 }
 
-void graph::gen_node_ends(vector<inst*>& inst_lst, set<size_t>& node_starts, vector<size_t>& node_ends) {
+void graph::gen_node_ends(inst* inst_lst, int length, set<size_t>& node_starts, vector<size_t>& node_ends) {
   /* Traverse all starts in node_starts, find an end for each start
      The end for all starts except the last one is the OP_RET/OP_UNCOND_JMP instruction
      OR the ${next start - 1} instruction
@@ -86,7 +86,7 @@ void graph::gen_node_ends(vector<inst*>& inst_lst, set<size_t>& node_starts, vec
     node_ends.push_back(end);
   }
   // end for the last start
-  size_t end = get_end_inst_id(inst_lst, *i, inst_lst.size() - 1);
+  size_t end = get_end_inst_id(inst_lst, *i, length - 1);
   node_ends.push_back(end);
 }
 
@@ -114,7 +114,7 @@ void graph::gen_id_map(unsigned_map& id_map, vector<node>& gnodes) {
 }
 
 void graph::gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vector<node>& gnodes,
-                                vector<inst*>& inst_lst) {
+                                inst* inst_lst) {
   for (size_t i = 0; i < gnodes.size(); i++) {
     gnodes_out.push_back(vector<unsigned int> {});
   }
@@ -125,15 +125,15 @@ void graph::gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vecto
   for (size_t i = 0; i < gnodes.size(); i++) {
     size_t end_inst_id = gnodes[i]._end;
     vector <unsigned int> next_inst_ids;
-    int inst_type = inst_lst[end_inst_id]->get_opcode_type();
+    int inst_type = inst_lst[end_inst_id].get_opcode_type();
     if (inst_type == OP_OTHERS || inst_type == OP_NOP) {
       next_inst_ids.push_back(end_inst_id + 1);
     } else if (inst_type == OP_UNCOND_JMP) {
-      next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id]->get_jmp_dis());
+      next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id].get_jmp_dis());
     } else if (inst_type == OP_COND_JMP) {
       // keep order: insert no jmp first
       next_inst_ids.push_back(end_inst_id + 1); //no jmp
-      next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id]->get_jmp_dis()); //jmp
+      next_inst_ids.push_back(end_inst_id + 1 + inst_lst[end_inst_id].get_jmp_dis()); //jmp
     }
 
     for (size_t j = 0; j < next_inst_ids.size(); j++) {
@@ -201,19 +201,19 @@ void graph::dfs(size_t cur_gnode_id, vector<node>& gnodes, vector<vector<unsigne
   finished[cur_gnode_id] = true;
 }
 
-void graph::gen_graph(vector<inst*> &inst_lst) {
+void graph::gen_graph(inst* inst_lst, int length) {
   init();
   // 1 generate node starts
   // set: keep order and ensure no repeated items
   set<size_t> node_starts;
   try {
-    gen_node_starts(inst_lst, node_starts);
+    gen_node_starts(inst_lst, length, node_starts);
   } catch (const string err_msg) {
     throw err_msg;
   }
   // 2 generate node ends for each start in node_starts
   vector<size_t> node_ends;
-  gen_node_ends(inst_lst, node_starts, node_ends);
+  gen_node_ends(inst_lst, length, node_starts, node_ends);
   // 3 generate graph G containg all nodes and all edges
   vector<node> gnodes;
   vector<vector<unsigned int> > gnodes_out;
@@ -239,9 +239,9 @@ void graph::gen_graph(vector<inst*> &inst_lst) {
   }
 }
 
-graph::graph(vector<inst*>& inst_lst) {
+graph::graph(inst* inst_lst, int length) {
   try {
-    gen_graph(inst_lst);
+    gen_graph(inst_lst, length);
   } catch (const string err_msg) {
     throw err_msg;
   }
@@ -250,6 +250,25 @@ graph::graph(vector<inst*>& inst_lst) {
 graph::graph() {}
 
 graph::~graph() {}
+
+string graph::graph_to_str() const {
+  string str = "nodes:";
+  for (size_t i = 0; i < nodes.size(); i++) {
+    str += to_string(nodes[i]._start) + "," + to_string(nodes[i]._end) + " ";
+  }
+  str += "edges:";
+  for (size_t i = 0; i < nodes.size(); i++) {
+    str += " " + to_string(i) + ":";
+    for (size_t j = 0; j < nodes_in[i].size(); j++) {
+      str += to_string(nodes_in[i][j]) + ",";
+    }
+    str += ";";
+    for (size_t j = 0; j < nodes_out[i].size(); j++) {
+      str += to_string(nodes_out[i][j]) + ",";
+    }
+  }
+  return str;
+}
 
 ostream& operator<<(ostream& out, const graph& g) {
   out << endl << "nodes:" << endl << " ";
