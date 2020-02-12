@@ -24,19 +24,18 @@ void test1() {
   string file_name = "measure/test.txt";
   meas_mh_data d;
   d._mode = true;
-  int isa_type = TOY_ISA;
 
-  store_optimals_to_file(file_name, optimals, d._mode, isa_type);
+  store_optimals_to_file(file_name, optimals, d._mode);
   read_data_from_file(file_name, "Optimals:");
 
   d.insert_proposal(prog(bm0), 1);
   d.insert_proposal(prog(bm1), 0);
-  store_proposals_to_file(file_name, d, optimals, isa_type);
+  store_proposals_to_file(file_name, d, optimals);
   read_data_from_file(file_name, "Proposals:");
 
   d.insert_program(0, prog(bm0));
   d.insert_program(5, prog(bm1));
-  store_programs_to_file(file_name, d, optimals, isa_type);
+  store_programs_to_file(file_name, d, optimals);
   read_data_from_file(file_name, "Programs:");
 
   examples exs;

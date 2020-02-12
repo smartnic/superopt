@@ -2,12 +2,14 @@
 
 #include <utility>
 #include <vector>
-#include "../src/isa/toy-isa/inst.h"
-#include "../src/isa/ebpf/inst.h"
-#include "../src/isa/inst.h"
-#include "../src/isa/prog.h"
 #include "../src/utils.h"
 #include "../src/inout.h"
+#if ISA_TOY_ISA
+#include "../src/isa/toy-isa/inst.h"
+#elif ISA_EBPF
+#include "../src/isa/ebpf/inst.h"
+#endif
+#include "../src/isa/prog.h"
 
 using namespace std;
 
@@ -39,19 +41,16 @@ class meas_mh_data {
  */
 void store_proposals_to_file(string file_name,
                              const meas_mh_data &d,
-                             const vector<prog> &optimals,
-                             int isa_type);
+                             const vector<prog> &optimals);
 void store_programs_to_file(string file_name,
                             const meas_mh_data &d,
-                            const vector<prog> &optimals,
-                            int isa_type);
+                            const vector<prog> &optimals);
 void store_examples_to_file(string file_name,
                             const meas_mh_data &d);
 void store_optimals_to_file(string file_name,
                             const vector<prog> &optimals,
-                            bool measure_mode,
-                            int isa_type);
+                            bool measure_mode);
 void meas_store_raw_data(meas_mh_data &d, string meas_path_out, string suffix,
-                         int meas_bm, vector<prog> &bm_optimals, int isa_type);
+                         int meas_bm, vector<prog> &bm_optimals);
 
 void gen_optis_for_progs(const vector<inst*> &bm_optis_orig, vector<prog> &bm_optimals);

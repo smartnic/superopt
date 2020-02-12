@@ -3,194 +3,173 @@
 #include "../../../src/utils.h"
 #include "inst.h"
 
-#define CONVERT(inst_ptrs, insts, len) {  \
-  inst_ptrs.resize(len);  \
-  insts->convert_to_pointers(inst_ptrs, insts);  \
-}
+inst instructions1[3] = {inst(MOV64XC, 0, 0xffffffff),  /* mov64 r0, 0xffffffff */
+                         inst(ADD64XY, 0, 0),           /* add64 r0, r0 */
+                         inst(EXIT),                    /* exit, return r0 */
+                        };
 
-#define INTERPRET(inst_ptrs, prog_state) inst_ptrs[0]->interpret(inst_ptrs, prog_state)
-
-ebpf_inst instructions1[3] = {ebpf_inst(ebpf::MOV64XC, 0, 0xffffffff),  /* mov64 r0, 0xffffffff */
-                              ebpf_inst(ebpf::ADD64XY, 0, 0),           /* add64 r0, r0 */
-                              ebpf_inst(ebpf::EXIT),                    /* exit, return r0 */
-                             };
-
-ebpf_inst instructions2[3] = {ebpf_inst(ebpf::MOV64XC, 0, 0xffffffff),  /* mov64 r0, 0xffffffff */
-                              ebpf_inst(ebpf::ADD32XY, 0, 0),           /* add32 r0, r0 */
-                              ebpf_inst(ebpf::EXIT),                    /* exit, return r0 */
-                             };
+inst instructions2[3] = {inst(MOV64XC, 0, 0xffffffff),  /* mov64 r0, 0xffffffff */
+                         inst(ADD32XY, 0, 0),           /* add32 r0, r0 */
+                         inst(EXIT),                    /* exit, return r0 */
+                        };
 /* test JEQXC */
-ebpf_inst instructions3[9] = {ebpf_inst(ebpf::MOV32XC, 0, -1),         /* r0 = 0x00000000ffffffff */
-                              ebpf_inst(ebpf::ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
-                              ebpf_inst(ebpf::MOV64XC, 1, 0x0),        /* r1 = 0 */
-                              ebpf_inst(ebpf::JEQXC, 0, 0, 4),         /* if r0 == 0, ret r0 = 0x100000000 */
-                              ebpf_inst(ebpf::MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
-                              ebpf_inst(ebpf::JEQXC, 0, 0xffffffff, 1),/* if r0 == -1, ret r0 = 0 */
-                              ebpf_inst(ebpf::EXIT),                   /* else ret r0 = 0xffffffffffffffff */
-                              ebpf_inst(ebpf::MOV64XC, 0, 0),
-                              ebpf_inst(ebpf::EXIT),
-                             };
+inst instructions3[9] = {inst(MOV32XC, 0, -1),         /* r0 = 0x00000000ffffffff */
+                         inst(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
+                         inst(MOV64XC, 1, 0x0),        /* r1 = 0 */
+                         inst(JEQXC, 0, 0, 4),         /* if r0 == 0, ret r0 = 0x100000000 */
+                         inst(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
+                         inst(JEQXC, 0, 0xffffffff, 1),/* if r0 == -1, ret r0 = 0 */
+                         inst(EXIT),                   /* else ret r0 = 0xffffffffffffffff */
+                         inst(MOV64XC, 0, 0),
+                         inst(EXIT),
+                        };
 /* test JEQXY */
-ebpf_inst instructions4[9] = {ebpf_inst(ebpf::MOV32XC, 0, 0xffffffff), /* r0 = 0x00000000ffffffff */
-                              ebpf_inst(ebpf::ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
-                              ebpf_inst(ebpf::MOV64XC, 1, 0x0),        /* r1 = 0 */
-                              ebpf_inst(ebpf::JEQXY, 0, 1, 4),         /* if r0 == r1, ret r0 = 0x100000000 */
-                              ebpf_inst(ebpf::MOV64XY, 1, 0),          /* else r1 = r0 */
-                              ebpf_inst(ebpf::JEQXY, 0, 1, 1),         /* if r0 == r1, ret r0 = 0x100000001 */
-                              ebpf_inst(ebpf::EXIT),                   /* else ret r0 = 0x100000000 */
-                              ebpf_inst(ebpf::ADD64XC, 0, 0x1),
-                              ebpf_inst(ebpf::EXIT),
-                             };
+inst instructions4[9] = {inst(MOV32XC, 0, 0xffffffff), /* r0 = 0x00000000ffffffff */
+                         inst(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
+                         inst(MOV64XC, 1, 0x0),        /* r1 = 0 */
+                         inst(JEQXY, 0, 1, 4),         /* if r0 == r1, ret r0 = 0x100000000 */
+                         inst(MOV64XY, 1, 0),          /* else r1 = r0 */
+                         inst(JEQXY, 0, 1, 1),         /* if r0 == r1, ret r0 = 0x100000001 */
+                         inst(EXIT),                   /* else ret r0 = 0x100000000 */
+                         inst(ADD64XC, 0, 0x1),
+                         inst(EXIT),
+                        };
 
-ebpf_inst instructions5[3] = {ebpf_inst(ebpf::MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                              ebpf_inst(ebpf::LE16, 0),                /* le16 r0 */
-                              ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
-                             };
+inst instructions5[3] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
+                         inst(LE, 0, 16),                /* le16 r0 */
+                         inst(EXIT),                   /* exit, return r0 */
+                        };
 
-ebpf_inst instructions6[3] = {ebpf_inst(ebpf::MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                              ebpf_inst(ebpf::LE32, 0),                /* le32 r0 */
-                              ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
-                             };
+inst instructions6[3] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
+                         inst(LE, 0, 32),                /* le32 r0 */
+                         inst(EXIT),                   /* exit, return r0 */
+                        };
 
-ebpf_inst instructions7[3] = {ebpf_inst(ebpf::MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                              ebpf_inst(ebpf::BE16, 0),                /* be16 r0 */
-                              ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
-                             };
+inst instructions7[3] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
+                         inst(BE, 0, 16),                /* be16 r0 */
+                         inst(EXIT),                   /* exit, return r0 */
+                        };
 
-ebpf_inst instructions8[3] = {ebpf_inst(ebpf::MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                              ebpf_inst(ebpf::BE32, 0),                /* be32 r0 */
-                              ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
-                             };
+inst instructions8[3] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
+                         inst(BE, 0, 32),                /* be32 r0 */
+                         inst(EXIT),                   /* exit, return r0 */
+                        };
 
-ebpf_inst instructions9[6] = {ebpf_inst(ebpf::MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                              ebpf_inst(ebpf::LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
-                              ebpf_inst(ebpf::MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
-                              ebpf_inst(ebpf::ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
-                              ebpf_inst(ebpf::LE64, 0),                /* le64 r0 */
-                              ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
-                             };
+inst instructions9[6] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
+                         inst(LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
+                         inst(MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
+                         inst(ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
+                         inst(LE, 0, 64),                /* le64 r0 */
+                         inst(EXIT),                   /* exit, return r0 */
+                        };
 
-ebpf_inst instructions10[6] = {ebpf_inst(ebpf::MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
-                               ebpf_inst(ebpf::LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
-                               ebpf_inst(ebpf::MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
-                               ebpf_inst(ebpf::ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
-                               ebpf_inst(ebpf::BE64, 0),                /* be64 r0 */
-                               ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
-                              };
+inst instructions10[6] = {inst(MOV64XC, 0, 0x01234567), /* mov64 r0, 0x01234567 */
+                          inst(LSH64XC, 0, 32),         /* r0 = 0x0123456700000000 */
+                          inst(MOV32XC, 1, 0x89abcdef), /* r1 = 0x0000000089abcdef */
+                          inst(ADD64XY, 0, 1),          /* r0 = 0x0123456789abcdef */
+                          inst(BE, 0, 64),                /* be64 r0 */
+                          inst(EXIT),                   /* exit, return r0 */
+                         };
 
-ebpf_inst instructions11[7] = {ebpf_inst(ebpf::MOV64XC, 0, -1),         /* r0 = 0xffffffffffffffff */
-                               ebpf_inst(ebpf::RSH64XC, 0, 63),         /* r0 >> 63 */
-                               ebpf_inst(ebpf::JEQXC, 0, 1, 1),         /* if r0 != 0x1, exit */
-                               ebpf_inst(ebpf::EXIT),                   /* exit */
-                               ebpf_inst(ebpf::MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
-                               ebpf_inst(ebpf::RSH32XC, 0, 1),          /* r0 >>32 1 */
-                               ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
-                              };
+inst instructions11[7] = {inst(MOV64XC, 0, -1),         /* r0 = 0xffffffffffffffff */
+                          inst(RSH64XC, 0, 63),         /* r0 >> 63 */
+                          inst(JEQXC, 0, 1, 1),         /* if r0 != 0x1, exit */
+                          inst(EXIT),                   /* exit */
+                          inst(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
+                          inst(RSH32XC, 0, 1),          /* r0 >>32 1 */
+                          inst(EXIT),                   /* exit, return r0 */
+                         };
 
-ebpf_inst instructions12[8] = {ebpf_inst(ebpf::MOV64XC, 0, -1),         /* r0 = 0xffffffffffffffff */
-                               ebpf_inst(ebpf::ARSH64XC, 0, 63),        /* r0 >> 63 */
-                               ebpf_inst(ebpf::MOV64XC, 1, -1),         /* r1 = 0xffffffffffffffff */
-                               ebpf_inst(ebpf::JEQXY, 0, 1, 1),         /* if r0 != r1, exit */
-                               ebpf_inst(ebpf::EXIT),                   /* exit */
-                               ebpf_inst(ebpf::MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
-                               ebpf_inst(ebpf::ARSH32XC, 0, 1),         /* r0 >>32 1 */
-                               ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
-                              };
+inst instructions12[8] = {inst(MOV64XC, 0, -1),         /* r0 = 0xffffffffffffffff */
+                          inst(ARSH64XC, 0, 63),        /* r0 >> 63 */
+                          inst(MOV64XC, 1, -1),         /* r1 = 0xffffffffffffffff */
+                          inst(JEQXY, 0, 1, 1),         /* if r0 != r1, exit */
+                          inst(EXIT),                   /* exit */
+                          inst(MOV64XC, 0, -1),         /* else r0 = 0xffffffffffffffff */
+                          inst(ARSH32XC, 0, 1),         /* r0 >>32 1 */
+                          inst(EXIT),                   /* exit, return r0 */
+                         };
 
-ebpf_inst instructions13[8] = {ebpf_inst(ebpf::MOV32XC, 0, -1),         /* r0 = 0xffffffff */
-                               ebpf_inst(ebpf::JGTXC, 0, 0, 1),         /* if r0 <= 0, ret r0 = 0xffffffff */
-                               ebpf_inst(ebpf::EXIT),
-                               ebpf_inst(ebpf::MOV64XC, 1, -1),         /* else r1 = 0xffffffffffffffff */
-                               ebpf_inst(ebpf::JGTXY, 1, 0, 1),         /* if r1 <= r0, ret r0 = 0xffffffff */
-                               ebpf_inst(ebpf::EXIT),
-                               ebpf_inst(ebpf::MOV64XC, 0, 0),          /* else r0 = 0 */
-                               ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
-                              };
+inst instructions13[8] = {inst(MOV32XC, 0, -1),         /* r0 = 0xffffffff */
+                          inst(JGTXC, 0, 0, 1),         /* if r0 <= 0, ret r0 = 0xffffffff */
+                          inst(EXIT),
+                          inst(MOV64XC, 1, -1),         /* else r1 = 0xffffffffffffffff */
+                          inst(JGTXY, 1, 0, 1),         /* if r1 <= r0, ret r0 = 0xffffffff */
+                          inst(EXIT),
+                          inst(MOV64XC, 0, 0),          /* else r0 = 0 */
+                          inst(EXIT),                   /* exit, return r0 */
+                         };
 
-ebpf_inst instructions14[7] = {ebpf_inst(ebpf::MOV64XC, 0, -1),         /* r0 = -1 */
-                               ebpf_inst(ebpf::JSGTXC, 0, 0, 4),        /* if r0 s>= 0, ret r0 = -1 */
-                               ebpf_inst(ebpf::JSGTXC, 0, 0xffffffff, 3),/* elif r1 s> 0xffffffff, ret r0 = -1 */
-                               ebpf_inst(ebpf::MOV64XC, 1, 0),          /* r1 = 0 */
-                               ebpf_inst(ebpf::JSGTXY, 0, 1),           /* if r0 s> r1, ret r0 = -1 */
-                               ebpf_inst(ebpf::MOV64XC, 0, 0),          /* else r0 = 0 */
-                               ebpf_inst(ebpf::EXIT),                   /* exit, return r0 */
-                              };
+inst instructions14[7] = {inst(MOV64XC, 0, -1),         /* r0 = -1 */
+                          inst(JSGTXC, 0, 0, 4),        /* if r0 s>= 0, ret r0 = -1 */
+                          inst(JSGTXC, 0, 0xffffffff, 3),/* elif r1 s> 0xffffffff, ret r0 = -1 */
+                          inst(MOV64XC, 1, 0),          /* r1 = 0 */
+                          inst(JSGTXY, 0, 1),           /* if r0 s> r1, ret r0 = -1 */
+                          inst(MOV64XC, 0, 0),          /* else r0 = 0 */
+                          inst(EXIT),                   /* exit, return r0 */
+                         };
 
-ebpf_inst instructions15[4] = {ebpf_inst(ebpf::MOV32XC, 0, -1),         /* r0 = 0xffffffff */
-                               ebpf_inst(ebpf::JGTXC, 0, -2, 1),        /* if r0 > 0xfffffffffffffffe, ret r0 = 0xffffffff */
-                               ebpf_inst(ebpf::MOV64XC, 0, 0),          /* else ret r0 = 0 */
-                               ebpf_inst(ebpf::EXIT),
-                              };
+inst instructions15[4] = {inst(MOV32XC, 0, -1),         /* r0 = 0xffffffff */
+                          inst(JGTXC, 0, -2, 1),        /* if r0 > 0xfffffffffffffffe, ret r0 = 0xffffffff */
+                          inst(MOV64XC, 0, 0),          /* else ret r0 = 0 */
+                          inst(EXIT),
+                         };
 
 void test1() {
-  ebpf_prog_state ps;
+  prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
-  vector<inst*> insts;
-  CONVERT(insts, instructions1, 3);
+
   int64_t expected = 0xfffffffffffffffe;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 1");
+  print_test_res(interpret(instructions1, 3, ps) == expected, "interpret program 1");
 
-  CONVERT(insts, instructions2, 3);
   expected = 0xfffffffe;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 2");
+  print_test_res(interpret(instructions2, 3, ps) == expected, "interpret program 2");
 
-  CONVERT(insts, instructions3, 9);
   expected = 0;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 3");
+  print_test_res(interpret(instructions3, 9, ps) == expected, "interpret program 3");
 
-  CONVERT(insts, instructions4, 9);
   expected = 0x100000001;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 4");
+  print_test_res(interpret(instructions4, 9, ps) == expected, "interpret program 4");
 
-  CONVERT(insts, instructions5, 3);
-  if (is_little_endian()) expected = 0x01234567;
-  else expected = 0x23014567;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 5");
+  bool is_le = is_little_endian();
+  if (is_le) expected = 0x4567;
+  else expected = 0x6745;
+  print_test_res(interpret(instructions5, 3, ps) == expected, "interpret program 5");
 
-  CONVERT(insts, instructions6, 3);
-  if (is_little_endian()) expected = 0x01234567;
+  if (is_le) expected = 0x01234567;
   else expected = 0x67452301;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 6");
+  print_test_res(interpret(instructions6, 3, ps) == expected, "interpret program 6");
 
-  CONVERT(insts, instructions7, 3);
-  if (is_little_endian()) expected = 0x01236745;
+  if (is_le) expected = 0x6745;
+  else expected = 0x4567;
+  print_test_res(interpret(instructions7, 3, ps) == expected, "interpret program 7");
+
+  if (is_le) expected = 0x67452301;
   else expected = 0x01234567;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 7");
+  print_test_res(interpret(instructions8, 3, ps) == expected, "interpret program 8");
 
-  CONVERT(insts, instructions8, 3);
-  if (is_little_endian()) expected = 0x67452301;
-  else expected = 0x01234567;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 8");
-
-  CONVERT(insts, instructions9, 6);
-  if (is_little_endian()) expected = 0x0123456789abcdef;
+  if (is_le) expected = 0x0123456789abcdef;
   else expected = 0xefcdab8967452301;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 9");
+  print_test_res(interpret(instructions9, 6, ps) == expected, "interpret program 9");
 
-  CONVERT(insts, instructions10, 6);
-  if (is_little_endian()) expected = 0xefcdab8967452301;
+  if (is_le) expected = 0xefcdab8967452301;
   else expected = 0x0123456789abcdef;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret program 10");
+  print_test_res(interpret(instructions10, 6, ps) == expected, "interpret program 10");
 
-  CONVERT(insts, instructions11, 7);
   expected = 0x7fffffff;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret rsh64 & rsh32");
+  print_test_res(interpret(instructions11, 7, ps) == expected, "interpret rsh64 & rsh32");
 
-  CONVERT(insts, instructions12, 8);
   expected = 0xffffffff;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret arsh64 & arsh32");
+  print_test_res(interpret(instructions12, 8, ps) == expected, "interpret arsh64 & arsh32");
 
-  CONVERT(insts, instructions13, 8);
   expected = 0;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret jgt");
+  print_test_res(interpret(instructions13, 8, ps) == expected, "interpret jgt");
 
-  CONVERT(insts, instructions14, 7);
   expected = 0;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret jsgt");
+  print_test_res(interpret(instructions14, 7, ps) == expected, "interpret jsgt");
 
-  CONVERT(insts, instructions15, 4);
   expected = 0;
-  print_test_res(INTERPRET(insts, ps) == expected, "interpret jgt");
+  print_test_res(interpret(instructions15, 4, ps) == expected, "interpret jgt");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output) {
@@ -220,8 +199,8 @@ bool is_valid(z3::expr smt) {
 void test2() {
   cout << endl << "Test 2: instruction smt check" << endl;
 
-#define CURDST sv.get_cur_reg_var(insn._args[0])
-#define CURSRC sv.get_cur_reg_var(insn._args[1])
+#define CURDST sv.get_cur_reg_var(insn._dst_reg)
+#define CURSRC sv.get_cur_reg_var(insn._src_reg)
 // Input FOL formulae (A) should set to `smt` first, then add instruction FOL formula (B),
 // Since getting instruction FOL formula will update dst register expression.
 // Also cannot add A and B together, such as smt = A && B, since some compilers
@@ -239,100 +218,101 @@ void test2() {
   output = CURDST;                                                               \
   print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
-  ebpf_inst insn = (ebpf::NOP);
-  int prog_id = 0, node_id = 0, num_regs = insn.get_num_regs();
-  smt_var sv(prog_id, node_id, num_regs);
+  inst insn = (NOP);
+  int prog_id = 0, node_id = 0;
+  smt_var sv(prog_id, node_id, NUM_REGS);
   z3::expr smt = string_to_expr("false");
   z3::expr output = string_to_expr("false");
 
-  insn = ebpf_inst(ebpf::ADD64XC, 0, 0xffffffff);
+  insn = inst(ADD64XC, 0, 0xffffffff);
   SMT_CHECK_XC(0xffffffffffffffff, 0xfffffffffffffffe, "smt ADD64XC");
 
-  insn = ebpf_inst(ebpf::ADD64XY, 0, 1);
+  insn = inst(ADD64XY, 0, 1);
   SMT_CHECK_XY(0xffffffff, 0xffffffff, 0x1fffffffe, "smt ADD64XY");
 
-  insn = ebpf_inst(ebpf::ADD32XC, 0, 0xffffffff);
+  insn = inst(ADD32XC, 0, 0xffffffff);
   SMT_CHECK_XC(0xffffffff, 0xfffffffe, "smt ADD32XC");
 
-  insn = ebpf_inst(ebpf::ADD32XY, 0, 1);
+  insn = inst(ADD32XY, 0, 1);
   SMT_CHECK_XY(0xffffffff, 0xffffffff, 0xfffffffe, "smt ADD32XY");
 
-  insn = ebpf_inst(ebpf::MOV64XC, 0, 0xfffffffe);
+  insn = inst(MOV64XC, 0, 0xfffffffe);
   SMT_CHECK_XC(0x0, 0xfffffffffffffffe, "smt MOV64XC");
 
-  insn = ebpf_inst(ebpf::MOV64XY, 0, 1);
+  insn = inst(MOV64XY, 0, 1);
   SMT_CHECK_XY(0x0, 0x0123456789abcdef, 0x0123456789abcdef, "smt MOV64XY");
 
-  insn = ebpf_inst(ebpf::MOV32XC, 0, 0xfffffffe);
+  insn = inst(MOV32XC, 0, 0xfffffffe);
   SMT_CHECK_XC(0xffffffff00000000, 0xfffffffe, "smt MOV32XC");
 
-  insn = ebpf_inst(ebpf::MOV32XY, 0, 1);
+  insn = inst(MOV32XY, 0, 1);
   SMT_CHECK_XY(0xffffffff00000000, 0x0123456789abcdef, 0x89abcdef, "smt MOV32XY");
 
-  insn = ebpf_inst(ebpf::LSH64XC, 0, 63);
+  insn = inst(LSH64XC, 0, 63);
   SMT_CHECK_XC(0xffffffffffffffff, 0x8000000000000000, "smt LSH64XC");
 
-  insn = ebpf_inst(ebpf::LSH64XY, 0, 1);
+  insn = inst(LSH64XY, 0, 1);
   SMT_CHECK_XY(0xffffffffffffffff, 0xff, 0x8000000000000000, "smt LSH64XY");
 
-  insn = ebpf_inst(ebpf::LSH32XC, 0, 31);
+  insn = inst(LSH32XC, 0, 31);
   SMT_CHECK_XC(0xffffffffffffffff, 0x80000000, "smt LSH32XC");
 
-  insn = ebpf_inst(ebpf::LSH32XY, 0, 1);
+  insn = inst(LSH32XY, 0, 1);
   SMT_CHECK_XY(0xffffffffffffffff, 0xff, 0x80000000, "smt LSH32XY");
 
-  insn = ebpf_inst(ebpf::RSH64XC, 0, 63);
+  insn = inst(RSH64XC, 0, 63);
   SMT_CHECK_XC(0xffffffffffffffff, 1, "smt RSH64XC");
 
-  insn = ebpf_inst(ebpf::RSH64XY, 0, 1);
+  insn = inst(RSH64XY, 0, 1);
   SMT_CHECK_XY(0xffffffffffffffff, 63, 1, "smt RSH64XY");
 
-  insn = ebpf_inst(ebpf::RSH32XC, 0, 31);
+  insn = inst(RSH32XC, 0, 31);
   SMT_CHECK_XC((int32_t)0xffffffff, 1, "smt RSH32XC");
 
-  insn = ebpf_inst(ebpf::RSH32XY, 0, 1);
+  insn = inst(RSH32XY, 0, 1);
   SMT_CHECK_XY(0xffffffffffffffff, 31, 1, "smt RSH32XY");
 
-  insn = ebpf_inst(ebpf::ARSH64XC, 0, 0x1);
+  insn = inst(ARSH64XC, 0, 0x1);
   SMT_CHECK_XC(0xfffffffffffffffe, 0xffffffffffffffff, "smt ARSH64XC");
 
-  insn = ebpf_inst(ebpf::ARSH64XY, 0, 1);
+  insn = inst(ARSH64XY, 0, 1);
   SMT_CHECK_XY(0x8000000000000000, 63, 0xffffffffffffffff, "smt ARSH64XY");
 
-  insn = ebpf_inst(ebpf::ARSH32XC, 0, 1);
+  insn = inst(ARSH32XC, 0, 1);
   SMT_CHECK_XC(0xfffffffffffffffe, 0xffffffff, "smt ARSH32XC");
 
-  insn = ebpf_inst(ebpf::ARSH32XY, 0, 1);
+  insn = inst(ARSH32XY, 0, 1);
   SMT_CHECK_XY(0xfffffffffffffffe, 31, 0xffffffff, "smt ARSH32XY");
 
   int64_t expected;
-  insn = ebpf_inst(ebpf::LE16, 0);
-  if (is_little_endian()) expected = 0x0123456789abcdef;
-  else expected = 0x2301456789abcdef;
+  bool is_le = is_little_endian();
+  insn = inst(LE, 0, 16);
+  if (is_le) expected = 0xcdef;
+  else expected = 0xefcd;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE16");
 
-  insn = ebpf_inst(ebpf::LE32, 0);
-  if (is_little_endian()) expected = 0x0123456789abcdef;
-  else expected = 0x6745230189abcdef;
+  insn = inst(LE, 0, 32);
+  if (is_le) expected = 0x89abcdef;
+  else expected = 0xefcdab89;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE32");
 
-  insn = ebpf_inst(ebpf::LE64, 0);
-  if (is_little_endian()) expected = 0x0123456789abcdef;
+  insn = inst(LE, 0, 64);
+  if (is_le) expected = 0x0123456789abcdef;
   else expected = 0xefcdab8967452301;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt LE64");
 
-  insn = ebpf_inst(ebpf::BE16, 0);
-  if (is_little_endian()) expected = 0x0123456789abefcd;
-  else expected = 0x0123456789abcdef;
+  insn = inst(BE, 0, 16);
+  if (is_le) expected = 0xefcd;
+  else expected = 0xcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE16");
 
-  insn = ebpf_inst(ebpf::BE32, 0);
-  if (is_little_endian()) expected = 0x01234567efcdab89;
-  else expected = 0x0123456789abcdef;
+  insn = inst(BE, 0, 32);
+  if (is_le) expected = 0xefcdab89;
+  else expected = 0x89abcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE32");
 
-  insn = ebpf_inst(ebpf::BE64, 0);
-  if (is_little_endian()) expected = 0xefcdab8967452301;
+  insn = inst(BE, 0, 64);
+  if (is_le) expected = 0xefcdab8967452301;
   else expected = 0x0123456789abcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE64");
 
@@ -346,40 +326,40 @@ void test2() {
   smt = z3::implies(smt, insn.smt_inst_jmp(sv));                                     \
   print_test_res(is_valid(!smt) == (bool)bool_expected, test_name);
 
-  insn = ebpf_inst(ebpf::JEQXC, 0, 0xffffffff, 1);
+  insn = inst(JEQXC, 0, 0xffffffff, 1);
   SMT_JMP_CHECK_XC(0xffffffffffffffff, true, "smt JEQXC 1");
 
-  insn = ebpf_inst(ebpf::JEQXC, 0, 0xffffffff, 1);
+  insn = inst(JEQXC, 0, 0xffffffff, 1);
   SMT_JMP_CHECK_XC(0x00000000ffffffff, false, "smt JEQXC 2");
 
-  insn = ebpf_inst(ebpf::JEQXY, 0, 1, 1);
+  insn = inst(JEQXY, 0, 1, 1);
   SMT_JMP_CHECK_XY(0xffffffffffffffff, 0xffffffffffffffff, true, "smt JEQXY 1");
 
-  insn = ebpf_inst(ebpf::JEQXY, 0, 1, 1);
+  insn = inst(JEQXY, 0, 1, 1);
   SMT_JMP_CHECK_XY(0x00000000ffffffff, 0xffffffffffffffff, false, "smt JEQXY 2");
 
-  insn = ebpf_inst(ebpf::JGTXC, 0, 0x80000000, 1);
+  insn = inst(JGTXC, 0, 0x80000000, 1);
   SMT_JMP_CHECK_XC(0xffffffff80000001, true, "smt JGTXC 1");
 
-  insn = ebpf_inst(ebpf::JGTXC, 0, 0x2, 1);
+  insn = inst(JGTXC, 0, 0x2, 1);
   SMT_JMP_CHECK_XC(0x1, false, "smt JGTXC 2");
 
-  insn = ebpf_inst(ebpf::JGTXY, 0, 1, 1);
+  insn = inst(JGTXY, 0, 1, 1);
   SMT_JMP_CHECK_XY(0xffffffffffffffff, 0x7fffffffffffffff, true, "smt JGTXY 1");
 
-  insn = ebpf_inst(ebpf::JGTXY, 0, 1, 1);
+  insn = inst(JGTXY, 0, 1, 1);
   SMT_JMP_CHECK_XY(0x0, 0x2, false, "smt JGTXY 2");
 
-  insn = ebpf_inst(ebpf::JSGTXC, 0, 0x80000000, 1);
+  insn = inst(JSGTXC, 0, 0x80000000, 1);
   SMT_JMP_CHECK_XC(0x0, true, "smt JSGTXC 1");
 
-  insn = ebpf_inst(ebpf::JSGTXC, 0, 0x2, 1);
+  insn = inst(JSGTXC, 0, 0x2, 1);
   SMT_JMP_CHECK_XC(0x1, false, "smt JSGTXC 2");
 
-  insn = ebpf_inst(ebpf::JSGTXY, 0, 1, 1);
+  insn = inst(JSGTXY, 0, 1, 1);
   SMT_JMP_CHECK_XY(0x0, 0x8000000000000000, true, "smt JSGTXY 1");
 
-  insn = ebpf_inst(ebpf::JSGTXY, 0, 1, 1);
+  insn = inst(JSGTXY, 0, 1, 1);
   SMT_JMP_CHECK_XY(0x1, 0x2, false, "smt JSGTXY 2");
 
 #undef CURDST
@@ -390,9 +370,123 @@ void test2() {
 #undef SMT_JMP_CHECK_XY
 }
 
+// test3 is to check whether the ebpf inst is the same as linux bpf
+void test3() {
+  cout << endl << "Test 3: ebpf bytecode check" << endl;
+  // this has been checked by bpf-step
+  inst prog[] = {inst(MOV64XY, 6, 1),
+                 inst(MOV64XY, 2, 10),
+                 inst(ADD64XC, 2, -4),
+                 inst(MOV64XC, 1, 0x10),
+                 inst(JGTXC, 1, -1, 1),
+                 inst(MOV64XC, 1, 1),
+                 inst(JEQXC, 0, 0, 1),
+                 inst(MOV64XC, 0, 1),
+                 inst(EXIT),
+                };
+  string expected = "{191, 6, 1, 0, 0},"\
+                    "{191, 2, 10, 0, 0},"\
+                    "{7, 2, 0, 0, -4},"\
+                    "{183, 1, 0, 0, 16},"\
+                    "{37, 1, 0, 1, -1},"\
+                    "{183, 1, 0, 0, 1},"\
+                    "{21, 0, 0, 1, 0},"\
+                    "{183, 0, 0, 0, 1},"\
+                    "{149, 0, 0, 0, 0},";
+  string prog_bytecode = "";
+  for (int i = 0; i < 9; i++) {
+    prog_bytecode += prog[i].get_bytecode_str() + ",";
+  }
+  print_test_res(prog_bytecode == expected, "ebpf bytecode 1");
+
+  // test all opcodes
+  inst prog2[30] = {inst(ADD64XC, 3, 1),
+                    inst(ADD64XY, 3, 1),
+                    inst(LSH64XC, 3, 1),
+                    inst(LSH64XY, 3, 1),
+                    inst(RSH64XC, 3, 1),
+                    inst(RSH64XY, 3, 1),
+                    inst(MOV64XC, 3, 1),
+                    inst(MOV64XY, 3, 1),
+                    inst(ARSH64XC, 3, 1),
+                    inst(ARSH64XY, 3, 1),
+                    inst(ADD32XC, 3, 1),
+                    inst(ADD32XY, 3, 1),
+                    inst(LSH32XC, 3, 1),
+                    inst(LSH32XY, 3, 1),
+                    inst(RSH32XC, 3, 1),
+                    inst(RSH32XY, 3, 1),
+                    inst(MOV32XC, 3, 1),
+                    inst(MOV32XY, 3, 1),
+                    inst(ARSH32XC, 3, 1),
+                    inst(ARSH32XY, 3, 1),
+                    inst(LE, 3, 16),
+                    inst(BE, 3, 16),
+                    inst(JA, 1),
+                    inst(JEQXC, 3, 1, 2),
+                    inst(JEQXY, 3, 1, 2),
+                    inst(JGTXC, 3, 1, 2),
+                    inst(JGTXY, 3, 1, 2),
+                    inst(JSGTXC, 3, 1, 2),
+                    inst(JSGTXY, 3, 1, 2),
+                    inst(EXIT),
+                   };
+  expected = "{7, 3, 0, 0, 1},"\
+             "{15, 3, 1, 0, 0},"\
+             "{103, 3, 0, 0, 1},"\
+             "{111, 3, 1, 0, 0},"\
+             "{119, 3, 0, 0, 1},"\
+             "{127, 3, 1, 0, 0},"\
+             "{183, 3, 0, 0, 1},"\
+             "{191, 3, 1, 0, 0},"\
+             "{199, 3, 0, 0, 1},"\
+             "{207, 3, 1, 0, 0},"\
+             "{4, 3, 0, 0, 1},"\
+             "{12, 3, 1, 0, 0},"\
+             "{100, 3, 0, 0, 1},"\
+             "{108, 3, 1, 0, 0},"\
+             "{116, 3, 0, 0, 1},"\
+             "{124, 3, 1, 0, 0},"\
+             "{180, 3, 0, 0, 1},"\
+             "{188, 3, 1, 0, 0},"\
+             "{196, 3, 0, 0, 1},"\
+             "{204, 3, 1, 0, 0},"\
+             "{212, 3, 0, 0, 16},"\
+             "{220, 3, 0, 0, 16},"\
+             "{5, 0, 0, 1, 0},"\
+             "{21, 3, 0, 2, 1},"\
+             "{29, 3, 1, 2, 0},"\
+             "{37, 3, 0, 2, 1},"\
+             "{45, 3, 1, 2, 0},"\
+             "{101, 3, 0, 2, 1},"\
+             "{109, 3, 1, 2, 0},"\
+             "{149, 0, 0, 0, 0},";
+  prog_bytecode = "";
+  for (int i = 0; i < 30; i++) {
+    prog_bytecode += prog2[i].get_bytecode_str() + ",";
+  }
+  print_test_res(prog_bytecode == expected, "ebpf bytecode 2");
+}
+
+void test4() {
+  cout << endl << "Test 3: ebpf opcode and idx conversion check" << endl;
+  bool check_res = true;
+  for (int idx = 0; idx < NUM_INSTR; idx++) {
+    if (opcode_2_idx(idx_2_opcode[idx]) != idx) {
+      print_test_res(false, "idx:" + to_string(idx) + " opcode conversion");
+      check_res = false;
+    }
+  }
+  if (check_res) {
+    print_test_res(true, "opcode and idx conversion");
+  }
+}
+
 int main(int argc, char *argv[]) {
   test1();
   test2();
+  test3();
+  test4();
 
   return 0;
 }

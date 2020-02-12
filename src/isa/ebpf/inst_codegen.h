@@ -99,16 +99,16 @@ inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
 #undef BE16_EXPR
 #undef BE32_EXPR
 #undef BE64_EXPR
-// For LE expressions, if the machine is little-endian, then return the value without process,
-// else swap the lower bits.
-// For BE expressions, if the machine is little-endian, then swap the lower bits,
-// else return the value without process.
-#define LE16_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), a, SWAP_L16(a)))
-#define LE32_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), a, SWAP_L32(a)))
-#define LE64_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), a, SWAP_L64(a)))
-#define BE16_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), SWAP_L16(a), a))
-#define BE32_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), SWAP_L32(a), a))
-#define BE64_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), SWAP_L64(a), a))
+// For LE expressions, if the machine is little-endian, then set the higher bits of the
+// value as 0, else swap the lower bits and set the higher bits of the value as 0.
+// For BE expressions, if the machine is little-endian, then swap the lower bits and
+// set the higher bits of the value as 0, else set the higher bits of the value as 0.
+#define LE16_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), SET_HIGHER48_ZERO(a), SET_HIGHER48_ZERO(SWAP16(a))))
+#define LE32_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), SET_HIGHER32_ZERO(a), SET_HIGHER32_ZERO(SWAP32(a))))
+#define LE64_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), a, SWAP64(a)))
+#define BE16_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), SET_HIGHER48_ZERO(SWAP16(a)), SET_HIGHER48_ZERO(a)))
+#define BE32_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), SET_HIGHER32_ZERO(SWAP32(a)), SET_HIGHER32_ZERO(a)))
+#define BE64_EXPR(a, b) (PRED_UNARY_EXPR(b, is_little_endian(), SWAP64(a), a))
 
 #undef EQ
 #define EQ =
@@ -128,6 +128,8 @@ inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
 #define RSH32(a, b) ((uint32_t)a >> b)
 #undef SET_HIGHER32_ZERO
 #define SET_HIGHER32_ZERO(a) (L32(a))
+#undef SET_HIGHER48_ZERO
+#define SET_HIGHER48_ZERO(a) (L16(a))
 #undef INT32
 #define INT32(a) (int32_t)(a)
 #undef SWAP16
@@ -148,12 +150,6 @@ inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
                    (((uint64_t)(v) & 0x0000000000ff0000) << 24) | \
                    (((uint64_t)(v) & 0x000000000000ff00) << 40) | \
                    (((uint64_t)(v) & 0x00000000000000ff) << 56) )
-#undef SWAP_L16
-#undef SWAP_L32
-#undef SWAP_L64
-#define SWAP_L16(v) (H48(v) | SWAP16(v))
-#define SWAP_L32(v) (H32(v) | SWAP32(v))
-#define SWAP_L64(v) SWAP64(v)
 
 #undef COMPUTE_UNARY
 #define COMPUTE_UNARY(func_name, operation)                                      \
@@ -204,7 +200,9 @@ COMPUTE_BINARY(arsh32, ARSH32_EXPR)
 #undef RSH32
 #define RSH32(a, b) RSH(a, b)
 #undef SET_HIGHER32_ZERO
-#define SET_HIGHER32_ZERO(a) z3::concat(to_expr((int32_t)0, 32), a)
+#define SET_HIGHER32_ZERO(a) z3::concat(to_expr((int32_t)0, 32), a.extract(31, 0))
+#undef SET_HIGHER48_ZERO
+#define SET_HIGHER48_ZERO(a) z3::concat(to_expr((int32_t)0, 48), a.extract(15, 0))
 #undef INT32
 #define INT32(a) a.extract(31, 0)
 #undef SWAP16
@@ -215,12 +213,6 @@ COMPUTE_BINARY(arsh32, ARSH32_EXPR)
 #define SWAP_BV_H32(v) z3::concat(z3::concat(v.extract(39, 32), v.extract(47, 40)), \
                                   z3::concat(v.extract(55, 48), v.extract(63, 56)))
 #define SWAP64(v) z3::concat(SWAP32(v), SWAP_BV_H32(v))
-#undef SWAP_L16
-#undef SWAP_L32
-#undef SWAP_L64
-#define SWAP_L16(v) z3::concat(v.extract(63, 16), SWAP16(v))
-#define SWAP_L32(v) z3::concat(v.extract(63, 32), SWAP32(v))
-#define SWAP_L64(v) SWAP64(v)
 
 #undef PREDICATE_UNARY
 #define PREDICATE_UNARY(func_name, operation)                                      \

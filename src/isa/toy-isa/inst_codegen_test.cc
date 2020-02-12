@@ -8,25 +8,25 @@ z3::context ctx;
 
 void test1() {
   cout << "Test 1" << endl;
-  int32_t a = 4, b = 5, c = 10;
+  int a = 4, b = 5, c = 10;
   z3::expr x = ctx.int_val(a);
   z3::expr y = ctx.int_val(b);
   z3::expr z = ctx.int_val(c);
 
   // check add
-  print_test_res(toy_isa_compute_add(a, b, c) == (a + b), "compute_add");
+  print_test_res(compute_add(a, b, c) == (a + b), "compute_add");
   z3::expr expected = (z == x + y);
-  print_test_res(toy_isa_predicate_add(x, y, z) == expected, "predicate_add");
+  print_test_res(predicate_add(x, y, z) == expected, "predicate_add");
 
   // check mov
-  print_test_res(toy_isa_compute_mov(a, b) == a, "compute_mov");
+  print_test_res(compute_mov(a, b) == a, "compute_mov");
   expected = (y == x);
-  print_test_res(toy_isa_predicate_mov(x, y) == expected, "predicate_mov");
+  print_test_res(predicate_mov(x, y) == expected, "predicate_mov");
 
   // check max
-  print_test_res(toy_isa_compute_max(a, b, c) == max(a, b), "compute_max");
+  print_test_res(compute_max(a, b, c) == max(a, b), "compute_max");
   expected = ((x > a) && (z == x)) || ((x <= a) && (z == a));
-  print_test_res(toy_isa_predicate_max(x, y, z) == expected, "predicate_max");
+  print_test_res(predicate_max(x, y, z) == expected, "predicate_max");
 }
 
 int main() {

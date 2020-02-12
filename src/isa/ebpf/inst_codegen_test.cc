@@ -54,14 +54,14 @@ void test2() {
   bool is_le = is_little_endian();
 
   b = compute_le16(a);
-  if (is_le) expected = 0x0123456789abcdef;
-  else expected = 0x2301456789abcdef;
+  if (is_le) expected = 0xcdef;
+  else expected = 0xefcd;
   print_test_res(b == expected, "compute_le16");
-  print_test_res(is_valid(predicate_le16(v(a), v(b))), "predicate_le16 match predicate_le16");
+  print_test_res(is_valid(predicate_le16(v(a), v(b))), "predicate_le16 match compute_le16");
 
   b = compute_le32(a);
-  if (is_le) expected = 0x0123456789abcdef;
-  else expected = 0x6745230189abcdef;
+  if (is_le) expected = 0x89abcdef;
+  else expected = 0xefcdab89;
   print_test_res(compute_le32(a, b) == expected, "compute_le32");
   print_test_res(is_valid(predicate_le32(v(a), v(b))), "predicate_le32 match compute_le32");
 
@@ -72,14 +72,14 @@ void test2() {
   print_test_res(is_valid(predicate_le64(v(a), v(b))), "predicate_le64 match compute_le64");
 
   b = compute_be16(a);
-  if (is_le) expected = 0x0123456789abefcd;
-  else expected = 0x0123456789abcdef;
+  if (is_le) expected = 0xefcd;
+  else expected = 0xcdef;
   print_test_res(compute_be16(a, b) == expected, "compute_be16");
   print_test_res(is_valid(predicate_be16(v(a), v(b))), "predicate_be16 match compute_be16");
 
   b = compute_be32(a);
-  if (is_le) expected = 0x01234567efcdab89;
-  else expected = 0x0123456789abcdef;
+  if (is_le) expected = 0xefcdab89;
+  else expected = 0x89abcdef;
   print_test_res(compute_be32(a, b) == expected, "compute_be32");
   print_test_res(is_valid(predicate_be32(v(a), v(b))), "predicate_be32 match compute_be32");
 

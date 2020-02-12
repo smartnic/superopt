@@ -22,7 +22,7 @@ smt_var::~smt_var() {
 z3::expr smt_var::update_reg_var(unsigned int reg_id) {
   reg_cur_id[reg_id]++;
   string name = "r_" + _name + "_" + to_string(reg_id) \
-                     + "_" + to_string(reg_cur_id[reg_id]);
+                + "_" + to_string(reg_cur_id[reg_id]);
   reg_var[reg_id] = string_to_expr(name);
   return get_cur_reg_var(reg_id);
 }
@@ -43,7 +43,7 @@ z3::expr string_to_expr(string s) {
   } else if (s == "false") {
     return smt_c.bool_val(false);
   }
-  return smt_c.bv_const(s.c_str(), 64);
+  return smt_c.bv_const(s.c_str(), NUM_REG_BITS);
 }
 
 z3::expr to_bool_expr(string s) {
