@@ -46,6 +46,7 @@ class inst_base {
   int get_operand(int op_index) const;
   void set_operand(int op_index, op_t op_value);
   int get_opcode() const;
+  int get_opcode_by_idx(int idx) const;
   void set_opcode(int op_value);
 
   /* Functions class inst should support */

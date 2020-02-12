@@ -67,11 +67,14 @@ void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_ch
 }
 
 void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
-  int op_to_change = sample_int(orig.inst_list[inst_index].get_num_operands());
+  int num = orig.inst_list[inst_index].get_num_operands();
+  if (num == 0) return;
+  int op_to_change = sample_int(num);
   mod_operand(orig, synth, inst_index, op_to_change);
 }
 
 prog* mod_random_inst_operand(const prog &orig) {
+  // TODO: remove instructions whithout valid operands, such as NOP, EXIT
   int inst_index = sample_int(MAX_PROG_LEN);
   prog* synth = new prog(orig);
   synth->reset_vals();
@@ -92,14 +95,13 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   } else {
     exceptions = {old_opcode};
   }
-  int new_opcode = sample_int_with_exceptions(NUM_INSTR, exceptions);
+  int new_opcode_idx = sample_int_with_exceptions(NUM_INSTR, exceptions);
+  int new_opcode = sel_inst->get_opcode_by_idx(new_opcode_idx);
+  sel_inst->set_as_nop_inst();
   sel_inst->set_opcode(new_opcode);
   for (int i = 0; i < sel_inst->get_num_operands(); i++) {
     int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, i, -1);
     sel_inst->set_operand(i, new_opvalue);
-  }
-  for (int i = sel_inst->get_num_operands(); i < MAX_OP_LEN; i++) {
-    sel_inst->set_operand(i, 0);
   }
 }
 

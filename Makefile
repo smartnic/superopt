@@ -46,7 +46,7 @@ inst_test.out: inst_z3.o $(TOY_ISA)inst.cc $(TOY_ISA)inst.h $(SRC)utils.cc $(SRC
 inst_z3.o: $(TOY_ISA)inst_test.cc
 	$(CXX) $(TOY_ISA_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(TOY_ISA)inst_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(TOY_ISA)inst_test.cc
 
-ebpf_inst_test.out: ebpf_inst_z3.o $(EBPF)inst.cc $(EBPF)inst.h $(SRC)utils.cc $(SRC)utils.h $(EBPF)inst_codegen.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h
+ebpf_inst_test.out: ebpf_inst_z3.o $(EBPF)inst.cc $(EBPF)inst.h $(EBPF)bpf.h $(SRC)utils.cc $(SRC)utils.h $(EBPF)inst_codegen.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h
 	g++ $(EBPF_FLAG) -std=c++11 -fvisibility=hidden $(EBPF)inst_z3.o $(EBPF)inst.cc $(SRC)utils.cc $(ISA)inst.cc $(VERIFY)smt_var.cc -o $(EBPF)inst_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 ebpf_inst_z3.o: $(EBPF)inst_test.cc
