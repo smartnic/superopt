@@ -260,7 +260,7 @@ static constexpr int32_t MAX_IMM_SH32 = 31;
 static constexpr int32_t MAX_IMM_SH64 = 63;
 // 3 types of OP_IMM_ENDIAN: 16, 32, 64
 // type counts from 0
-static constexpr int32_t TYPES_IMM_ENDIAN = 2;
+static constexpr int32_t MAX_TYPES_IMM_ENDIAN = 2;
 
 // Operand types for instructions
 enum OPERANDS {
