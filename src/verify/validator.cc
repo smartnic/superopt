@@ -27,6 +27,8 @@ void validator::gen_counterex(model& m) {
 }
 
 bool validator::is_smt_valid(expr& smt) {
+  // Compared to the default tactic, 'bv' tactic is faster
+  // for z3 check when processing bit vector
   tactic t = tactic(smt_c, "bv");
   solver s = t.mk_solver();
   s.add(!smt);
