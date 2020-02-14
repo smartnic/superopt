@@ -99,7 +99,7 @@ int32_t inst::get_max_imm() const {
     case RSH32XC:
     case ARSH32XC: return MAX_IMM_SH32;
     case LE:
-    case BE: return TYPES_IMM_ENDIAN;
+    case BE: return MAX_TYPES_IMM_ENDIAN;
     default: cout << "Error: no imm in instruction: ";
       print();
       return 0;
