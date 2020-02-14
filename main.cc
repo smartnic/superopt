@@ -11,15 +11,10 @@
 #include <chrono>
 #include "src/utils.h"
 #include "src/inout.h"
-#if ISA_TOY_ISA
-#include "src/isa/toy-isa/inst.h"
-#include "measure/benchmark_toy_isa.h"
-#elif ISA_EBPF
-#include "src/isa/ebpf/inst.h"
-#include "measure/benchmark_ebpf.h"
-#endif
+#include "src/isa/inst_header.h"
 #include "src/isa/prog.h"
 #include "src/search/mh_prog.h"
+#include "measure/benchmark_header.h"
 #include "measure/meas_mh_bhv.h"
 #include "main.h"
 

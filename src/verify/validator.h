@@ -3,11 +3,7 @@
 #include "z3++.h"
 #include "../../src/utils.h"
 #include "../../src/inout.h"
-#if ISA_TOY_ISA
-#include "../../src/isa/toy-isa/inst.h"
-#elif ISA_EBPF
-#include "../../src/isa/ebpf/inst.h"
-#endif
+#include "../../src/isa/inst_header.h"
 #include "smt_prog.h"
 
 using namespace z3;
