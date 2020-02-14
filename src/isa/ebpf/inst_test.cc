@@ -399,7 +399,8 @@ void test3() {
   }
   print_test_res(prog_bytecode == expected, "ebpf bytecode 1");
 
-  // test all opcodes
+  // test all opcodes: has included all opcodes except NOP, 
+  // since there is no NOP in linux bpf
   inst prog2[30] = {inst(ADD64XC, 3, 1),
                     inst(ADD64XY, 3, 1),
                     inst(LSH64XC, 3, 1),
