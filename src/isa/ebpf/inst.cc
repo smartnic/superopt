@@ -264,16 +264,10 @@ z3::expr inst::smt_inst(smt_var& sv) const {
   // If opcode is valid, then define curDst, curSrc, imm and newDst
   if (get_opcode_type() != OP_OTHERS) return string_to_expr("false");
   // Get curDst, curSrc, imm and newDst at the begining to avoid using switch case to
-  // get some of these values for different opcodes. So need to check whether the value is valid.
-  // E.g., for curSrc, the range of register is [0, NUM_REGS], for opcode ends up with XC,
-  // actually the value is an immediate number whose value may be out of register's range.
-  // Should get curDst and curSrc before updating curDst (curSrc may be the same reg as curDst)
+  // get some of these values for different opcodes. Should get curDst and curSrc before
+  // updating curDst (curSrc may be the same reg as curDst)
   z3::expr curDst = sv.get_cur_reg_var(_dst_reg);
-  z3::expr curSrc = string_to_expr("false");
-  // check whether the value is within the range of regisers, or function get_cur_reg_var() will raise exception
-  if (_src_reg < NUM_REGS && _src_reg >= 0) {
-    curSrc = sv.get_cur_reg_var(_src_reg);
-  }
+  z3::expr curSrc = sv.get_cur_reg_var(_src_reg);
   z3::expr newDst = sv.update_reg_var(_dst_reg);
   int64_t imm = (int64_t)_imm;
 
@@ -322,10 +316,7 @@ z3::expr inst::smt_inst_jmp(smt_var& sv) const {
   // If opcode is valid, then define curDst, curSrc, imm
   if (get_opcode_type() != OP_COND_JMP) return string_to_expr("false");
   z3::expr curDst = sv.get_cur_reg_var(_dst_reg);
-  z3::expr curSrc = string_to_expr("false");
-  if (_src_reg < NUM_REGS && _src_reg >= 0) {
-    curSrc = sv.get_cur_reg_var(_src_reg);
-  }
+  z3::expr curSrc = sv.get_cur_reg_var(_src_reg);
   int64_t imm = (int64_t)_imm;
 
   switch (_opcode) {
