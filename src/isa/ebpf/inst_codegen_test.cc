@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include "../../../src/utils.h"
 #include "inst_codegen.h"
 
@@ -123,10 +124,52 @@ void test3() {
   print_test_res(is_valid(predicate_arsh32(v(a), v(b), v(c))), "predicate_arsh32 match compute_arsh32");
 }
 
+string array_to_str(uint8_t* a, int len) {
+  ostringstream oss;
+  for (int i = 0; i < len; i++) {
+    oss << hex << (uint)a[i];
+  }
+  return oss.str();
+}
+
+bool check_array_equal(uint8_t* a, uint8_t* b, int len) {
+  for (int i = 0; i < len; i++) {
+    if (a[i] != b[i]) {
+      cout << array_to_str(a, len) << " != " << array_to_str(b, len) << endl;
+      return false;
+    }
+  }
+  return true;
+}
+
+void test4() {
+  cout << "Test 3: Memory check" << endl;
+  uint8_t a[4];
+  uint8_t expected[4] = {0xef, 0xcd, 0xab, 0x89};
+  int64_t x = 0x0123456789abcdef;
+  compute_st32(x, a, 0);
+  // store lower 32-bit of x into a, check whether a == expected
+  print_test_res(check_array_equal(a, expected, 4), "compute st32");
+  // load four bytes from expected, check whether the value == L32(x)
+  print_test_res(compute_ld32(expected, 0) == L32(x), "compute ld32");
+
+  z3::sort z3_mem_t = smt_c.array_sort(smt_c.bv_sort(64), smt_c.bv_sort(8));
+  z3::expr mem = smt_c.constant("mem", z3_mem_t);
+  z3::expr mem_expected = store(mem, v((uint64_t)a), v(x).extract(7, 0));
+  mem_expected = store(mem_expected, v((uint64_t)a + 1), v(x).extract(15, 8));
+  mem_expected = store(mem_expected, v((uint64_t)a + 2), v(x).extract(23, 16));
+  mem_expected = store(mem_expected, v((uint64_t)a + 3), v(x).extract(31, 24));
+  z3::expr smt = predicate_st32(v(x), v((uint64_t)a), v(0), mem, mem_expected);
+  print_test_res(is_valid(smt), "predicate_st32");
+  smt = predicate_ld32(v((uint64_t)a), v(0), mem_expected, v(L32(x)));
+  print_test_res(is_valid(smt), "predicate_ld32");
+}
+
 int main() {
   test1();
   test2();
   test3();
+  test4();
 
   return 0;
 }

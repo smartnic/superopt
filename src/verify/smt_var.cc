@@ -54,6 +54,10 @@ z3::expr to_expr(int64_t x, unsigned sz) {
   return smt_c.bv_val(x, sz);
 }
 
+z3::expr to_expr(uint64_t x, unsigned sz) {
+  return smt_c.bv_val(x, sz);
+}
+
 z3::expr to_expr(int32_t x, unsigned sz) {
   return smt_c.bv_val(x, sz);
 }
