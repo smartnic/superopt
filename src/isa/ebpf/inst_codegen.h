@@ -1,6 +1,5 @@
 #pragma once
 
-#include <unordered_map>
 #include "z3++.h"
 #include "../../../src/utils.h"
 #include "../../../src/verify/smt_var.h"
@@ -31,16 +30,10 @@ inline int64_t compute_rsh(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_rsh32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_arsh(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_arsh32(int64_t in1, int64_t in2, int64_t out = 0);
-// out = (u32)[addr+in]
-inline int64_t compute_ld32(uint64_t addr, int64_t off, int64_t out = 0) {
-  out = *(uint32_t*)(addr + off);
-  return out;
-}
-
-// (u32)[addr+in1]=in2
-inline void compute_st32(int64_t in, uint64_t addr, int64_t off) {
-  *(uint32_t*)(addr + off) = in;
-}
+// out = (u32)[addr + off]
+inline int64_t compute_ld32(uint64_t addr, int64_t off, int64_t out = 0);
+// (u32)[addr + off] = in
+inline void compute_st32(int64_t in, uint64_t addr, int64_t off);
 
 /* type of parameters (in, in1, in2, out) is z3 64-bit bitvector */
 // return (out == op in)
@@ -61,23 +54,12 @@ inline z3::expr predicate_rsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_rsh32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
-// return (out == (u32)mem[in1 + in2])
+// return (out == (u32)mem[addr + off])
 // mem type z3 array, bv64 -> bv8
-inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, z3::expr mem, z3::expr out) {
-  z3::expr a = z3::concat(to_expr(0, 32), mem[addr + off + 3]);
-  a = z3::concat(a, mem[addr + off + 2]);
-  a = z3::concat(a, mem[addr + off + 1]);
-  a = z3::concat(a, mem[addr + off]);
-  return (out == a);
-}
-// return mem_out == new_mem, new_mem: mem_in[addr+off] = (u32)in
-inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, z3::expr mem_in, z3::expr mem_out) {
-  z3::expr mem1 = store(mem_in, addr + off, in.extract(7, 0));
-  z3::expr mem2 = store(mem1, addr + off + to_expr(1, 64), in.extract(15, 8));
-  z3::expr mem3 = store(mem2, addr + off + to_expr(2, 64), in.extract(23, 16));
-  z3::expr mem4 = store(mem3, addr + off + to_expr(3, 64), in.extract(31, 24));
-  return (mem_out == mem4);
-}
+inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, z3::expr mem, z3::expr out);
+// return mem_out == new_mem, new_mem: mem_in[addr + off] = (u32)in
+inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, z3::expr mem_in, z3::expr mem_out);
+
 /* APIs exposed to the externals end */
 
 /* Inputs in, out must be side-effect-free expressions. */
@@ -271,3 +253,31 @@ PREDICATE_BINARY(arsh, ARSH_EXPR)
 PREDICATE_BINARY(lsh32, LSH32_EXPR);
 PREDICATE_BINARY(rsh32, RSH32_EXPR);
 PREDICATE_BINARY(arsh32, ARSH32_EXPR);
+
+/* Memory access implementation */
+// out = (u32)[addr + off]
+inline int64_t compute_ld32(uint64_t addr, int64_t off, int64_t out) {
+  out = *(uint32_t*)(addr + off);
+  return out;
+}
+// (u32)[addr + off] = in
+inline void compute_st32(int64_t in, uint64_t addr, int64_t off) {
+  *(uint32_t*)(addr + off) = in;
+}
+// return (out == (u32)mem[addr + off])
+// mem type z3 array, bv64 -> bv8
+inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, z3::expr mem, z3::expr out) {
+  z3::expr a = z3::concat(to_expr(0, 32), mem[addr + off + 3]);
+  a = z3::concat(a, mem[addr + off + 2]);
+  a = z3::concat(a, mem[addr + off + 1]);
+  a = z3::concat(a, mem[addr + off]);
+  return (out == a);
+}
+// return mem_out == new_mem, new_mem: mem_in[addr + off] = (u32)in
+inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, z3::expr mem_in, z3::expr mem_out) {
+  z3::expr mem1 = store(mem_in, addr + off, in.extract(7, 0));
+  z3::expr mem2 = store(mem1, addr + off + to_expr(1, 64), in.extract(15, 8));
+  z3::expr mem3 = store(mem2, addr + off + to_expr(2, 64), in.extract(23, 16));
+  z3::expr mem4 = store(mem3, addr + off + to_expr(3, 64), in.extract(31, 24));
+  return (mem_out == mem4);
+}

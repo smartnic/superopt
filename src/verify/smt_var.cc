@@ -4,7 +4,8 @@
 using namespace std;
 
 z3::context smt_c;
-z3::sort z3_mem_t = smt_c.array_sort(smt_c.bv_sort(NUM_REG_BITS), smt_c.bv_sort(8));
+#define NUM_BYTE_BITS 8
+z3::sort z3_mem_t = smt_c.array_sort(smt_c.bv_sort(NUM_REG_BITS), smt_c.bv_sort(NUM_BYTE_BITS));
 
 /* class smt_var start */
 smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs) {
