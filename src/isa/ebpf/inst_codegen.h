@@ -7,7 +7,8 @@
 
 using namespace std;
 
-/* APIs exposed to the externals,
+/* Assume the machine is little-endian.
+   APIs exposed to the externals,
    Should ensure all parameters do NOT have side effects.
 */
 // type of parameters (in, in1, in2, out) and return value is int64_t
@@ -31,13 +32,13 @@ inline int64_t compute_rsh32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_arsh(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_arsh32(int64_t in1, int64_t in2, int64_t out = 0);
 // out = (u32)[addr+in]
-inline int64_t compute_ld32(uint8_t *addr, int64_t off, int64_t out = 0) {
+inline int64_t compute_ld32(uint64_t addr, int64_t off, int64_t out = 0) {
   out = *(uint32_t*)(addr + off);
   return out;
 }
 
 // (u32)[addr+in1]=in2
-inline void compute_st32(int64_t in, uint8_t *addr, int64_t off) {
+inline void compute_st32(int64_t in, uint64_t addr, int64_t off) {
   *(uint32_t*)(addr + off) = in;
 }
 

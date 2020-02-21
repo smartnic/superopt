@@ -173,7 +173,7 @@ int interpret(inst* program, int length, prog_state &ps, int input) {
   need to generalize this later. */
   inst *insn = program;
   ps.clear();
-  ps.regs[0] = input;
+  ps._regs[0] = input;
 
   static void *jumptable[NUM_INSTR] = {
     [NOP]   = && INSN_NOP,
@@ -203,8 +203,8 @@ int interpret(inst* program, int length, prog_state &ps, int input) {
 #undef SRC
 #undef IMM1
 #undef IMM2
-#define DST ps.regs[DSTREG(*insn)]
-#define SRC ps.regs[SRCREG(*insn)]
+#define DST ps._regs[DSTREG(*insn)]
+#define SRC ps._regs[SRCREG(*insn)]
 #define IMM1 IMM1VAL(*insn)
 #define IMM2 IMM2VAL(*insn)
 
@@ -259,5 +259,5 @@ error_label:
 
 out:
   //cout << "Error: program terminated without RET; returning R0" << endl;
-  return ps.regs[0]; /* return default R0 value */
+  return ps._regs[0]; /* return default R0 value */
 }

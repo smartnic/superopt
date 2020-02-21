@@ -1,8 +1,23 @@
 #include <iostream>
 #include <cassert>
+#include <string.h>
 #include "inst.h"
 
 using namespace std;
+
+void prog_state::print() {
+  prog_state_base::print();
+  cout << "Memory:" << endl;
+  for (int i = 0; i < mem_t::MEM_SIZE; i++) {
+    cout << (unsigned int)_mem._mem[i] << " ";
+  }
+  cout << endl;
+}
+
+void prog_state::clear() {
+  prog_state_base::clear();
+  memset(_mem._mem, 0, sizeof(_mem._mem));
+}
 
 inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
   int32_t dst_reg = 0, src_reg = 0, imm = 0, off = 0;
@@ -31,6 +46,8 @@ inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
     case ARSH32XY: dst_reg = arg1; src_reg = arg2; imm = 0; off = 0; break;
     case LE:
     case BE: dst_reg = arg1; src_reg = 0; imm = arg2; off = 0; break;
+    case LDXW: dst_reg = arg1; src_reg = arg2; imm = 0; off = arg3; break;
+    case STXW: dst_reg = arg1; src_reg = arg3; imm = 0; off = arg2; break;
     case JA: dst_reg = 0; src_reg = 0; imm = 0; off = arg1; break;
     case JEQXC:
     case JGTXC:
@@ -145,6 +162,8 @@ string inst::opcode_to_str(int opcode) const {
     case ARSH32XY: return "arsh32xy";
     case LE: return "le";
     case BE: return "be";
+    case LDXW: return "ldxw";
+    case STXW: return "stxw";
     case JA: return "ja";
     case JEQXC: return "jeqxc";
     case JEQXY: return "jeqxy";
@@ -255,21 +274,35 @@ void inst::set_as_nop_inst() {
 #define NEWDST newDst
 #define CURDST curDst
 #define CURSRC curSrc
+#define NEWMEM newMem
+#define CURMEM curMem
 #define IMM to_expr(imm)
+#define OFF to_expr(off)
 #define CURSRC_L6 (CURSRC & to_expr((int64_t)0x3f))
 #define CURSRC_L5 (CURSRC & to_expr((int64_t)0x1f))
 
 z3::expr inst::smt_inst(smt_var& sv) const {
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
   // If opcode is valid, then define curDst, curSrc, imm and newDst
-  if (get_opcode_type() != OP_OTHERS) return string_to_expr("false");
+  int op_type = get_opcode_type();
+  if ((op_type != OP_OTHERS) && (op_type != OP_LD) && (op_type != OP_ST))
+    return string_to_expr("false");
   // Get curDst, curSrc, imm and newDst at the begining to avoid using switch case to
   // get some of these values for different opcodes. Should get curDst and curSrc before
   // updating curDst (curSrc may be the same reg as curDst)
   z3::expr curDst = sv.get_cur_reg_var(_dst_reg);
   z3::expr curSrc = sv.get_cur_reg_var(_src_reg);
-  z3::expr newDst = sv.update_reg_var(_dst_reg);
+  z3::expr curMem = sv.get_cur_mem_var();
+  z3::expr newDst = string_to_expr("false");
+  z3::expr newMem = string_to_expr("false");
+  // update register or memory according to the opcode type
+  if ((op_type == OP_OTHERS) || (op_type == OP_LD)) {
+    newDst = sv.update_reg_var(_dst_reg);
+  } else if (op_type == OP_ST) {
+    newMem = sv.update_mem_var();
+  }
   int64_t imm = (int64_t)_imm;
+  int64_t off = (int64_t)_off;
 
   switch (_opcode) {
     case ADD64XC: return predicate_add(CURDST, IMM, NEWDST);
@@ -308,6 +341,10 @@ z3::expr inst::smt_inst(smt_var& sv) const {
         default: cout << "Error: imm " << imm << " is not 16, 32, 64" << endl;
           return string_to_expr("false");
       }
+    // ldxw dst, [src+off]
+    case LDXW: return predicate_ld32(CURSRC, OFF, CURMEM, NEWDST);
+    // stxw [dst+off], src
+    case STXW: return predicate_st32(CURSRC, CURDST, OFF, CURMEM, NEWMEM);
     default: return string_to_expr("false");
   }
 }
@@ -355,6 +392,8 @@ int opcode_2_idx(int opcode) {
     case ARSH32XY: return IDX_ARSH32XY;
     case LE: return IDX_LE;
     case BE: return IDX_BE;
+    case LDXW: return IDX_LDXW;
+    case STXW: return IDX_STXW;
     case JA: return IDX_JA;
     case JEQXC: return IDX_JEQXC;
     case JEQXY: return IDX_JEQXY;
@@ -377,9 +416,10 @@ string inst::get_bytecode_str() const {
 
 int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 #undef IMM
+#undef OFF
 // type: int64_t
-#define DST ps.regs[insn->_dst_reg]
-#define SRC ps.regs[insn->_src_reg]
+#define DST ps._regs[insn->_dst_reg]
+#define SRC ps._regs[insn->_src_reg]
 #define IMM (int64_t)insn->_imm
 #define SRC_L6 L6(SRC)
 #define SRC_L5 L5(SRC)
@@ -398,6 +438,14 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 #define ALU_BINARY(OPCODE, OP, OPERAND1, OPERAND2)                 \
   INSN_##OPCODE:                                                   \
     DST = compute_##OP(OPERAND1, OPERAND2);                        \
+    CONT;
+
+#define LDST(SIZEOP, SIZE)                                         \
+  INSN_LDX##SIZEOP:                                                \
+    DST = compute_ld##SIZE(SRC, OFF);                              \
+    CONT;                                                          \
+  INSN_STX##SIZEOP:                                                \
+    compute_st##SIZE(SRC, DST, OFF);                               \
     CONT;
 
 #define BYTESWAP(OPCODE, OP)                                       \
@@ -420,7 +468,9 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 
   inst* insn = program;
   ps.clear();
-  ps.regs[1] = input;
+  ps._regs[1] = input;
+  // set r10 as frame pointer, the bottom of the stack
+  ps._regs[10] = ps._mem._stack_addr;
 
   static void *jumptable[NUM_INSTR] = {
     [IDX_NOP]      = && INSN_NOP,
@@ -446,6 +496,8 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
     [IDX_ARSH32XY] = && INSN_ARSH32XY,
     [IDX_LE]       = && INSN_LE,
     [IDX_BE]       = && INSN_BE,
+    [IDX_LDXW]     = && INSN_LDXW,
+    [IDX_STXW]     = && INSN_STXW,
     [IDX_JA]       = && INSN_JA,
     [IDX_JEQXC]    = && INSN_JEQXC,
     [IDX_JEQXY]    = && INSN_JEQXY,
@@ -491,6 +543,8 @@ INSN_NOP:
   ALU_BINARY(ARSH32XC, arsh32, DST, IMM)
   ALU_BINARY(ARSH32XY, arsh32, DST, SRC_L5)
 
+  LDST(W, 32)
+
   BYTESWAP(LE, le)
   BYTESWAP(BE, be)
 
@@ -506,7 +560,7 @@ INSN_JA:
   COND_JMP(JSGTXY, >, DST, SRC)
 
 INSN_EXIT:
-  return ps.regs[0];
+  return ps._regs[0];
 
 error_label:
   cout << "Error in processing instruction; unknown opcode" << endl;
@@ -514,5 +568,5 @@ error_label:
 
 out:
   //cout << "Error: program terminated without RET; returning R0" << endl;
-  return ps.regs[0]; /* return default R0 value */
+  return ps._regs[0]; /* return default R0 value */
 }

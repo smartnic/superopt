@@ -123,7 +123,7 @@ static constexpr int optable[NUM_INSTR] = {
 
 class prog_state: public prog_state_base {
  public:
-  prog_state() {regs.resize(NUM_REGS, 0);}
+  prog_state() {_regs.resize(NUM_REGS, 0);}
 };
 
 class inst: public inst_base {

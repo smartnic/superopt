@@ -18,15 +18,17 @@ enum ISA_TYPES {
 #define OP_UNCOND_JMP 2
 #define OP_COND_JMP 3
 #define OP_OTHERS 4
+#define OP_ST 5
+#define OP_LD 6
 
 // Return opcode types for the end instruction of a program
 #define RET_C 0   // return immediate number
 #define RET_X 1   // return register
 
 class prog_state_base {
-  int pc = 0; /* Assume only straight line code execution for now */
+  int _pc = 0; /* Assume only straight line code execution for now */
  public:
-  vector<reg_t> regs; /* assume only registers for now */
+  vector<reg_t> _regs; /* assume only registers for now */
   void print();
   void clear();
 };

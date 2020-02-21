@@ -115,6 +115,11 @@ inst instructions15[4] = {inst(MOV32XC, 0, -1),         /* r0 = 0xffffffff */
                           inst(EXIT),
                          };
 
+inst instructions16[3] = {inst(STXW, 10, -4, 1),
+                          inst(LDXW, 0, 10, -4),
+                          inst(EXIT),
+                         };
+
 void test1() {
   prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
@@ -170,6 +175,11 @@ void test1() {
 
   expected = 0;
   print_test_res(interpret(instructions15, 4, ps) == expected, "interpret jgt");
+
+  expected = 1;
+  print_test_res(interpret(instructions16, 4, ps, 1) == expected, "interpret ldxw & stxw 1");
+  expected = 0xffffffff;
+  print_test_res(interpret(instructions16, 4, ps, -1) == expected, "interpret ldxw & stxw 2");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output) {
@@ -368,6 +378,25 @@ void test2() {
 #undef SMT_CHECK_XY
 #undef SMT_JMP_CHECK_XC
 #undef SMT_JMP_CHECK_XY
+
+#define CURDST(insn) sv.get_cur_reg_var(insn._dst_reg)
+#define CURSRC(insn) sv.get_cur_reg_var(insn._src_reg)
+// Assume two instructions in the program `insns`,
+// the first one is ST and the second is LD
+#define SMT_CHECK_LDST(st_input, ld_output, test_name)                       \
+  smt = (CURSRC(insns[0]) == to_expr((int64_t)st_input));                    \
+  smt = smt && insns[0].smt_inst(sv);                                        \
+  smt = smt && insns[1].smt_inst(sv);                                        \
+  output = CURDST(insns[1]);                                                 \
+  print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
+
+  inst insns[2] = {inst(STXW, 10, -4, 1), inst(LDXW, 0, 10, -4)};
+  SMT_CHECK_LDST(10, 10, "smt LDXW & STXW 1");
+  SMT_CHECK_LDST(-2, 0xfffffffe, "smt LDXW & STXW 2");
+
+#undef CURDST
+#undef CURSRC
+#undef SMT_CHECK_LDST
 }
 
 // test3 is to check whether the ebpf inst is the same as linux bpf
@@ -399,9 +428,9 @@ void test3() {
   }
   print_test_res(prog_bytecode == expected, "ebpf bytecode 1");
 
-  // test all opcodes: has included all opcodes except NOP, 
+  // test all opcodes: has included all opcodes except NOP,
   // since there is no NOP in linux bpf
-  inst prog2[30] = {inst(ADD64XC, 3, 1),
+  inst prog2[32] = {inst(ADD64XC, 3, 1),
                     inst(ADD64XY, 3, 1),
                     inst(LSH64XC, 3, 1),
                     inst(LSH64XY, 3, 1),
@@ -423,6 +452,8 @@ void test3() {
                     inst(ARSH32XY, 3, 1),
                     inst(LE, 3, 16),
                     inst(BE, 3, 16),
+                    inst(LDXW, 1, 10, -4),
+                    inst(STXW, 10, -4, 1),
                     inst(JA, 1),
                     inst(JEQXC, 3, 1, 2),
                     inst(JEQXY, 3, 1, 2),
@@ -454,6 +485,8 @@ void test3() {
              "{204, 3, 1, 0, 0},"\
              "{212, 3, 0, 0, 16},"\
              "{220, 3, 0, 0, 16},"\
+             "{97, 1, 10, -4, 0},"\
+             "{99, 10, 1, -4, 0},"\
              "{5, 0, 0, 1, 0},"\
              "{21, 3, 0, 2, 1},"\
              "{29, 3, 1, 2, 0},"\
@@ -463,7 +496,7 @@ void test3() {
              "{109, 3, 1, 2, 0},"\
              "{149, 0, 0, 0, 0},";
   prog_bytecode = "";
-  for (int i = 0; i < 30; i++) {
+  for (int i = 0; i < 32; i++) {
     prog_bytecode += prog2[i].get_bytecode_str() + ",";
   }
   print_test_res(prog_bytecode == expected, "ebpf bytecode 2");

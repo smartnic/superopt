@@ -147,14 +147,13 @@ void test4() {
   uint8_t a[4];
   uint8_t expected[4] = {0xef, 0xcd, 0xab, 0x89};
   int64_t x = 0x0123456789abcdef;
-  compute_st32(x, a, 0);
+  compute_st32(x, (uint64_t)a, 0);
   // store lower 32-bit of x into a, check whether a == expected
   print_test_res(check_array_equal(a, expected, 4), "compute st32");
   // load four bytes from expected, check whether the value == L32(x)
-  print_test_res(compute_ld32(expected, 0) == L32(x), "compute ld32");
+  print_test_res(compute_ld32((uint64_t)expected, 0) == L32(x), "compute ld32");
 
-  z3::sort z3_mem_t = smt_c.array_sort(smt_c.bv_sort(64), smt_c.bv_sort(8));
-  z3::expr mem = smt_c.constant("mem", z3_mem_t);
+  z3::expr mem = to_constant_expr("mem");
   z3::expr mem_expected = store(mem, v((uint64_t)a), v(x).extract(7, 0));
   mem_expected = store(mem_expected, v((uint64_t)a + 1), v(x).extract(15, 8));
   mem_expected = store(mem_expected, v((uint64_t)a + 2), v(x).extract(23, 16));

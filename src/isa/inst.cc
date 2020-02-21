@@ -5,15 +5,15 @@
 using namespace std;
 
 void prog_state_base::print() {
-  for (int i = 0; i < regs.size(); i++) {
-    cout << "Register "  << i << " " << regs[i] << endl;
+  for (int i = 0; i < _regs.size(); i++) {
+    cout << "Register "  << i << " " << _regs[i] << endl;
   }
 };
 
 void prog_state_base::clear() {
-  pc = 0;
-  for (int i = 0; i < regs.size(); i++) {
-    regs[i] = 0;
+  _pc = 0;
+  for (int i = 0; i < _regs.size(); i++) {
+    _regs[i] = 0;
   }
 };
 

@@ -49,6 +49,9 @@ enum OPCODE_IDX {
   // Byteswap
   IDX_LE,
   IDX_BE,
+  // Memory
+  IDX_LDXW,
+  IDX_STXW,
   // JMP
   IDX_JA,
   IDX_JEQXC,
@@ -71,6 +74,8 @@ enum OPCODE_IDX {
 #define OPCODE_BPF_MOV64_REG BPF_ALU64 | BPF_MOV | BPF_X
 #define OPCODE_BPF_MOV32_IMM BPF_ALU | BPF_MOV | BPF_K
 #define OPCODE_BPF_MOV32_REG BPF_ALU | BPF_MOV | BPF_X
+#define OPCODE_BPF_LDX_MEM(SIZE) BPF_LDX | BPF_SIZE(SIZE) | BPF_MEM
+#define OPCODE_BPF_STX_MEM(SIZE) BPF_STX | BPF_SIZE(SIZE) | BPF_MEM
 #define OPCODE_BPF_JMP_IMM(OP) BPF_JMP | BPF_OP(OP) | BPF_K
 #define OPCODE_BPF_JMP_REG(OP) BPF_JMP | BPF_OP(OP) | BPF_X
 #define OPCODE_BPF_JMP_A BPF_JMP | BPF_JA
@@ -101,6 +106,8 @@ enum OPCODES {
   ARSH32XY = OPCODE_BPF_ALU32_REG(BPF_ARSH),
   LE       = OPCODE_BPF_ENDIAN(BPF_TO_LE),
   BE       = OPCODE_BPF_ENDIAN(BPF_TO_BE),
+  LDXW     = OPCODE_BPF_LDX_MEM(BPF_W),
+  STXW     = OPCODE_BPF_STX_MEM(BPF_W),
   JA       = OPCODE_BPF_JMP_A,
   JEQXC    = OPCODE_BPF_JMP_IMM(BPF_JEQ),
   JEQXY    = OPCODE_BPF_JMP_REG(BPF_JEQ),
@@ -136,6 +143,8 @@ static const int idx_2_opcode[NUM_INSTR] = {
   [IDX_ARSH32XY] = ARSH32XY,
   [IDX_LE] = LE,
   [IDX_BE] = BE,
+  [IDX_LDXW] = LDXW,
+  [IDX_STXW] = STXW,
   [IDX_JA] = JA,
   [IDX_JEQXC] = JEQXC,
   [IDX_JEQXY] = JEQXY,
@@ -170,6 +179,8 @@ static const int num_operands[NUM_INSTR] = {
   [IDX_ARSH32XY] = 2,
   [IDX_LE]       = 2,
   [IDX_BE]       = 2,
+  [IDX_LDXW]     = 3,
+  [IDX_STXW]     = 3,
   [IDX_JA]       = 1,
   [IDX_JEQXC]    = 3,
   [IDX_JEQXY]    = 3,
@@ -206,6 +217,8 @@ static const int insn_num_regs[NUM_INSTR] = {
   [IDX_ARSH32XY] = 2,
   [IDX_LE]       = 1,
   [IDX_BE]       = 1,
+  [IDX_LDXW]     = 2,
+  [IDX_STXW]     = 2,
   [IDX_JA]       = 0,
   [IDX_JEQXC]    = 1,
   [IDX_JEQXY]    = 2,
@@ -240,6 +253,8 @@ static const int opcode_type[NUM_INSTR] = {
   [IDX_ARSH32XY] = OP_OTHERS,
   [IDX_LE]       = OP_OTHERS,
   [IDX_BE]       = OP_OTHERS,
+  [IDX_LDXW]     = OP_LD,
+  [IDX_STXW]     = OP_ST,
   [IDX_JA]       = OP_UNCOND_JMP,
   [IDX_JEQXC]    = OP_COND_JMP,
   [IDX_JEQXY]    = OP_COND_JMP,
@@ -279,6 +294,8 @@ enum OPERANDS {
 #define ALU_OPS_IMM (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED))
 #define ALU_OPS_REG (FSTOP(OP_DST_REG) | SNDOP(OP_SRC_REG) | TRDOP(OP_UNUSED))
 #define BYTESWAP (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED))
+#define LDX_OPS (FSTOP(OP_DST_REG) | SNDOP(OP_SRC_REG) | TRDOP(OP_OFF))
+#define STX_OPS (FSTOP(OP_DST_REG) | SNDOP(OP_OFF) | TRDOP(OP_SRC_REG))
 #define JA_OPS (FSTOP(OP_OFF) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 #define JMP_OPS_IMM (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_OFF))
 #define JMP_OPS_REG (FSTOP(OP_DST_REG) | SNDOP(OP_SRC_REG) | TRDOP(OP_OFF))
@@ -307,6 +324,8 @@ static const int optable[NUM_INSTR] = {
   [IDX_ARSH32XY] = ALU_OPS_REG,
   [IDX_LE]       = BYTESWAP,
   [IDX_BE]       = BYTESWAP,
+  [IDX_LDXW]     = LDX_OPS,
+  [IDX_STXW]     = STX_OPS,
   [IDX_JA]       = JA_OPS,
   [IDX_JEQXC]    = JMP_OPS_IMM,
   [IDX_JEQXY]    = JMP_OPS_REG,
@@ -322,13 +341,26 @@ static const int optable[NUM_INSTR] = {
 #undef ALU_OPS_IMM
 #undef ALU_OPS_REG
 #undef BYTESWAP
+#undef LDX_OPS
+#undef STX_OPS
 #undef JMP_OPS_IMM
 #undef JMP_OPS_REG
 #undef UNUSED_OPS
 
+class mem_t {
+ public:
+  static const int MEM_SIZE = 512;
+  uint8_t _mem[MEM_SIZE];
+  // stack address is the bottom of the stack
+  uint64_t _stack_addr = (uint64_t)&_mem[MEM_SIZE - 1] + 1;
+};
+
 class prog_state: public prog_state_base {
  public:
-  prog_state() {regs.resize(NUM_REGS, 0);}
+  mem_t _mem;
+  prog_state() {_regs.resize(NUM_REGS, 0);}
+  void print();
+  void clear();
 };
 
 class inst: public inst_base {
