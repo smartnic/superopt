@@ -32,6 +32,18 @@ void test1() {
   validator vld(instructions1, 9);
   print_test_res(vld.is_equal_to(instructions1, 9), "instructions1 == instructions1");
   print_test_res(vld.is_equal_to(instructions2, 9), "instructions1 == instructions2");
+
+  // output = L32(input)
+  inst instructions3[2] = {inst(MOV32XY, 0, 1),
+                           inst(EXIT),
+                          };
+
+  inst instructions4[3] = {inst(STXW, 10, -4, 1),
+                           inst(LDXW, 0, 10, -4),
+                           inst(EXIT),
+                          };
+  vld.set_orig(instructions3, 2);
+  print_test_res(vld.is_equal_to(instructions4, 3), "instructions3 == instructions4");
 }
 
 int main() {

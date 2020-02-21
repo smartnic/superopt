@@ -46,7 +46,8 @@ smt_prog::~smt_prog() {}
 void smt_prog::smt_block(expr& smt_b, inst* program, int start, int end, smt_var& sv) {
   expr p = string_to_expr("true");
   for (size_t i = start; i <= end; i++) {
-    if (program[i].get_opcode_type() != OP_OTHERS) continue;
+    int op_type = program[i].get_opcode_type();
+    if ((op_type != OP_OTHERS) && (op_type != OP_LD) && (op_type != OP_ST)) continue;
     p = p and program[i].smt_inst(sv);
   }
   smt_b = p.simplify();
