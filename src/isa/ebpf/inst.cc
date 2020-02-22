@@ -486,6 +486,16 @@ string inst::get_bytecode_str() const {
           + "}");
 }
 
+// safe address: [ps._mem._stack_addr - mem_t:MEM_SIZE, ps._mem._stack_addr)
+inline void memory_access_check(uint64_t addr, prog_state &ps) {
+  if (!((addr >= ps._mem._stack_addr - mem_t::MEM_SIZE) &&
+        (addr < ps._mem._stack_addr))) {
+    string err_msg = "unsafe memory access";
+    throw (err_msg);
+  }
+  return;
+}
+
 int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 #undef IMM
 #undef OFF
@@ -514,9 +524,11 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 
 #define LDST(SIZEOP, SIZE)                                         \
   INSN_LDX##SIZEOP:                                                \
+    memory_access_check(SRC + OFF, ps);                            \
     DST = compute_ld##SIZE(SRC, OFF);                              \
     CONT;                                                          \
   INSN_STX##SIZEOP:                                                \
+    memory_access_check(DST + OFF, ps);                            \
     compute_st##SIZE(SRC, DST, OFF);                               \
     CONT;
 

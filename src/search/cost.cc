@@ -19,6 +19,7 @@ void cost::init(prog* orig, int len, const vector<reg_t> &input,
   prog_state ps;
   for (size_t i = 0; i < input.size(); i++) {
     ps.clear();
+    // Assume original program can pass the interpreter
     reg_t output = orig->interpret(ps, input[i]);
     inout example;
     example.set_in_out(input[i], output);
@@ -125,7 +126,11 @@ double cost::error_cost(prog* synth, int len) {
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
-    output2 = synth->interpret(ps, _examples._exs[i].input);
+    try {
+      output2 = synth->interpret(ps, _examples._exs[i].input);
+    } catch (const string err_msg) {
+      return ERROR_COST_MAX;
+    }
     double ex_cost = get_ex_error_cost(output1, output2);
     if (ex_cost == 0) num_successful_ex++;
     total_cost += ex_cost;
