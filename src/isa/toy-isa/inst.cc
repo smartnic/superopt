@@ -55,11 +55,16 @@ int inst::get_max_operand_val(int op_index, int inst_index) const {
   // max value for each operand type
   int max_val[4] = {
     [OP_UNUSED] = 0,
-    [OP_REG] = NUM_REGS,
+    [OP_REG] = NUM_REGS - 1,
     [OP_IMM] = MAX_CONST,
-    [OP_OFF] = MAX_PROG_LEN - inst_index - 1,
+    [OP_OFF] = MAX_PROG_LEN - inst_index - 2,
   };
   return max_val[OPTYPE(_opcode, op_index)];
+}
+
+// For jmp opcode, it can only jump forward
+int inst::get_min_operand_val(int op_index, int inst_index) const {
+  return 0;
 }
 
 vector<int> inst::get_reg_list() const {
@@ -111,6 +116,11 @@ int inst::inst_output() const {
 bool inst::is_real_inst() const {
   if (_opcode == NOP) return false;
   return true;
+}
+
+bool inst::is_reg(int op_index) const {
+  if (OPTYPE(_opcode, op_index) == OP_REG) return true;
+  return false;
 }
 
 void inst::set_as_nop_inst() {

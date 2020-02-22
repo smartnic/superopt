@@ -367,6 +367,9 @@ class inst: public inst_base {
  private:
   void set_imm(int op_value);
   int32_t get_max_imm() const;
+  int32_t get_min_imm() const;
+  int16_t get_max_off(int inst_index) const;
+  int16_t get_min_off() const;
  public:
   int32_t _dst_reg;
   int32_t _src_reg;
@@ -390,11 +393,13 @@ class inst: public inst_base {
   void print() const;
   vector<int> get_reg_list() const;
   int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
+  int32_t get_min_operand_val(int op_index, int inst_index = 0) const;
   int get_jmp_dis() const;
   void insert_jmp_opcodes(unordered_set<int>& jmp_set) const;
   int inst_output_opcode_type() const;
   int inst_output() const;
   bool is_real_inst() const;
+  bool is_reg(int op_index) const;
   void set_as_nop_inst();
   unsigned int get_input_reg() const {return 1;}
   int get_num_operands() const {return num_operands[opcode_2_idx(_opcode)];}

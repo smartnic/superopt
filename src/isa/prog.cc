@@ -165,9 +165,11 @@ void prog::canonicalize() {
 
   // replace reg_ids(before) with reg_ids(after) for all instructions
   for (int i = 0; i < MAX_PROG_LEN; i++) {
-    for (int j = 0; j < inst_list[i].get_insn_num_regs(); j++) {
-      int reg_id_after = map_before_after[inst_list[i].get_operand(j)];
-      inst_list[i].set_operand(j, reg_id_after);
+    for (int j = 0; j < MAX_OP_LEN; j++) {
+      if (inst_list[i].is_reg(j)) {
+        int reg_id_after = map_before_after[inst_list[i].get_operand(j)];
+        inst_list[i].set_operand(j, reg_id_after);
+      }
     }
   }
 }

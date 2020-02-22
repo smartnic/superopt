@@ -123,6 +123,55 @@ int32_t inst::get_max_imm() const {
   }
 }
 
+int16_t inst::get_max_off(int inst_index) const {
+  int op_type = get_opcode_type();
+  switch (op_type) {
+    case OP_LD:
+    case OP_ST: return -1; // assume only stack
+    case OP_UNCOND_JMP:
+    case OP_COND_JMP: return min(MAX_OFF, MAX_PROG_LEN - inst_index - 2);
+    default: cout << "Error: no off in instruction: ";
+      print();
+      return 0;
+  }
+}
+
+int32_t inst::get_min_imm() const {
+  switch (_opcode) {
+    case ADD64XC:
+    case MOV64XC:
+    case ADD32XC:
+    case MOV32XC:
+    case JEQXC:
+    case JGTXC:
+    case JSGTXC: return MIN_IMM;
+    case LSH64XC:
+    case RSH64XC:
+    case ARSH64XC:
+    case LSH32XC:
+    case RSH32XC:
+    case ARSH32XC:
+    case LE:
+    case BE: return 0;
+    default: cout << "Error: no imm in instruction: ";
+      print();
+      return 0;
+  }
+}
+
+int16_t inst::get_min_off() const {
+  int op_type = get_opcode_type();
+  switch (op_type) {
+    case OP_LD:
+    case OP_ST: return -mem_t::MEM_SIZE; // assume only stack
+    case OP_UNCOND_JMP:
+    case OP_COND_JMP: return 0; // assume only jump forward
+    default: cout << "Error: no off in instruction: ";
+      print();
+      return 0;
+  }
+}
+
 void inst::set_operand(int op_index, op_t op_value) {
   assert(op_index < MAX_OP_LEN);
   int operand_type = OPTYPE(_opcode, op_index);
@@ -187,8 +236,10 @@ void inst::print() const {
 vector<int> inst::get_reg_list() const {
   vector<int> reg_list;
   // Here assume registers are the first operands in one instruction
-  for (int i = 0; i < get_insn_num_regs(); i++)
-    reg_list.push_back(get_operand(i));
+  for (int i = 0; i < MAX_OP_LEN; i++) {
+    if (is_reg(i))
+      reg_list.push_back(get_operand(i));
+  }
   return reg_list;
 }
 
@@ -215,12 +266,27 @@ int32_t inst::get_max_operand_val(int op_index, int inst_index) const {
   int operand_type = OPTYPE(_opcode, op_index);
   switch (operand_type) {
     case OP_UNUSED: return 0;
-    case OP_DST_REG: return NUM_REGS;
-    case OP_SRC_REG: return NUM_REGS;
-    case OP_OFF: return min((int32_t)MAX_OFF, MAX_PROG_LEN - inst_index - 1);
+    case OP_DST_REG: return NUM_REGS - 1;
+    case OP_SRC_REG: return NUM_REGS - 1;
+    case OP_OFF: return get_max_off(inst_index);
     case OP_IMM: return get_max_imm();
     default: cout << "Error: cannot find operand_type for instruction: ";
       // print();
+      return 0;
+  }
+}
+
+// For jmp opcode, it can only jump forward
+int32_t inst::get_min_operand_val(int op_index, int inst_index) const {
+  int operand_type = OPTYPE(_opcode, op_index);
+  switch (operand_type) {
+    case OP_UNUSED: return 0;
+    case OP_DST_REG: return 0;
+    case OP_SRC_REG: return 0;
+    case OP_OFF: return get_min_off();
+    case OP_IMM: return get_min_imm();
+    default: cout << "Error: cannot find operand_type for instruction: ";
+      print();
       return 0;
   }
 }
@@ -260,6 +326,12 @@ int inst::inst_output() const {
 bool inst::is_real_inst() const {
   if (_opcode == NOP) return false;
   return true;
+}
+
+bool inst::is_reg(int op_index) const {
+  int op_type = OPTYPE(_opcode, op_index);
+  if ((op_type == OP_DST_REG) || (op_type == OP_SRC_REG)) return true;
+  return false;
 }
 
 void inst::set_as_nop_inst() {

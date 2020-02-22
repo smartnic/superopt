@@ -12,47 +12,62 @@ using namespace std;
 default_random_engine gen;
 uniform_real_distribution<double> unidist(0.0, 1.0);
 
-/* Return a uniformly random integer from start to end - 1 inclusive */
+/* Return a uniformly random integer from start to end inclusive */
 int sample_int(int start, int end) {
+  end++;
   int val;
   do {
-    val = (int)(start + unidist(gen) * (double)(end - start));
+    val = start + (int)(unidist(gen) * (double)(end - start));
   } while (val == end && end > start);
   return val;
 }
 
-/* Return a uniformly random integer from 0 to limit - 1 inclusive */
+/* Return a uniformly random integer from 0 to limit inclusive */
 int sample_int(int limit) {
   return sample_int(0, limit);
 }
 
-/* Return a uniformly random integer from 0 to limit - 1 inclusive, with the
+/* Return a uniformly random integer from 0 to limit inclusive, with the
  * exceptions of  `excepts`. */
 int sample_int_with_exceptions(int limit, unordered_set<int> &excepts) {
   int val = sample_int(limit - excepts.size());
-  while (true) {
-    if (excepts.find(val) == excepts.end()) {
-      break;
-    }
-    val++;
+  for (auto it = excepts.begin(); it != excepts.end(); it++) {
+    if (*it <= val) val++;
   }
   return val;
 }
 
-/* Return a uniformly random integer from 0 to limit - 1 inclusive, with the
+/* Return a uniformly random integer from start to end inclusive, with the
  * exception of  `except`. */
-int sample_int_with_exception(int limit, int except) {
+int sample_int_with_exception(int start, int end, int except) {
+  end++;
   int val;
   do {
-    val = (int)(unidist(gen) * (double)limit);
-  } while ((val == limit || val == except) && limit > 1);
+    val = start + (int)(unidist(gen) * (double)(end - start));
+  } while ((val == end || val == except) && ((end - start) > 1));
   return val;
 }
 
+/* Return a uniformly random integer from 0 to limit inclusive, with the
+ * exception of  `except`. */
+int sample_int_with_exception(int limit, int except) {
+  return sample_int_with_exception(0, limit, except);
+}
+
+// sample with exception `old_opvalue`
 int get_new_operand(int sel_inst_index, const inst& sel_inst, int op_to_change, int old_opvalue) {
   int max_opvalue = sel_inst.get_max_operand_val(op_to_change, sel_inst_index);
+  int min_opvalue = sel_inst.get_min_operand_val(op_to_change, sel_inst_index);
   // TODO: is it wise to sample with exception?
-  int new_opvalue = sample_int_with_exception(max_opvalue, old_opvalue);
+  int new_opvalue = sample_int_with_exception(min_opvalue, max_opvalue, old_opvalue);
+  return new_opvalue;
+}
+
+// sample without exception
+int get_new_operand(int sel_inst_index, const inst& sel_inst, int op_to_change) {
+  int max_opvalue = sel_inst.get_max_operand_val(op_to_change, sel_inst_index);
+  int min_opvalue = sel_inst.get_min_operand_val(op_to_change, sel_inst_index);
+  int new_opvalue = sample_int(min_opvalue, max_opvalue);
   return new_opvalue;
 }
 
@@ -69,13 +84,13 @@ void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_ch
 void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
   int num = orig.inst_list[inst_index].get_num_operands();
   if (num == 0) return;
-  int op_to_change = sample_int(num);
+  int op_to_change = sample_int(num - 1);
   mod_operand(orig, synth, inst_index, op_to_change);
 }
 
 prog* mod_random_inst_operand(const prog &orig) {
   // TODO: remove instructions whithout valid operands, such as NOP, EXIT
-  int inst_index = sample_int(MAX_PROG_LEN);
+  int inst_index = sample_int(MAX_PROG_LEN - 1);
   prog* synth = new prog(orig);
   synth->reset_vals();
   mod_random_operand(orig, synth, inst_index);
@@ -95,12 +110,12 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   } else {
     exceptions = {old_opcode};
   }
-  int new_opcode_idx = sample_int_with_exceptions(NUM_INSTR, exceptions);
+  int new_opcode_idx = sample_int_with_exceptions(NUM_INSTR - 1, exceptions);
   int new_opcode = sel_inst->get_opcode_by_idx(new_opcode_idx);
   sel_inst->set_as_nop_inst();
   sel_inst->set_opcode(new_opcode);
   for (int i = 0; i < sel_inst->get_num_operands(); i++) {
-    int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, i, -1);
+    int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, i);
     sel_inst->set_operand(i, new_opvalue);
   }
 }
@@ -109,7 +124,7 @@ prog* mod_random_inst(const prog &orig) {
   // First make a copy of the old program
   prog* synth = new prog(orig);
   synth->reset_vals();
-  int inst_index = sample_int(MAX_PROG_LEN);
+  int inst_index = sample_int(MAX_PROG_LEN - 1);
   mod_select_inst(synth, inst_index);
   return synth;
 }
@@ -121,7 +136,7 @@ prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
   prog* synth = new prog(orig);
   synth->reset_vals();
   // Select a random start instruction
-  int start_inst_index = sample_int(MAX_PROG_LEN - k + 1);
+  int start_inst_index = sample_int(MAX_PROG_LEN - k);
   for (int i = start_inst_index; i < start_inst_index + k; i++) {
     mod_select_inst(synth, i);
   }
@@ -130,6 +145,6 @@ prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
 
 prog* mod_random_cont_insts(const prog &orig) {
   int start_k_value = 2; // at least change two instructions
-  int k = sample_int(start_k_value, MAX_PROG_LEN + 1);
+  int k = sample_int(start_k_value, MAX_PROG_LEN);
   return mod_random_k_cont_insts(orig, k);
 }

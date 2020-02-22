@@ -58,6 +58,7 @@ class inst_base {
   vector<int> get_reg_list() const {RAISE_EXCEPTION("inst::get_reg_list");}
   string opcode_to_str(int) const {RAISE_EXCEPTION("inst::opcode_to_str");}
   op_t get_max_operand_val(int op_index, int inst_index = 0) const {RAISE_EXCEPTION("inst::get_max_operand_val");}
+  op_t get_min_operand_val(int op_index, int inst_index = 0) const {RAISE_EXCEPTION("inst::get_min_operand_val");}
   int get_jmp_dis() const {RAISE_EXCEPTION("inst::get_jmp_dis");}
   // insert all jmp opcode in jmp_set, used by proposals.cc to
   // avoid jumps in the last line of the program
@@ -65,6 +66,7 @@ class inst_base {
   int inst_output_opcode_type() const {RAISE_EXCEPTION("inst::inst_output_opcode_type");}
   int inst_output() const {RAISE_EXCEPTION("inst::inst_output");}
   bool is_real_inst() const {RAISE_EXCEPTION("inst::is_real_inst");}
+  bool is_reg(int op_index) const {RAISE_EXCEPTION("inst::is_reg");}
   void set_as_nop_inst() {RAISE_EXCEPTION("inst::set_as_nop_inst");}
   unsigned int get_input_reg() const {RAISE_EXCEPTION("inst::get_input_reg");}
   int get_num_operands() const {RAISE_EXCEPTION("inst::get_num_operands");}
