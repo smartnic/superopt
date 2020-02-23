@@ -58,7 +58,9 @@ unsigned int pop_count_outputs(reg_t output1, reg_t output2) {
 
 double cost::get_ex_error_cost(reg_t output1, reg_t output2) {
   switch (_strategy_ex) {
-    case ERROR_COST_STRATEGY_ABS: return abs(output1 - output2);
+    // `double`: in case there is overflow which makes a positive value
+    // become a negative value
+    case ERROR_COST_STRATEGY_ABS: return abs((double)output1 - (double)output2);
     case ERROR_COST_STRATEGY_POP: return pop_count_outputs(output1, output2);
     default:
       cout << "ERROR: no error cost example strategy matches." << endl;
@@ -151,6 +153,11 @@ double cost::error_cost(prog* synth, int len) {
   if ((is_equal == 0) && (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
+  }
+  // in case there is overflow which makes a positive value become a negative value
+  if (total_cost < 0) {
+    cout << "Error: total_cost:" << total_cost <<  "< 0" << endl;
+    return ERROR_COST_MAX;
   }
   return total_cost;
 }
