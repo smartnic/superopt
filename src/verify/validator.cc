@@ -47,7 +47,10 @@ bool validator::is_smt_valid(expr& smt) {
 // assgin input r0 "input", other registers 0
 void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg) {
   smt_var sv(prog_id, 0, num_regs);
-  expr p = (sv.get_cur_reg_var(input_reg) == string_to_expr("input"));
+  expr input = string_to_expr("input");
+  // TODO: set input limit, need to be generalized
+  expr p = (input >= -1024) && (input <= 1024);
+  p = p and (sv.get_cur_reg_var(input_reg) == input);
   for (size_t i = 0; i < num_regs; i++) {
     if (i != input_reg) p = p and (sv.get_cur_reg_var(i) == 0);
   }
