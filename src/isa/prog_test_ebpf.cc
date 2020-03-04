@@ -37,6 +37,28 @@ void test1() {
   prog p22(insts22);
   p21.canonicalize();
   print_test_res(p21 == p22, "canonicalize 2");  
+
+  // test when r1 is not used, r1 can be used in register renaming
+  inst insts31[7] = {inst(MOV64XC, 3, 0x1),
+                     inst(MOV64XC, 2, 0x2),
+                     inst(MOV64XY, 0, 2),
+                     inst(EXIT),
+                     inst(),
+                     inst(),
+                     inst(),
+                    };
+  inst insts32[7] = {inst(MOV64XC, 0, 0x1),
+                     inst(MOV64XC, 1, 0x2),
+                     inst(MOV64XY, 2, 1),
+                     inst(EXIT),
+                     inst(),
+                     inst(),
+                     inst(),
+                    };
+  prog p31(insts31);
+  prog p32(insts32);
+  p31.canonicalize();
+  print_test_res(p31 == p32, "canonicalize 3"); 
 }
 
 int main() {
