@@ -13,6 +13,7 @@ class InputParas:
     def __init__(self):
         self.fin_path = ""
         self.fout_path = ""
+        self.isa = ""
         self.niter = ""
         self.steady_start = ""
         self.bm_ids = []
@@ -28,6 +29,7 @@ class InputParas:
 
     def print_out(self):
         print("fin_path:", self.fin_path)
+        print("isa:", self.isa)
         print("fout_path:", self.fout_path)
         print("niter:", self.niter)
         print("steady_start:", self.steady_start)
@@ -71,7 +73,7 @@ def usage():
 def parse_input():
     in_para = InputParas()
     short_opts = "n:h"
-    long_opts = ["fin_path=", "bm_ids=", "w_list=", "st_list=",
+    long_opts = ["fin_path=", "isa=", "bm_ids=", "w_list=", "st_list=",
                  "best_perf_costs=", "steady_start=",
                  "st_when_to_restart_list=", "st_when_to_restart_niter_list=",
                  "st_start_prog_list=", "p_list="]
@@ -86,6 +88,8 @@ def parse_input():
         elif o == "--fin_path":
             in_para.fin_path = a
             in_para.fout_path = a + "figure/"
+        elif o == "--isa":
+            in_para.isa = a
         elif o == "--bm_ids":
             in_para.bm_ids = a.split(" ")
         elif o == "--w_list":
@@ -121,6 +125,9 @@ def parse_input():
 
 
 def input_check(in_para):
+    if (in_para.isa != "toy-isa") and (in_para.isa != "ebpf"):
+        print("ERROR: isa should be one of toy-isa or ebpf.")
+        return False
     for st, niter in zip(in_para.st_when_to_restart_list,
                          in_para.st_when_to_restart_niter_list):
         if (st != '0') and (niter == '0'):
@@ -304,8 +311,13 @@ def perf_cost_function_cdf_xy(perf_cost_list):
     return cost_function_cdf_xy(perf_cost_list, MAX_PERF_COST_IN_FIGURE)
 
 
-def total_cost_function_cdf_xy(error_cost_list, perf_cost_list, w_e, w_p):
+def total_cost_function_cdf_xy(isa, error_cost_list, perf_cost_list, w_e, w_p):
+    # for toy-isa, the w_e and w_p is small (smaller than 2),
+    # then the total costs of most programs are smaller than 40
     MAX_TOTAL_COST_IN_FIGURE = 40
+    # for ebpf, the w_p may be about 10, then set this value as 100
+    if isa == "ebpf":
+        MAX_TOTAL_COST_IN_FIGURE = 100
     total_cost_list = get_total_cost_list(w_e, w_p, error_cost_list, perf_cost_list)
     x_axis, y_axis = cost_function_cdf_xy(total_cost_list, MAX_TOTAL_COST_IN_FIGURE)
     return x_axis, y_axis
@@ -348,7 +360,7 @@ def get_cost_list_when_steady(file_type, file_data, cost_list, steady_start, nit
 
 
 # steady start applies independently to each restart
-def cost_function_for_different_types_when_steady(c_type, file_type, fin_path, steady_start,
+def cost_function_for_different_types_when_steady(c_type, file_type, fin_path, isa, steady_start,
                                                   bm_id, niter, st,
                                                   st_when_to_restart, st_when_to_restart_niter,
                                                   st_start_prog, p_inst_operand, p_inst, w_e, w_p):
@@ -369,7 +381,7 @@ def cost_function_for_different_types_when_steady(c_type, file_type, fin_path, s
                                                     niter, st_when_to_restart, st_when_to_restart_niter)
         perf_cost_list = get_cost_list_when_steady(file_type, file_data, file_data.perf_cost_list, steady_start,
                                                    niter, st_when_to_restart, st_when_to_restart_niter)
-        x_axis, y_axis = total_cost_function_cdf_xy(error_cost_list, perf_cost_list, w_e, w_p)
+        x_axis, y_axis = total_cost_function_cdf_xy(isa, error_cost_list, perf_cost_list, w_e, w_p)
     return x_axis, y_axis
 
 
@@ -450,7 +462,7 @@ def num_unique_programs_for_different_types(file_type, fin_path, bm_id, niter, s
     return x_axis, y_axis
 
 
-def get_abs_opcodes_operands_for_different_types(file_type, fin_path, bm_id, niter, st, w_e, w_p,
+def get_abs_opcodes_operands_for_different_types(file_type, fin_path, isa, bm_id, niter, st, w_e, w_p,
                                                  st_when_to_restart, st_when_to_restart_niter, st_start_prog,
                                                  p_inst_operand, p_inst):
     file_data = get_data_for_different_file_types(fin_path, file_type, bm_id, niter, st,
@@ -460,14 +472,22 @@ def get_abs_opcodes_operands_for_different_types(file_type, fin_path, bm_id, nit
     abs_bv_list = file_data.abs_coding_list
     opcode_list = []
     operand_list = []
-    OP_LEN = 5
+    # get from input
+    op_len = 0
+    op_num = 0
+    if isa == "toy-isa":
+        op_len = 5
+        op_num = 4
+    elif isa == "ebpf":
+        op_len = 32
+        op_num = 5
     for prog_bv in abs_bv_list:
-        inst_bv_list = [prog_bv[i: i + OP_LEN * 4] for i in range(0, len(prog_bv), OP_LEN * 4)]
+        inst_bv_list = [prog_bv[i: i + op_len * op_num] for i in range(0, len(prog_bv), op_len * op_num)]
         prog_opcode_bv = ""
         prog_operand_bv = ""
         for inst_bv in inst_bv_list:
-            prog_opcode_bv += inst_bv[:OP_LEN]
-            prog_operand_bv += inst_bv[OP_LEN:]
+            prog_opcode_bv += inst_bv[:op_len]
+            prog_operand_bv += inst_bv[op_len:]
         opcode_list.append(prog_opcode_bv)
         operand_list.append(prog_operand_bv)
     opcode_list = [int(i, 2) for i in opcode_list]
@@ -476,7 +496,7 @@ def get_abs_opcodes_operands_for_different_types(file_type, fin_path, bm_id, nit
 
 
 #################### figure plotting ####################
-def figure_cost_function_cdf_when_steady(file_type, c_type, fin_path, fout_path, niter,
+def figure_cost_function_cdf_when_steady(file_type, c_type, fin_path, fout_path, isa, niter,
                                          steady_start, bm_id, best_perf_cost, st,
                                          st_when_to_restart, st_when_to_restart_niter,
                                          st_start_prog, p_inst_operand, p_inst,
@@ -484,7 +504,7 @@ def figure_cost_function_cdf_when_steady(file_type, c_type, fin_path, fout_path,
     f = plt.figure()
     for w_e, w_p in zip(w_e_list, w_p_list):
         x_axis, y_axis = cost_function_for_different_types_when_steady(c_type, file_type,
-                                                                       fin_path, steady_start,
+                                                                       fin_path, isa, steady_start,
                                                                        bm_id, niter, st,
                                                                        st_when_to_restart, st_when_to_restart_niter,
                                                                        st_start_prog, p_inst_operand, p_inst,
@@ -565,10 +585,10 @@ def figure_num_unique_programs(file_type, fin_path, fout_path, niter, bm_id, st,
     plt.close(f)
 
 
-def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, niter, bm_id, st, w_e, w_p,
+def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, isa, niter, bm_id, st, w_e, w_p,
                                           st_when_to_restart, st_when_to_restart_niter, st_start_prog,
                                           p_inst_operand, p_inst):
-    opcode_list, operand_list = get_abs_opcodes_operands_for_different_types(file_type, fin_path, bm_id,
+    opcode_list, operand_list = get_abs_opcodes_operands_for_different_types(file_type, fin_path, isa, bm_id,
                                                                              niter, st, w_e, w_p,
                                                                              st_when_to_restart,
                                                                              st_when_to_restart_niter, st_start_prog,
@@ -581,7 +601,7 @@ def figure_absolute_coding_transfer_graph(file_type, fin_path, fout_path, niter,
                 c="blue", alpha=1)
     # compute the optimal program points and add them into the figure
     opti_opcode_list, opti_operand_list = get_abs_opcodes_operands_for_different_types(file_name_type.optimals,
-                                                                                       fin_path, bm_id,
+                                                                                       fin_path, isa, bm_id,
                                                                                        niter, st, w_e, w_p,
                                                                                        st_when_to_restart,
                                                                                        st_when_to_restart_niter,
@@ -904,7 +924,7 @@ def figure_all(bm_id, best_perf_cost, st, st_when_to_restart, st_when_to_restart
     for file_type in [file_name_type.proposals, file_name_type.programs]:
         # figure 1: cost function CDF
         for c_type in [cost_type.error_cost, cost_type.perf_cost, cost_type.total_cost]:
-            figure_cost_function_cdf_when_steady(file_type, c_type, in_para.fin_path, in_para.fout_path,
+            figure_cost_function_cdf_when_steady(file_type, c_type, in_para.fin_path, in_para.fout_path, in_para.isa,
                                                  in_para.niter, in_para.steady_start, bm_id, best_perf_cost,
                                                  st, st_when_to_restart, st_when_to_restart_niter,
                                                  st_start_prog, p_inst_operand, p_inst,
@@ -927,7 +947,7 @@ def figure_all(bm_id, best_perf_cost, st, st_when_to_restart, st_when_to_restart
                                                   st_when_to_restart, st_when_to_restart_niter, st_start_prog,
                                                   p_inst_operand, p_inst)
             # figure 5: absolute coding transfer graph
-            figure_absolute_coding_transfer_graph(file_type, in_para.fin_path, in_para.fout_path,
+            figure_absolute_coding_transfer_graph(file_type, in_para.fin_path, in_para.fout_path, in_para.isa,
                                                   in_para.niter, bm_id, st, w_e, w_p,
                                                   st_when_to_restart, st_when_to_restart_niter, st_start_prog,
                                                   p_inst_operand, p_inst)
