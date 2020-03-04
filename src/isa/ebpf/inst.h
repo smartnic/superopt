@@ -392,7 +392,7 @@ class inst: public inst_base {
   bool operator==(const inst &x) const;
   string opcode_to_str(int) const;
   void print() const;
-  vector<int> get_reg_list() const;
+  vector<int> get_canonical_reg_list() const;
   int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
   int32_t get_min_operand_val(int op_index, int inst_index = 0) const;
   int get_jmp_dis() const;
@@ -401,6 +401,7 @@ class inst: public inst_base {
   int inst_output() const;
   bool is_real_inst() const;
   bool is_reg(int op_index) const;
+  int implicit_ret_reg() const;
   void set_as_nop_inst();
   unsigned int get_input_reg() const {return 1;}
   int get_num_operands() const {return num_operands[opcode_2_idx(_opcode)];}

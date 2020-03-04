@@ -141,7 +141,7 @@ void prog::canonicalize() {
   // traverse all instructions and once there is a new reg_id(before), assign it a reg_id(after)
   // store reg_id(before) and reg_id(after) into map
   for (int i = 0; i < MAX_PROG_LEN; i++) {
-    reg_list = inst_list[i].get_reg_list();
+    reg_list = inst_list[i].get_canonical_reg_list();
     for (size_t j = 0; j < reg_list.size(); j++) {
       if (map_before_after.find(reg_list[j]) == map_before_after.end()) {
         map_before_after[reg_list[j]] = (int)map_before_after.size();
@@ -150,25 +150,40 @@ void prog::canonicalize() {
   }
   if (map_before_after.size() == 0) return;
 
-  if (map_before_after.find(0) != map_before_after.end()) {
-    // if reg 0 is used, then cannot modify reg 0, since it stores the input value
-    if (map_before_after[0] != 0) {
-      int thr = map_before_after[0];
+  int input_reg = inst_list->get_input_reg();
+  if (map_before_after.find(input_reg) != map_before_after.end()) {
+    // if input register is used, then cannot modify it, since it stores the input value
+    if (map_before_after[input_reg] != input_reg) {
+      // since the after value of input register will be modified from i1 to i2,
+      // after values between i1 and i2 should be modified.
+      int i1 = map_before_after[input_reg];
+      int i2 = input_reg;
+      int add = 0, start = 0, end = 0;
+      if (i1 < i2) {add = -1; start = i1 + 1; end = i2;}
+      else {add = 1; start = i2; end = i1 - 1;}
       for (auto it = map_before_after.begin(); it != map_before_after.end(); it++) {
-        if (it->second < thr) it->second++;
+        if ((it->second >= start) && (it->second <= end)) {
+          it->second += add;
+        }
       }
-      map_before_after[0] = 0;
+      map_before_after[input_reg] = input_reg;
     }
   } else {
-    update_map_if_implicit_ret_r0_needed(map_before_after);
+    int implicit_ret_reg = inst_list->implicit_ret_reg();
+    if (implicit_ret_reg != -1) {
+      // TODO: to support new ISA which allows implicit return register
+      // and the return register is not r0, should modify the following function.
+      update_map_if_implicit_ret_r0_needed(map_before_after);
+    }
   }
 
   // replace reg_ids(before) with reg_ids(after) for all instructions
   for (int i = 0; i < MAX_PROG_LEN; i++) {
     for (int j = 0; j < MAX_OP_LEN; j++) {
       if (inst_list[i].is_reg(j)) {
-        int reg_id_after = map_before_after[inst_list[i].get_operand(j)];
-        inst_list[i].set_operand(j, reg_id_after);
+        auto it = map_before_after.find(inst_list[i].get_operand(j));
+        if (it != map_before_after.end())
+          inst_list[i].set_operand(j, it->second);
       }
     }
   }

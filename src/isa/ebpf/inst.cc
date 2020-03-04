@@ -233,12 +233,17 @@ void inst::print() const {
   cout << endl;
 }
 
-vector<int> inst::get_reg_list() const {
+// get_canonical_reg_list return the registers that can be modified
+vector<int> inst::get_canonical_reg_list() const {
   vector<int> reg_list;
-  // Here assume registers are the first operands in one instruction
   for (int i = 0; i < MAX_OP_LEN; i++) {
-    if (is_reg(i))
-      reg_list.push_back(get_operand(i));
+    // r10 cannot be modified, since r10 is the read-only frame pointer to access stack
+    // reference: https://www.kernel.org/doc/Documentation/networking/filter.txt
+    if (is_reg(i)) {
+      if (get_operand(i) != 10) {
+        reg_list.push_back(get_operand(i));
+      }
+    }
   }
   return reg_list;
 }
@@ -332,6 +337,10 @@ bool inst::is_reg(int op_index) const {
   int op_type = OPTYPE(_opcode, op_index);
   if ((op_type == OP_DST_REG) || (op_type == OP_SRC_REG)) return true;
   return false;
+}
+
+int inst::implicit_ret_reg() const {
+  return -1;
 }
 
 void inst::set_as_nop_inst() {

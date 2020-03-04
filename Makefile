@@ -8,7 +8,7 @@ EBPF=src/isa/ebpf/
 TOY_ISA_FLAG=-D ISA_TOY_ISA
 EBPF_FLAG=-D ISA_EBPF
 
-all: main.out main_ebpf.out proposals_test.out inst_codegen_test_toy_isa.out inst_codegen_test_ebpf.out inst_test.out cost_test.out prog_test.out mh_prog_test.out validator_test.out cfg_test.out inout_test.out smt_prog_test.out ebpf_inst_test.out validator_test_ebpf.out cfg_test_ebpf.out
+all: main.out main_ebpf.out proposals_test.out inst_codegen_test_toy_isa.out inst_codegen_test_ebpf.out inst_test.out cost_test.out prog_test.out prog_test_ebpf.out mh_prog_test.out validator_test.out cfg_test.out inout_test.out smt_prog_test.out ebpf_inst_test.out validator_test_ebpf.out cfg_test_ebpf.out
 
 main.out: main.cc main.h main_z3.o measure/benchmark_header.h measure/benchmark_toy_isa.cc measure/benchmark_toy_isa.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h $(SEARCH)proposals.cc $(SEARCH)proposals.h $(ISA)prog.cc $(ISA)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(TOY_ISA)inst_codegen.h $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(TOY_ISA)inst.cc $(TOY_ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(SRC)utils.cc $(SRC)utils.h
 	g++ $(TOY_ISA_FLAG) -std=c++11 main_z3.o measure/benchmark_toy_isa.cc measure/meas_mh_bhv.cc $(ISA)inst.cc $(TOY_ISA)inst.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(ISA)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(VERIFY)smt_prog.cc $(VERIFY)smt_var.cc $(SRC)utils.cc -o main.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
@@ -64,6 +64,12 @@ prog_test.out: prog_z3.o $(ISA)prog.cc $(TOY_ISA)inst_codegen.h $(ISA)inst_heade
 prog_z3.o: $(ISA)prog_test.cc
 	$(CXX) $(TOY_ISA_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(ISA)prog_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(ISA)prog_test.cc
 
+prog_test_ebpf.out: prog_z3_ebpf.o $(ISA)prog.cc $(EBPF)inst_codegen.h $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.h $(EBPF)inst.cc $(ISA)prog.h $(SRC)utils.h $(SRC)utils.cc $(VERIFY)smt_var.cc $(VERIFY)smt_var.h
+	g++ $(EBPF_FLAG) -std=c++11 $(ISA)prog_z3_ebpf.o $(ISA)prog.cc $(ISA)inst.cc $(EBPF)inst.cc $(SRC)utils.cc $(VERIFY)smt_var.cc -o $(ISA)prog_test_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+
+prog_z3_ebpf.o: $(ISA)prog_test_ebpf.cc
+	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(ISA)prog_z3_ebpf.o  -I../z3/src/api -I../z3/src/api/c++ $(ISA)prog_test_ebpf.cc
+
 mh_prog_test.out: $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h mh_prog_z3.o $(SEARCH)proposals.cc $(SEARCH)proposals.h $(ISA)prog.cc $(ISA)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(TOY_ISA)inst_codegen.h $(EBPF)inst_codegen.h $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(TOY_ISA)inst.cc $(TOY_ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(SRC)utils.cc $(SRC)utils.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc
 	g++ $(TOY_ISA_FLAG) -std=c++11 $(ISA)inst.cc $(TOY_ISA)inst.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(ISA)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(SEARCH)mh_prog_z3.o $(VERIFY)smt_prog.cc $(VERIFY)smt_var.cc $(SRC)utils.cc measure/meas_mh_bhv.cc -o $(SEARCH)mh_prog_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
@@ -111,6 +117,7 @@ run_tests:
 	make
 	./src/inout_test.out
 	./src/isa/prog_test.out
+	./src/isa/prog_test_ebpf.out
 	./src/isa/toy-isa/inst_codegen_test.out
 	./src/isa/toy-isa/inst_test.out
 	./src/isa/ebpf/inst_codegen_test.out

@@ -142,12 +142,13 @@ class inst: public inst_base {
   int get_max_operand_val(int op_index, int inst_index = 0) const;
   int get_min_operand_val(int op_index, int inst_index = 0) const;
   int get_jmp_dis() const;
-  vector<int> get_reg_list() const;
+  vector<int> get_canonical_reg_list() const;
   void insert_jmp_opcodes(unordered_set<int>& jmp_set) const;
   int inst_output_opcode_type() const;
   int inst_output() const;
   bool is_real_inst() const;
   bool is_reg(int op_index) const;
+  int implicit_ret_reg() const;
   void set_as_nop_inst();
   // return the register for storing the given input
   unsigned int get_input_reg() const {return 0;}

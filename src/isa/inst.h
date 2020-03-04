@@ -55,7 +55,8 @@ class inst_base {
   // inst& operator=(const inst &rhs)
   bool operator==(const inst_base &x) const {RAISE_EXCEPTION("inst::operator==");}
   void print() const {RAISE_EXCEPTION("inst::print");}
-  vector<int> get_reg_list() const {RAISE_EXCEPTION("inst::get_reg_list");}
+  // get_canonical_reg_list returns the list of regs which can be modified by prog canonicalize
+  vector<int> get_canonical_reg_list() const {RAISE_EXCEPTION("inst::get_canonical_reg_list");}
   string opcode_to_str(int) const {RAISE_EXCEPTION("inst::opcode_to_str");}
   op_t get_max_operand_val(int op_index, int inst_index = 0) const {RAISE_EXCEPTION("inst::get_max_operand_val");}
   op_t get_min_operand_val(int op_index, int inst_index = 0) const {RAISE_EXCEPTION("inst::get_min_operand_val");}
@@ -67,6 +68,8 @@ class inst_base {
   int inst_output() const {RAISE_EXCEPTION("inst::inst_output");}
   bool is_real_inst() const {RAISE_EXCEPTION("inst::is_real_inst");}
   bool is_reg(int op_index) const {RAISE_EXCEPTION("inst::is_reg");}
+  // If ISA allows an implicit register, return the register, else return -1
+  int implicit_ret_reg() const {RAISE_EXCEPTION("inst::implicit_ret_reg");}
   void set_as_nop_inst() {RAISE_EXCEPTION("inst::set_as_nop_inst");}
   unsigned int get_input_reg() const {RAISE_EXCEPTION("inst::get_input_reg");}
   int get_num_operands() const {RAISE_EXCEPTION("inst::get_num_operands");}

@@ -67,7 +67,7 @@ int inst::get_min_operand_val(int op_index, int inst_index) const {
   return 0;
 }
 
-vector<int> inst::get_reg_list() const {
+vector<int> inst::get_canonical_reg_list() const {
   vector<int> reg_list;
   for (int i = 0; i < get_insn_num_regs(); i++)
     reg_list.push_back(_args[i]);
@@ -121,6 +121,10 @@ bool inst::is_real_inst() const {
 bool inst::is_reg(int op_index) const {
   if (OPTYPE(_opcode, op_index) == OP_REG) return true;
   return false;
+}
+
+int inst::implicit_ret_reg() const {
+  return 0;
 }
 
 void inst::set_as_nop_inst() {
