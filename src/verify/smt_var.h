@@ -24,7 +24,7 @@ z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(string s, unsigned sz);
 
 class smt_stack {
-public:
+ public:
   vector<z3::expr> addr; // 64-bit bitvector
   vector<z3::expr> val;  // 8-bit bitvector
   void add(z3::expr a, z3::expr v) {addr.push_back(a); val.push_back(v);}
@@ -43,6 +43,7 @@ class smt_var {
   unsigned int mem_cur_id;
   z3::expr mem_var = to_constant_expr("mem");
  public:
+  smt_stack stack_var;
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
   // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs
   smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);

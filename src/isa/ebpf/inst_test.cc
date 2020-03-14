@@ -383,7 +383,7 @@ void test2() {
 #define CURSRC(insn) sv.get_cur_reg_var(insn._src_reg)
 // Assume two instructions in the program `insns`,
 // the first one is ST and the second is LD
-#define SMT_CHECK_LDST(st_input, ld_output, test_name)                       \
+#define SMT_CHECK_LDST(st_input, ld_output, test_name, insns)                \
   smt = (CURSRC(insns[0]) == to_expr((int64_t)st_input));                    \
   smt = smt && insns[0].smt_inst(sv);                                        \
   smt = smt && insns[1].smt_inst(sv);                                        \
@@ -391,8 +391,12 @@ void test2() {
   print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
 
   inst insns[2] = {inst(STXW, 10, -4, 1), inst(LDXW, 0, 10, -4)};
-  SMT_CHECK_LDST(10, 10, "smt LDXW & STXW 1");
-  SMT_CHECK_LDST(-2, 0xfffffffe, "smt LDXW & STXW 2");
+  SMT_CHECK_LDST(10, 10, "smt LDXW & STXW 1", insns);
+  SMT_CHECK_LDST(-2, 0xfffffffe, "smt LDXW & STXW 2", insns);
+
+  inst insns1[2] = {inst(STXB, 10, -4, 1), inst(LDXB, 0, 10, -4)};
+  SMT_CHECK_LDST(10, 10, "smt LDXB & STXB 1", insns1);
+  SMT_CHECK_LDST(-2, 0xfe, "smt LDXB & STXB 2", insns1);
 
 #undef CURDST
 #undef CURSRC

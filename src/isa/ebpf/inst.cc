@@ -46,7 +46,9 @@ inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
     case ARSH32XY: dst_reg = arg1; src_reg = arg2; imm = 0; off = 0; break;
     case LE:
     case BE: dst_reg = arg1; src_reg = 0; imm = arg2; off = 0; break;
+    case LDXB:
     case LDXW: dst_reg = arg1; src_reg = arg2; imm = 0; off = arg3; break;
+    case STXB:
     case STXW: dst_reg = arg1; src_reg = arg3; imm = 0; off = arg2; break;
     case JA: dst_reg = 0; src_reg = 0; imm = 0; off = arg1; break;
     case JEQXC:
@@ -211,6 +213,8 @@ string inst::opcode_to_str(int opcode) const {
     case ARSH32XY: return "arsh32xy";
     case LE: return "le";
     case BE: return "be";
+    case LDXB: return "ldxb";
+    case STXB: return "stxb";
     case LDXW: return "ldxw";
     case STXW: return "stxw";
     case JA: return "ja";
@@ -357,6 +361,7 @@ void inst::set_as_nop_inst() {
 #define CURSRC curSrc
 #define NEWMEM newMem
 #define CURMEM curMem
+#define STACK sv.stack_var
 #define IMM to_expr(imm)
 #define OFF to_expr(off)
 #define CURSRC_L6 (CURSRC & to_expr((int64_t)0x3f))
@@ -422,8 +427,10 @@ z3::expr inst::smt_inst(smt_var& sv) const {
         default: cout << "Error: imm " << imm << " is not 16, 32, 64" << endl;
           return string_to_expr("false");
       }
+    case LDXB: return predicate_ld8(CURSRC, OFF, STACK, NEWDST);
     // ldxw dst, [src+off]
     case LDXW: return predicate_ld32(CURSRC, OFF, CURMEM, NEWDST);
+    case STXB: predicate_st8(CURSRC, CURDST, OFF, STACK); return string_to_expr("true");
     // stxw [dst+off], src
     case STXW: return predicate_st32(CURSRC, CURDST, OFF, CURMEM, NEWMEM);
     default: return string_to_expr("false");
@@ -473,6 +480,8 @@ int opcode_2_idx(int opcode) {
     case ARSH32XY: return IDX_ARSH32XY;
     case LE: return IDX_LE;
     case BE: return IDX_BE;
+    case LDXB: return IDX_LDXB;
+    case STXB: return IDX_STXB;
     case LDXW: return IDX_LDXW;
     case STXW: return IDX_STXW;
     case JA: return IDX_JA;
