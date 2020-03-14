@@ -23,6 +23,13 @@ z3::expr to_expr(uint64_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(string s, unsigned sz);
 
+class smt_stack {
+public:
+  vector<z3::expr> addr; // 64-bit bitvector
+  vector<z3::expr> val;  // 8-bit bitvector
+  void add(z3::expr a, z3::expr v) {addr.push_back(a); val.push_back(v);}
+};
+
 // SMT Variable format
 // register: r_[prog_id]_[node_id]_[reg_id]_[version_id]
 // memory: m_[prog_id]_[node_id]_[version_id]

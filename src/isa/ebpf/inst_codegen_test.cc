@@ -162,6 +162,16 @@ void test4() {
   print_test_res(is_valid(smt), "predicate_st32");
   smt = predicate_ld32(v((uint64_t)a), v(0), mem_expected, v(L32(x)));
   print_test_res(is_valid(smt), "predicate_ld32");
+
+  // out == (read addr+off, 8, s)
+  smt_stack s;
+  s.add(v((uint64_t)a), to_expr(0x12, 8));
+  s.add(v((uint64_t)a + 1), to_expr(0x34, 8));
+  z3::expr addr = v((uint64_t)a);
+  z3::expr off = v(1);
+  z3::expr out = to_expr(0x34, 64);
+  smt = predicate_ld8(addr, off, s, out);
+  print_test_res(is_valid(smt), "predicate_ld8");
 }
 
 int main() {
