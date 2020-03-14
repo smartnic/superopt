@@ -519,13 +519,12 @@ string inst::get_bytecode_str() const {
 }
 
 // safe address: [ps._mem._stack_addr - mem_t:MEM_SIZE, ps._mem._stack_addr)
-inline void memory_access_check(uint64_t addr, prog_state &ps) {
+inline void memory_access_check(uint64_t addr, uint64_t num_bytes, prog_state &ps) {
   if (!((addr >= ps._mem._stack_addr - mem_t::MEM_SIZE) &&
-        (addr < ps._mem._stack_addr))) {
+        ((addr + num_bytes - 1) < ps._mem._stack_addr))) {
     string err_msg = "unsafe memory access";
     throw (err_msg);
   }
-  return;
 }
 
 int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
@@ -556,11 +555,11 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 
 #define LDST(SIZEOP, SIZE)                                         \
   INSN_LDX##SIZEOP:                                                \
-    memory_access_check(SRC + OFF, ps);                            \
+    memory_access_check(SRC + OFF, SIZE/8, ps);                    \
     DST = compute_ld##SIZE(SRC, OFF);                              \
     CONT;                                                          \
   INSN_STX##SIZEOP:                                                \
-    memory_access_check(DST + OFF, ps);                            \
+    memory_access_check(DST + OFF, SIZE/8, ps);                    \
     compute_st##SIZE(SRC, DST, OFF);                               \
     CONT;
 
@@ -612,8 +611,14 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
     [IDX_ARSH32XY] = && INSN_ARSH32XY,
     [IDX_LE]       = && INSN_LE,
     [IDX_BE]       = && INSN_BE,
+    [IDX_LDXB]     = && INSN_LDXB,
+    [IDX_STXB]     = && INSN_STXB,
+    [IDX_LDXH]     = && INSN_LDXH,
+    [IDX_STXH]     = && INSN_STXH,
     [IDX_LDXW]     = && INSN_LDXW,
     [IDX_STXW]     = && INSN_STXW,
+    [IDX_LDXDW]    = && INSN_LDXDW,
+    [IDX_STXDW]    = && INSN_STXDW,
     [IDX_JA]       = && INSN_JA,
     [IDX_JEQXC]    = && INSN_JEQXC,
     [IDX_JEQXY]    = && INSN_JEQXY,
@@ -659,7 +664,10 @@ INSN_NOP:
   ALU_BINARY(ARSH32XC, arsh32, DST, IMM)
   ALU_BINARY(ARSH32XY, arsh32, DST, SRC_L5)
 
-  LDST(W, 32)
+  LDST(B,  8)
+  LDST(H,  16)
+  LDST(W,  32)
+  LDST(DW, 64)
 
   BYTESWAP(LE, le)
   BYTESWAP(BE, be)

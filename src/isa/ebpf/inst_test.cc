@@ -454,39 +454,45 @@ void test3() {
 
   // test all opcodes: has included all opcodes except NOP,
   // since there is no NOP in linux bpf
-  inst prog2[32] = {inst(ADD64XC, 3, 1),
-                    inst(ADD64XY, 3, 1),
-                    inst(LSH64XC, 3, 1),
-                    inst(LSH64XY, 3, 1),
-                    inst(RSH64XC, 3, 1),
-                    inst(RSH64XY, 3, 1),
-                    inst(MOV64XC, 3, 1),
-                    inst(MOV64XY, 3, 1),
-                    inst(ARSH64XC, 3, 1),
-                    inst(ARSH64XY, 3, 1),
-                    inst(ADD32XC, 3, 1),
-                    inst(ADD32XY, 3, 1),
-                    inst(LSH32XC, 3, 1),
-                    inst(LSH32XY, 3, 1),
-                    inst(RSH32XC, 3, 1),
-                    inst(RSH32XY, 3, 1),
-                    inst(MOV32XC, 3, 1),
-                    inst(MOV32XY, 3, 1),
-                    inst(ARSH32XC, 3, 1),
-                    inst(ARSH32XY, 3, 1),
-                    inst(LE, 3, 16),
-                    inst(BE, 3, 16),
-                    inst(LDXW, 1, 10, -4),
-                    inst(STXW, 10, -4, 1),
-                    inst(JA, 1),
-                    inst(JEQXC, 3, 1, 2),
-                    inst(JEQXY, 3, 1, 2),
-                    inst(JGTXC, 3, 1, 2),
-                    inst(JGTXY, 3, 1, 2),
-                    inst(JSGTXC, 3, 1, 2),
-                    inst(JSGTXY, 3, 1, 2),
-                    inst(EXIT),
-                   };
+  inst prog2[] = {inst(ADD64XC, 3, 1),
+                  inst(ADD64XY, 3, 1),
+                  inst(LSH64XC, 3, 1),
+                  inst(LSH64XY, 3, 1),
+                  inst(RSH64XC, 3, 1),
+                  inst(RSH64XY, 3, 1),
+                  inst(MOV64XC, 3, 1),
+                  inst(MOV64XY, 3, 1),
+                  inst(ARSH64XC, 3, 1),
+                  inst(ARSH64XY, 3, 1),
+                  inst(ADD32XC, 3, 1),
+                  inst(ADD32XY, 3, 1),
+                  inst(LSH32XC, 3, 1),
+                  inst(LSH32XY, 3, 1),
+                  inst(RSH32XC, 3, 1),
+                  inst(RSH32XY, 3, 1),
+                  inst(MOV32XC, 3, 1),
+                  inst(MOV32XY, 3, 1),
+                  inst(ARSH32XC, 3, 1),
+                  inst(ARSH32XY, 3, 1),
+                  inst(LE, 3, 16),
+                  inst(BE, 3, 16),
+                  inst(LDXB, 1, 10, -4),
+                  inst(STXB, 10, -4, 1),
+                  inst(LDXH, 1, 10, -4),
+                  inst(STXH, 10, -4, 1),
+                  inst(LDXW, 1, 10, -4),
+                  inst(STXW, 10, -4, 1),
+                  inst(LDXDW, 1, 10, -8),
+                  inst(STXDW, 10, -8, 1),
+                  inst(JA, 1),
+                  inst(JEQXC, 3, 1, 2),
+                  inst(JEQXY, 3, 1, 2),
+                  inst(JGTXC, 3, 1, 2),
+                  inst(JGTXY, 3, 1, 2),
+                  inst(JSGTXC, 3, 1, 2),
+                  inst(JSGTXY, 3, 1, 2),
+                  inst(EXIT),
+                 };
   expected = "{7, 3, 0, 0, 1},"\
              "{15, 3, 1, 0, 0},"\
              "{103, 3, 0, 0, 1},"\
@@ -509,8 +515,14 @@ void test3() {
              "{204, 3, 1, 0, 0},"\
              "{212, 3, 0, 0, 16},"\
              "{220, 3, 0, 0, 16},"\
+             "{113, 1, 10, -4, 0},"\
+             "{115, 10, 1, -4, 0},"\
+             "{105, 1, 10, -4, 0},"\
+             "{107, 10, 1, -4, 0},"\
              "{97, 1, 10, -4, 0},"\
              "{99, 10, 1, -4, 0},"\
+             "{121, 1, 10, -8, 0},"\
+             "{123, 10, 1, -8, 0},"\
              "{5, 0, 0, 1, 0},"\
              "{21, 3, 0, 2, 1},"\
              "{29, 3, 1, 2, 0},"\
@@ -520,7 +532,7 @@ void test3() {
              "{109, 3, 1, 2, 0},"\
              "{149, 0, 0, 0, 0},";
   prog_bytecode = "";
-  for (int i = 0; i < 32; i++) {
+  for (int i = 0; i < NUM_INSTR - 1; i++) {
     prog_bytecode += prog2[i].get_bytecode_str() + ",";
   }
   print_test_res(prog_bytecode == expected, "ebpf bytecode 2");
@@ -540,11 +552,45 @@ void test4() {
   }
 }
 
+void test5() {
+  cout << endl << "Test 5: memory access satety check" << endl;
+  prog_state ps;
+  string msg = "";
+#define SMT_CHECK_MEM_SAFE(insns, len, check_expr, test_name) \
+  msg = "";\
+  try { \
+    interpret(insns, len, ps);\
+  } catch (const string err_msg) {\
+    msg = err_msg;\
+  } \
+  print_test_res(check_expr, test_name);
+
+  inst insns1[2] = {inst(STXB, 10, 0, 1), inst(EXIT)};
+  SMT_CHECK_MEM_SAFE(insns1, 2, !msg.empty(), "1");
+
+  inst insns2[2] = {inst(STXB, 10, -1, 1), inst(EXIT)};
+  SMT_CHECK_MEM_SAFE(insns2, 2, msg.empty(), "2");
+
+  inst insns3[2] = {inst(STXB, 10, -512, 1), inst(EXIT)};
+  SMT_CHECK_MEM_SAFE(insns3, 2, msg.empty(), "3");
+
+  inst insns4[2] = {inst(STXB, 10, -513, 1), inst(EXIT)};
+  SMT_CHECK_MEM_SAFE(insns4, 2, !msg.empty(), "4");
+
+  inst insns5[2] = {inst(STXH, 10, -1, 1), inst(EXIT)};
+  SMT_CHECK_MEM_SAFE(insns5, 2, !msg.empty(), "5");
+
+  inst insns6[2] = {inst(STXH, 10, -2, 1), inst(EXIT)};
+  SMT_CHECK_MEM_SAFE(insns6, 2, msg.empty(), "6");
+#undef SMT_CHECK_MEM_SAFE
+}
+
 int main(int argc, char *argv[]) {
   test1();
   test2();
   test3();
   test4();
+  test5();
 
   return 0;
 }
