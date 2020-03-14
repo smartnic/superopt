@@ -143,25 +143,32 @@ bool check_array_equal(uint8_t* a, uint8_t* b, int len) {
 }
 
 void test4() {
-  cout << "Test 3: Memory check" << endl;
-  uint8_t a[4];
-  uint8_t expected[4] = {0xef, 0xcd, 0xab, 0x89};
+  cout << "Test 4: Memory check" << endl;
   int64_t x = 0x0123456789abcdef;
-  compute_st32(x, (uint64_t)a, 0);
-  // store lower 32-bit of x into a, check whether a == expected
-  print_test_res(check_array_equal(a, expected, 4), "compute st32");
-  // load four bytes from expected, check whether the value == L32(x)
-  print_test_res(compute_ld32((uint64_t)expected, 0) == L32(x), "compute ld32");
 
-  // z3::expr mem = to_constant_expr("mem");
-  // z3::expr mem_expected = store(mem, v((uint64_t)a), v(x).extract(7, 0));
-  // mem_expected = store(mem_expected, v((uint64_t)a + 1), v(x).extract(15, 8));
-  // mem_expected = store(mem_expected, v((uint64_t)a + 2), v(x).extract(23, 16));
-  // mem_expected = store(mem_expected, v((uint64_t)a + 3), v(x).extract(31, 24));
-  // z3::expr smt = predicate_st32(v(x), v((uint64_t)a), v(0), mem, mem_expected);
-  // print_test_res(is_valid(smt), "predicate_st32");
-  // smt = predicate_ld32(v((uint64_t)a), v(0), mem_expected, v(L32(x)));
-  // print_test_res(is_valid(smt), "predicate_ld32");
+  uint8_t a1[8] = {0};
+  uint8_t expected1[8] = {0xef, 0, 0, 0, 0, 0, 0, 0};
+  compute_st8(x, (uint64_t)a1, 0);
+  print_test_res(check_array_equal(a1, expected1, 8), "compute st8");
+  print_test_res(compute_ld8((uint64_t)expected1, 0) == (x & 0xff), "compute ld8");
+
+  uint8_t a2[8] = {0};
+  uint8_t expected2[8] = {0xef, 0xcd, 0, 0, 0, 0, 0, 0};
+  compute_st16(x, (uint64_t)a2, 0);
+  print_test_res(check_array_equal(a2, expected2, 8), "compute st16");
+  print_test_res(compute_ld16((uint64_t)expected2, 0) == (x & 0xffff), "compute ld16");
+
+  uint8_t a3[8] = {0};
+  uint8_t expected3[8] = {0xef, 0xcd, 0xab, 0x89, 0, 0, 0, 0};
+  compute_st32(x, (uint64_t)a3, 0);
+  print_test_res(check_array_equal(a3, expected3, 8), "compute st32");
+  print_test_res(compute_ld32((uint64_t)expected3, 0) == (x & 0xffffffff), "compute ld32");
+
+  uint8_t a4[8] = {0};
+  uint8_t expected4[8] = {0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01};
+  compute_st64(x, (uint64_t)a4, 0);
+  print_test_res(check_array_equal(a4, expected4, 8), "compute st64");
+  print_test_res(compute_ld64((uint64_t)expected4, 0) == x, "compute ld64");
 }
 
 void test5() {

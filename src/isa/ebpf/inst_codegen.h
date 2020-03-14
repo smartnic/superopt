@@ -30,10 +30,16 @@ inline int64_t compute_rsh(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_rsh32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_arsh(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_arsh32(int64_t in1, int64_t in2, int64_t out = 0);
-// out = (u32)[addr + off]
+// out = (u_sz)[addr + off]
+inline int64_t compute_ld8(uint64_t addr, int64_t off, int64_t out = 0);
+inline int64_t compute_ld16(uint64_t addr, int64_t off, int64_t out = 0);
 inline int64_t compute_ld32(uint64_t addr, int64_t off, int64_t out = 0);
-// (u32)[addr + off] = in
+inline int64_t compute_ld64(uint64_t addr, int64_t off, int64_t out = 0);
+// (u_sz)[addr + off] = in
+inline void compute_st8(int64_t in, uint64_t addr, int64_t off);
+inline void compute_st16(int64_t in, uint64_t addr, int64_t off);
 inline void compute_st32(int64_t in, uint64_t addr, int64_t off);
+inline void compute_st64(int64_t in, uint64_t addr, int64_t off);
 
 /* type of parameters (in, in1, in2, out) is z3 64-bit bitvector */
 // return (out == op in)
@@ -259,15 +265,19 @@ PREDICATE_BINARY(rsh32, RSH32_EXPR);
 PREDICATE_BINARY(arsh32, ARSH32_EXPR);
 
 /* Memory access implementation */
-// out = (u32)[addr + off]
-inline int64_t compute_ld32(uint64_t addr, int64_t off, int64_t out) {
-  out = *(uint32_t*)(addr + off);
-  return out;
+#define COMPUTE_LDST(SIZE, SIZE_TYPE) \
+inline int64_t compute_ld##SIZE(uint64_t addr, int64_t off, int64_t out) { \
+  out = *(SIZE_TYPE*)(addr + off); \
+  return out; \
+} \
+inline void compute_st##SIZE(int64_t in, uint64_t addr, int64_t off) { \
+  *(SIZE_TYPE*)(addr + off) = in; \
 }
-// (u32)[addr + off] = in
-inline void compute_st32(int64_t in, uint64_t addr, int64_t off) {
-  *(uint32_t*)(addr + off) = in;
-}
+
+COMPUTE_LDST(8, uint8_t)
+COMPUTE_LDST(16, uint16_t)
+COMPUTE_LDST(32, uint32_t)
+COMPUTE_LDST(64, uint64_t)
 
 inline void predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_stack& s) {
   s.add(addr + off, in.extract(7, 0));
