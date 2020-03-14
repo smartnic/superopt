@@ -288,7 +288,7 @@ inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, z3::exp
 }
 
 inline void predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_stack& s) {
-  s.add(addr + off, in);
+  s.add(addr + off, in.extract(7, 0));
 }
 
 inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out) {

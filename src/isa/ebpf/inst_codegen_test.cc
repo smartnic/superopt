@@ -172,23 +172,23 @@ void test5() {
   smt_stack s;
   // (write addr+off, 8, in, s)
   // out == (read addr+off, 8, s)
-  predicate_st8(to_expr(vals[0], 8), addr, offs[0], s);
+  predicate_st8(v(vals[0]), addr, offs[0], s);
   z3::expr smt = (s.addr[0] == (addr + offs[0])) && (s.val[0] == to_expr(vals[0], 8));
   print_test_res(is_valid(smt), "predicate_st8 1");
-  smt = predicate_ld8(addr, offs[0], s, to_expr(vals[0], 64));
+  smt = predicate_ld8(addr, offs[0], s, v(vals[0]));
   print_test_res(is_valid(smt), "predicate_ld8 1");
 
-  predicate_st8(to_expr(vals[1], 8), addr, offs[1], s);
+  predicate_st8(v(vals[1]), addr, offs[1], s);
   smt = (s.addr[1] == (addr + offs[1])) && (s.val[1] == to_expr(vals[1], 8));
   print_test_res(is_valid(smt), "predicate_st8 2");
-  smt = predicate_ld8(addr, offs[1], s, to_expr(vals[1], 64));
+  smt = predicate_ld8(addr, offs[1], s, v(vals[1]));
   print_test_res(is_valid(smt), "predicate_ld8 2");
 
   // test rewrite
-  predicate_st8(to_expr(vals[1], 8), addr, offs[0], s);
+  predicate_st8(v(vals[1]), addr, offs[0], s);
   smt = (s.addr[2] == (addr + offs[0])) && (s.val[2] == to_expr(vals[1], 8));
   print_test_res(is_valid(smt), "predicate_st8 3");
-  smt = predicate_ld8(addr, offs[0], s, to_expr(vals[1], 64));
+  smt = predicate_ld8(addr, offs[0], s, v(vals[1]));
   print_test_res(is_valid(smt), "predicate_ld8 3");
 }
 
