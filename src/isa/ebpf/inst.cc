@@ -367,8 +367,6 @@ void inst::set_as_nop_inst() {
 #define NEWDST newDst
 #define CURDST curDst
 #define CURSRC curSrc
-#define NEWMEM newMem
-#define CURMEM curMem
 #define STACK sv.stack_var
 #define IMM to_expr(imm)
 #define OFF to_expr(off)
@@ -386,14 +384,10 @@ z3::expr inst::smt_inst(smt_var& sv) const {
   // updating curDst (curSrc may be the same reg as curDst)
   z3::expr curDst = sv.get_cur_reg_var(_dst_reg);
   z3::expr curSrc = sv.get_cur_reg_var(_src_reg);
-  z3::expr curMem = sv.get_cur_mem_var();
   z3::expr newDst = string_to_expr("false");
-  z3::expr newMem = string_to_expr("false");
-  // update register or memory according to the opcode type
+  // update register according to the opcode type
   if ((op_type == OP_OTHERS) || (op_type == OP_LD)) {
     newDst = sv.update_reg_var(_dst_reg);
-  } else if (op_type == OP_ST) {
-    newMem = sv.update_mem_var();
   }
   int64_t imm = (int64_t)_imm;
   int64_t off = (int64_t)_off;

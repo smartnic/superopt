@@ -17,7 +17,6 @@ extern z3::context smt_c;
 // else the type of e is int_const
 z3::expr string_to_expr(string s);
 z3::expr to_bool_expr(string s);
-z3::expr to_constant_expr(string s);
 z3::expr to_expr(int64_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(uint64_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
@@ -33,7 +32,6 @@ class smt_stack {
 
 // SMT Variable format
 // register: r_[prog_id]_[node_id]_[reg_id]_[version_id]
-// memory: m_[prog_id]_[node_id]_[version_id]
 class smt_var {
  private:
   // _name: [prog_id]_[node_id]
@@ -41,8 +39,6 @@ class smt_var {
   // store the curId
   vector<unsigned int> reg_cur_id;
   vector<z3::expr> reg_var;
-  unsigned int mem_cur_id;
-  z3::expr mem_var = to_constant_expr("mem");
  public:
   smt_stack stack_var;
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
@@ -53,6 +49,4 @@ class smt_var {
   z3::expr update_reg_var(unsigned int reg_id);
   z3::expr get_cur_reg_var(unsigned int reg_id);
   z3::expr get_init_reg_var(unsigned int reg_id);
-  z3::expr update_mem_var();
-  z3::expr get_cur_mem_var();
 };
