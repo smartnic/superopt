@@ -44,6 +44,23 @@ void test1() {
                           };
   vld.set_orig(instructions3, 2);
   print_test_res(vld.is_equal_to(instructions4, 3), "instructions3 == instructions4");
+
+  inst instructions5[3] = {inst(STXDW, 10, -8, 1),
+                           inst(LDXDW, 0, 10, -8),
+                           inst(EXIT),
+                          };
+  inst instructions6[9] = {inst(STXW, 10, -8, 1),
+                           inst(RSH64XC, 1, 32),
+                           inst(STXH, 10, -4, 1),
+                           inst(RSH64XC, 1, 16),
+                           inst(STXB, 10, -2, 1),
+                           inst(RSH64XC, 1, 8),
+                           inst(STXB, 10, -1, 1),
+                           inst(LDXDW, 0, 10, -8),
+                           inst(EXIT),
+                          };
+  vld.set_orig(instructions5, 3);
+  print_test_res(vld.is_equal_to(instructions6, 9), "instructions5 == instructions6");
 }
 
 int main() {
