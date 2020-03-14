@@ -120,6 +120,29 @@ inst instructions16[3] = {inst(STXW, 10, -4, 1),
                           inst(EXIT),
                          };
 
+inst instructions17[3] = {inst(STXB, 10, -1, 1),
+                          inst(LDXB, 0, 10, -1),
+                          inst(EXIT),
+                         };
+
+inst instructions18[3] = {inst(STXH, 10, -2, 1),
+                          inst(LDXH, 0, 10, -2),
+                          inst(EXIT),
+                         };
+
+inst instructions19[6] = {inst(MOV64XY, 2, 1),
+                          inst(LSH64XC, 1, 32),
+                          inst(ADD64XY, 1, 2),
+                          inst(STXDW, 10, -8, 1),
+                          inst(LDXDW, 0, 10, -8),
+                          inst(EXIT),
+                         };
+
+inst instructions20[3] = {inst(STXH, 10, -2, 1),
+                          inst(LDXB, 0, 10, -2),
+                          inst(EXIT),
+                         };
+
 void test1() {
   prog_state ps;
   cout << "Test 1: full interpretation check" << endl;
@@ -177,9 +200,29 @@ void test1() {
   print_test_res(interpret(instructions15, 4, ps) == expected, "interpret jgt");
 
   expected = 1;
-  print_test_res(interpret(instructions16, 4, ps, 1) == expected, "interpret ldxw & stxw 1");
+  print_test_res(interpret(instructions16, 3, ps, 1) == expected, "interpret ldxw & stxw 1");
   expected = 0xffffffff;
-  print_test_res(interpret(instructions16, 4, ps, -1) == expected, "interpret ldxw & stxw 2");
+  print_test_res(interpret(instructions16, 3, ps, -1) == expected, "interpret ldxw & stxw 2");
+
+  expected = 1;
+  print_test_res(interpret(instructions17, 3, ps, 1) == expected, "interpret ldxb & stxb 1");
+  expected = 0x78;
+  print_test_res(interpret(instructions17, 3, ps, 0x12345678) == expected, "interpret ldxb & stxb 2");
+
+  expected = 1;
+  print_test_res(interpret(instructions18, 3, ps, 1) == expected, "interpret ldxh & stxh 1");
+  expected = 0x5678;
+  print_test_res(interpret(instructions18, 3, ps, 0x12345678) == expected, "interpret ldxh & stxh 2");
+
+  expected = 0x100000001;
+  print_test_res(interpret(instructions19, 6, ps, 1) == expected, "interpret ldxdw & stxdw 1");
+  expected = 0x1234567812345678;
+  print_test_res(interpret(instructions19, 6, ps, 0x12345678) == expected, "interpret ldxdw & stxdw 2");
+
+  expected = 1;
+  print_test_res(interpret(instructions20, 3, ps, 1) == expected, "interpret ldxb & stxh 1");
+  expected = 0x78;
+  print_test_res(interpret(instructions20, 3, ps, 0x12345678) == expected, "interpret ldxb & stxh 2");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output) {
@@ -553,7 +596,7 @@ void test4() {
 }
 
 void test5() {
-  cout << endl << "Test 5: memory access satety check" << endl;
+  cout << endl << "Test 5: memory access safety check" << endl;
   prog_state ps;
   string msg = "";
 #define SMT_CHECK_MEM_SAFE(insns, len, check_expr, test_name) \
