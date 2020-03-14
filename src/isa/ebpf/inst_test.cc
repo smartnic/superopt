@@ -390,13 +390,33 @@ void test2() {
   output = CURDST(insns[1]);                                                 \
   print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
 
-  inst insns[2] = {inst(STXW, 10, -4, 1), inst(LDXW, 0, 10, -4)};
-  SMT_CHECK_LDST(10, 10, "smt LDXW & STXW 1", insns);
-  SMT_CHECK_LDST(-2, 0xfffffffe, "smt LDXW & STXW 2", insns);
-
   inst insns1[2] = {inst(STXB, 10, -4, 1), inst(LDXB, 0, 10, -4)};
   SMT_CHECK_LDST(10, 10, "smt LDXB & STXB 1", insns1);
   SMT_CHECK_LDST(-2, 0xfe, "smt LDXB & STXB 2", insns1);
+
+  inst insns2[2] = {inst(STXH, 10, -4, 1), inst(LDXH, 0, 10, -4)};
+  SMT_CHECK_LDST(10, 10, "smt LDXH & STXH 1", insns2);
+  SMT_CHECK_LDST(-2, 0xfffe, "smt LDXH & STXH 2", insns2);
+
+  inst insns3[2] = {inst(STXW, 10, -4, 1), inst(LDXW, 0, 10, -4)};
+  SMT_CHECK_LDST(10, 10, "smt LDXW & STXW 1", insns3);
+  SMT_CHECK_LDST(-2, 0xfffffffe, "smt LDXW & STXW 2", insns3);
+
+  inst insns4[2] = {inst(STXDW, 10, -8, 1), inst(LDXDW, 0, 10, -8)};
+  SMT_CHECK_LDST(10, 10, "smt LDXDW & STXDW 1", insns4);
+  SMT_CHECK_LDST(-2, -2, "smt LDXDW & STXDW 2", insns4);
+
+  inst insns5[2] = {inst(STXW, 10, -4, 1), inst(LDXB, 0, 10, -4)};
+  SMT_CHECK_LDST(0x12345678, 0x78, "smt LDXW & STXB 1", insns5);
+
+  inst insns6[2] = {inst(STXW, 10, -4, 1), inst(LDXB, 0, 10, -3)};
+  SMT_CHECK_LDST(0x12345678, 0x56, "smt LDXW & STXB 2", insns6);
+
+  inst insns7[2] = {inst(STXW, 10, -4, 1), inst(LDXB, 0, 10, -2)};
+  SMT_CHECK_LDST(0x12345678, 0x34, "smt LDXW & STXB 3", insns7);
+
+  inst insns8[2] = {inst(STXW, 10, -4, 1), inst(LDXB, 0, 10, -1)};
+  SMT_CHECK_LDST(0x12345678, 0x12, "smt LDXW & STXB 4", insns8);
 
 #undef CURDST
 #undef CURSRC

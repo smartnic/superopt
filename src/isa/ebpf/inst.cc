@@ -47,9 +47,13 @@ inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
     case LE:
     case BE: dst_reg = arg1; src_reg = 0; imm = arg2; off = 0; break;
     case LDXB:
-    case LDXW: dst_reg = arg1; src_reg = arg2; imm = 0; off = arg3; break;
+    case LDXH:
+    case LDXW:
+    case LDXDW: dst_reg = arg1; src_reg = arg2; imm = 0; off = arg3; break;
     case STXB:
-    case STXW: dst_reg = arg1; src_reg = arg3; imm = 0; off = arg2; break;
+    case STXH:
+    case STXW:
+    case STXDW: dst_reg = arg1; src_reg = arg3; imm = 0; off = arg2; break;
     case JA: dst_reg = 0; src_reg = 0; imm = 0; off = arg1; break;
     case JEQXC:
     case JGTXC:
@@ -215,8 +219,12 @@ string inst::opcode_to_str(int opcode) const {
     case BE: return "be";
     case LDXB: return "ldxb";
     case STXB: return "stxb";
+    case LDXH: return "ldxh";
+    case STXH: return "stxh";
     case LDXW: return "ldxw";
     case STXW: return "stxw";
+    case LDXDW: return "ldxdw";
+    case STXDW: return "stxdw";
     case JA: return "ja";
     case JEQXC: return "jeqxc";
     case JEQXY: return "jeqxy";
@@ -428,11 +436,13 @@ z3::expr inst::smt_inst(smt_var& sv) const {
           return string_to_expr("false");
       }
     case LDXB: return predicate_ld8(CURSRC, OFF, STACK, NEWDST);
-    // ldxw dst, [src+off]
-    case LDXW: return predicate_ld32(CURSRC, OFF, CURMEM, NEWDST);
+    case LDXH: return predicate_ld16(CURSRC, OFF, STACK, NEWDST);
+    case LDXW: return predicate_ld32(CURSRC, OFF, STACK, NEWDST);
+    case LDXDW: return predicate_ld64(CURSRC, OFF, STACK, NEWDST);
     case STXB: predicate_st8(CURSRC, CURDST, OFF, STACK); return string_to_expr("true");
-    // stxw [dst+off], src
-    case STXW: return predicate_st32(CURSRC, CURDST, OFF, CURMEM, NEWMEM);
+    case STXH: predicate_st16(CURSRC, CURDST, OFF, STACK); return string_to_expr("true");
+    case STXW: predicate_st32(CURSRC, CURDST, OFF, STACK); return string_to_expr("true");
+    case STXDW: predicate_st64(CURSRC, CURDST, OFF, STACK); return string_to_expr("true");
     default: return string_to_expr("false");
   }
 }
@@ -482,8 +492,12 @@ int opcode_2_idx(int opcode) {
     case BE: return IDX_BE;
     case LDXB: return IDX_LDXB;
     case STXB: return IDX_STXB;
+    case LDXH: return IDX_LDXH;
+    case STXH: return IDX_STXH;
     case LDXW: return IDX_LDXW;
     case STXW: return IDX_STXW;
+    case LDXDW: return IDX_LDXDW;
+    case STXDW: return IDX_STXDW;
     case JA: return IDX_JA;
     case JEQXC: return IDX_JEQXC;
     case JEQXY: return IDX_JEQXY;
