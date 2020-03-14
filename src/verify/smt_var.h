@@ -28,6 +28,7 @@ class smt_stack {
   vector<z3::expr> addr; // 64-bit bitvector
   vector<z3::expr> val;  // 8-bit bitvector
   void add(z3::expr a, z3::expr v) {addr.push_back(a); val.push_back(v);}
+  void clear() {addr.clear(); val.clear();}
 };
 
 // SMT Variable format

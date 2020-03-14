@@ -153,20 +153,20 @@ void test4() {
   // load four bytes from expected, check whether the value == L32(x)
   print_test_res(compute_ld32((uint64_t)expected, 0) == L32(x), "compute ld32");
 
-  z3::expr mem = to_constant_expr("mem");
-  z3::expr mem_expected = store(mem, v((uint64_t)a), v(x).extract(7, 0));
-  mem_expected = store(mem_expected, v((uint64_t)a + 1), v(x).extract(15, 8));
-  mem_expected = store(mem_expected, v((uint64_t)a + 2), v(x).extract(23, 16));
-  mem_expected = store(mem_expected, v((uint64_t)a + 3), v(x).extract(31, 24));
-  z3::expr smt = predicate_st32(v(x), v((uint64_t)a), v(0), mem, mem_expected);
-  print_test_res(is_valid(smt), "predicate_st32");
-  smt = predicate_ld32(v((uint64_t)a), v(0), mem_expected, v(L32(x)));
-  print_test_res(is_valid(smt), "predicate_ld32");
+  // z3::expr mem = to_constant_expr("mem");
+  // z3::expr mem_expected = store(mem, v((uint64_t)a), v(x).extract(7, 0));
+  // mem_expected = store(mem_expected, v((uint64_t)a + 1), v(x).extract(15, 8));
+  // mem_expected = store(mem_expected, v((uint64_t)a + 2), v(x).extract(23, 16));
+  // mem_expected = store(mem_expected, v((uint64_t)a + 3), v(x).extract(31, 24));
+  // z3::expr smt = predicate_st32(v(x), v((uint64_t)a), v(0), mem, mem_expected);
+  // print_test_res(is_valid(smt), "predicate_st32");
+  // smt = predicate_ld32(v((uint64_t)a), v(0), mem_expected, v(L32(x)));
+  // print_test_res(is_valid(smt), "predicate_ld32");
 }
 
 void test5() {
   cout << "Test 5: Stack check" << endl;
-  vector<z3::expr> offs = {v(0), v(1)};
+  vector<z3::expr> offs = {v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7)};
   vector<uint8_t> vals = {0x12, 0x34};
   z3::expr addr = v((uint64_t)0xff12000000001234);
   smt_stack s;
@@ -190,6 +190,50 @@ void test5() {
   print_test_res(is_valid(smt), "predicate_st8 3");
   smt = predicate_ld8(addr, offs[0], s, v(vals[1]));
   print_test_res(is_valid(smt), "predicate_ld8 3");
+  s.clear();
+
+  // test st16 && ld16
+  uint64_t x = 0x0123456789abcdef;
+  predicate_st16(v(x), addr, offs[0], s);
+  smt = predicate_ld8(addr, offs[0], s, v(x & 0xff)) &&
+        predicate_ld8(addr, offs[1], s, v((x >> 8) & 0xff));
+  print_test_res(is_valid(smt), "predicate_st16/ld8");
+  smt = predicate_ld16(addr, offs[0], s, v(x & 0xffff));
+  print_test_res(is_valid(smt), "predicate_st16/ld16");
+  s.clear();
+  predicate_st8(v(x), addr, offs[0], s);
+  predicate_st8(v(x >> 8), addr, offs[1], s);
+  smt = predicate_ld16(addr, offs[0], s, v(x & 0xffff));
+  print_test_res(is_valid(smt), "predicate_st8/ld16");
+  s.clear();
+
+  // test st32 && ld32
+  predicate_st32(v(x), addr, offs[0], s);
+  smt = predicate_ld16(addr, offs[0], s, v(x & 0xffff)) &&
+        predicate_ld16(addr, offs[2], s, v((x >> 16) & 0xffff));
+  print_test_res(is_valid(smt), "predicate_st32/ld16");
+  smt = predicate_ld32(addr, offs[0], s, v(x & 0xffffffff));
+  print_test_res(is_valid(smt), "predicate_st32/ld32");
+  s.clear();
+  predicate_st16(v(x), addr, offs[0], s);
+  predicate_st16(v(x >> 16), addr, offs[2], s);
+  smt = predicate_ld32(addr, offs[0], s, v(x & 0xffffffff));
+  print_test_res(is_valid(smt), "predicate_st16/ld32");
+  s.clear();
+
+  // test st64 && ld64
+  predicate_st64(v(x), addr, offs[0], s);
+  smt = predicate_ld32(addr, offs[0], s, v(x & 0xffffffff)) &&
+        predicate_ld32(addr, offs[4], s, v((x >> 32) & 0xffffffff));
+  print_test_res(is_valid(smt), "predicate_st64/ld32");
+  smt = predicate_ld64(addr, offs[0], s, v(x));
+  print_test_res(is_valid(smt), "predicate_st64/ld64");
+  s.clear();
+  predicate_st32(v(x), addr, offs[0], s);
+  predicate_st32(v(x >> 32), addr, offs[4], s);
+  smt = predicate_ld64(addr, offs[0], s, v(x));
+  print_test_res(is_valid(smt), "predicate_st32/ld64");
+  s.clear();
 }
 
 int main() {
