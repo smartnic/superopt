@@ -162,16 +162,34 @@ void test4() {
   print_test_res(is_valid(smt), "predicate_st32");
   smt = predicate_ld32(v((uint64_t)a), v(0), mem_expected, v(L32(x)));
   print_test_res(is_valid(smt), "predicate_ld32");
+}
 
-  // out == (read addr+off, 8, s)
+void test5() {
+  cout << "Test 5: Stack check" << endl;
+  vector<z3::expr> offs = {v(0), v(1)};
+  vector<uint8_t> vals = {0x12, 0x34};
+  z3::expr addr = v((uint64_t)0xff12000000001234);
   smt_stack s;
-  s.add(v((uint64_t)a), to_expr(0x12, 8));
-  s.add(v((uint64_t)a + 1), to_expr(0x34, 8));
-  z3::expr addr = v((uint64_t)a);
-  z3::expr off = v(1);
-  z3::expr out = to_expr(0x34, 64);
-  smt = predicate_ld8(addr, off, s, out);
-  print_test_res(is_valid(smt), "predicate_ld8");
+  // (write addr+off, 8, in, s)
+  // out == (read addr+off, 8, s)
+  predicate_st8(to_expr(vals[0], 8), addr, offs[0], s);
+  z3::expr smt = (s.addr[0] == (addr + offs[0])) && (s.val[0] == to_expr(vals[0], 8));
+  print_test_res(is_valid(smt), "predicate_st8 1");
+  smt = predicate_ld8(addr, offs[0], s, to_expr(vals[0], 64));
+  print_test_res(is_valid(smt), "predicate_ld8 1");
+
+  predicate_st8(to_expr(vals[1], 8), addr, offs[1], s);
+  smt = (s.addr[1] == (addr + offs[1])) && (s.val[1] == to_expr(vals[1], 8));
+  print_test_res(is_valid(smt), "predicate_st8 2");
+  smt = predicate_ld8(addr, offs[1], s, to_expr(vals[1], 64));
+  print_test_res(is_valid(smt), "predicate_ld8 2");
+
+  // test rewrite
+  predicate_st8(to_expr(vals[1], 8), addr, offs[0], s);
+  smt = (s.addr[2] == (addr + offs[0])) && (s.val[2] == to_expr(vals[1], 8));
+  print_test_res(is_valid(smt), "predicate_st8 3");
+  smt = predicate_ld8(addr, offs[0], s, to_expr(vals[1], 64));
+  print_test_res(is_valid(smt), "predicate_ld8 3");
 }
 
 int main() {
@@ -179,6 +197,7 @@ int main() {
   test2();
   test3();
   test4();
+  test5();
 
   return 0;
 }
