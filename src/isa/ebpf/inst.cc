@@ -20,54 +20,21 @@ void prog_state::clear() {
 }
 
 inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
-  int32_t dst_reg = 0, src_reg = 0, imm = 0, off = 0;
-  switch (opcode) {
-    case NOP:
-    case EXIT: dst_reg = 0; src_reg = 0; imm = 0; off = 0; break;
-    case ADD64XC:
-    case LSH64XC:
-    case RSH64XC:
-    case MOV64XC:
-    case ARSH64XC:
-    case ADD32XC:
-    case LSH32XC:
-    case RSH32XC:
-    case MOV32XC:
-    case ARSH32XC: dst_reg = arg1; src_reg = 0; imm = arg2; off = 0; break;
-    case ADD64XY:
-    case LSH64XY:
-    case RSH64XY:
-    case MOV64XY:
-    case ARSH64XY:
-    case ADD32XY:
-    case LSH32XY:
-    case RSH32XY:
-    case MOV32XY:
-    case ARSH32XY: dst_reg = arg1; src_reg = arg2; imm = 0; off = 0; break;
-    case LE:
-    case BE: dst_reg = arg1; src_reg = 0; imm = arg2; off = 0; break;
-    case LDXB:
-    case LDXH:
-    case LDXW:
-    case LDXDW: dst_reg = arg1; src_reg = arg2; imm = 0; off = arg3; break;
-    case STXB:
-    case STXH:
-    case STXW:
-    case STXDW: dst_reg = arg1; src_reg = arg3; imm = 0; off = arg2; break;
-    case JA: dst_reg = 0; src_reg = 0; imm = 0; off = arg1; break;
-    case JEQXC:
-    case JGTXC:
-    case JSGTXC: dst_reg = arg1; src_reg = 0; imm = arg2; off = arg3; break;
-    case JEQXY:
-    case JGTXY:
-    case JSGTXY: dst_reg = arg1; src_reg = arg2; imm = 0; off = arg3; break;
-    default: cout << "unknown opcode" << endl;
-  }
+  int32_t arg[3] = {arg1, arg2, arg3};
   _opcode = opcode;
-  _dst_reg = dst_reg;
-  _src_reg = src_reg;
-  _imm = imm;
-  _off = off;
+  _dst_reg = 0;
+  _src_reg = 0;
+  _imm = 0;
+  _off = 0;
+  for (int i = 0; i < MAX_OP_LEN; i++) {
+    switch (OPTYPE(opcode, i)) {
+      case OP_DST_REG: _dst_reg = arg[i]; break;
+      case OP_SRC_REG: _src_reg = arg[i]; break;
+      case OP_OFF: _off = arg[i]; break;
+      case OP_IMM: _imm = arg[i]; break;
+      default: break;
+    }
+  }
 }
 
 void inst::to_abs_bv(vector<op_t>& abs_vec) const {
