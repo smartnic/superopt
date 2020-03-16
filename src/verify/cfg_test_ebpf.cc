@@ -26,6 +26,15 @@ inst instructions2[9] = {inst(MOV32XC, 0, -1),         /* r0 = 0x00000000fffffff
                          inst(EXIT),
                         };
 
+// test jmp and st/ld
+inst instructions3[6] = {inst(STXB, 10, -1, 1),
+                         inst(JEQXC, 1, 0x12, 2),
+                         inst(MOV64XC, 1, 0x12),
+                         inst(STXW, 10, -1, 1),
+                         inst(LDXB, 0, 10, -1),
+                         inst(EXIT),
+                        };
+
 void test1() {
   string expected;
   graph g1(instructions1, 8);
@@ -35,6 +44,10 @@ void test1() {
   graph g2(instructions2, 9);
   expected = "nodes:0,3 4,5 6,6 8,8 7,7 edges: 0:;1,3, 1:0,;2,4, 2:1,;3, 3:2,4,0,; 4:1,;3,";
   print_test_res(g2.graph_to_str() == expected, "program 2");
+
+  graph g3(instructions3, 6);
+  expected = "nodes:0,1 2,3 4,5 edges: 0:;1,2, 1:0,;2, 2:1,0,;";
+  print_test_res(g3.graph_to_str() == expected, "program 3");
 }
 
 int main() {
