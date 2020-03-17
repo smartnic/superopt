@@ -35,6 +35,15 @@ z3::expr smt_var::get_init_reg_var(unsigned int reg_id) {
   string name = "r_" + _name + "_" + to_string(reg_id) + "_0";
   return string_to_expr(name);
 }
+
+void smt_var::clear() {
+  for (size_t i = 0; i < reg_var.size(); i++) {
+    reg_cur_id[i] = 0;
+    string name = "r_" + _name + "_" + to_string(i) + "_0";
+    reg_var[i] = string_to_expr(name);
+  }
+  stack_var.clear();
+}
 /* class smt_var end */
 
 z3::expr string_to_expr(string s) {

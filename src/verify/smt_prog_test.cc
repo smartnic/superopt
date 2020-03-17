@@ -32,10 +32,10 @@ void test1() {
               implies(v("r_0_2_0_0") <= 15, v("r_0_2_0_1") == 15)
              );
   expr post2 = implies(prePC2, v("output" + to_string(prog_id)) == v("r_0_2_0_1"));
-  print_test_res(is_smt_valid(prePC2 == ps.path_con[2][0]), "pre path condition");
+  print_test_res(is_smt_valid(prePC2 == ps.path_con[2][0][0]), "pre path condition");
   print_test_res(is_smt_valid(preIV2 == ps.reg_iv[2][0]), "pre register initial values");
   print_test_res(is_smt_valid(bl2 == ps.bl[2]), "basic block logic");
-  print_test_res(is_smt_valid(post2 == ps.post[2][0]), "post condition");
+  print_test_res(is_smt_valid(post2 == ps.post[2]), "post condition");
 
   std::cout << "\ntest1.2: check basic block 2[2:3]\n";
   inst p1[7] = {inst(JMPLT, 0, 1, 3),   // 0 [0:0]
@@ -67,12 +67,12 @@ void test1() {
                    );
   bl2 = (v("r_1_2_0_1") == v("r_1_2_0_0") + v("r_1_2_0_0"));
   post2 = implies(pre_pc2_0 || pre_pc2_1, v("output" + to_string(prog_id)) == v("r_1_2_0_1"));
-  print_test_res(is_smt_valid(pre_pc2_0 == ps.path_con[2][0]), "pre path condition 0");
-  print_test_res(is_smt_valid(pre_pc2_1 == ps.path_con[2][1]), "pre path condition 1");
+  print_test_res(is_smt_valid(pre_pc2_0 == ps.path_con[2][0][0]), "pre path condition 0");
+  print_test_res(is_smt_valid(pre_pc2_1 == ps.path_con[2][1][0]), "pre path condition 1");
   print_test_res(is_smt_valid(pre_iv2_0 == ps.reg_iv[2][0]), "pre register initial values 0");
   print_test_res(is_smt_valid(pre_iv2_1 == ps.reg_iv[2][1]), "pre register initial values 1");
   print_test_res(is_smt_valid(bl2 == ps.bl[2]), "basic block logic");
-  print_test_res(is_smt_valid(post2 == ps.post[2][0]), "post condition");
+  print_test_res(is_smt_valid(post2 == ps.post[2]), "post condition");
 
   std::cout << "\ntest1.3: check program-end basic block 0[0:0] without RET instructions\n";
   inst p2[1] = {inst(ADDXY, 0, 0),
@@ -81,7 +81,7 @@ void test1() {
   ps.gen_smt(prog_id, p2, 1);
   // fmt: r_[prog_id]_[block_id]_[reg_id]_[version_id]
   expr post0 = implies(v("true"), v("output" + to_string(prog_id)) == v("r_2_0_0_1"));
-  print_test_res(is_smt_valid(post0 == ps.post[0][0]), "post condition");
+  print_test_res(is_smt_valid(post0 == ps.post[0]), "post condition");
 }
 
 void test2() {

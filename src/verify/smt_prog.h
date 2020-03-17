@@ -38,18 +38,16 @@ class smt_prog {
   // store path_con, reg_iv, bl, post, g
   // 1. path_con[i] stores pre path condition formulas of basic block i
   // There is a corresponding relationship between path_con and g.nodesIn
-  // more specifically, path_con[i][j] stores the pre path condition formula from basic block g.nodesIn[i][j] to i
-  vector<vector<expr> > path_con;
+  // more specifically, path_con[i][j] stores the all pre path condition formulae from basic block g.nodesIn[i][j] to i
+  vector<vector<vector<expr> > > path_con;
   // 2. reg_iv[i][j] stores pre register initial value formula
   // that values from the last node(g.nodes[i][j]) are fed to the node(i)
   vector<vector<expr> > reg_iv;
   // 3. bl[i] stores block logic formula of basic block i
   // more specifically, bl[i] = instLogic_i_0 && instLogic_i_1 && ... && instLogic_i_n
   vector<expr> bl;
-  // 4. post[i][j] store post logic formula for basic block i
-  // If block i is the end block, post[i][j] stores output formula
-  // otherwise, post[i][j] stores post path condition formula.
-  vector<vector<expr> > post;
+  // 4. post[i] store post logic formula (output formula) for the end basic block i
+  vector<expr> post;
   // control flow graph
   graph g;
   smt_prog();
