@@ -482,7 +482,7 @@ string inst::get_bytecode_str() const {
 // safe address: [ps._mem._stack_addr - mem_t:MEM_SIZE, ps._mem._stack_addr)
 inline void memory_access_check(uint64_t addr, uint64_t num_bytes, prog_state &ps) {
   if (!((addr >= ps._mem._stack_addr - mem_t::MEM_SIZE) &&
-        ((addr + num_bytes - 1) < ps._mem._stack_addr))) {
+        (addr < (ps._mem._stack_addr - (num_bytes - 1))))) {
     string err_msg = "unsafe memory access";
     throw (err_msg);
   }
