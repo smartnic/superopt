@@ -33,6 +33,8 @@ class smt_prog {
   void gen_block_c_in(expr& c_in, size_t cur_bid);
   void process_output(expr& f_p_output, inst* inst_lst, unsigned int prog_id);
  public:
+  // for unit test check
+  vector<vector<smt_stack> > post_stack_write_table;
   // program logic
   expr pl = string_to_expr("true");
   // store path_con, reg_iv, bl, post, g

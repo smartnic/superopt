@@ -94,6 +94,12 @@ smt_prog_test.out: smt_prog_z3.o $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERI
 smt_prog_z3.o: $(VERIFY)smt_prog_test.cc
 	$(CXX) $(TOY_ISA_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(VERIFY)smt_prog_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)smt_prog_test.cc
 
+smt_prog_test_ebpf.out: smt_prog_z3_ebpf.o $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(EBPF)inst_codegen.h $(EBPF)inst_codegen.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.cc $(EBPF)inst.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(SRC)utils.cc $(SRC)utils.h
+	g++ $(EBPF_FLAG) -std=c++11 -fvisibility=hidden $(VERIFY)smt_prog_z3_ebpf.o $(VERIFY)smt_prog.cc $(VERIFY)smt_var.cc $(EBPF)inst_codegen.cc $(ISA)inst.cc $(EBPF)inst.cc $(VERIFY)cfg.cc $(SRC)utils.cc -o $(VERIFY)smt_prog_test_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+
+smt_prog_z3_ebpf.o: $(VERIFY)smt_prog_test_ebpf.cc
+	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(VERIFY)smt_prog_z3_ebpf.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)smt_prog_test_ebpf.cc
+
 cfg_test.out: cfg_z3.o $(TOY_ISA)inst_codegen.h $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(TOY_ISA)inst.h $(TOY_ISA)inst.cc $(VERIFY)cfg.h $(VERIFY)cfg.cc $(SRC)utils.cc $(SRC)utils.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h
 	g++ $(TOY_ISA_FLAG) -std=c++11 $(ISA)inst.cc $(TOY_ISA)inst.cc $(VERIFY)cfg.cc $(VERIFY)cfg_z3.o $(SRC)utils.cc $(VERIFY)smt_var.cc -o $(VERIFY)cfg_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
@@ -108,6 +114,12 @@ cfg_z3_ebpf.o: $(VERIFY)cfg_test_ebpf.cc
 
 inout_test.out: $(SRC)inout_test.cc $(SRC)inout.cc $(SRC)inout.h $(SRC)utils.cc $(SRC)utils.h
 	g++ $(TOY_ISA_FLAG) -std=c++11 $(SRC)inout_test.cc $(SRC)inout.cc $(SRC)utils.cc -o $(SRC)inout_test.out
+
+smt_var_test.out: smt_var_z3.o $(SRC)utils.cc $(SRC)utils.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h
+	g++ -std=c++11 -fvisibility=hidden $(VERIFY)smt_var_z3.o $(SRC)utils.cc $(VERIFY)smt_var.cc -o $(VERIFY)smt_var_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+
+smt_var_z3.o: $(VERIFY)smt_var_test.cc
+	$(CXX) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(VERIFY)smt_var_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)smt_var_test.cc
 
 clean:
 	for i in */; do find . -name "*.o" -delete; done

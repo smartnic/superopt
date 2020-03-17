@@ -23,11 +23,15 @@ z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(string s, unsigned sz);
 
 class smt_stack {
+ private:
+  bool is_equal(z3::expr e1, z3::expr e2);
  public:
   vector<z3::expr> addr; // 64-bit bitvector
   vector<z3::expr> val;  // 8-bit bitvector
   void add(z3::expr a, z3::expr v) {addr.push_back(a); val.push_back(v);}
   void clear() {addr.clear(); val.clear();}
+  smt_stack& operator=(const smt_stack &rhs);
+  bool operator==(const smt_stack &rhs);
 };
 
 // SMT Variable format

@@ -63,8 +63,27 @@ void test1() {
   print_test_res(vld.is_equal_to(instructions6, 9), "instructions5 == instructions6");
 }
 
+void test2() {
+  // check branch with ld/st
+  inst p1[6] = {inst(STXB, 10, -1, 1),
+                inst(JEQXC, 1, 0x12, 2),
+                inst(MOV64XC, 1, 0x12),
+                inst(STXB, 10, -1, 1),
+                inst(LDXB, 0, 10, -1),
+                inst(EXIT),
+               };
+  inst p2[4] = {inst(MOV64XC, 1, 0x12),
+                inst(STXB, 10, -1, 1),
+                inst(LDXB, 0, 10, -1),
+                inst(EXIT),
+               };
+  vld.set_orig(p1, 6);
+  print_test_res(vld.is_equal_to(p2, 4), "p1 == p2");
+}
+
 int main() {
   test1();
+  test2();
 
   return 0;
 }

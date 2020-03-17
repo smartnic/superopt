@@ -5,6 +5,36 @@ using namespace std;
 
 z3::context smt_c;
 
+/* class smt_stack start */
+bool smt_stack::is_equal(z3::expr e1, z3::expr e2) {
+  z3::tactic t = z3::tactic(smt_c, "bv");
+  z3::solver s = t.mk_solver();
+  s.add(!(e1 == e2));
+  if (s.check() == z3::unsat) return true;
+  return false;
+}
+
+smt_stack& smt_stack::operator=(const smt_stack &rhs) {
+  addr.clear();
+  val.clear();
+  for (int i = 0; i < rhs.addr.size(); i++) {
+    add(rhs.addr[i], rhs.val[i]);
+  }
+  return *this;
+}
+
+bool smt_stack::operator==(const smt_stack &rhs) {
+  bool res = (addr.size() == rhs.addr.size()) &&
+              (val.size() == rhs.val.size());
+  if (! res) return res;
+  for (int i = 0; i < addr.size(); i++) {
+    res = res && is_equal(addr[i], rhs.addr[i]) && is_equal(val[i], rhs.val[i]);
+  }
+  return res;
+}
+
+/* class smt_stack end */
+
 /* class smt_var start */
 smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs) {
   reg_cur_id.resize(num_regs, 0);
