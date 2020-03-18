@@ -33,6 +33,13 @@ bool smt_stack::operator==(const smt_stack &rhs) {
   return res;
 }
 
+ostream& operator<<(ostream& out, const smt_stack& s) {
+  for (int i = 0; i < s.addr.size(); i++) {
+    out << i << ": " << s.addr[i] << " " << s.val[i] << endl;
+  }
+  return out;
+}
+
 /* class smt_stack end */
 
 /* class smt_var start */

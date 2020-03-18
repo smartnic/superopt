@@ -77,8 +77,43 @@ void test2() {
                 inst(LDXB, 0, 10, -1),
                 inst(EXIT),
                };
-  vld.set_orig(p1, 6);
+  validator vld(p1, 6);
   print_test_res(vld.is_equal_to(p2, 4), "p1 == p2");
+
+  inst p3[5] = {inst(STXB, 10, -1, 1),
+                inst(JEQXY, 0, 1, 0),
+                inst(STXB, 10, -1, 1),
+                inst(LDXB, 0, 10, -1),
+                inst(EXIT),
+               };
+  inst p4[4] = {inst(STXB, 10, -1, 1),
+                inst(STXB, 10, -1, 1),
+                inst(LDXB, 0, 10, -1),
+                inst(EXIT),
+               };
+  vld.set_orig(p3, 5);
+  print_test_res(vld.is_equal_to(p4, 4), "p3 == p4");
+
+  // test no jmp
+  inst p5[8] = {inst(STXB, 10, -1, 1),
+                inst(JEQXY, 1, 2, 2), // jmp case 1, r1 == r2
+                inst(STXB, 10, -1, 2),
+                inst(JEQXY, 1, 3, 2), // jmp case 2, r1 == r3
+                inst(STXB, 10, -1, 3),
+                inst(JEQXY, 1, 4, 0), // jmp case 3, r1 == r4
+                inst(LDXB, 0, 10, -1),
+                inst(EXIT),
+               };
+  inst p6[7] = {inst(STXB, 10, -1, 1),
+                inst(JEQXY, 1, 2, 2), // jmp case 1, r1 == r2
+                inst(STXB, 10, -1, 2),
+                inst(JEQXY, 1, 3, 1), // jmp case 2, r1 == r3
+                inst(STXB, 10, -1, 3),
+                inst(LDXB, 0, 10, -1),
+                inst(EXIT),
+               };
+  vld.set_orig(p5, 8);
+  print_test_res(vld.is_equal_to(p6, 7), "p5 == p6");
 }
 
 int main() {

@@ -32,6 +32,7 @@ class smt_stack {
   void clear() {addr.clear(); val.clear();}
   smt_stack& operator=(const smt_stack &rhs);
   bool operator==(const smt_stack &rhs);
+  friend ostream& operator<<(ostream& out, const smt_stack& s);
 };
 
 // SMT Variable format
