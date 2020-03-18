@@ -59,8 +59,14 @@ void test1() {
                            inst(LDXDW, 0, 10, -8),
                            inst(EXIT),
                           };
+  inst instructions7[4] = {inst(MOV64XY, 9, 10),
+                           inst(STXDW, 10, -8, 1),
+                           inst(LDXDW, 0, 9, -8),
+                           inst(EXIT),
+                          };
   vld.set_orig(instructions5, 3);
   print_test_res(vld.is_equal_to(instructions6, 9), "instructions5 == instructions6");
+  print_test_res(vld.is_equal_to(instructions7, 4), "instructions5 == instructions7");
 }
 
 void test2() {
