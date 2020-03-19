@@ -35,6 +35,15 @@ class smt_stack {
   friend ostream& operator<<(ostream& out, const smt_stack& s);
 };
 
+class mem_wt {
+ public:
+  smt_stack _wt; // write table, each element is for write instructions
+  smt_stack _uwt; // uninitalized write table, each element is for read before write instructions
+  bool _allow_uw; // allow read before write
+  mem_wt(bool allow_uw = false) {_allow_uw = allow_uw;}
+  void clear() {_wt.clear(); _uwt.clear();}
+};
+
 // SMT Variable format
 // register: r_[prog_id]_[node_id]_[reg_id]_[version_id]
 class smt_var {

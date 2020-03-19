@@ -243,12 +243,76 @@ void test5() {
   s.clear();
 }
 
+// z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y);
+void test6() {
+  cout << "Test 6: Memory output equivalence check" << endl;
+  mem_wt x(false), y(false);
+  // case 1.x: x._wt is the same as y._wt
+  z3::expr expected = string_to_expr("true");
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 1.1");
+  x._wt.add(v("a1"), v("v1"));
+  y._wt = x._wt;
+  expected = string_to_expr("true");
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 1.2");
+  x._wt.add(v("a2"), v("v2"));
+  x._wt.add(v("a3"), v("v3"));
+  y._wt = x._wt;
+  expected = string_to_expr("true");
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 1.3");
+
+  // case 2.x: addrs in x._wt and in y._wt have different names,
+  // test the logic of addrs_in_one_wt_not_allow_uw
+  x.clear();
+  y.clear();
+  x._wt.add(v("a1"), v("v1"));
+  expected = string_to_expr("false");
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 2.1");
+  y._wt.add(v("a2"), v("v2"));
+  expected = (v("a1") == v("a2")) && (v("v1") == v("v2"));
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 2.2");
+  x._wt.add(v("a2"), v("v2"));
+  expected = (v("a1") == v("a2"));
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 2.3");
+  y._wt.add(v("a1"), v("v1"));
+  expected = z3::implies(v("a1") == v("a2"), v("v1") == v("v2"));
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 2.4");
+
+  // case 3.x, allow read before write
+  x._allow_uw = true;
+  y._allow_uw = true;
+  x.clear();
+  y.clear();
+  expected = string_to_expr("true");
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.1");
+  x._wt.add(v("a1"), v("v1"));
+  expected = string_to_expr("false");
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.2");
+  x._uwt.add(v("a1"), v("v1"));
+  expected = string_to_expr("true");
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.3");
+  x._uwt.clear();
+  x._uwt.add(v("a2"), v("v2"));
+  expected = (v("a1") == v("a2")) && (v("v1") == v("v2"));
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.4");
+
+  // case 4.x, test the property of _uwt (uninitilized write table)
+  x.clear();
+  x._wt.add(v("a1"), v("v1"));
+  // the property of _uwt ensures that v("v1") == v("v2")
+  x._uwt.add(v("a1"), v("v1"));
+  x._uwt.add(v("a1"), v("v2"));
+  y._wt.add(v("a1"), v("v2"));
+  expected = string_to_expr("true");
+  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 4.1");
+}
+
 int main() {
   test1();
   test2();
   test3();
   test4();
   test5();
+  test6();
 
   return 0;
 }

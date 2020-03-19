@@ -70,6 +70,9 @@ inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_stack& s, z3::exp
 inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out);
 inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out);
 inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out);
+
+// return the FOL formula that check whether two memories have the same values
+z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y);
 /* APIs exposed to the externals end */
 
 /* Inputs in, out must be side-effect-free expressions. */
