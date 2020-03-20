@@ -25,7 +25,7 @@ void test1() {
   //  0 in:4294967295  out:1 2  // 4294967295 means -1
   //  1 in:0  out:2
   //  2 in:1 0  out:
-  smt_stack s0, s1, s21, s22;
+  smt_wt s0, s1, s21, s22;
   s0.add(v("r_0_0_10_0") + to_expr(-1), v("r_0_0_1_0").extract(7, 0));
   bool res = (s0 == ps.post_mem_val[0][0]._stack._wt);
   s1 = s0;
@@ -49,7 +49,7 @@ void test1() {
   // edges:
   //  0 in:4294967295  out:1 1 // 4294967295 means -1
   //  1 in:0 0  out:
-  smt_stack s;
+  smt_wt s;
   s.add(v("r_0_0_10_0") + to_expr(-1), v("r_0_0_1_0").extract(7, 0));
   res = (s == ps.post_mem_val[0][0]._stack._wt);
   s.add(v("r_0_1_10_0") + to_expr(-1), v("r_0_1_1_0").extract(7, 0));

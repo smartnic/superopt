@@ -177,7 +177,7 @@ void test5() {
   vector<uint8_t> vals = {0x12, 0x34};
   z3::expr addr = v((uint64_t)0xff12000000001234);
   smt_mem m;
-  smt_stack *s = &m._stack._wt;
+  smt_wt *s = &m._stack._wt;
   // (write addr+off, 8, in, s)
   // out == (read addr+off, 8, s)
   predicate_st8(v(vals[0]), addr, offs[0], m);

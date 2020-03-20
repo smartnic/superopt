@@ -22,7 +22,7 @@ z3::expr to_expr(uint64_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(string s, unsigned sz);
 
-class smt_stack {
+class smt_wt {
  private:
   bool is_equal(z3::expr e1, z3::expr e2);
  public:
@@ -30,15 +30,15 @@ class smt_stack {
   vector<z3::expr> val;  // 8-bit bitvector
   void add(z3::expr a, z3::expr v) {addr.push_back(a); val.push_back(v);}
   void clear() {addr.clear(); val.clear();}
-  smt_stack& operator=(const smt_stack &rhs);
-  bool operator==(const smt_stack &rhs);
-  friend ostream& operator<<(ostream& out, const smt_stack& s);
+  smt_wt& operator=(const smt_wt &rhs);
+  bool operator==(const smt_wt &rhs);
+  friend ostream& operator<<(ostream& out, const smt_wt& s);
 };
 
 class mem_wt {
  public:
-  smt_stack _wt; // write table, each element is for write instructions
-  smt_stack _uwt; // uninitalized write table, each element is for read before write instructions
+  smt_wt _wt; // write table, each element is for write instructions
+  smt_wt _uwt; // uninitalized write table, each element is for read before write instructions
   bool _allow_uw; // allow read before write
   mem_wt(bool allow_uw = false) {_allow_uw = allow_uw;}
   void clear() {_wt.clear(); _uwt.clear();}

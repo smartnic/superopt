@@ -5,8 +5,8 @@ using namespace std;
 
 z3::context smt_c;
 
-/* class smt_stack start */
-bool smt_stack::is_equal(z3::expr e1, z3::expr e2) {
+/* class smt_wt start */
+bool smt_wt::is_equal(z3::expr e1, z3::expr e2) {
   z3::tactic t = z3::tactic(smt_c, "bv");
   z3::solver s = t.mk_solver();
   s.add(!(e1 == e2));
@@ -14,7 +14,7 @@ bool smt_stack::is_equal(z3::expr e1, z3::expr e2) {
   return false;
 }
 
-smt_stack& smt_stack::operator=(const smt_stack &rhs) {
+smt_wt& smt_wt::operator=(const smt_wt &rhs) {
   addr.clear();
   val.clear();
   for (int i = 0; i < rhs.addr.size(); i++) {
@@ -23,7 +23,7 @@ smt_stack& smt_stack::operator=(const smt_stack &rhs) {
   return *this;
 }
 
-bool smt_stack::operator==(const smt_stack &rhs) {
+bool smt_wt::operator==(const smt_wt &rhs) {
   bool res = (addr.size() == rhs.addr.size()) &&
               (val.size() == rhs.val.size());
   if (! res) return res;
@@ -33,14 +33,14 @@ bool smt_stack::operator==(const smt_stack &rhs) {
   return res;
 }
 
-ostream& operator<<(ostream& out, const smt_stack& s) {
+ostream& operator<<(ostream& out, const smt_wt& s) {
   for (int i = 0; i < s.addr.size(); i++) {
     out << i << ": " << s.addr[i] << " " << s.val[i] << endl;
   }
   return out;
 }
 
-/* class smt_stack end */
+/* class smt_wt end */
 
 /* class smt_var start */
 smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs) {

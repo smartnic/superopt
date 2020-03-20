@@ -8,7 +8,7 @@ void predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m) {
 
 // Assume the input is safe, eg. addr+off can be found in s.addr
 z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out) {
-  smt_stack *s = &m._stack._wt;
+  smt_wt *s = &m._stack._wt;
   z3::expr a = addr + off;
   z3::expr c = string_to_expr("false");
   z3::expr f = string_to_expr("true");
@@ -21,7 +21,7 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out
 
 // return the FOL formula that x.addr[idx] is the latest addr in x
 // that is, for any i > idx, x.addr[idx] != x.addr[i]
-z3::expr latest_write_addr(int idx, smt_stack& x) {
+z3::expr latest_write_addr(int idx, smt_wt& x) {
   z3::expr f = string_to_expr("true");
   for (int i = x.addr.size() - 1; i > idx; i--) {
     f = f && (x.addr[idx] != x.addr[i]);
@@ -31,7 +31,7 @@ z3::expr latest_write_addr(int idx, smt_stack& x) {
 
 // return the FOL formula that addr cannot be found in x
 // that is, for any addr_x in x, addr != addr_x
-z3::expr addr_not_in_wt(z3::expr& addr, smt_stack& x) {
+z3::expr addr_not_in_wt(z3::expr& addr, smt_wt& x) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < x.addr.size(); i++) {
     f = f && (addr != x.addr[i]);
@@ -96,7 +96,7 @@ z3::expr addrs_in_one_wt_allow_uw(mem_wt& x, mem_wt& y) {
 // make sure the elements in unintialized write table are unique,
 // i.e., for two elements <a1, v1> and <a2, v2> in write table,
 // a1 == a2 => v1 == v2
-z3::expr property_of_uwt(smt_stack& x) {
+z3::expr property_of_uwt(smt_wt& x) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < x.addr.size(); i++) {
     for (int j = x.addr.size() - 1; j > i; j--) {
