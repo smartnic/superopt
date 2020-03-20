@@ -123,3 +123,20 @@ z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y) {
   f = z3::implies(property_of_uwt(x._uwt) && property_of_uwt(y._uwt), f);
   return f;
 }
+
+// TODO: in order to test, stack is checked
+// need to modify later, since stack does not need to be checked
+z3::expr smt_mem_eq_chk(smt_mem& x, smt_mem& y) {
+  return predicate_mem_eq_chk(x._stack, y._stack);
+}
+
+z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_mem>& mem1,
+                            vector<z3::expr>& pc2, vector<smt_mem>& mem2) {
+  z3::expr f = string_to_expr("true");
+  for (int i = 0; i < pc1.size(); i++) {
+    for (int j = 0; j < pc2.size(); j++) {
+      f = f && z3::implies((pc1[i] && pc2[j]), smt_mem_eq_chk(mem1[i], mem2[j]));
+    }
+  }
+  return f;
+}

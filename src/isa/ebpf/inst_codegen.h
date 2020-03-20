@@ -73,6 +73,9 @@ inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr
 
 // return the FOL formula that check whether two memories have the same values
 z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y);
+// return the FOL formula that check whether two programs have the same output memories
+z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_mem>& mem1,
+                            vector<z3::expr>& pc2, vector<smt_mem>& mem2);
 /* APIs exposed to the externals end */
 
 /* Inputs in, out must be side-effect-free expressions. */

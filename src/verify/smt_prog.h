@@ -60,4 +60,7 @@ class smt_prog {
   // Return the program logic FOL formula 'PL' including basic program logic
   // and the formula of capturing the output of the program in the variable output[prog_id]
   expr gen_smt(unsigned int prog_id, inst* inst_lst, int length);
+  // get all the path conditions and the corresponding memory.
+  // should call this function after calling gen_smt()
+  void get_output_pc_mem(vector<expr>& pc, vector<smt_mem>& mv);
 };

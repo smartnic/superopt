@@ -102,5 +102,10 @@ inline z3::expr predicate_##func_name(z3::expr in1, z3::expr in2, z3::expr out) 
 PREDICATE_UNARY(mov, MOV_EXPR)
 PREDICATE_BINARY(add, ADD_EXPR)
 PREDICATE_BINARY(max, MAX_EXPR)
-// Functions for validator end
+
+inline z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_mem>& mem1,
+                                   vector<z3::expr>& pc2, vector<smt_mem>& mem2) {
+  return string_to_expr("true");
+}
+// Functions for validator en
 /* Macros for validator end  */

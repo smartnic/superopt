@@ -302,4 +302,19 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   pl = (f_prog && f_p_output).simplify();
   return pl;
 }
+
+void smt_prog::get_output_pc_mem(vector<expr>& pc, vector<smt_mem>& mv) {
+  pc.clear();
+  mv.clear();
+  for (size_t i = 0; i < g.nodes.size(); i++) {
+    if (g.nodes_out[i].size() != 0) continue;
+
+    // copy the path condtions and memory values into "pc" and "mv"
+    for (size_t j = 0; j < path_con[i].size(); j++)
+      for (size_t k = 0; k < path_con[i][j].size(); k++)
+        pc.push_back(path_con[i][j][k]);
+    for (size_t j = 0; j < post_mem_val[i].size(); j++)
+      mv.push_back(post_mem_val[i][j]);
+  }
+}
 /* class smt_prog end */

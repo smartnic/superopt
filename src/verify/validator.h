@@ -43,6 +43,8 @@ class validator {
   // or the input variable of FOL formula as input[prog_id]
   expr _pre_orig = string_to_expr("true");
   expr _pl_orig = string_to_expr("true");
+  vector<expr> _op_pc_orig;
+  vector<smt_mem> _op_mem_orig;
   // last counterexample
   inout _last_counterex;
   /* store variables start */
@@ -76,6 +78,7 @@ class validator {
   // set the input variable of FOL formula as input[prog_id]
   void smt_pre(expr& pre, expr e);
   // setting outputs of two programs are equal
-  void smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2);
+  void smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2,
+                vector<expr>& op_pc_synth, vector<smt_mem>& op_mem_synth);
 
 };
