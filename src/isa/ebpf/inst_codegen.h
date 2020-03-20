@@ -60,16 +60,16 @@ inline z3::expr predicate_rsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_rsh32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
-// (write addr+off, sz, in, s); type: in, addr, off: bv64;
-inline void predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_stack& s);
-inline void predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_stack& s);
-inline void predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_stack& s);
-inline void predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_stack& s);
-// out == (read addr+off, sz, s); type: addr, off, out: bv64;
-inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out);
-inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out);
-inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out);
-inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out);
+// (write addr+off, sz, in, m); type: in, addr, off: bv64;
+inline void predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m);
+inline void predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m);
+inline void predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m);
+inline void predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m);
+// out == (read addr+off, sz, m); type: addr, off, out: bv64;
+inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out);
+inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out);
+inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out);
+inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out);
 
 // return the FOL formula that check whether two memories have the same values
 z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y);
@@ -282,51 +282,54 @@ COMPUTE_LDST(16, uint16_t)
 COMPUTE_LDST(32, uint32_t)
 COMPUTE_LDST(64, uint64_t)
 
-inline void predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_stack& s) {
-  s.add(addr + off, in.extract(7, 0));
+// implemented in inst_codegen.cc
+void predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m);
+
+inline void predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m) {
+  predicate_st_byte(in.extract(7, 0), addr, off, m);
 }
 
-inline void predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_stack& s) {
-  predicate_st8(in.extract(7, 0), addr, off, s);
-  predicate_st8(in.extract(15, 8), addr, off + to_expr(1, 64), s);
+inline void predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m) {
+  predicate_st8(in.extract(7, 0), addr, off, m);
+  predicate_st8(in.extract(15, 8), addr, off + to_expr(1, 64), m);
 }
 
-inline void predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_stack& s) {
-  predicate_st16(in.extract(15, 0), addr, off, s);
-  predicate_st16(in.extract(31, 16), addr, off + to_expr(2, 64), s);
+inline void predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m) {
+  predicate_st16(in.extract(15, 0), addr, off, m);
+  predicate_st16(in.extract(31, 16), addr, off + to_expr(2, 64), m);
 }
 
-inline void predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_stack& s) {
-  predicate_st32(in.extract(31, 0), addr, off, s);
-  predicate_st32(in.extract(63, 32), addr, off + to_expr(4, 64), s);
+inline void predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m) {
+  predicate_st32(in.extract(31, 0), addr, off, m);
+  predicate_st32(in.extract(63, 32), addr, off + to_expr(4, 64), m);
 }
 
 // implemented in inst_codegen.cc
-z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out);
+z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out);
 
-inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out) {
+inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out) {
   return ((out.extract(63, 8) == to_expr(0, 56)) &&
-          predicate_ld_byte(addr, off, s, out.extract(7, 0)));
+          predicate_ld_byte(addr, off, m, out.extract(7, 0)));
 }
 
-inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out) {
+inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out) {
   return ((out.extract(63, 16) == to_expr(0, 48)) &&
-          predicate_ld_byte(addr, off, s, out.extract(7, 0)) &&
-          predicate_ld_byte(addr, off + 1, s, out.extract(15, 8)));
+          predicate_ld_byte(addr, off, m, out.extract(7, 0)) &&
+          predicate_ld_byte(addr, off + 1, m, out.extract(15, 8)));
 }
 
-inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out) {
+inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out) {
   return ((out.extract(63, 32) == to_expr(0, 32)) &&
-          predicate_ld_byte(addr, off, s, out.extract(7, 0)) &&
-          predicate_ld_byte(addr, off + 1, s, out.extract(15, 8)) &&
-          predicate_ld_byte(addr, off + 2, s, out.extract(23, 16)) &&
-          predicate_ld_byte(addr, off + 3, s, out.extract(31, 24)));
+          predicate_ld_byte(addr, off, m, out.extract(7, 0)) &&
+          predicate_ld_byte(addr, off + 1, m, out.extract(15, 8)) &&
+          predicate_ld_byte(addr, off + 2, m, out.extract(23, 16)) &&
+          predicate_ld_byte(addr, off + 3, m, out.extract(31, 24)));
 }
 
-inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_stack& s, z3::expr out) {
-  z3::expr f = predicate_ld_byte(addr, off, s, out.extract(7, 0));
+inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out) {
+  z3::expr f = predicate_ld_byte(addr, off, m, out.extract(7, 0));
   for (int i = 1; i < 8; i++) {
-    f = f && predicate_ld_byte(addr, off + i, s, out.extract(8 * i + 7, 8 * i));
+    f = f && predicate_ld_byte(addr, off + i, m, out.extract(8 * i + 7, 8 * i));
   }
   return f;
 }

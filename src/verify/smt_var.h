@@ -44,6 +44,13 @@ class mem_wt {
   void clear() {_wt.clear(); _uwt.clear();}
 };
 
+class smt_mem {
+ public:
+  mem_wt _stack;
+  smt_mem() {_stack._allow_uw = false;}
+  void clear() {_stack.clear();}
+};
+
 // SMT Variable format
 // register: r_[prog_id]_[node_id]_[reg_id]_[version_id]
 class smt_var {
@@ -54,7 +61,7 @@ class smt_var {
   vector<unsigned int> reg_cur_id;
   vector<z3::expr> reg_var;
  public:
-  smt_stack stack_var;
+  smt_mem mem_var;
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
   // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs
   smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);

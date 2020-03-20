@@ -334,7 +334,7 @@ void inst::set_as_nop_inst() {
 #define NEWDST newDst
 #define CURDST curDst
 #define CURSRC curSrc
-#define STACK sv.stack_var
+#define STACK sv.mem_var
 #define IMM to_expr(imm)
 #define OFF to_expr(off)
 #define CURSRC_L6 (CURSRC & to_expr((int64_t)0x3f))

@@ -27,14 +27,14 @@ void test1() {
   //  2 in:1 0  out:
   smt_stack s0, s1, s21, s22;
   s0.add(v("r_0_0_10_0") + to_expr(-1), v("r_0_0_1_0").extract(7, 0));
-  bool res = (s0 == ps.post_stack_write_table[0][0]);
+  bool res = (s0 == ps.post_mem_val[0][0]._stack._wt);
   s1 = s0;
   s1.add(v("r_0_1_10_0") + to_expr(-1), v("r_0_1_1_1").extract(7, 0));
-  res = res && (s1 == ps.post_stack_write_table[1][0]);
+  res = res && (s1 == ps.post_mem_val[1][0]._stack._wt);
   s21 = s1;
   s22 = s0;
-  res = res && (s21 == ps.post_stack_write_table[2][0]) && (s22 == ps.post_stack_write_table[2][1]);
-  print_test_res(res, "post stack_write_table 1");
+  res = res && (s21 == ps.post_mem_val[2][0]._stack._wt) && (s22 == ps.post_mem_val[2][1]._stack._wt);
+  print_test_res(res, "post stack write table 1");
 
   // test jmp 0
   inst p2[5] = {inst(STXB, 10, -1, 1),
@@ -51,12 +51,12 @@ void test1() {
   //  1 in:0 0  out:
   smt_stack s;
   s.add(v("r_0_0_10_0") + to_expr(-1), v("r_0_0_1_0").extract(7, 0));
-  res = (s == ps.post_stack_write_table[0][0]);
+  res = (s == ps.post_mem_val[0][0]._stack._wt);
   s.add(v("r_0_1_10_0") + to_expr(-1), v("r_0_1_1_0").extract(7, 0));
   res = res &&
-        (s == ps.post_stack_write_table[1][0]) &&
-        (s == ps.post_stack_write_table[1][1]);
-  print_test_res(res, "post stack_write_table 2");
+        (s == ps.post_mem_val[1][0]._stack._wt) &&
+        (s == ps.post_mem_val[1][1]._stack._wt);
+  print_test_res(res, "post stack write table 2");
 
   // test jmp 0 with other jmps
   inst p3[8] = {inst(STXB, 10, -1, 1),
@@ -76,7 +76,7 @@ void test1() {
   //  1 in:0  out:2 3
   //  2 in:1 0  out:3 3
   //  3 in:2 2 1  out:
-  // test the post_stack_write_table of basic block 3
+  // test the post stack write table of basic block 3
   vector<expr> w_addr = {v("r_0_0_10_0") + to_expr(-1), // write in basic block 0
                          v("r_0_1_10_0") + to_expr(-1), // write in basic block 1
                          v("r_0_2_10_0") + to_expr(-1), // write in basic block 2
@@ -89,20 +89,20 @@ void test1() {
   // case1: from 2: 0 -> 1 -> 2 -> 3, 0 -> 2 -> 3,
   // case2: from 2: 0 -> 1 -> 2 -> 3, 0 -> 2 -> 3,
   // case3: from 1: 0 -> 1 -> 3
-  // case1 and 2 are the same, can be tested by the same smt_stack
+  // case1 and 2 are the same, can be tested by the same stack write table
   s.clear();
   // 0 -> 1 -> 2 -> 3
   s.add(w_addr[0], w_val[0]); s.add(w_addr[1], w_val[1]); s.add(w_addr[2], w_val[2]);
-  res = (s == ps.post_stack_write_table[3][0]) && (s == ps.post_stack_write_table[3][2]);
+  res = (s == ps.post_mem_val[3][0]._stack._wt) && (s == ps.post_mem_val[3][2]._stack._wt);
   // 0 -> 2 -> 3
-  s.clear(); 
+  s.clear();
   s.add(w_addr[0], w_val[0]); s.add(w_addr[2], w_val[2]);
-  res = res && (s == ps.post_stack_write_table[3][1]) && (s == ps.post_stack_write_table[3][3]);
+  res = res && (s == ps.post_mem_val[3][1]._stack._wt) && (s == ps.post_mem_val[3][3]._stack._wt);
   // 0 -> 1 -> 3
   s.clear();
   s.add(w_addr[0], w_val[0]); s.add(w_addr[1], w_val[1]);
-  res = res && (s == ps.post_stack_write_table[3][4]);
-  print_test_res(res, "post stack_write_table 3");  
+  res = res && (s == ps.post_mem_val[3][4]._stack._wt);
+  print_test_res(res, "post stack write table 3");
 }
 
 int main() {

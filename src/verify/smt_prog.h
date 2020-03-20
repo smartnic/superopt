@@ -34,10 +34,10 @@ class smt_prog {
   void process_output(expr& f_p_output, inst* inst_lst, unsigned int prog_id);
  public:
   // `public` for unit test check
-  // post_stack_write_table[i][0...n] stores the post stack_write_table for the basic block i.
+  // post_mem_val[i][0...n] stores the post post_mem_val for the basic block i.
   // 0...n are the cases for different paths reaching i, and the order keeps the same as
   // g.nodes_in[i] and path_con[i]
-  vector<vector<smt_stack> > post_stack_write_table;
+  vector<vector<smt_mem> > post_mem_val;
   // program logic
   expr pl = string_to_expr("true");
   // store path_con, reg_iv, bl, post, g

@@ -176,71 +176,72 @@ void test5() {
   vector<z3::expr> offs = {v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7)};
   vector<uint8_t> vals = {0x12, 0x34};
   z3::expr addr = v((uint64_t)0xff12000000001234);
-  smt_stack s;
+  smt_mem m;
+  smt_stack *s = &m._stack._wt;
   // (write addr+off, 8, in, s)
   // out == (read addr+off, 8, s)
-  predicate_st8(v(vals[0]), addr, offs[0], s);
-  z3::expr smt = (s.addr[0] == (addr + offs[0])) && (s.val[0] == to_expr(vals[0], 8));
+  predicate_st8(v(vals[0]), addr, offs[0], m);
+  z3::expr smt = (s->addr[0] == (addr + offs[0])) && (s->val[0] == to_expr(vals[0], 8));
   print_test_res(is_valid(smt), "predicate_st8 1");
-  smt = predicate_ld8(addr, offs[0], s, v(vals[0]));
+  smt = predicate_ld8(addr, offs[0], m, v(vals[0]));
   print_test_res(is_valid(smt), "predicate_ld8 1");
 
-  predicate_st8(v(vals[1]), addr, offs[1], s);
-  smt = (s.addr[1] == (addr + offs[1])) && (s.val[1] == to_expr(vals[1], 8));
+  predicate_st8(v(vals[1]), addr, offs[1], m);
+  smt = (s->addr[1] == (addr + offs[1])) && (s->val[1] == to_expr(vals[1], 8));
   print_test_res(is_valid(smt), "predicate_st8 2");
-  smt = predicate_ld8(addr, offs[1], s, v(vals[1]));
+  smt = predicate_ld8(addr, offs[1], m, v(vals[1]));
   print_test_res(is_valid(smt), "predicate_ld8 2");
 
   // test rewrite
-  predicate_st8(v(vals[1]), addr, offs[0], s);
-  smt = (s.addr[2] == (addr + offs[0])) && (s.val[2] == to_expr(vals[1], 8));
+  predicate_st8(v(vals[1]), addr, offs[0], m);
+  smt = (s->addr[2] == (addr + offs[0])) && (s->val[2] == to_expr(vals[1], 8));
   print_test_res(is_valid(smt), "predicate_st8 3");
-  smt = predicate_ld8(addr, offs[0], s, v(vals[1]));
+  smt = predicate_ld8(addr, offs[0], m, v(vals[1]));
   print_test_res(is_valid(smt), "predicate_ld8 3");
-  s.clear();
+  s->clear();
 
   // test st16 && ld16
   uint64_t x = 0x0123456789abcdef;
-  predicate_st16(v(x), addr, offs[0], s);
-  smt = predicate_ld8(addr, offs[0], s, v(x & 0xff)) &&
-        predicate_ld8(addr, offs[1], s, v((x >> 8) & 0xff));
+  predicate_st16(v(x), addr, offs[0], m);
+  smt = predicate_ld8(addr, offs[0], m, v(x & 0xff)) &&
+        predicate_ld8(addr, offs[1], m, v((x >> 8) & 0xff));
   print_test_res(is_valid(smt), "predicate_st16/ld8");
-  smt = predicate_ld16(addr, offs[0], s, v(x & 0xffff));
+  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff));
   print_test_res(is_valid(smt), "predicate_st16/ld16");
-  s.clear();
-  predicate_st8(v(x), addr, offs[0], s);
-  predicate_st8(v(x >> 8), addr, offs[1], s);
-  smt = predicate_ld16(addr, offs[0], s, v(x & 0xffff));
+  s->clear();
+  predicate_st8(v(x), addr, offs[0], m);
+  predicate_st8(v(x >> 8), addr, offs[1], m);
+  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff));
   print_test_res(is_valid(smt), "predicate_st8/ld16");
-  s.clear();
+  s->clear();
 
   // test st32 && ld32
-  predicate_st32(v(x), addr, offs[0], s);
-  smt = predicate_ld16(addr, offs[0], s, v(x & 0xffff)) &&
-        predicate_ld16(addr, offs[2], s, v((x >> 16) & 0xffff));
+  predicate_st32(v(x), addr, offs[0], m);
+  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff)) &&
+        predicate_ld16(addr, offs[2], m, v((x >> 16) & 0xffff));
   print_test_res(is_valid(smt), "predicate_st32/ld16");
-  smt = predicate_ld32(addr, offs[0], s, v(x & 0xffffffff));
+  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff));
   print_test_res(is_valid(smt), "predicate_st32/ld32");
-  s.clear();
-  predicate_st16(v(x), addr, offs[0], s);
-  predicate_st16(v(x >> 16), addr, offs[2], s);
-  smt = predicate_ld32(addr, offs[0], s, v(x & 0xffffffff));
+  s->clear();
+  predicate_st16(v(x), addr, offs[0], m);
+  predicate_st16(v(x >> 16), addr, offs[2], m);
+  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff));
   print_test_res(is_valid(smt), "predicate_st16/ld32");
-  s.clear();
+  s->clear();
 
   // test st64 && ld64
-  predicate_st64(v(x), addr, offs[0], s);
-  smt = predicate_ld32(addr, offs[0], s, v(x & 0xffffffff)) &&
-        predicate_ld32(addr, offs[4], s, v((x >> 32) & 0xffffffff));
+  predicate_st64(v(x), addr, offs[0], m);
+  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff)) &&
+        predicate_ld32(addr, offs[4], m, v((x >> 32) & 0xffffffff));
   print_test_res(is_valid(smt), "predicate_st64/ld32");
-  smt = predicate_ld64(addr, offs[0], s, v(x));
+  smt = predicate_ld64(addr, offs[0], m, v(x));
   print_test_res(is_valid(smt), "predicate_st64/ld64");
-  s.clear();
-  predicate_st32(v(x), addr, offs[0], s);
-  predicate_st32(v(x >> 32), addr, offs[4], s);
-  smt = predicate_ld64(addr, offs[0], s, v(x));
+  s->clear();
+  predicate_st32(v(x), addr, offs[0], m);
+  predicate_st32(v(x >> 32), addr, offs[4], m);
+  smt = predicate_ld64(addr, offs[0], m, v(x));
   print_test_res(is_valid(smt), "predicate_st32/ld64");
-  s.clear();
+  s->clear();
 }
 
 // z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y);

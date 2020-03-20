@@ -79,7 +79,7 @@ void smt_var::clear() {
     string name = "r_" + _name + "_" + to_string(i) + "_0";
     reg_var[i] = string_to_expr(name);
   }
-  stack_var.clear();
+  mem_var.clear();
 }
 /* class smt_var end */
 

@@ -60,7 +60,7 @@ void smt_prog::init(unsigned int num_regs) {
   reg_iv.clear();
   bl.clear();
   post.clear();
-  post_stack_write_table.clear();
+  post_mem_val.clear();
 
   size_t block_num = g.nodes.size();
 
@@ -72,7 +72,7 @@ void smt_prog::init(unsigned int num_regs) {
     post_reg_val[i].resize(num_regs, string_to_expr("true"));
   }
 
-  post_stack_write_table.resize(block_num);
+  post_mem_val.resize(block_num);
 
   path_con.resize(block_num);
   for (size_t i = 0; i < block_num; i++) {
@@ -262,8 +262,8 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
       // basic block 0 does not have pre path condition
       // and its f_iv is the whole program's pre condition which is stored in variable pre of class validator
       f_block[0] = f_bl;
-      // store the stack write table of basic block 0 into post_stack_write_table
-      post_stack_write_table[0].push_back(sv.stack_var);
+      // store the memory write table of basic block 0 into post_mem_val
+      post_mem_val[0].push_back(sv.mem_var);
     } else {
       for (size_t j = 0; j < g.nodes_in[b].size(); j++) {
         // generate f_iv: the logic that the initial values are fed by the last basic block
@@ -274,14 +274,14 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
           // clear() is to make sure when/after computing the fol of this basic block, the register versions
           // are the same for different initial path conditions of this block
           sv.clear();
-          // update sv with the stack write table from the previous basic block
-          sv.stack_var = post_stack_write_table[g.nodes_in[b][j]][k];
+          // update sv with the memory write table from the previous basic block
+          sv.mem_var = post_mem_val[g.nodes_in[b][j]][k];
           // generate f_bl: the block program logic
           expr f_bl = string_to_expr("true");
           gen_block_prog_logic(f_bl, sv, b, inst_lst);
           f_block[b] = f_block[b] && implies(path_con[b][j][k], f_iv && f_bl);
-          // store the current stack write table into post_stack_write_table
-          post_stack_write_table[b].push_back(sv.stack_var);
+          // store the current memory write table into post_mem_val
+          post_mem_val[b].push_back(sv.mem_var);
         }
       }
     }
