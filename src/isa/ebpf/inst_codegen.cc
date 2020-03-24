@@ -61,9 +61,7 @@ z3::expr addrs_in_both_wts(mem_wt& x, mem_wt& y) {
 z3::expr addrs_in_one_wt_not_allow_uw(mem_wt& x, mem_wt& y) {
   z3::expr f = string_to_expr("true");
   for (int i = x._wt.addr.size() - 1; i >= 0; i--) {
-    z3::expr f1 = latest_write_addr(i, x._wt);
-    f1 = f1 && addr_not_in_wt(x._wt.addr[i], y._wt);
-    f = f && z3::implies(f1, false);
+    f = f && z3::implies(addr_not_in_wt(x._wt.addr[i], y._wt), false);
   }
   return f;
 }
@@ -81,12 +79,10 @@ z3::expr addrs_in_one_wt_allow_uw(mem_wt& x, mem_wt& y) {
     z3::expr f1 = latest_write_addr(i, x._wt) && addr_not_in_wt(addr, y._wt);
     // f2: FOL formula that addr must in x._uwt
     z3::expr f2 = !(addr_not_in_wt(addr, x._uwt)); // addr in x._uwt
-    // f3: FOL formula that if addr is found in x._uwt (searched from the latest),
-    // the values are equal
+    // f3: FOL formula that if addr is found in x._uwt, the values are equal
     z3::expr f3 = string_to_expr("true");
     for (int j = x._uwt.addr.size() - 1; j >= 0; j--) {
-      f3 = f3 && z3::implies(latest_write_addr(j, x._uwt) && (addr == x._uwt.addr[j]),
-                             val == x._uwt.val[j]);
+      f3 = f3 && z3::implies(addr == x._uwt.addr[j], val == x._uwt.val[j]);
     }
     f = f && z3::implies(f1, f2 && f3);
   }
