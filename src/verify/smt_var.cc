@@ -25,7 +25,7 @@ smt_wt& smt_wt::operator=(const smt_wt &rhs) {
 
 bool smt_wt::operator==(const smt_wt &rhs) {
   bool res = (addr.size() == rhs.addr.size()) &&
-              (val.size() == rhs.val.size());
+             (val.size() == rhs.val.size());
   if (! res) return res;
   for (int i = 0; i < addr.size(); i++) {
     res = res && is_equal(addr[i], rhs.addr[i]) && is_equal(val[i], rhs.val[i]);
