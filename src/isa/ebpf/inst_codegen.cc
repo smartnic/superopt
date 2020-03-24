@@ -92,6 +92,7 @@ z3::expr addrs_in_one_wt_allow_uw(mem_wt& x, mem_wt& y) {
 // make sure the elements in unintialized write table are unique,
 // i.e., for two elements <a1, v1> and <a2, v2> in write table,
 // a1 == a2 => v1 == v2
+// TODO: may need add the logic into read
 z3::expr property_of_uwt(smt_wt& x) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < x.addr.size(); i++) {
