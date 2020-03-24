@@ -38,16 +38,16 @@ class smt_wt {
 class mem_wt {
  public:
   smt_wt _wt; // write table, each element is for write instructions
-  smt_wt _uwt; // uninitalized write table, each element is for read before write instructions
-  bool _allow_uw; // allow read before write
-  mem_wt(bool allow_uw = false) {_allow_uw = allow_uw;}
-  void clear() {_wt.clear(); _uwt.clear();}
+  smt_wt _urt; // uninitalized read table, each element is for read before write instructions
+  bool _allow_ur; // allow read before write
+  mem_wt(bool allow_ur = false) {_allow_ur = allow_ur;}
+  void clear() {_wt.clear(); _urt.clear();}
 };
 
 class smt_mem {
  public:
   mem_wt _stack;
-  smt_mem() {_stack._allow_uw = false;}
+  smt_mem() {_stack._allow_ur = false;}
   void clear() {_stack.clear();}
 };
 

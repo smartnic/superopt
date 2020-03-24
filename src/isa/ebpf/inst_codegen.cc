@@ -58,7 +58,7 @@ z3::expr addrs_in_both_wts(mem_wt& x, mem_wt& y) {
 
 // case: addrs in x._wt but not in y._wt and not allow read before write
 // return the FOL formula that if these addrs are found, the result is false
-z3::expr addrs_in_one_wt_not_allow_uw(mem_wt& x, mem_wt& y) {
+z3::expr addrs_in_one_wt_not_allow_ur(mem_wt& x, mem_wt& y) {
   z3::expr f = string_to_expr("true");
   for (int i = x._wt.addr.size() - 1; i >= 0; i--) {
     f = f && z3::implies(addr_not_in_wt(x._wt.addr[i], y._wt), false);
@@ -68,32 +68,32 @@ z3::expr addrs_in_one_wt_not_allow_uw(mem_wt& x, mem_wt& y) {
 
 // case: addrs in x._wt but not in y._wt and allow read before write
 // return the FOL formula that if these addrs are found, they should be
-// found in the x._uwt and the values corresponding to the same addrs found in
-// the x._wt and x._uwt should be the same.
-z3::expr addrs_in_one_wt_allow_uw(mem_wt& x, mem_wt& y) {
+// found in the x._urt and the values corresponding to the same addrs found in
+// the x._wt and x._urt should be the same.
+z3::expr addrs_in_one_wt_allow_ur(mem_wt& x, mem_wt& y) {
   z3::expr f = string_to_expr("true");
   for (int i = x._wt.addr.size() - 1; i >= 0; i--) {
     z3::expr addr = x._wt.addr[i];
     z3::expr val = x._wt.val[i];
     // f1: FOL formula that addr(latest_write_addr) \in x._wt.addr, \notin y.wt.addr
     z3::expr f1 = latest_write_addr(i, x._wt) && addr_not_in_wt(addr, y._wt);
-    // f2: FOL formula that addr must in x._uwt
-    z3::expr f2 = !(addr_not_in_wt(addr, x._uwt)); // addr in x._uwt
-    // f3: FOL formula that if addr is found in x._uwt, the values are equal
+    // f2: FOL formula that addr must in x._urt
+    z3::expr f2 = !(addr_not_in_wt(addr, x._urt)); // addr in x._urt
+    // f3: FOL formula that if addr is found in x._urt, the values are equal
     z3::expr f3 = string_to_expr("true");
-    for (int j = x._uwt.addr.size() - 1; j >= 0; j--) {
-      f3 = f3 && z3::implies(addr == x._uwt.addr[j], val == x._uwt.val[j]);
+    for (int j = x._urt.addr.size() - 1; j >= 0; j--) {
+      f3 = f3 && z3::implies(addr == x._urt.addr[j], val == x._urt.val[j]);
     }
     f = f && z3::implies(f1, f2 && f3);
   }
   return f;
 }
 
-// make sure the elements in unintialized write table are unique,
+// make sure the elements in unintialized read table are unique,
 // i.e., for two elements <a1, v1> and <a2, v2> in write table,
 // a1 == a2 => v1 == v2
 // TODO: may need add the logic into read
-z3::expr property_of_uwt(smt_wt& x) {
+z3::expr property_of_urt(smt_wt& x) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < x.addr.size(); i++) {
     for (int j = x.addr.size() - 1; j > i; j--) {
@@ -108,16 +108,16 @@ z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y) {
   z3::expr f = addrs_in_both_wts(x, y);
   // case 2.1 addr(latest_write_addr) \in x._wt.addr, \notin y._wt.addr and
   // do not allow read before write
-  if ((! x._allow_uw) || (! y._allow_uw)) {
-    f = f && addrs_in_one_wt_not_allow_uw(x, y)
-        && addrs_in_one_wt_not_allow_uw(y, x);
+  if ((! x._allow_ur) || (! y._allow_ur)) {
+    f = f && addrs_in_one_wt_not_allow_ur(x, y)
+        && addrs_in_one_wt_not_allow_ur(y, x);
     return f;
   }
   // case2.2 addr(latest_write_addr) \in x._wt.addr, \notin y._wt.addr and
   // allow read before write
-  f = f && (addrs_in_one_wt_allow_uw(x, y) && addrs_in_one_wt_allow_uw(y, x));
-  // add the property of unintialized write table
-  f = z3::implies(property_of_uwt(x._uwt) && property_of_uwt(y._uwt), f);
+  f = f && (addrs_in_one_wt_allow_ur(x, y) && addrs_in_one_wt_allow_ur(y, x));
+  // add the property of unintialized read table
+  f = z3::implies(property_of_urt(x._urt) && property_of_urt(y._urt), f);
   return f;
 }
 

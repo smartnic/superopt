@@ -262,7 +262,7 @@ void test6() {
   print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 1.3");
 
   // case 2.x: addrs in x._wt and in y._wt have different names,
-  // test the logic of addrs_in_one_wt_not_allow_uw
+  // test the logic of addrs_in_one_wt_not_allow_ur
   x.clear();
   y.clear();
   x._wt.add(v("a1"), v("v1"));
@@ -279,8 +279,8 @@ void test6() {
   print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 2.4");
 
   // case 3.x, allow read before write
-  x._allow_uw = true;
-  y._allow_uw = true;
+  x._allow_ur = true;
+  y._allow_ur = true;
   x.clear();
   y.clear();
   expected = string_to_expr("true");
@@ -288,20 +288,20 @@ void test6() {
   x._wt.add(v("a1"), v("v1"));
   expected = string_to_expr("false");
   print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.2");
-  x._uwt.add(v("a1"), v("v1"));
+  x._urt.add(v("a1"), v("v1"));
   expected = string_to_expr("true");
   print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.3");
-  x._uwt.clear();
-  x._uwt.add(v("a2"), v("v2"));
+  x._urt.clear();
+  x._urt.add(v("a2"), v("v2"));
   expected = (v("a1") == v("a2")) && (v("v1") == v("v2"));
   print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.4");
 
-  // case 4.x, test the property of _uwt (uninitilized write table)
+  // case 4.x, test the property of _urt (uninitilized read table)
   x.clear();
   x._wt.add(v("a1"), v("v1"));
-  // the property of _uwt ensures that v("v1") == v("v2")
-  x._uwt.add(v("a1"), v("v1"));
-  x._uwt.add(v("a1"), v("v2"));
+  // the property of _urt ensures that v("v1") == v("v2")
+  x._urt.add(v("a1"), v("v1"));
+  x._urt.add(v("a1"), v("v2"));
   y._wt.add(v("a1"), v("v2"));
   expected = string_to_expr("true");
   print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 4.1");
