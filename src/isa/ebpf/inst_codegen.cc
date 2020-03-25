@@ -49,6 +49,10 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out
 
   if (m._stack._allow_ur) {
     f = f && read_addr_not_in_wt(a, out, m._stack);
+  } else {
+    // add the safety check: if _allow_ur is false and cannot found the "a"
+    // in the write table, it implies false
+    f = f && z3::implies(addr_not_in_wt(a, m._stack._wt), string_to_expr("false"));
   }
 
   return f;
@@ -91,16 +95,6 @@ z3::expr addrs_in_both_wts(mem_wt& x, mem_wt& y) {
   return f;
 }
 
-// case: addrs in x._wt but not in y._wt and not allow read before write
-// return the FOL formula that if these addrs are found, the result is false
-z3::expr addrs_in_one_wt_not_allow_ur(mem_wt& x, mem_wt& y) {
-  z3::expr f = string_to_expr("true");
-  for (int i = x._wt.addr.size() - 1; i >= 0; i--) {
-    f = f && z3::implies(addr_not_in_wt(x._wt.addr[i], y._wt), false);
-  }
-  return f;
-}
-
 // case: addrs in x._wt but not in y._wt and allow read before write
 // return the FOL formula that if these addrs are found, they should be
 // found in the x._urt and the values corresponding to the same addrs found in
@@ -128,12 +122,9 @@ z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y) {
   // case1 addr(latest_write_addr) \in x._wt.addr, \in y._wt.addr
   z3::expr f = addrs_in_both_wts(x, y);
   // case 2.1 addr(latest_write_addr) \in x._wt.addr, \notin y._wt.addr and
-  // do not allow read before write
-  if ((! x._allow_ur) || (! y._allow_ur)) {
-    f = f && addrs_in_one_wt_not_allow_ur(x, y)
-        && addrs_in_one_wt_not_allow_ur(y, x);
-    return f;
-  }
+  // do not allow read before write, this case implies false. Since this case has 
+  // been checked by safety check, do not need to check this here
+
   // case2.2 addr(latest_write_addr) \in x._wt.addr, \notin y._wt.addr and
   // allow read before write
   f = f && (addrs_in_one_wt_allow_ur(x, y) && addrs_in_one_wt_allow_ur(y, x));
