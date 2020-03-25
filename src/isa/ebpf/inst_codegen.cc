@@ -124,20 +124,6 @@ z3::expr addrs_in_one_wt_allow_ur(mem_wt& x, mem_wt& y) {
   return f;
 }
 
-// make sure the elements in unintialized read table are unique,
-// i.e., for two elements <a1, v1> and <a2, v2> in write table,
-// a1 == a2 => v1 == v2
-// TODO: may need add the logic into read
-z3::expr property_of_urt(smt_wt& x) {
-  z3::expr f = string_to_expr("true");
-  for (int i = 0; i < x.addr.size(); i++) {
-    for (int j = x.addr.size() - 1; j > i; j--) {
-      f = f && z3::implies(x.addr[i] == x.addr[j], x.val[i] == x.val[j]);
-    }
-  }
-  return f;
-}
-
 z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y) {
   // case1 addr(latest_write_addr) \in x._wt.addr, \in y._wt.addr
   z3::expr f = addrs_in_both_wts(x, y);
@@ -151,8 +137,6 @@ z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y) {
   // case2.2 addr(latest_write_addr) \in x._wt.addr, \notin y._wt.addr and
   // allow read before write
   f = f && (addrs_in_one_wt_allow_ur(x, y) && addrs_in_one_wt_allow_ur(y, x));
-  // add the property of unintialized read table
-  f = z3::implies(property_of_urt(x._urt) && property_of_urt(y._urt), f);
   return f;
 }
 

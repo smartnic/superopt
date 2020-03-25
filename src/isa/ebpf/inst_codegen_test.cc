@@ -295,16 +295,6 @@ void test6() {
   x._urt.add(v("a2"), v("v2"));
   expected = (v("a1") == v("a2")) && (v("v1") == v("v2"));
   print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.4");
-
-  // case 4.x, test the property of _urt (uninitilized read table)
-  x.clear();
-  x._wt.add(v("a1"), v("v1"));
-  // the property of _urt ensures that v("v1") == v("v2")
-  x._urt.add(v("a1"), v("v1"));
-  x._urt.add(v("a1"), v("v2"));
-  y._wt.add(v("a1"), v("v2"));
-  expected = string_to_expr("true");
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 4.1");
 }
 
 void test7() {
