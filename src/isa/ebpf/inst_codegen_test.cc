@@ -307,6 +307,31 @@ void test6() {
   print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 4.1");
 }
 
+void test7() {
+  cout << "Test 6: Uninitialized read in ld" << endl;
+  smt_mem m;
+  // modify to make stack allow read before write
+  m._stack._allow_ur = true;
+  m._stack._wt.add(v("a1"), v("v1"));
+  // test ld: the address which is in the wt
+  z3::expr f = predicate_ld_byte(v("a1"), v(0), m, v("v1"));
+  print_test_res(is_valid(string_to_expr("true") == f), "uninitialized read 1");
+  f = predicate_ld_byte(v("a2"), v(0), m, v("v2"));
+  // test ld: the address may be in the wt, but not in the urt
+  z3::expr f_expected = z3::implies(v("a1") == v("a2"), v("v1") == v("v2"));
+  print_test_res(is_valid(f_expected == f), "uninitialized read 2");
+  // test ld: the address may be in the wt, must be in the urt
+  m._stack._urt.add(v("a2"), v("v2"));
+  f = predicate_ld_byte(v("a2"), v(0), m, v("v2"));
+  f_expected = z3::implies(v("a1") == v("a2"), v("v1") == v("v2"));
+  print_test_res(is_valid(f_expected == f), "uninitialized read 3");
+  // test ld: the address may be in the wt or in the urt
+  f = predicate_ld_byte(v("a3"), v(0), m, v("v3"));
+  f_expected = z3::implies(v("a1") == v("a3"), v("v1") == v("v3")) &&
+               z3::implies((v("a1") != v("a3")) && (v("a2") == v("a3")), v("v2") == v("v3"));
+  print_test_res(is_valid(f_expected == f), "uninitialized read 4");
+}
+
 int main() {
   test1();
   test2();
@@ -314,6 +339,7 @@ int main() {
   test4();
   test5();
   test6();
+  test7();
 
   return 0;
 }

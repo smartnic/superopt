@@ -2,11 +2,41 @@
 
 using namespace std;
 
+z3::expr latest_write_addr(int idx, smt_wt& x);
+z3::expr addr_not_in_wt(z3::expr& addr, smt_wt& x);
+
 void predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m) {
   m._stack._wt.add(addr + off, in.extract(7, 0));
 }
 
-// Assume the input is safe, eg. addr+off can be found in s.addr
+z3::expr read_addr_not_in_wt(z3::expr a, z3::expr v, mem_wt& x) {
+  z3::expr f = string_to_expr("true");
+  x._urt.add(a, v);
+  // add constrains on the new symbolic value "v" according to the following cases:
+  // case 1: "a" can be found in x._wt(addr1).
+  // if addr1 is the latest write address in x._wt and a is equal to addr1,
+  // it implies v is equal to the value of addr1
+  for (int i = x._wt.addr.size() - 1; i >= 0; i--) {
+    f = f && z3::implies(latest_write_addr(i, x._wt) &&
+                         (a == x._wt.addr[i]),
+                         v == x._wt.val[i]);
+
+  }
+  // case 2: "a" cannot be found in x._wt, but x._urt(addr1).
+  // if there is no address equal to a in x._wt and addr1 in x._urt is equal to
+  // a, it implies v is equal to the value of addr1
+  z3::expr f2 = string_to_expr("true");
+  z3::expr f3 = addr_not_in_wt(a, x._wt);
+  // "-2" is to skip the latest add just now
+  for (int i = x._urt.addr.size() - 2; i >= 0; i--) {
+    f2 = f2 && z3::implies(f3 && (a == x._urt.addr[i]), v == x._urt.val[i]);
+  }
+  f = f && f2;
+  // case 3: "a" cannot be found in x._wt or x._urt.
+  // there is no constrains on the new symbolic value "v"
+  return f;
+}
+
 z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out) {
   smt_wt *s = &m._stack._wt;
   z3::expr a = addr + off;
@@ -16,6 +46,11 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out
     f = f && z3::implies((!c) && (a == s->addr[i]), out == s->val[i]);
     c = c || (a == s->addr[i]);
   }
+
+  if (m._stack._allow_ur) {
+    f = f && read_addr_not_in_wt(a, out, m._stack);
+  }
+
   return f;
 }
 
