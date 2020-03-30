@@ -39,16 +39,15 @@ class mem_wt {
  public:
   smt_wt _wt; // write table, each element is for write instructions
   smt_wt _urt; // uninitalized read table, each element is for read before write instructions
-  bool _allow_ur; // allow read before write
-  mem_wt(bool allow_ur = false) {_allow_ur = allow_ur;}
   void clear() {_wt.clear(); _urt.clear();}
 };
 
 class smt_mem {
  public:
-  mem_wt _stack;
-  smt_mem() {_stack._allow_ur = false;}
-  void clear() {_stack.clear();}
+  mem_wt _mem_table;
+
+  smt_mem() {}
+  void clear() {_mem_table.clear();}
 };
 
 // SMT Variable format
@@ -71,4 +70,19 @@ class smt_var {
   z3::expr get_cur_reg_var(unsigned int reg_id);
   z3::expr get_init_reg_var(unsigned int reg_id);
   void clear();
+};
+
+class mem_range {
+ public:
+  z3::expr start = string_to_expr("true"); // start address, 64-bit bitvector
+  z3::expr end = string_to_expr("true"); // end address, 64-bit bitvector
+  void set_range(z3::expr s, z3::expr e) {
+    start = s;
+    end = e;
+  }
+};
+
+class mem_info {
+ public:
+  mem_range _stack;
 };

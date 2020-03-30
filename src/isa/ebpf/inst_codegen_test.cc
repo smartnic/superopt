@@ -176,147 +176,120 @@ void test5() {
   vector<z3::expr> offs = {v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7)};
   vector<uint8_t> vals = {0x12, 0x34};
   z3::expr addr = v((uint64_t)0xff12000000001234);
+  mem_info m_info;
+  m_info._stack.set_range(addr, addr + 511);
   smt_mem m;
-  smt_wt *s = &m._stack._wt;
+  smt_wt *s = &m._mem_table._wt;
   // (write addr+off, 8, in, s)
   // out == (read addr+off, 8, s)
   predicate_st8(v(vals[0]), addr, offs[0], m);
   z3::expr smt = (s->addr[0] == (addr + offs[0])) && (s->val[0] == to_expr(vals[0], 8));
   print_test_res(is_valid(smt), "predicate_st8 1");
-  smt = predicate_ld8(addr, offs[0], m, v(vals[0]));
+  smt = predicate_ld8(addr, offs[0], m, v(vals[0]), m_info);
   print_test_res(is_valid(smt), "predicate_ld8 1");
 
   predicate_st8(v(vals[1]), addr, offs[1], m);
   smt = (s->addr[1] == (addr + offs[1])) && (s->val[1] == to_expr(vals[1], 8));
   print_test_res(is_valid(smt), "predicate_st8 2");
-  smt = predicate_ld8(addr, offs[1], m, v(vals[1]));
+  smt = predicate_ld8(addr, offs[1], m, v(vals[1]), m_info);
   print_test_res(is_valid(smt), "predicate_ld8 2");
 
   // test rewrite
   predicate_st8(v(vals[1]), addr, offs[0], m);
   smt = (s->addr[2] == (addr + offs[0])) && (s->val[2] == to_expr(vals[1], 8));
   print_test_res(is_valid(smt), "predicate_st8 3");
-  smt = predicate_ld8(addr, offs[0], m, v(vals[1]));
+  smt = predicate_ld8(addr, offs[0], m, v(vals[1]), m_info);
   print_test_res(is_valid(smt), "predicate_ld8 3");
   s->clear();
 
   // test st16 && ld16
   uint64_t x = 0x0123456789abcdef;
   predicate_st16(v(x), addr, offs[0], m);
-  smt = predicate_ld8(addr, offs[0], m, v(x & 0xff)) &&
-        predicate_ld8(addr, offs[1], m, v((x >> 8) & 0xff));
+  smt = predicate_ld8(addr, offs[0], m, v(x & 0xff), m_info) &&
+        predicate_ld8(addr, offs[1], m, v((x >> 8) & 0xff), m_info);
   print_test_res(is_valid(smt), "predicate_st16/ld8");
-  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff));
+  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff), m_info);
   print_test_res(is_valid(smt), "predicate_st16/ld16");
   s->clear();
   predicate_st8(v(x), addr, offs[0], m);
   predicate_st8(v(x >> 8), addr, offs[1], m);
-  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff));
+  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff), m_info);
   print_test_res(is_valid(smt), "predicate_st8/ld16");
   s->clear();
 
   // test st32 && ld32
   predicate_st32(v(x), addr, offs[0], m);
-  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff)) &&
-        predicate_ld16(addr, offs[2], m, v((x >> 16) & 0xffff));
+  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff), m_info) &&
+        predicate_ld16(addr, offs[2], m, v((x >> 16) & 0xffff), m_info);
   print_test_res(is_valid(smt), "predicate_st32/ld16");
-  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff));
+  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff), m_info);
   print_test_res(is_valid(smt), "predicate_st32/ld32");
   s->clear();
   predicate_st16(v(x), addr, offs[0], m);
   predicate_st16(v(x >> 16), addr, offs[2], m);
-  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff));
+  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff), m_info);
   print_test_res(is_valid(smt), "predicate_st16/ld32");
   s->clear();
 
   // test st64 && ld64
   predicate_st64(v(x), addr, offs[0], m);
-  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff)) &&
-        predicate_ld32(addr, offs[4], m, v((x >> 32) & 0xffffffff));
+  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff), m_info) &&
+        predicate_ld32(addr, offs[4], m, v((x >> 32) & 0xffffffff), m_info);
   print_test_res(is_valid(smt), "predicate_st64/ld32");
-  smt = predicate_ld64(addr, offs[0], m, v(x));
+  smt = predicate_ld64(addr, offs[0], m, v(x), m_info);
   print_test_res(is_valid(smt), "predicate_st64/ld64");
   s->clear();
   predicate_st32(v(x), addr, offs[0], m);
   predicate_st32(v(x >> 32), addr, offs[4], m);
-  smt = predicate_ld64(addr, offs[0], m, v(x));
+  smt = predicate_ld64(addr, offs[0], m, v(x), m_info);
   print_test_res(is_valid(smt), "predicate_st32/ld64");
   s->clear();
 }
 
-// z3::expr predicate_mem_eq_chk(mem_wt& x, mem_wt& y);
 void test6() {
   cout << "Test 6: Memory output equivalence check" << endl;
-  mem_wt x(false), y(false);
-  // case 1.x: x._wt is the same as y._wt
+  mem_info m_info;
+  z3::expr stack_s = v((uint64_t)0xff12000000001234);
+  z3::expr stack_e = stack_s + 511;
+  m_info._stack.set_range(stack_s, stack_e);
+  mem_wt x, y;
+  // case 1.x: x is the same as y
   z3::expr expected = string_to_expr("true");
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 1.1");
-  x._wt.add(v("a1"), v("v1"));
+  print_test_res(is_valid(smt_stack_eq_chk(x._wt, y._wt, m_info._stack) == expected), "stack output 1.1");
+  x._wt.add(stack_s, v("v1"));
   y._wt = x._wt;
   expected = string_to_expr("true");
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 1.2");
-  x._wt.add(v("a2"), v("v2"));
-  x._wt.add(v("a3"), v("v3"));
+  print_test_res(is_valid(smt_stack_eq_chk(x._wt, y._wt, m_info._stack) == expected), "stack output 1.2");
+  x._wt.add(stack_s + 1, v("v2"));
+  x._wt.add(stack_s + 2, v("v3"));
   y._wt = x._wt;
   expected = string_to_expr("true");
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 1.3");
-
-  // case 2.x: addrs in x._wt and in y._wt have different names,
-  // test the logic of addrs_in_one_wt_not_allow_ur
-  x.clear();
-  y.clear();
-  x._wt.add(v("a1"), v("v1"));
+  print_test_res(is_valid(smt_stack_eq_chk(x._wt, y._wt, m_info._stack) == expected), "stack output 1.3");
+  y._wt.add(stack_s + 3, v("v4"));
   expected = string_to_expr("false");
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 2.1");
-  y._wt.add(v("a2"), v("v2"));
-  expected = (v("a1") == v("a2")) && (v("v1") == v("v2"));
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 2.2");
-  x._wt.add(v("a2"), v("v2"));
-  expected = (v("a1") == v("a2"));
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 2.3");
-  y._wt.add(v("a1"), v("v1"));
-  expected = z3::implies(v("a1") == v("a2"), v("v1") == v("v2"));
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 2.4");
-
-  // case 3.x, allow read before write
-  x._allow_ur = true;
-  y._allow_ur = true;
-  x.clear();
-  y.clear();
-  expected = string_to_expr("true");
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.1");
-  x._wt.add(v("a1"), v("v1"));
-  expected = string_to_expr("false");
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.2");
-  x._urt.add(v("a1"), v("v1"));
-  expected = string_to_expr("true");
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.3");
-  x._urt.clear();
-  x._urt.add(v("a2"), v("v2"));
-  expected = (v("a1") == v("a2")) && (v("v1") == v("v2"));
-  print_test_res(is_valid(predicate_mem_eq_chk(x, y) == expected), "memory output 3.4");
+  print_test_res(is_valid(smt_stack_eq_chk(x._wt, y._wt, m_info._stack) == expected), "stack output 1.4");
 }
 
 void test7() {
   cout << "Test 6: Uninitialized read in ld" << endl;
+  mem_info m_info;
   smt_mem m;
   // modify to make stack allow read before write
-  m._stack._allow_ur = true;
-  m._stack._wt.add(v("a1"), v("v1"));
+  m._mem_table._wt.add(v("a1"), v("v1"));
   // test ld: the address which is in the wt
-  z3::expr f = predicate_ld_byte(v("a1"), v(0), m, v("v1"));
+  z3::expr f = predicate_ld_byte(v("a1"), v(0), m, v("v1"), m_info);
   print_test_res(is_valid(string_to_expr("true") == f), "uninitialized read 1");
-  f = predicate_ld_byte(v("a2"), v(0), m, v("v2"));
+  f = predicate_ld_byte(v("a2"), v(0), m, v("v2"), m_info);
   // test ld: the address may be in the wt, but not in the urt
   z3::expr f_expected = z3::implies(v("a1") == v("a2"), v("v1") == v("v2"));
   print_test_res(is_valid(f_expected == f), "uninitialized read 2");
   // test ld: the address may be in the wt, must be in the urt
-  m._stack._urt.add(v("a2"), v("v2"));
-  f = predicate_ld_byte(v("a2"), v(0), m, v("v2"));
+  m._mem_table._urt.add(v("a2"), v("v2"));
+  f = predicate_ld_byte(v("a2"), v(0), m, v("v2"), m_info);
   f_expected = z3::implies(v("a1") == v("a2"), v("v1") == v("v2"));
   print_test_res(is_valid(f_expected == f), "uninitialized read 3");
   // test ld: the address may be in the wt or in the urt
-  f = predicate_ld_byte(v("a3"), v(0), m, v("v3"));
+  f = predicate_ld_byte(v("a3"), v(0), m, v("v3"), m_info);
   f_expected = z3::implies(v("a1") == v("a3"), v("v1") == v("v3")) &&
                z3::implies((v("a1") != v("a3")) && (v("a2") == v("a3")), v("v2") == v("v3"));
   print_test_res(is_valid(f_expected == f), "uninitialized read 4");
@@ -329,7 +302,7 @@ int main() {
   test4();
   test5();
   test6();
-  test7();
+  // test7();
 
   return 0;
 }
