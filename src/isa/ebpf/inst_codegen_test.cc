@@ -271,28 +271,39 @@ void test6() {
 }
 
 void test7() {
-  cout << "Test 6: Uninitialized read in ld" << endl;
+  cout << "Test 7: Uninitialized read in ld" << endl;
   mem_info m_info;
+  z3::expr stack_s = v((uint64_t)0xff12000000001234);
+  z3::expr stack_e = stack_s + 511;
+  m_info._stack.set_range(stack_s, stack_e);
+  z3::expr map_s = stack_e + 1;
+  z3::expr map_e = stack_e + 512;
+  m_info.add_map(map_s, map_e);
   smt_mem m;
-  // modify to make stack allow read before write
-  m._mem_table._wt.add(v("a1"), v("v1"));
-  // test ld: the address which is in the wt
-  z3::expr f = predicate_ld_byte(v("a1"), v(0), m, v("v1"), m_info);
-  print_test_res(is_valid(string_to_expr("true") == f), "uninitialized read 1");
-  f = predicate_ld_byte(v("a2"), v(0), m, v("v2"), m_info);
-  // test ld: the address may be in the wt, but not in the urt
-  z3::expr f_expected = z3::implies(v("a1") == v("a2"), v("v1") == v("v2"));
-  print_test_res(is_valid(f_expected == f), "uninitialized read 2");
-  // test ld: the address may be in the wt, must be in the urt
-  m._mem_table._urt.add(v("a2"), v("v2"));
-  f = predicate_ld_byte(v("a2"), v(0), m, v("v2"), m_info);
-  f_expected = z3::implies(v("a1") == v("a2"), v("v1") == v("v2"));
-  print_test_res(is_valid(f_expected == f), "uninitialized read 3");
-  // test ld: the address may be in the wt or in the urt
-  f = predicate_ld_byte(v("a3"), v(0), m, v("v3"), m_info);
-  f_expected = z3::implies(v("a1") == v("a3"), v("v1") == v("v3")) &&
-               z3::implies((v("a1") != v("a3")) && (v("a2") == v("a3")), v("v2") == v("v3"));
-  print_test_res(is_valid(f_expected == f), "uninitialized read 4");
+  z3::expr v1 = v(0xff);
+
+  // stack safety check, read before write within stack address range implies "false"
+  print_test_res(is_valid(predicate_ld8(stack_s, v(0), m, v1, m_info) == string_to_expr("false")),
+                 "safety check 1");
+  predicate_st8(v1, stack_s, v(0), m);
+  print_test_res(is_valid(predicate_ld8(stack_s, v(0), m, v1, m_info) == string_to_expr("true")),
+                 "safety check 2");
+  print_test_res(is_valid(predicate_ld8(stack_s, v(8), m, v1, m_info) == string_to_expr("false")),
+                 "safety check 3");
+  print_test_res(is_valid(predicate_ld8(stack_s, v(511), m, v1, m_info) == string_to_expr("false")),
+                 "safety check 4");
+  print_test_res(is_valid(predicate_ld8(stack_s, v(512), m, v1, m_info) == string_to_expr("true")),
+                 "safety check 5");
+
+  // test constrain on URT element (addr within map address range)
+  // if addr cannot be found in the WT but found in URT,
+  // the value in element is equal to the value(s) of the addr(s) in URT
+  m.clear();
+  predicate_ld8(map_s, v(0), m, v1, m_info);
+  print_test_res(is_valid(predicate_ld8(map_s, v(0), m, v1, m_info) == string_to_expr("true")),
+                 "URT element constrain 1");
+  print_test_res(is_valid(predicate_ld8(map_s, v(0), m, v(0xfe), m_info) == string_to_expr("false")),
+                 "URT element constrain 2");
 }
 
 int main() {
@@ -302,7 +313,7 @@ int main() {
   test4();
   test5();
   test6();
-  // test7();
+  test7();
 
   return 0;
 }

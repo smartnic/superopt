@@ -19,12 +19,9 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, mem_wt& x) {
   // case 1: "a" can be found in x._wt(addr1).
   // if addr1 is the latest write address in x._wt and a is equal to addr1,
   // it implies v is equal to the value of addr1
-  for (int i = x._wt.addr.size() - 1; i >= 0; i--) {
-    f = f && z3::implies(latest_write_addr(i, x._wt) &&
-                         (a == x._wt.addr[i]),
-                         v == x._wt.val[i]);
+  // The constrains of this case can be removed, since if the addr exists in the memory WT,
+  // the value in that address is read from WT but not URT.
 
-  }
   // case 2: "a" cannot be found in x._wt, but x._urt(addr1).
   // if there is no address equal to a in x._wt and addr1 in x._urt is equal to
   // a, it implies v is equal to the value of addr1

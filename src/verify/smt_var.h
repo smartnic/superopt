@@ -76,6 +76,11 @@ class mem_range {
  public:
   z3::expr start = string_to_expr("true"); // start address, 64-bit bitvector
   z3::expr end = string_to_expr("true"); // end address, 64-bit bitvector
+  mem_range() {}
+  mem_range(z3::expr s, z3::expr e) {
+    start = s;
+    end = e;
+  }
   void set_range(z3::expr s, z3::expr e) {
     start = s;
     end = e;
@@ -85,4 +90,7 @@ class mem_range {
 class mem_info {
  public:
   mem_range _stack;
+  vector<mem_range> _maps;
+
+  void add_map(z3::expr s, z3::expr e) {_maps.push_back(mem_range(s, e));}
 };
