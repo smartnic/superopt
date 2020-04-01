@@ -12,6 +12,8 @@ using namespace std;
 // reference: https://github.com/Z3Prover/z3/blob/master/src/api/python/z3/z3.py
 extern z3::context smt_c;
 
+#define NULL_ADDR to_expr(0)
+
 // convert string s into expr e
 // if e = "true"/"false" the type of e is bool_val
 // else the type of e is int_const
@@ -42,12 +44,33 @@ class mem_wt {
   void clear() {_wt.clear(); _urt.clear();}
 };
 
+class smt_map_wt {
+ public:
+  vector<z3::expr> addr_map; // 64-bit bitvector
+  vector<z3::expr> key;
+  vector<z3::expr> addr_v;
+  void add(z3::expr a, z3::expr k, z3::expr v) {
+    addr_map.push_back(a);
+    key.push_back(k);
+    addr_v.push_back(v);
+  }
+  void clear() {addr_map.clear(); key.clear(); addr_v.clear();}
+};
+
+class map_wt {
+ public:
+  smt_map_wt _wt;
+  smt_map_wt _urt;
+  void clear() {_wt.clear(); _urt.clear();}
+};
+
 class smt_mem {
  public:
   mem_wt _mem_table;
+  map_wt _map_table;
 
   smt_mem() {}
-  void clear() {_mem_table.clear();}
+  void clear() {_mem_table.clear(); _map_table.clear();}
 };
 
 // SMT Variable format
@@ -87,7 +110,7 @@ class mem_range {
   }
 };
 
-class mem_info {
+class mem_layout {
  public:
   mem_range _stack;
   vector<mem_range> _maps;

@@ -35,7 +35,7 @@ bool smt_wt::operator==(const smt_wt &rhs) {
 
 ostream& operator<<(ostream& out, const smt_wt& s) {
   for (int i = 0; i < s.addr.size(); i++) {
-    out << i << ": " << s.addr[i] << " " << s.val[i] << endl;
+    out << i << ": " << s.addr[i].simplify() << " " << s.val[i].simplify() << endl;
   }
   return out;
 }

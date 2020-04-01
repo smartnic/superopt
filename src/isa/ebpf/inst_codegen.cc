@@ -2,8 +2,8 @@
 
 using namespace std;
 
-z3::expr latest_write_addr(int idx, smt_wt& x);
-z3::expr addr_not_in_wt(z3::expr& addr, smt_wt& x);
+z3::expr latest_write_element(int idx, vector<z3::expr>& x);
+z3::expr addr_not_in_wt(z3::expr& a, vector<z3::expr>& x);
 
 void predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m) {
   m._mem_table._wt.add(addr + off, in.extract(7, 0));
@@ -26,7 +26,7 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, mem_wt& x) {
   // if there is no address equal to a in x._wt and addr1 in x._urt is equal to
   // a, it implies v is equal to the value of addr1
   z3::expr f2 = string_to_expr("true");
-  z3::expr f3 = addr_not_in_wt(a, x._wt);
+  z3::expr f3 = addr_not_in_wt(a, x._wt.addr);
   // "-2" is to skip the latest add just now
   for (int i = x._urt.addr.size() - 2; i >= 0; i--) {
     f2 = f2 && z3::implies(f3 && (a == x._urt.addr[i]), v == x._urt.val[i]);
@@ -37,7 +37,7 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, mem_wt& x) {
   return f;
 }
 
-z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_info& m_info) {
+z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout) {
   smt_wt *s = &m._mem_table._wt;
   z3::expr a = addr + off;
   z3::expr c = string_to_expr("false");
@@ -54,28 +54,28 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out
   // safety check
   // address "a" within the memory range that does not allow ur
   // if "a" cannot be found in memory WT, the result is false
-  f = f && z3::implies(addr_in_range(a, m_info._stack.start, m_info._stack.end) &&
-                       addr_not_in_wt(a, m._mem_table._wt),
+  f = f && z3::implies(addr_in_range(a, m_layout._stack.start, m_layout._stack.end) &&
+                       addr_not_in_wt(a, m._mem_table._wt.addr),
                        string_to_expr("false"));
   return f;
 }
 
 // return the FOL formula that x.addr[idx] is the latest addr in x
 // that is, for any i > idx, x.addr[idx] != x.addr[i]
-z3::expr latest_write_addr(int idx, smt_wt& x) {
+z3::expr latest_write_element(int idx, vector<z3::expr>& x) {
   z3::expr f = string_to_expr("true");
-  for (int i = x.addr.size() - 1; i > idx; i--) {
-    f = f && (x.addr[idx] != x.addr[i]);
+  for (int i = x.size() - 1; i > idx; i--) {
+    f = f && (x[idx] != x[i]);
   }
   return f;
 }
 
 // return the FOL formula that addr cannot be found in x
 // that is, for any addr_x in x, addr != addr_x
-z3::expr addr_not_in_wt(z3::expr& addr, smt_wt& x) {
+z3::expr addr_not_in_wt(z3::expr& a, vector<z3::expr>& x) {
   z3::expr f = string_to_expr("true");
-  for (int i = 0; i < x.addr.size(); i++) {
-    f = f && (addr != x.addr[i]);
+  for (int i = 0; i < x.size(); i++) {
+    f = f && (a != x[i]);
   }
   return f;
 }
@@ -84,7 +84,7 @@ z3::expr stack_addr_in_one_wt(smt_wt& x, smt_wt& y, mem_range& r) {
   z3::expr f = string_to_expr("true");
   for (int i = x.addr.size() - 1; i >= 0; i--) {
     f = f && z3::implies(addr_in_range(x.addr[i], r.start, r.end) &&
-                         addr_not_in_wt(x.addr[i], y),
+                         addr_not_in_wt(x.addr[i], y.addr),
                          false);
   }
   return f;
@@ -98,10 +98,10 @@ z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, mem_range& r) {
   z3::expr f_addr_y = string_to_expr("true");
   for (int i = x.addr.size() - 1; i >= 0; i--) {
     f_addr_x = addr_in_range(x.addr[i], r.start, r.end) &&
-               latest_write_addr(i, x);
+               latest_write_element(i, x.addr);
     for (int j = y.addr.size() - 1; j >= 0; j--) {
       f_addr_y = addr_in_range(y.addr[j], r.start, r.end) &&
-                 latest_write_addr(j, y);
+                 latest_write_element(j, y.addr);
       f = f && z3::implies(f_addr_x && f_addr_y && (x.addr[i] == y.addr[j]),
                            x.val[i] == y.val[j]);
     }
@@ -114,18 +114,60 @@ z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, mem_range& r) {
 
 // TODO: in order to test, stack is checked
 // need to modify later, since stack does not need to be checked
-z3::expr smt_mem_eq_chk(smt_mem& x, smt_mem& y, mem_info& m_info) {
-  return smt_stack_eq_chk(x._mem_table._wt, y._mem_table._wt, m_info._stack);
+z3::expr smt_mem_eq_chk(smt_mem& x, smt_mem& y, mem_layout& m_layout) {
+  return smt_stack_eq_chk(x._mem_table._wt, y._mem_table._wt, m_layout._stack);
 }
 
 z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_mem>& mem1,
                             vector<z3::expr>& pc2, vector<smt_mem>& mem2,
-                            mem_info& m_info) {
+                            mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < pc1.size(); i++) {
     for (int j = 0; j < pc2.size(); j++) {
-      f = f && z3::implies((pc1[i] && pc2[j]), smt_mem_eq_chk(mem1[i], mem2[j], m_info));
+      f = f && z3::implies((pc1[i] && pc2[j]), smt_mem_eq_chk(mem1[i], mem2[j], m_layout));
     }
   }
+  return f;
+}
+
+// addr_map_v = map_lookup addr_k addr_map
+z3::expr predicate_map_lookup(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
+                              smt_mem& mem, mem_layout& m_layout, z3::expr k) {
+  z3::expr f = predicate_ld_byte(addr_k, to_expr(0), mem, k, m_layout);
+
+  // case 1: k in the map WT
+  for (int i = mem._map_table._wt.key.size() - 1; i >= 0; i--) {
+    f = f && z3::implies( (addr_map == mem._map_table._wt.addr_map[i]) && // the same map
+                          latest_write_element(i, mem._map_table._wt.key) && // latest write of key-value pair in the map
+                          (k == mem._map_table._wt.key[i]), // the same key
+                          addr_map_v == mem._map_table._wt.addr_v[i]);
+  }
+  return f;
+}
+
+// new variables: k, v, addrs_map_v_next
+z3::expr predicate_map_update(z3::expr addr_map, z3::expr addr_k, z3::expr addr_v,
+                              smt_mem& mem, mem_layout& m_layout,
+                              z3::expr addr_map_v, z3::expr k, z3::expr v,
+                              vector<z3::expr>& addrs_map_v_next) {
+  z3::expr f = predicate_ld_byte(addr_k, to_expr(0), mem, k, m_layout) &&
+               predicate_ld_byte(addr_v, to_expr(0), mem, v, m_layout);
+  for (int i = 0; i < m_layout._maps.size(); i++) {
+    f = f && z3::implies(addr_map == m_layout._maps[i].start, addr_map_v == addrs_map_v_next[i]);
+    addrs_map_v_next[i] = addrs_map_v_next[i] + 1;
+  }
+
+  mem._map_table._wt.add(addr_map, k, addr_map_v);
+  mem._mem_table._wt.add(addr_map_v, v);
+  return f;
+}
+
+// Assume size of k is 1 byte
+z3::expr predicate_map_delete(z3::expr addr_map, z3::expr addr_k,
+                              smt_mem& mem, mem_layout& m_layout, z3::expr k) {
+  // FOL formula of the constrain on "k"
+  z3::expr f = predicate_ld_byte(addr_k, to_expr(0), mem, k, m_layout);
+
+  mem._map_table._wt.add(addr_map, k, NULL_ADDR);
   return f;
 }
