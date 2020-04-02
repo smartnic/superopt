@@ -354,7 +354,8 @@ void test8() {
   // map lookup: get map value address of key *addr_k1 in map, the return value stored in addr_v_lookup_1
   // addr_v_lookup_1 = lookup addr_k1 m
   z3::expr f2 = predicate_map_lookup(map_s, addr_k1, addr_v_lookup_1,
-                                     m, m_layout, new_k());
+                                     m, m_layout, new_k(), new_v(),
+                                     addrs_map_v_next);
   // v_lookup_1 = concat(bv(56, 0), *addr_v_lookup_1)
   z3::expr f3 = predicate_ld8(addr_v_lookup_1, v(0), m, v_lookup_1, m_layout);
   z3::expr f = f1 && f2;
@@ -379,7 +380,8 @@ void test8() {
                            addr_map_v2, new_k(), new_v(),
                            addrs_map_v_next) &&
       predicate_map_lookup(map_s, addr_k1, addr_v_lookup_2,
-                           m, m_layout, new_k()) &&
+                           m, m_layout, new_k(), new_v(),
+                           addrs_map_v_next) &&
       predicate_ld8(addr_v_lookup_2, v(0), m, v_lookup_2, m_layout);
   f_expected = z3::implies(f && (k2 != k1), v_lookup_2.extract(7, 0) == v1);
   print_test_res(is_valid(f_expected), "*(lookup &k1 (update &k2 &v2 (update &k1 &v1 m))) == v1, if k2 != k1");
@@ -391,7 +393,8 @@ void test8() {
   z3::expr addr_v_lookup_3 = v("addr_v_lookup_3");
   f = f &&
       predicate_map_lookup(map_s, addr_k2, addr_v_lookup_3,
-                           m, m_layout, new_k()) &&
+                           m, m_layout, new_k(), new_v(),
+                           addrs_map_v_next) &&
       predicate_ld8(addr_v_lookup_3, v(0), m, v_lookup_3, m_layout);
   f_expected = z3::implies(f, v_lookup_3.extract(7, 0) == v2);
   print_test_res(is_valid(f_expected), "*(lookup &k2 (update &k2 &v2 (update &k1 &v1 m))) == v2");
@@ -401,7 +404,8 @@ void test8() {
   f = f &&
       predicate_map_delete(map_s, addr_k2, m, m_layout, new_k()) &&
       predicate_map_lookup(map_s, addr_k2, addr_v_lookup_4,
-                           m, m_layout, new_k());
+                           m, m_layout, new_k(), new_v(),
+                           addrs_map_v_next);
   f_expected = z3::implies(f, addr_v_lookup_4 == NULL_ADDR);
   print_test_res(is_valid(f_expected), "lookup &k2 (delete &k2 (update &k2 &v2 (update &k1 &v1 m))) == NULL");
 
@@ -410,10 +414,38 @@ void test8() {
   z3::expr addr_v_lookup_5 = v("addr_v_lookup_5");
   f = f &&
       predicate_map_lookup(map_s, addr_k1, addr_v_lookup_5,
-                           m, m_layout, new_k()) &&
+                           m, m_layout, new_k(), new_v(),
+                           addrs_map_v_next) &&
       predicate_ld8(addr_v_lookup_5, v(0), m, v_lookup_5, m_layout);
   f_expected = z3::implies(f && (k1 != k2), v_lookup_5.extract(7, 0) == v1);
   print_test_res(is_valid(f_expected), "*(lookup &k1 (delete &k2 (update &k2 &v2 (update &k1 &v1 m)))) == v1, if k2 != k1");
+
+  // test ur
+  m.clear();
+  addrs_map_v_next[0] = map_s;
+  predicate_st8(k1, addr_k1, v(0), m); // *addr_k1 = k1 (addr_k1 in the stack)
+  predicate_st8(k2, addr_k2, v(0), m); // *addr_k2 = k2 (addr_k2 in the stack)
+  z3::expr v_lookup_6 = v("v_lookup_6");
+  z3::expr addr_v_lookup_6 = v("addr_v_lookup_6");
+  z3::expr v_lookup_7 = v("v_lookup_7");
+  z3::expr addr_v_lookup_7 = v("addr_v_lookup_7");
+  f1 = predicate_map_lookup(map_s, addr_k1, addr_v_lookup_6,
+                            m, m_layout, new_k(), new_v(),
+                            addrs_map_v_next) &&
+       predicate_map_lookup(map_s, addr_k2, addr_v_lookup_7,
+                            m, m_layout, new_k(), new_v(),
+                            addrs_map_v_next);
+  f2 = predicate_ld8(addr_v_lookup_6, v(0), m, v_lookup_6, m_layout) &&
+       predicate_ld8(addr_v_lookup_7, v(0), m, v_lookup_7, m_layout);
+  f_expected = z3::implies(f && (addr_v_lookup_6 == NULL_ADDR), addr_v_lookup_7 == NULL_ADDR);
+  print_test_res(is_valid(f_expected), "(lookup &k1 empty_map) == NULL "\
+                 "=> (lookup &k2 empty_map) == NULL, if k1 == k2");
+  f_expected = z3::implies(f, uge(map_s, addr_v_lookup_6) && uge(addr_v_lookup_6, map_e) &&
+                           uge(map_s, addr_v_lookup_7) && uge(addr_v_lookup_7, map_e));
+  print_test_res(is_valid(f_expected), "a1 = (lookup &k1 empty_map), a2 = (lookup &k2 empty_map), " \
+                 "a1 != NULL => a1 and a2 in map range, if k1 == k2");
+  f_expected = z3::implies(f && f2 && (k1 == k2), v_lookup_6 == v_lookup_7);
+  print_test_res(is_valid(f_expected), "*(lookup &k1 empty_map) == *(lookup &k2 empty_map), if k1 == k2");
 }
 
 int main() {

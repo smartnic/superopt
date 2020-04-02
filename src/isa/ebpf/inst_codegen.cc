@@ -132,7 +132,8 @@ z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_mem>& mem1,
 
 // addr_map_v = map_lookup addr_k addr_map
 z3::expr predicate_map_lookup(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
-                              smt_mem& mem, mem_layout& m_layout, z3::expr k) {
+                              smt_mem& mem, mem_layout& m_layout, z3::expr k, z3::expr v,
+                              vector<z3::expr>& addrs_map_v_next) {
   z3::expr f = predicate_ld_byte(addr_k, to_expr(0), mem, k, m_layout);
 
   // case 1: k in the map WT
@@ -142,6 +143,35 @@ z3::expr predicate_map_lookup(z3::expr addr_map, z3::expr addr_k, z3::expr addr_
                           (k == mem._map_table._wt.key[i]), // the same key
                           addr_map_v == mem._map_table._wt.addr_v[i]);
   }
+
+  // case 2: k not in the map WT
+  // add the constrain of new elements in map URT and mem URT
+  // the addr_map_v is next address of the map value in the specific map
+  for (int i = 0; i < m_layout._maps.size(); i++) {
+    f = f && z3::implies(addr_map == m_layout._maps[i].start,
+                         (addr_map_v == NULL_ADDR) || (addr_map_v == addrs_map_v_next[i]));
+    addrs_map_v_next[i] = addrs_map_v_next[i] + 1;
+  }
+  // constrain: (k not in map WT) && (map == map1) && (k==k1) => (v==v1)
+  z3::expr f1 = string_to_expr("true");
+  z3::expr f2 = addr_not_in_wt(k, mem._map_table._wt.key);
+  for (int i = mem._map_table._urt.key.size() - 1; i >= 0; i--) {
+    z3::expr f3 = f2 && (addr_map == mem._map_table._urt.addr_map[i]) &&
+                  (k == mem._map_table._urt.key[i]);
+    z3::expr addr_vi = mem._map_table._urt.addr_v[i];
+    // both addr_map_v 0 or not 0
+    z3::expr f4 = ((addr_vi == NULL_ADDR) && (addr_map_v == NULL_ADDR)) ||
+                  ((addr_vi != NULL_ADDR) && (addr_map_v != NULL_ADDR));
+    f1 = z3::implies(f3, f4);
+    for (int j = mem._mem_table._urt.addr.size() - 1; j >= 0; j--) {
+      f1 = f1 && z3::implies(f3 && (addr_vi == mem._mem_table._urt.addr[j]),
+                             v == mem._mem_table._urt.val[j]);
+    }
+  }
+  f = f && f1;
+  mem._map_table._urt.add(addr_map, k, addr_map_v);
+  mem._mem_table._urt.add(addr_map_v, v);
+
   return f;
 }
 

@@ -74,7 +74,8 @@ inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr
 // return map lookup FOL formula, addr_v = lookup k map, where k is key,
 // addr_v is the address of key's value, map is the map address
 z3::expr predicate_map_lookup(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
-                              smt_mem& mem, mem_layout& m_layout, z3::expr k);
+                              smt_mem& mem, mem_layout& m_layout, z3::expr k, z3::expr v,
+                              vector<z3::expr>& addrs_map_v_next);
 z3::expr predicate_map_update(z3::expr addr_map, z3::expr addr_k, z3::expr addr_v,
                               smt_mem& mem, mem_layout& m_layout,
                               z3::expr addr_map_v, z3::expr k, z3::expr v,
