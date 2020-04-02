@@ -22,6 +22,9 @@ typedef int op_t;
 #define NUM_REG_BITS 32
 #endif
 
+#define NUM_ADDR_BITS 64
+#define NUM_BYTE_BITS 8
+
 #define NOW chrono::steady_clock::now()
 #define DUR(t1, t2) chrono::duration <double, micro> (t2 - t1).count()
 

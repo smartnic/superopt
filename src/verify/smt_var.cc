@@ -42,6 +42,20 @@ ostream& operator<<(ostream& out, const smt_wt& s) {
 
 /* class smt_wt end */
 
+/* class smt_wt end */
+void smt_mem::init_addrs_map_v_next(mem_layout& m_layout) {
+  for (int i = 0; i < m_layout._maps.size(); i++) {
+    _addrs_map_v_next.push_back(m_layout._maps[i].start);
+  }
+}
+
+z3::expr smt_mem::get_and_update_addr_v_next(int map_id) {
+  z3::expr res = _addrs_map_v_next[map_id];
+  _addrs_map_v_next[map_id] = _addrs_map_v_next[map_id] + 1;
+  return res;
+}
+/* class smt_wt end */
+
 /* class smt_var start */
 smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs) {
   reg_cur_id.resize(num_regs, 0);
@@ -51,6 +65,9 @@ smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_re
     string name = name_prefix + to_string(i) + "_0";
     reg_var.push_back(string_to_expr(name));
   }
+  key_cur_id = 0;
+  val_cur_id = 0;
+  addr_v_cur_id = 0;
 }
 
 smt_var::~smt_var() {
@@ -73,11 +90,32 @@ z3::expr smt_var::get_init_reg_var(unsigned int reg_id) {
   return string_to_expr(name);
 }
 
+z3::expr smt_var::update_key() {
+  key_cur_id++;
+  string name = "k_" + _name + "_" + to_string(key_cur_id);
+  return to_expr(name, NUM_BYTE_BITS);
+}
+
+z3::expr smt_var::update_val() {
+  val_cur_id++;
+  string name = "v_" + _name + "_" + to_string(val_cur_id);
+  return to_expr(name, NUM_BYTE_BITS);
+}
+
+z3::expr smt_var::update_addr_v() {
+  addr_v_cur_id++;
+  string name = "av_" + _name + "_" + to_string(addr_v_cur_id);
+  return to_expr(name, NUM_ADDR_BITS);
+}
+
 void smt_var::clear() {
   for (size_t i = 0; i < reg_var.size(); i++) {
     reg_cur_id[i] = 0;
     string name = "r_" + _name + "_" + to_string(i) + "_0";
     reg_var[i] = string_to_expr(name);
+    key_cur_id = 0;
+    val_cur_id = 0;
+    addr_v_cur_id = 0;
   }
   mem_var.clear();
 }

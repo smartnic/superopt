@@ -24,6 +24,29 @@ z3::expr to_expr(uint64_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(string s, unsigned sz);
 
+class mem_range {
+ public:
+  z3::expr start = string_to_expr("true"); // start address, 64-bit bitvector
+  z3::expr end = string_to_expr("true"); // end address, 64-bit bitvector
+  mem_range() {}
+  mem_range(z3::expr s, z3::expr e) {
+    start = s;
+    end = e;
+  }
+  void set_range(z3::expr s, z3::expr e) {
+    start = s;
+    end = e;
+  }
+};
+
+class mem_layout {
+ public:
+  mem_range _stack;
+  vector<mem_range> _maps;
+
+  void add_map(z3::expr s, z3::expr e) {_maps.push_back(mem_range(s, e));}
+};
+
 class smt_wt {
  private:
   bool is_equal(z3::expr e1, z3::expr e2);
@@ -68,13 +91,19 @@ class smt_mem {
  public:
   mem_wt _mem_table;
   map_wt _map_table;
+  vector<z3::expr> _addrs_map_v_next;
 
   smt_mem() {}
-  void clear() {_mem_table.clear(); _map_table.clear();}
+  void init_addrs_map_v_next(mem_layout& m_layout);
+  z3::expr get_and_update_addr_v_next(int map_id);
+  void clear() {_mem_table.clear(); _map_table.clear(); _addrs_map_v_next.clear();}
 };
 
 // SMT Variable format
 // register: r_[prog_id]_[node_id]_[reg_id]_[version_id]
+// map key: k_[prog_id]_[node_id]_[version_id]
+// map value: v_[prog_id]_[node_id]_[version_id]
+// map address of value: av_[prog_id]_[node_id]_[version_id]
 class smt_var {
  private:
   // _name: [prog_id]_[node_id]
@@ -82,6 +111,8 @@ class smt_var {
   // store the curId
   vector<unsigned int> reg_cur_id;
   vector<z3::expr> reg_var;
+  // store the curId of map related variables
+  unsigned int key_cur_id, val_cur_id, addr_v_cur_id;
  public:
   smt_mem mem_var;
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
@@ -92,28 +123,9 @@ class smt_var {
   z3::expr update_reg_var(unsigned int reg_id);
   z3::expr get_cur_reg_var(unsigned int reg_id);
   z3::expr get_init_reg_var(unsigned int reg_id);
+  // map related functions
+  z3::expr update_key();
+  z3::expr update_val();
+  z3::expr update_addr_v();
   void clear();
-};
-
-class mem_range {
- public:
-  z3::expr start = string_to_expr("true"); // start address, 64-bit bitvector
-  z3::expr end = string_to_expr("true"); // end address, 64-bit bitvector
-  mem_range() {}
-  mem_range(z3::expr s, z3::expr e) {
-    start = s;
-    end = e;
-  }
-  void set_range(z3::expr s, z3::expr e) {
-    start = s;
-    end = e;
-  }
-};
-
-class mem_layout {
- public:
-  mem_range _stack;
-  vector<mem_range> _maps;
-
-  void add_map(z3::expr s, z3::expr e) {_maps.push_back(mem_range(s, e));}
 };
