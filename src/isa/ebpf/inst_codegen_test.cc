@@ -486,7 +486,17 @@ void test8() {
   f = f && predicate_ld8(p1, v(0), sv.mem_var, v_p1, m_layout);
   f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout);
   f_expected = z3::implies(f, (v_p1.extract(7, 0) == v3) && (v_p2.extract(7, 0) == v2));
-  print_test_res(is_valid(f_expected), "modify m1[k1] not change m2[k1]");
+  print_test_res(is_valid(f_expected), "modify m1[k1] not affect m2[k1]");
+
+  z3::expr p3 = v("p3");
+  z3::expr p4 = v("p4");
+  z3::expr v_p4 = v("v_p4");
+  f = f && predicate_map_delete_helper(map_s, addr_k1, sv, m_layout);
+  f = f && predicate_map_lookup_helper(map_s, addr_k1, p3, sv, m_layout);
+  f = f && predicate_map_lookup_helper(map_s_2, addr_k1, p4, sv, m_layout);
+  f = f && predicate_ld8(p4, v(0), sv.mem_var, v_p4, m_layout);
+  f_expected = z3::implies(f, (p3 == NULL_ADDR) && (p4 == p2) && (v_p4.extract(7, 0) == v2));
+  print_test_res(is_valid(f_expected), "delete m1[k1] not affect m2[k1]");
 
   f = predicate_map_update_helper(map_s, addr_k1, addr_v1, sv, m_layout);
   f = f && predicate_map_lookup_helper(map_s_2, addr_k1, p2, sv, m_layout);
