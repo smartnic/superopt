@@ -317,31 +317,31 @@ inline void predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m)
 }
 
 // implemented in inst_codegen.cc
-z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout);
+z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, mem_layout& m_layout);
 
 inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout) {
   return ((out.extract(63, 8) == to_expr(0, 56)) &&
-          predicate_ld_byte(addr, off, m, out.extract(7, 0), m_layout));
+          predicate_ld_byte(addr + off, m, out.extract(7, 0), m_layout));
 }
 
 inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout) {
   return ((out.extract(63, 16) == to_expr(0, 48)) &&
-          predicate_ld_byte(addr, off, m, out.extract(7, 0), m_layout) &&
-          predicate_ld_byte(addr, off + 1, m, out.extract(15, 8), m_layout));
+          predicate_ld_byte(addr + off, m, out.extract(7, 0), m_layout) &&
+          predicate_ld_byte(addr + off + 1, m, out.extract(15, 8), m_layout));
 }
 
 inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout) {
   return ((out.extract(63, 32) == to_expr(0, 32)) &&
-          predicate_ld_byte(addr, off, m, out.extract(7, 0), m_layout) &&
-          predicate_ld_byte(addr, off + 1, m, out.extract(15, 8), m_layout) &&
-          predicate_ld_byte(addr, off + 2, m, out.extract(23, 16), m_layout) &&
-          predicate_ld_byte(addr, off + 3, m, out.extract(31, 24), m_layout));
+          predicate_ld_byte(addr + off, m, out.extract(7, 0), m_layout) &&
+          predicate_ld_byte(addr + off + 1, m, out.extract(15, 8), m_layout) &&
+          predicate_ld_byte(addr + off + 2, m, out.extract(23, 16), m_layout) &&
+          predicate_ld_byte(addr + off + 3, m, out.extract(31, 24), m_layout));
 }
 
 inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout) {
-  z3::expr f = predicate_ld_byte(addr, off, m, out.extract(7, 0), m_layout);
+  z3::expr f = predicate_ld_byte(addr + off, m, out.extract(7, 0), m_layout);
   for (int i = 1; i < 8; i++) {
-    f = f && predicate_ld_byte(addr, off + i, m, out.extract(8 * i + 7, 8 * i), m_layout);
+    f = f && predicate_ld_byte(addr + off + i, m, out.extract(8 * i + 7, 8 * i), m_layout);
   }
   return f;
 }

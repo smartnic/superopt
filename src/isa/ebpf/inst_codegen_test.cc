@@ -172,7 +172,7 @@ void test4() {
 }
 
 void test5() {
-  cout << "Test 5: Stack check" << endl;
+  cout << "Test 5: Memory st/ld check" << endl;
   vector<z3::expr> offs = {v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7)};
   vector<uint8_t> vals = {0x12, 0x34};
   z3::expr addr = v((uint64_t)0xff12000000001234);
@@ -244,6 +244,10 @@ void test5() {
   smt = predicate_ld64(addr, offs[0], m, v(x), m_layout);
   print_test_res(is_valid(smt), "predicate_st32/ld64");
   s->clear();
+
+  // safety check
+  smt = predicate_ld8(NULL_ADDR, v(0), m, v(x), m_layout);
+  print_test_res(is_valid(smt == string_to_expr("false")), "safety check when ld from NULL_ADDR");
 }
 
 void test6() {

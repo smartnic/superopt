@@ -37,9 +37,9 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, mem_wt& x) {
   return f;
 }
 
-z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout) {
+z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, mem_layout& m_layout) {  
   smt_wt *s = &m._mem_table._wt;
-  z3::expr a = addr + off;
+  z3::expr a = addr;
   z3::expr c = string_to_expr("false");
   z3::expr f = string_to_expr("true");
   for (int i = s->addr.size() - 1; i >= 0; i--) {
@@ -57,6 +57,8 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out
   f = f && z3::implies(addr_in_range(a, m_layout._stack.start, m_layout._stack.end) &&
                        addr_not_in_wt(a, m._mem_table._wt.addr),
                        string_to_expr("false"));
+  // if addr + off = 0, the result is false
+  f = f && z3::implies(addr == NULL_ADDR, string_to_expr("false"));
   return f;
 }
 
@@ -144,7 +146,7 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   smt_mem& mem = sv.mem_var;
   z3::expr k = sv.update_key();
   z3::expr v = sv.update_val();
-  z3::expr f = predicate_ld_byte(addr_k, to_expr(0), mem, k, m_layout);
+  z3::expr f = predicate_ld_byte(addr_k, mem, k, m_layout);
 
   // case 1: k in the map WT
   for (int i = mem._map_table._wt.key.size() - 1; i >= 0; i--) {
@@ -182,8 +184,8 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   z3::expr k = sv.update_key();
   z3::expr v = sv.update_val();
   z3::expr addr_map_v = sv.update_addr_v();
-  z3::expr f = predicate_ld_byte(addr_k, to_expr(0), mem, k, m_layout) &&
-               predicate_ld_byte(addr_v, to_expr(0), mem, v, m_layout);
+  z3::expr f = predicate_ld_byte(addr_k, mem, k, m_layout) &&
+               predicate_ld_byte(addr_v, mem, v, m_layout);
   // constrains on "addr_map_v".
   // constrain 1: for each element in map WT,
   // if the key has been added into the same map, the value address is the same as before
@@ -211,7 +213,7 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k,
   smt_mem& mem = sv.mem_var;
   z3::expr k = sv.update_key();
   // FOL formula of the constrain on "k"
-  z3::expr f = predicate_ld_byte(addr_k, to_expr(0), sv.mem_var, k, m_layout);
+  z3::expr f = predicate_ld_byte(addr_k, sv.mem_var, k, m_layout);
 
   mem._map_table._wt.add(addr_map, k, NULL_ADDR);
   return f;
