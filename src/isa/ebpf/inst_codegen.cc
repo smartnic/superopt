@@ -130,6 +130,15 @@ z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_mem>& mem1,
   return f;
 }
 
+z3::expr key_not_in_map_wt(z3::expr addr_map, z3::expr k, smt_map_wt& m_wt) {
+  z3::expr f = string_to_expr("true"); // f1: k not in the map WT
+  for (int i = 0; i < m_wt.key.size(); i++) {
+    f == f && (!((addr_map == m_wt.addr_map[i]) &&
+                 (k == m_wt.key[i])));
+  }
+  return f;
+}
+
 z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
                                      smt_var& sv, mem_layout& m_layout) {
   smt_mem& mem = sv.mem_var;
@@ -146,32 +155,23 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   }
 
   // case 2: k not in the map WT
-  // add the constrain of new elements in map URT and mem URT
-  // the addr_map_v is next address of the map value in the specific map
+  // add the constrain of the new element in map URT
+  // constrain 1: the addr_map_v is next address of the map value in the specific map or NULL
+  // constrain 1 is also for case 1, so do not need to add case 1 condition
   for (int i = 0; i < m_layout._maps.size(); i++) {
     f = f && z3::implies(addr_map == m_layout._maps[i].start,
                          (addr_map_v == NULL_ADDR) ||
                          (addr_map_v == mem.get_and_update_addr_v_next(i)));
   }
-  // constrain: (k not in map WT) && (map == map1) && (k==k1) => (v==v1)
-  z3::expr f1 = string_to_expr("true");
-  z3::expr f2 = addr_not_in_wt(k, mem._map_table._wt.key);
+  // constrain: (k not in map WT) && (map == map_i) && (k == k_i) => addr_v == addr_vi
+  z3::expr f1 = key_not_in_map_wt(addr_map, k, mem._map_table._wt);
   for (int i = mem._map_table._urt.key.size() - 1; i >= 0; i--) {
-    z3::expr f3 = f2 && (addr_map == mem._map_table._urt.addr_map[i]) &&
+    z3::expr f2 = (addr_map == mem._map_table._urt.addr_map[i]) &&
                   (k == mem._map_table._urt.key[i]);
-    z3::expr addr_vi = mem._map_table._urt.addr_v[i];
-    // both addr_map_v 0 or not 0
-    z3::expr f4 = ((addr_vi == NULL_ADDR) && (addr_map_v == NULL_ADDR)) ||
-                  ((addr_vi != NULL_ADDR) && (addr_map_v != NULL_ADDR));
-    f1 = z3::implies(f3, f4);
-    for (int j = mem._mem_table._urt.addr.size() - 1; j >= 0; j--) {
-      f1 = f1 && z3::implies(f3 && (addr_vi == mem._mem_table._urt.addr[j]),
-                             v == mem._mem_table._urt.val[j]);
-    }
+    f = f && z3::implies(f1 && f2, addr_map_v == mem._map_table._urt.addr_v[i]);
   }
   f = f && f1;
   mem._map_table._urt.add(addr_map, k, addr_map_v);
-  mem._mem_table._urt.add(addr_map_v, v);
 
   return f;
 }
@@ -184,13 +184,25 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   z3::expr addr_map_v = sv.update_addr_v();
   z3::expr f = predicate_ld_byte(addr_k, to_expr(0), mem, k, m_layout) &&
                predicate_ld_byte(addr_v, to_expr(0), mem, v, m_layout);
+  // constrains on "addr_map_v".
+  // constrain 1: for each element in map WT,
+  // if the key has been added into the same map, the value address is the same as before
+  // i.e., (addr_map == addr_map_i) && (k == k_i) && (addr_map_v_i != NULL) => addr_map_v == addr_map_v_i
+  for (int i = mem._map_table._wt.key.size() - 1; i >= 0; i--) {
+    smt_map_wt& m_wt = mem._map_table._wt;
+    f = f && z3::implies((addr_map == m_wt.addr_map[i]) && (k == m_wt.key[i]) &&
+                         (m_wt.addr_v[i] == NULL_ADDR),
+                         addr_map_v == m_wt.addr_v[i]);
+  }
+  // constrain 2: if the key has not been added into the same map,
+  // assign a different address to the value address
+  z3::expr f1 = key_not_in_map_wt(addr_map, k, mem._map_table._wt);
   for (int i = 0; i < m_layout._maps.size(); i++) {
-    f = f && z3::implies(addr_map == m_layout._maps[i].start,
+    f = f && z3::implies(f1 && (addr_map == m_layout._maps[i].start),
                          addr_map_v == mem.get_and_update_addr_v_next(i));
   }
-
   mem._map_table._wt.add(addr_map, k, addr_map_v);
-  mem._mem_table._wt.add(addr_map_v, v);
+  predicate_st_byte(v, addr_map_v, to_expr(0), mem);
   return f;
 }
 

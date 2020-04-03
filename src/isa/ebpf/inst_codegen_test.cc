@@ -322,6 +322,7 @@ void test8() {
   m_layout.add_map(map_s, map_e);
   sv.mem_var.init_addrs_map_v_next(m_layout);
 
+  cout << "  1. test properties of lookup after update/delete in map" << endl;
   // test *(lookup &k1 (update &k1 &v1 m))
   z3::expr k1 = to_expr("k1", 8);
   z3::expr v1 = to_expr("v1", 8);
@@ -383,6 +384,7 @@ void test8() {
   print_test_res(is_valid(f_expected), "*(lookup &k1 (delete &k2 (update &k2 &v2 (update &k1 &v1 m)))) == v1, if k2 != k1");
 
   // test ur
+  cout << "  2. test properties of uninitialized lookup in map" << endl;
   sv.clear();
   sv.mem_var.init_addrs_map_v_next(m_layout);
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
@@ -392,18 +394,113 @@ void test8() {
   z3::expr v_lookup_7 = v("v_lookup_7");
   z3::expr addr_v_lookup_7 = v("addr_v_lookup_7");
   z3::expr f1 = predicate_map_lookup_helper(map_s, addr_k1, addr_v_lookup_6, sv, m_layout);
-  f1 = f1 && predicate_map_lookup_helper(map_s, addr_k2, addr_v_lookup_7, sv, m_layout);
-  z3::expr f2 = predicate_ld8(addr_v_lookup_6, v(0), sv.mem_var, v_lookup_6, m_layout);
-  f2 = f2 && predicate_ld8(addr_v_lookup_7, v(0), sv.mem_var, v_lookup_7, m_layout);
-  f_expected = z3::implies(f1 && (k1 == k2) && (addr_v_lookup_6 == NULL_ADDR), addr_v_lookup_7 == NULL_ADDR);
-  print_test_res(is_valid(f_expected), "(lookup &k1 m) == NULL "\
-                 "=> (lookup &k2 m) == NULL, if k1 == k2");
-  f_expected = z3::implies(f1 && (k1 == k2) && uge(map_s, addr_v_lookup_6) && uge(addr_v_lookup_6, map_e),
-                           uge(map_s, addr_v_lookup_7) && uge(addr_v_lookup_7, map_e));
-  print_test_res(is_valid(f_expected), "a1 = (lookup &k1 m), a2 = (lookup &k2 m), " \
-                 "a1 != NULL => a1 and a2 in map range, if k1 == k2");
-  f_expected = z3::implies(f1 && f2 && (k1 == k2), v_lookup_6 == v_lookup_7);
-  print_test_res(is_valid(f_expected), "*(lookup &k1 m) == *(lookup &k2 m), if k1 == k2");
+  z3::expr f2 = predicate_map_lookup_helper(map_s, addr_k2, addr_v_lookup_7, sv, m_layout);
+  z3::expr f3 = predicate_ld8(addr_v_lookup_6, v(0), sv.mem_var, v_lookup_6, m_layout);
+  z3::expr f4 = predicate_ld8(addr_v_lookup_7, v(0), sv.mem_var, v_lookup_7, m_layout);
+
+  cout << "a. address range" << endl;
+  f_expected = z3::implies(f1 && (addr_v_lookup_6 != NULL_ADDR),
+                           (uge(addr_v_lookup_6, map_s) && uge(map_e, addr_v_lookup_6)));
+  print_test_res(is_valid(f_expected), "a = lookup &k1 m, a != NULL => a in map range");
+
+  f_expected = z3::implies(f1 && (!(uge(addr_v_lookup_6, map_s) && uge(map_e, addr_v_lookup_6))),
+                           addr_v_lookup_6 == NULL_ADDR);
+  print_test_res(is_valid(f_expected), "a = lookup &k1 m, a not in map range => a == NULL");
+
+  f_expected = z3::implies(f1 && f2 && (addr_v_lookup_7 != NULL_ADDR),
+                           (uge(addr_v_lookup_7, map_s) && uge(map_e, addr_v_lookup_7)));
+  print_test_res(is_valid(f_expected), "a1 = lookup &k1 m, a2 = lookup &k2 m, "\
+                 "a2 != NULL => a2 in map range");
+
+  f_expected = z3::implies(f1 && f2 && (uge(addr_v_lookup_7, map_s) && uge(map_e, addr_v_lookup_7)),
+                           (addr_v_lookup_7 != NULL_ADDR));
+  print_test_res(is_valid(f_expected), "a1 = lookup &k1 m, a2 = lookup &k2 m, "\
+                 "a2 not in map range => a2 == NULL");
+
+  cout << "b. address equivalence" << endl;
+  f_expected = z3::implies(f1 && f2 && (k1 == k2), addr_v_lookup_6 == addr_v_lookup_7);
+  print_test_res(is_valid(f_expected), "lookup &k1 m == lookup &k2 m, if k1 == k2");
+
+  cout << "c. address uniqueness" << endl;
+  f_expected = z3::implies(f1 && f2 && (k1 != k2) &&
+                           (addr_v_lookup_6 != NULL_ADDR) &&
+                           (addr_v_lookup_7 != NULL_ADDR),
+                           addr_v_lookup_6 != addr_v_lookup_7);
+  print_test_res(is_valid(f_expected), "lookup &k1 m != lookup &k2 m, if k1 != k2, k1 and k2 are in the map");
+
+  cout << "d. value equivalence" << endl;
+  f_expected = z3::implies(f1 && f2 && f3 && f4 && (k1 == k2) && (addr_v_lookup_6 != NULL_ADDR),
+                           v_lookup_6 == v_lookup_7);
+
+  print_test_res(is_valid(f_expected), "*(lookup &k1 m) == *(lookup &k2 m), " \
+                 "if k1 == k2 and k1 is in map");
+
+  cout << "  3. test operations with map helper functions and memory ld/st" << endl;
+  sv.clear();
+  sv.mem_var.init_addrs_map_v_next(m_layout);
+  z3::expr p1 = v("p1");
+  z3::expr p2 = v("p2");
+  z3::expr v_p1 = v("v_p1");
+  z3::expr v_p2 = v("v_p2");
+  predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
+  predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
+  f = predicate_map_update_helper(map_s, addr_k1, addr_v1, sv, m_layout); // m[k1] = v1
+  f = f && predicate_map_lookup_helper(map_s, addr_k1, p1, sv, m_layout); // p1 = &m[k1]
+  f = f && predicate_map_lookup_helper(map_s, addr_k1, p2, sv, m_layout); // p2 = &m[k1]
+  predicate_st8(v2, p1, v(0), sv.mem_var); // modify the map[k1] by p1
+  f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout);
+  f_expected = z3::implies(f && (v1 != v2), v_p2.extract(7, 0) == v2);
+  print_test_res(is_valid(f_expected), "test 1");
+
+  cout << "  4. test properties of mutiple maps" << endl;;
+  sv.clear();
+  z3::expr map_s_2 = map_e + 1;
+  z3::expr map_e_2 = map_e + 512;
+  m_layout.add_map(map_s_2, map_e_2);
+  sv.mem_var.init_addrs_map_v_next(m_layout);
+  predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
+  predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
+  predicate_st8(v2, addr_v2, v(0), sv.mem_var); // *addr_v2 = v2 (addr_v2 in the stack)
+  f = predicate_map_update_helper(map_s, addr_k1, addr_v1, sv, m_layout); // m1[k1] = v1
+  f = f && predicate_map_update_helper(map_s_2, addr_k1, addr_v2, sv, m_layout); // m2[k1] = v2
+  f = f && predicate_map_lookup_helper(map_s, addr_k1, p1, sv, m_layout); // p1 = &m1[k1]
+  f = f && predicate_ld8(p1, v(0), sv.mem_var, v_p1, m_layout); // v_p1 = *p1
+  f = f && predicate_map_lookup_helper(map_s_2, addr_k1, p2, sv, m_layout); // p2 = &m2[k1]
+  f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout); // v_p2 = *p2
+  f_expected = z3::implies(f, v_p1.extract(7, 0) == v1) &&
+               z3::implies(f, v_p2.extract(7, 0) == v2);
+  print_test_res(is_valid(f_expected), "*(lookup &k1 (update &k1 &v1 m1)) == v1 and "\
+                 "*(lookup &k1 (update &k1 &v2 m2)) == v2");
+  f_expected = z3::implies(f, (uge(p1, map_s) && uge(map_e, p1))) &&
+               z3::implies(f, (uge(p2, map_s_2) && uge(map_e_2, p2)));
+  print_test_res(is_valid(f_expected), "lookup &k1 (update &k1 &v1 m1) in m1 range, "\
+                 "lookup &k1 (update &k1 &v2 m2) in m2 range");
+  z3::expr v3 = to_expr("v3", 8);
+  predicate_st8(v3, p1, v(0), sv.mem_var); // modify the m1[k1] by p1
+  v_p1 = v("v_p1_1");
+  v_p2 = v("v_p2_1");
+  f = f && predicate_ld8(p1, v(0), sv.mem_var, v_p1, m_layout);
+  f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout);
+  f_expected = z3::implies(f, (v_p1.extract(7, 0) == v3) && (v_p2.extract(7, 0) == v2));
+  print_test_res(is_valid(f_expected), "modify m1[k1] not change m2[k1]");
+
+  f = predicate_map_update_helper(map_s, addr_k1, addr_v1, sv, m_layout);
+  f = f && predicate_map_lookup_helper(map_s_2, addr_k1, p2, sv, m_layout);
+  f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout);
+  f_expected = z3::implies(f && (!(uge(p2, map_s_2) && uge(map_e_2, p2))), p2 == NULL_ADDR) &&
+               z3::implies(f && (p2 != NULL_ADDR), (uge(p2, map_s_2) && uge(map_e_2, p2)));
+  print_test_res(is_valid(f_expected), "m1 update not affect m2 uninitialized lookup");
+
+  z3::expr addr_k3 = stack_s + 4;
+  z3::expr k3 = to_expr("k3", 8);
+  predicate_st8(k1, addr_k3, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
+  f = predicate_map_lookup_helper(map_s, addr_k3, p1, sv, m_layout);
+  f = f && predicate_map_lookup_helper(map_s_2, addr_k3, p2, sv, m_layout);
+  f_expected = z3::implies(f && (k3 != k1) && (k3 != k2),
+                           (p1 == NULL_ADDR) || ((uge(p1, map_s) && uge(map_e, p1)))) &&
+               z3::implies(f && (k3 != k1) && (k3 != k2),
+                           (p2 == NULL_ADDR) || ((uge(p2, map_s_2) && uge(map_e_2, p2))));
+  print_test_res(is_valid(f_expected), "uninitialized lookup in m1 and m2 not affect each other");
 }
 
 int main() {
