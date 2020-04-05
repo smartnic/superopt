@@ -45,6 +45,7 @@ class mem_layout {
   vector<mem_range> _maps;
 
   void add_map(z3::expr s, z3::expr e) {_maps.push_back(mem_range(s, e));}
+  void set_stack_range(z3::expr s, z3::expr e) {_stack.set_range(s, e);}
 };
 
 class smt_wt {
@@ -78,6 +79,7 @@ class smt_map_wt {
     addr_v.push_back(v);
   }
   void clear() {addr_map.clear(); key.clear(); addr_v.clear();}
+  friend ostream& operator<<(ostream& out, const smt_map_wt& s);
 };
 
 class map_wt {
@@ -97,6 +99,7 @@ class smt_mem {
   void init_addrs_map_v_next(mem_layout& m_layout);
   z3::expr get_and_update_addr_v_next(int map_id);
   void clear() {_mem_table.clear(); _map_table.clear(); _addrs_map_v_next.clear();}
+  friend ostream& operator<<(ostream& out, const smt_mem& s);
 };
 
 // SMT Variable format

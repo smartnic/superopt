@@ -42,6 +42,18 @@ ostream& operator<<(ostream& out, const smt_wt& s) {
 
 /* class smt_wt end */
 
+/* class smt_map_wt start */
+
+ostream& operator<<(ostream& out, const smt_map_wt& s) {
+  for (int i = 0; i < s.key.size(); i++) {
+    out << i << ": " << s.addr_map[i].simplify() << " "
+        << s.key[i].simplify() << " " << s.addr_v[i].simplify() << endl;
+  }
+  return out;
+}
+
+/* class smt_map_wt start */
+
 /* class smt_wt end */
 void smt_mem::init_addrs_map_v_next(mem_layout& m_layout) {
   for (int i = 0; i < m_layout._maps.size(); i++) {
@@ -53,6 +65,15 @@ z3::expr smt_mem::get_and_update_addr_v_next(int map_id) {
   z3::expr res = _addrs_map_v_next[map_id];
   _addrs_map_v_next[map_id] = _addrs_map_v_next[map_id] + 1;
   return res;
+}
+
+ostream& operator<<(ostream& out, const smt_mem& s) {
+  out << "memory WT:" << endl << s._mem_table._wt
+      << "memory URT:" << endl << s._mem_table._urt
+      << "map WT:" << endl << s._map_table._wt
+      << "map URT:" << endl << s._map_table._urt
+      << endl;
+  return out;
 }
 /* class smt_wt end */
 
