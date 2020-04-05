@@ -531,13 +531,13 @@ void test8() {
   f = predicate_map_delete_helper(map_s, addr_k1, out, sv, m_layout);
   f_expected = z3::implies(f && (out != MAP_DEL_RET_IF_KEY_INEXIST), out == MAP_DEL_RET_IF_KEY_EXIST) &&
                z3::implies(f && (out != MAP_DEL_RET_IF_KEY_EXIST), out == MAP_DEL_RET_IF_KEY_INEXIST);
-  print_test_res(is_valid(f_expected), "test 1");
+  print_test_res(is_valid(f_expected), "ret_val(delete &k m) == EXIST or INEXIST");
 
   f = f && predicate_map_update_helper(map_s, addr_k1, addr_v1, new_out(), sv, m_layout);
   out = new_out();
   f = f && predicate_map_delete_helper(map_s, addr_k1, out, sv, m_layout);
   f_expected = z3::implies(f, out == MAP_DEL_RET_IF_KEY_EXIST);
-  print_test_res(is_valid(f_expected), "test 2");
+  print_test_res(is_valid(f_expected), "ret_val(delete &k (update &k &v (delete &k m))) == EXIST");
 
   out = new_out();
   f = f && predicate_map_delete_helper(map_s, addr_k1, out, sv, m_layout);
@@ -545,7 +545,7 @@ void test8() {
 
   f_expected = z3::implies(f && (out != MAP_DEL_RET_IF_KEY_INEXIST), out == MAP_DEL_RET_IF_KEY_EXIST) &&
                z3::implies(f && (out != MAP_DEL_RET_IF_KEY_EXIST), out == MAP_DEL_RET_IF_KEY_INEXIST);
-  print_test_res(is_valid(f_expected), "test 3");
+  print_test_res(is_valid(f_expected), "ret_val(delete &k (delete &k (update &k &v (delete &k m)))) == EXIST or INEXIST");
 }
 
 z3::expr eval_output(z3::expr smt, z3::expr output) {
