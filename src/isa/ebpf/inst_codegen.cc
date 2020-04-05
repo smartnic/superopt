@@ -138,6 +138,7 @@ z3::expr key_not_in_map_wt(z3::expr addr_map, z3::expr k, smt_map_wt& m_wt) {
   return (!f);
 }
 
+// "addr_map_v" is the return value
 z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
                                      smt_var& sv, mem_layout& m_layout) {
   smt_mem& mem = sv.mem_var;
@@ -179,13 +180,15 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   return f;
 }
 
+// "out" is the return value
 z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_v,
-                                     smt_var& sv, mem_layout& m_layout) {
+                                     z3::expr out, smt_var& sv, mem_layout& m_layout) {
   smt_mem& mem = sv.mem_var;
   z3::expr k = sv.update_key();
   z3::expr v = sv.update_val();
   z3::expr addr_map_v = sv.update_addr_v();
-  z3::expr f = predicate_ld_byte(addr_k, mem, k, m_layout) &&
+  z3::expr f = (out == MAP_UPD_RET) &&
+               predicate_ld_byte(addr_k, mem, k, m_layout) &&
                predicate_ld_byte(addr_v, mem, v, m_layout);
   // constrains on "addr_map_v".
   // constrain 1: for each element in map WT,
@@ -199,9 +202,15 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   }
   // constrain 2: if the key has not been added into the same map,
   // assign a different address to the value address
-  z3::expr f1 = key_not_in_map_wt(addr_map, k, mem._map_table._wt);
+  z3::expr f_key_in_the_map = string_to_expr("false");
+  for (int i = mem._map_table._wt.key.size() - 1; i >= 0; i--) {
+    smt_map_wt& m_wt = mem._map_table._wt;
+    f_key_in_the_map = f_key_in_the_map || ((addr_map == m_wt.addr_map[i]) &&
+                                            (k == m_wt.key[i]) &&
+                                            (m_wt.addr_v[i] != NULL_ADDR));
+  }
   for (int i = 0; i < m_layout._maps.size(); i++) {
-    f = f && z3::implies(f1 && (addr_map == m_layout._maps[i].start),
+    f = f && z3::implies((!f_key_in_the_map) && (addr_map == m_layout._maps[i].start),
                          addr_map_v == mem.get_and_update_addr_v_next(i));
   }
   mem._map_table._wt.add(addr_map, k, addr_map_v);
@@ -209,12 +218,20 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   return f;
 }
 
-z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k,
+// "out" is the return value
+// if key not in the map, out = 0xfffffffe, else out = 0
+z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::expr out,
                                      smt_var& sv, mem_layout& m_layout) {
+  z3::expr addr_map_v = sv.update_addr_v();
+  z3::expr f = predicate_map_lookup_helper(addr_map, addr_k, addr_map_v, sv, m_layout);
+  f = f && z3::implies(addr_map_v == NULL_ADDR, out == MAP_DEL_RET_IF_KEY_INEXIST);
+  f = f && z3::implies(addr_map_v != NULL_ADDR, out == MAP_DEL_RET_IF_KEY_EXIST);
+
+  // if key in the map, insert an element in map table to delete this key
   smt_mem& mem = sv.mem_var;
   z3::expr k = sv.update_key();
   // FOL formula of the constrain on "k"
-  z3::expr f = predicate_ld_byte(addr_k, sv.mem_var, k, m_layout);
+  f = f && predicate_ld_byte(addr_k, sv.mem_var, k, m_layout);
 
   mem._map_table._wt.add(addr_map, k, NULL_ADDR);
   return f;
