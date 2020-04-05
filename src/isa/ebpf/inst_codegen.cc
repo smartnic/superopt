@@ -138,14 +138,6 @@ z3::expr key_not_in_map_wt(z3::expr addr_map, z3::expr k, smt_map_wt& m_wt) {
   return (!f);
 }
 
-z3::expr latest_write_map_key(z3::expr addr_map, z3::expr k, int idx, smt_map_wt& m_wt) {
-  z3::expr f = string_to_expr("false");
-  for (int i = m_wt.key.size() - 1; i > idx; i--) {
-    f = f || ((addr_map == m_wt.addr_map[i]) && (k == m_wt.key[i]));
-  }
-  return (!f);
-}
-
 z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
                                      smt_var& sv, mem_layout& m_layout) {
   smt_mem& mem = sv.mem_var;
@@ -154,11 +146,13 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   z3::expr f = predicate_ld_byte(addr_k, mem, k, m_layout);
 
   // case 1: k in the map WT
+  z3::expr key_found_after_i = string_to_expr("false");
   for (int i = mem._map_table._wt.key.size() - 1; i >= 0; i--) {
-    f = f && z3::implies( (addr_map == mem._map_table._wt.addr_map[i]) && // the same map
-                          (k == mem._map_table._wt.key[i]) && // the same key
-                          latest_write_map_key(addr_map, k, i, mem._map_table._wt), // latest write of key-value pair in the map
-                          addr_map_v == mem._map_table._wt.addr_v[i]);
+    z3::expr key_found_i = (addr_map == mem._map_table._wt.addr_map[i]) && // the same map
+                           (k == mem._map_table._wt.key[i]); // the same key
+    f = f && z3::implies((!key_found_after_i) && key_found_i, // latest write of key-value pair in the map
+                         addr_map_v == mem._map_table._wt.addr_v[i]);
+    key_found_after_i = key_found_after_i || key_found_i;
   }
 
   // case 2: k not in the map WT
