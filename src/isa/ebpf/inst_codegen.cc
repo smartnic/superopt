@@ -5,8 +5,8 @@ using namespace std;
 z3::expr latest_write_element(int idx, vector<z3::expr>& x);
 z3::expr addr_not_in_wt(z3::expr& a, vector<z3::expr>& x);
 
-void predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m) {
-  m._mem_table._wt.add(addr + off, in.extract(7, 0));
+void predicate_st_byte(z3::expr in, z3::expr addr, smt_mem& m) {
+  m._mem_table._wt.add(addr, in.extract(7, 0));
 }
 
 inline z3::expr addr_in_range(z3::expr addr, z3::expr start, z3::expr end) {
@@ -26,8 +26,7 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, mem_wt& x) {
   // if there is no address equal to a in x._wt and addr1 in x._urt is equal to
   // a, it implies v is equal to the value of addr1
   z3::expr f1 = addr_not_in_wt(a, x._wt.addr);
-  // "-2" is to skip the latest add just now
-  for (int i = x._urt.addr.size() - 2; i >= 0; i--) {
+  for (int i = x._urt.addr.size() - 1; i >= 0; i--) {
     f = f && z3::implies(f1 && (a == x._urt.addr[i]), v == x._urt.val[i]);
   }
   // case 3: "a" cannot be found in x._wt or x._urt.
@@ -44,10 +43,11 @@ z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, mem_layout& 
     f = f && z3::implies((!c) && (a == s->addr[i]), out == s->val[i]);
     c = c || (a == s->addr[i]);
   }
-  // add element in urt
-  m._mem_table._urt.add(a, out);
+
   // add constrains on the element(a, out)
   f = f && urt_element_constrain(a, out, m._mem_table);
+  // add element in urt
+  m._mem_table._urt.add(a, out);
 
   // safety check
   // address "a" within the memory range that does not allow ur
@@ -211,7 +211,7 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
                          addr_map_v == mem.get_and_update_addr_v_next(i));
   }
   mem._map_table._wt.add(addr_map, k, addr_map_v);
-  predicate_st_byte(v, addr_map_v, to_expr(0), mem);
+  predicate_st_byte(v, addr_map_v, mem);
   return f;
 }
 

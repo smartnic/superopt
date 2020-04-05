@@ -295,10 +295,10 @@ COMPUTE_LDST(32, uint32_t)
 COMPUTE_LDST(64, uint64_t)
 
 // implemented in inst_codegen.cc
-void predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m);
+void predicate_st_byte(z3::expr in, z3::expr addr, smt_mem& m);
 
 inline void predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m) {
-  predicate_st_byte(in.extract(7, 0), addr, off, m);
+  predicate_st_byte(in.extract(7, 0), addr + off, m);
 }
 
 inline void predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m) {
