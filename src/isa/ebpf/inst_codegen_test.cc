@@ -6,7 +6,9 @@
 using namespace std;
 
 bool is_valid(z3::expr smt) {
-  z3::solver s(smt_c);
+  // use bv tactic to accelerate
+  z3::tactic t = z3::tactic(smt_c, "bv");
+  z3::solver s = t.mk_solver();
   s.add(!smt);
   switch (s.check()) {
     case z3::unsat: return true;
@@ -515,7 +517,9 @@ void test8() {
 }
 
 z3::expr eval_output(z3::expr smt, z3::expr output) {
-  z3::solver s(smt_c);
+  // use bv tactic to accelerate
+  z3::tactic t = z3::tactic(smt_c, "bv");
+  z3::solver s = t.mk_solver();
   s.add(smt);
   if (s.check() == z3::sat) {
     z3::model m = s.get_model();
