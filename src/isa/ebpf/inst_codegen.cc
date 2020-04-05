@@ -55,13 +55,13 @@ z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, mem_layout& 
   f = f && z3::implies(addr_in_range(a, m_layout._stack.start, m_layout._stack.end) &&
                        addr_not_in_wt(a, m._mem_table._wt.addr),
                        string_to_expr("false"));
-  // if addr + off = 0, the result is false
+  // if addr = 0, the result is false
   f = f && z3::implies(addr == NULL_ADDR, string_to_expr("false"));
   return f;
 }
 
-// return the FOL formula that x.addr[idx] is the latest addr in x
-// that is, for any i > idx, x.addr[idx] != x.addr[i]
+// return the FOL formula that x[idx] is the latest write in x
+// that is, for any i > idx, x[idx] != x[i]
 z3::expr latest_write_element(int idx, vector<z3::expr>& x) {
   z3::expr f = string_to_expr("true");
   for (int i = x.size() - 1; i > idx; i--) {
@@ -70,8 +70,8 @@ z3::expr latest_write_element(int idx, vector<z3::expr>& x) {
   return f;
 }
 
-// return the FOL formula that addr cannot be found in x
-// that is, for any addr_x in x, addr != addr_x
+// return the FOL formula that a cannot be found in x
+// that is, for each x[i], a != x[i]
 z3::expr addr_not_in_wt(z3::expr& a, vector<z3::expr>& x) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < x.size(); i++) {

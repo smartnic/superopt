@@ -583,51 +583,51 @@ void test9() {
   predicate_st8(v2, addr_v2, v(0), sv.mem_var);
 
   cout << "1. test 1" << endl;
-  cout << "m_11 = update &k2 &v2 (update &k1 &v1 m_10)" << endl;
-  cout << "m_21 = update &k2 &v1 (update &k1 &v2 m_20)" << endl;
+  cout << "m1_1 = update &k2 &v2 (update &k1 &v1 m1_0)" << endl;
+  cout << "m2_1 = update &k2 &v1 (update &k1 &v2 m2_0)" << endl;
   z3::expr f = predicate_map_update_helper(map1_s, addr_k1, addr_v1, sv, m_layout); // m1[k1] = v1
   f = f && predicate_map_update_helper(map1_s, addr_k2, addr_v2, sv, m_layout); // m1[k2] = v2
   f = f && predicate_map_update_helper(map2_s, addr_k1, addr_v2, sv, m_layout); // m2[k1] = v2
   f = f && predicate_map_update_helper(map2_s, addr_k2, addr_v1, sv, m_layout); // m2[k2] = v1
   // check lookup m1[k1]
   MAP_LOOKUP_AND_LD(map1_s, addr_k1, v1)
-  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m_11)) == v1");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m1_1)) == v1");
   // check lookup m1[k2]
   MAP_LOOKUP_AND_LD(map1_s, addr_k2, v2)
-  print_test_res(f_expected == string_to_expr("true"), "eval(*(lookup &k2 m_11)) == v2");
+  print_test_res(f_expected == string_to_expr("true"), "eval(*(lookup &k2 m1_1)) == v2");
   // check lookup m2[k1]
   MAP_LOOKUP_AND_LD(map2_s, addr_k1, v2)
-  print_test_res(f_expected == string_to_expr("true"), "eval(*(lookup &k1 m_21)) == v2");
+  print_test_res(f_expected == string_to_expr("true"), "eval(*(lookup &k1 m2_1)) == v2");
   // check lookup m2[k2]
   MAP_LOOKUP_AND_LD(map2_s, addr_k2, v1)
-  print_test_res(f_expected == string_to_expr("true"), "eval(*(lookup &k2 m_21)) == v1");
+  print_test_res(f_expected == string_to_expr("true"), "eval(*(lookup &k2 m2_1)) == v1");
 
   cout << "2. test 2" << endl;
-  cout << "m_12 = delete &k2 m_11" << endl;
+  cout << "m1_2 = delete &k2 m1_1" << endl;
   f = f && predicate_map_delete_helper(map1_s, addr_k1, sv, m_layout); // del m1[k1]
   MAP_LOOKUP(map1_s, addr_k1, NULL_ADDR)
-  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m_12) == NULL");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m1_2) == NULL");
   MAP_LOOKUP_AND_LD(map1_s, addr_k2, v2)
-  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m_12)) == v2");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m1_2)) == v2");
   MAP_LOOKUP_AND_LD(map2_s, addr_k1, v2)
-  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m_21)) == v2");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m2_1)) == v2");
   MAP_LOOKUP_AND_LD(map2_s, addr_k2, v1)
-  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m_21)) == v1");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m2_1)) == v1");
 
   cout << "3. test 3" << endl;
-  cout << "m_13 = delete &k2 m_12" << endl;
-  cout << "m_22 = delete &k2 (delete &k1 m_21)" << endl;
+  cout << "m1_3 = delete &k2 m1_2" << endl;
+  cout << "m2_2 = delete &k2 (delete &k1 m2_1)" << endl;
   f = f && predicate_map_delete_helper(map1_s, addr_k2, sv, m_layout); // del m1[k2]
   f = f && predicate_map_delete_helper(map2_s, addr_k1, sv, m_layout); // del m2[k1]
   f = f && predicate_map_delete_helper(map2_s, addr_k2, sv, m_layout); // del m2[k2]
   MAP_LOOKUP(map1_s, addr_k1, NULL_ADDR)
-  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m_13) == NULL");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m1_3) == NULL");
   MAP_LOOKUP(map1_s, addr_k2, NULL_ADDR)
-  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k2 m_13) == NULL");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k2 m1_3) == NULL");
   MAP_LOOKUP(map2_s, addr_k1, NULL_ADDR)
-  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m_22) == NULL");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m2_2) == NULL");
   MAP_LOOKUP(map2_s, addr_k2, NULL_ADDR)
-  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k2 m_22) == NULL");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k2 m2_2) == NULL");
 }
 
 #undef MAP_LOOKUP_AND_LD
