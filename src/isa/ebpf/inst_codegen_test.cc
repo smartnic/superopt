@@ -541,11 +541,8 @@ void test8() {
 
   out = new_out();
   f = f && predicate_map_delete_helper(map_s, addr_k1, out, sv, m_layout);
-  f_expected = z3::implies(f, out == MAP_DEL_RET_IF_KEY_EXIST);
-
-  f_expected = z3::implies(f && (out != MAP_DEL_RET_IF_KEY_INEXIST), out == MAP_DEL_RET_IF_KEY_EXIST) &&
-               z3::implies(f && (out != MAP_DEL_RET_IF_KEY_EXIST), out == MAP_DEL_RET_IF_KEY_INEXIST);
-  print_test_res(is_valid(f_expected), "ret_val(delete &k (delete &k (update &k &v (delete &k m)))) == EXIST or INEXIST");
+  f_expected = z3::implies(f, out == MAP_DEL_RET_IF_KEY_INEXIST);
+  print_test_res(is_valid(f_expected), "ret_val(delete &k (delete &k (update &k &v (delete &k m)))) == INEXIST");
 }
 
 z3::expr eval_output(z3::expr smt, z3::expr output) {
@@ -639,7 +636,7 @@ void test9() {
   print_test_res(f_expected == string_to_expr("true"), "eval(*(lookup &k2 m2_1)) == v1");
 
   cout << "2. test 2" << endl;
-  cout << "m1_2 = delete &k2 m1_1" << endl;
+  cout << "m1_2 = delete &k1 m1_1" << endl;
   f = f && predicate_map_delete_helper(map1_s, addr_k1, new_out(), sv, m_layout); // del m1[k1]
   MAP_LOOKUP(map1_s, addr_k1, NULL_ADDR)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m1_2) == NULL");
