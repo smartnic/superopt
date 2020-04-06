@@ -143,7 +143,6 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
                                      smt_var& sv, mem_layout& m_layout) {
   smt_mem& mem = sv.mem_var;
   z3::expr k = sv.update_key();
-  z3::expr v = sv.update_val();
   z3::expr f = predicate_ld_byte(addr_k, mem, k, m_layout);
 
   // case 1: k in the map WT
