@@ -46,7 +46,7 @@ ostream& operator<<(ostream& out, const smt_wt& s) {
 
 ostream& operator<<(ostream& out, const smt_map_wt& s) {
   for (int i = 0; i < s.key.size(); i++) {
-    out << i << ": " << s.addr_map[i].simplify() << " "
+    out << i << ": " << s.addr_map[i] << " "
         << s.key[i].simplify() << " " << s.addr_v[i].simplify() << endl;
   }
   return out;

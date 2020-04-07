@@ -24,6 +24,12 @@ z3::expr to_expr(uint64_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(string s, unsigned sz);
 
+struct map_attr { // map attribute
+  int key_sz;
+  int val_sz;
+  map_attr(int k_sz, int v_sz) {key_sz = k_sz; val_sz = v_sz;}
+};
+
 class mem_range {
  public:
   z3::expr start = string_to_expr("true"); // start address, 64-bit bitvector
@@ -43,8 +49,12 @@ class mem_layout {
  public:
   mem_range _stack;
   vector<mem_range> _maps;
+  vector<map_attr> _maps_attr;
 
-  void add_map(z3::expr s, z3::expr e) {_maps.push_back(mem_range(s, e));}
+  void add_map(z3::expr s, z3::expr e) {
+    _maps.push_back(mem_range(s, e));
+    _maps_attr.push_back(map_attr(NUM_BYTE_BITS, NUM_BYTE_BITS));
+  }
   void set_stack_range(z3::expr s, z3::expr e) {_stack.set_range(s, e);}
 };
 
@@ -70,10 +80,10 @@ class mem_wt {
 
 class smt_map_wt {
  public:
-  vector<z3::expr> addr_map; // 64-bit bitvector
+  vector<int> addr_map;
   vector<z3::expr> key;
   vector<z3::expr> addr_v;
-  void add(z3::expr a, z3::expr k, z3::expr v) {
+  void add(int a, z3::expr k, z3::expr v) {
     addr_map.push_back(a);
     key.push_back(k);
     addr_v.push_back(v);

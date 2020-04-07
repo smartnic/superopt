@@ -333,6 +333,7 @@ void test8() {
   z3::expr map_s = stack_e + 1;
   z3::expr map_e = stack_e + 512;
   m_layout.add_map(map_s, map_e);
+  int map1 = 0;
   sv.mem_var.init_addrs_map_v_next(m_layout);
 
   cout << "  1. test properties of lookup after update/delete in map" << endl;
@@ -345,8 +346,8 @@ void test8() {
   z3::expr addr_v_lookup_1 = v("addr_v_lookup_1");
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
   predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
-  z3::expr f = predicate_map_update_helper(map_s, addr_k1, addr_v1, new_out(), sv, m_layout);
-  f = f && predicate_map_lookup_helper(map_s, addr_k1, addr_v_lookup_1, sv, m_layout);
+  z3::expr f = predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv, m_layout);
+  f = f && predicate_map_lookup_helper(map1, addr_k1, addr_v_lookup_1, sv, m_layout);
   f = f && predicate_ld8(addr_v_lookup_1, v(0), sv.mem_var, v_lookup_1, m_layout);
   z3::expr f_expected = z3::implies(f, v_lookup_1.extract(7, 0) == v1);
   print_test_res(is_valid(f_expected), "*(lookup &k1 (update &k1 &v1 m)) == v1");
@@ -361,8 +362,8 @@ void test8() {
   z3::expr addr_map_v2 = v("addr_map_v2");
   z3::expr v_lookup_2 = v("v_lookup_2");
   z3::expr addr_v_lookup_2 = v("addr_v_lookup_2");
-  f = f && predicate_map_update_helper(map_s, addr_k2, addr_v2, new_out(), sv, m_layout);
-  f = f && predicate_map_lookup_helper(map_s, addr_k1, addr_v_lookup_2, sv, m_layout);
+  f = f && predicate_map_update_helper(map1, addr_k2, addr_v2, new_out(), sv, m_layout);
+  f = f && predicate_map_lookup_helper(map1, addr_k1, addr_v_lookup_2, sv, m_layout);
   f = f && predicate_ld8(addr_v_lookup_2, v(0), sv.mem_var, v_lookup_2, m_layout);
   f_expected = z3::implies(f && (k2 != k1), v_lookup_2.extract(7, 0) == v1);
   print_test_res(is_valid(f_expected), "*(lookup &k1 (update &k2 &v2 (update &k1 &v1 m))) == v1, if k2 != k1");
@@ -372,22 +373,22 @@ void test8() {
   // test *(lookup &k2 (update &k2 &v2 (update &k1 &v1 m)))
   z3::expr v_lookup_3 = v("v_lookup_3");
   z3::expr addr_v_lookup_3 = v("addr_v_lookup_3");
-  f = f && predicate_map_lookup_helper(map_s, addr_k2, addr_v_lookup_3, sv, m_layout);
+  f = f && predicate_map_lookup_helper(map1, addr_k2, addr_v_lookup_3, sv, m_layout);
   f = f && predicate_ld8(addr_v_lookup_3, v(0), sv.mem_var, v_lookup_3, m_layout);
   f_expected = z3::implies(f, v_lookup_3.extract(7, 0) == v2);
   print_test_res(is_valid(f_expected), "*(lookup &k2 (update &k2 &v2 (update &k1 &v1 m))) == v2");
 
   // test *(lookup &k2 (delete &k2 (update &k2 &v2 (update &k1 &v1 m))))
   z3::expr addr_v_lookup_4 = v("addr_v_lookup_4");
-  f = f && predicate_map_delete_helper(map_s, addr_k2, new_out(), sv, m_layout);
-  f = f && predicate_map_lookup_helper(map_s, addr_k2, addr_v_lookup_4, sv, m_layout);
+  f = f && predicate_map_delete_helper(map1, addr_k2, new_out(), sv, m_layout);
+  f = f && predicate_map_lookup_helper(map1, addr_k2, addr_v_lookup_4, sv, m_layout);
   f_expected = z3::implies(f, addr_v_lookup_4 == NULL_ADDR);
   print_test_res(is_valid(f_expected), "lookup &k2 (delete &k2 (update &k2 &v2 (update &k1 &v1 m))) == NULL");
 
   // test *(lookup &k1 (delete &k2 (update &k2 &v2 (update &k1 &v1 m)))), if k2 != k1
   z3::expr v_lookup_5 = v("v_lookup_5");
   z3::expr addr_v_lookup_5 = v("addr_v_lookup_5");
-  f = f && predicate_map_lookup_helper(map_s, addr_k1, addr_v_lookup_5, sv, m_layout);
+  f = f && predicate_map_lookup_helper(map1, addr_k1, addr_v_lookup_5, sv, m_layout);
   f = f && predicate_ld8(addr_v_lookup_5, v(0), sv.mem_var, v_lookup_5, m_layout);
   f_expected = z3::implies(f && (k1 != k2), v_lookup_5.extract(7, 0) == v1);
   print_test_res(is_valid(f_expected), "*(lookup &k1 (delete &k2 (update &k2 &v2 (update &k1 &v1 m)))) == v1, if k2 != k1");
@@ -402,8 +403,8 @@ void test8() {
   z3::expr addr_v_lookup_6 = v("addr_v_lookup_6");
   z3::expr v_lookup_7 = v("v_lookup_7");
   z3::expr addr_v_lookup_7 = v("addr_v_lookup_7");
-  z3::expr f1 = predicate_map_lookup_helper(map_s, addr_k1, addr_v_lookup_6, sv, m_layout);
-  z3::expr f2 = predicate_map_lookup_helper(map_s, addr_k2, addr_v_lookup_7, sv, m_layout);
+  z3::expr f1 = predicate_map_lookup_helper(map1, addr_k1, addr_v_lookup_6, sv, m_layout);
+  z3::expr f2 = predicate_map_lookup_helper(map1, addr_k2, addr_v_lookup_7, sv, m_layout);
   z3::expr f3 = predicate_ld8(addr_v_lookup_6, v(0), sv.mem_var, v_lookup_6, m_layout);
   z3::expr f4 = predicate_ld8(addr_v_lookup_7, v(0), sv.mem_var, v_lookup_7, m_layout);
 
@@ -453,9 +454,9 @@ void test8() {
   z3::expr v_p2 = v("v_p2");
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
   predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
-  f = predicate_map_update_helper(map_s, addr_k1, addr_v1, new_out(), sv, m_layout); // m[k1] = v1
-  f = f && predicate_map_lookup_helper(map_s, addr_k1, p1, sv, m_layout); // p1 = &m[k1]
-  f = f && predicate_map_lookup_helper(map_s, addr_k1, p2, sv, m_layout); // p2 = &m[k1]
+  f = predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv, m_layout); // m[k1] = v1
+  f = f && predicate_map_lookup_helper(map1, addr_k1, p1, sv, m_layout); // p1 = &m[k1]
+  f = f && predicate_map_lookup_helper(map1, addr_k1, p2, sv, m_layout); // p2 = &m[k1]
   predicate_st8(v2, p1, v(0), sv.mem_var); // modify the map[k1] by p1
   f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout);
   f_expected = z3::implies(f && (v1 != v2), v_p2.extract(7, 0) == v2);
@@ -465,17 +466,18 @@ void test8() {
   sv.clear();
   z3::expr map_s_2 = map_e + 1;
   z3::expr map_e_2 = map_e + 512;
+  int map2 = 1;
   m_layout.add_map(map_s_2, map_e_2);
   sv.mem_var.init_addrs_map_v_next(m_layout);
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
   predicate_st8(k2, addr_k2, v(0), sv.mem_var); // *addr_k2 = k2 (addr_k2 in the stack)
   predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
   predicate_st8(v2, addr_v2, v(0), sv.mem_var); // *addr_v2 = v2 (addr_v2 in the stack)
-  f = predicate_map_update_helper(map_s, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
-  f = f && predicate_map_update_helper(map_s_2, addr_k1, addr_v2, new_out(), sv, m_layout); // m2[k1] = v2
-  f = f && predicate_map_lookup_helper(map_s, addr_k1, p1, sv, m_layout); // p1 = &m1[k1]
+  f = predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
+  f = f && predicate_map_update_helper(map2, addr_k1, addr_v2, new_out(), sv, m_layout); // m2[k1] = v2
+  f = f && predicate_map_lookup_helper(map1, addr_k1, p1, sv, m_layout); // p1 = &m1[k1]
   f = f && predicate_ld8(p1, v(0), sv.mem_var, v_p1, m_layout); // v_p1 = *p1
-  f = f && predicate_map_lookup_helper(map_s_2, addr_k1, p2, sv, m_layout); // p2 = &m2[k1]
+  f = f && predicate_map_lookup_helper(map2, addr_k1, p2, sv, m_layout); // p2 = &m2[k1]
   f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout); // v_p2 = *p2
   f_expected = z3::implies(f, v_p1.extract(7, 0) == v1);// &&
   z3::implies(f, v_p2.extract(7, 0) == v2);
@@ -497,15 +499,15 @@ void test8() {
   z3::expr p3 = v("p3");
   z3::expr p4 = v("p4");
   z3::expr v_p4 = v("v_p4");
-  f = f && predicate_map_delete_helper(map_s, addr_k1, new_out(), sv, m_layout);
-  f = f && predicate_map_lookup_helper(map_s, addr_k1, p3, sv, m_layout);
-  f = f && predicate_map_lookup_helper(map_s_2, addr_k1, p4, sv, m_layout);
+  f = f && predicate_map_delete_helper(map1, addr_k1, new_out(), sv, m_layout);
+  f = f && predicate_map_lookup_helper(map1, addr_k1, p3, sv, m_layout);
+  f = f && predicate_map_lookup_helper(map2, addr_k1, p4, sv, m_layout);
   f = f && predicate_ld8(p4, v(0), sv.mem_var, v_p4, m_layout);
   f_expected = z3::implies(f, (p3 == NULL_ADDR) && (p4 == p2) && (v_p4.extract(7, 0) == v2));
   print_test_res(is_valid(f_expected), "delete m1[k1] not affect m2[k1]");
 
-  f = f && predicate_map_update_helper(map_s, addr_k2, addr_v1, new_out(), sv, m_layout);
-  f = f && predicate_map_lookup_helper(map_s_2, addr_k2, p2, sv, m_layout);
+  f = f && predicate_map_update_helper(map1, addr_k2, addr_v1, new_out(), sv, m_layout);
+  f = f && predicate_map_lookup_helper(map2, addr_k2, p2, sv, m_layout);
   f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout);
   f_expected = z3::implies(f && (k1 != k2) && (!(uge(p2, map_s_2) && uge(map_e_2, p2))), p2 == NULL_ADDR) &&
                z3::implies(f && (k1 != k2) && (p2 != NULL_ADDR), (uge(p2, map_s_2) && uge(map_e_2, p2)));
@@ -514,8 +516,8 @@ void test8() {
   z3::expr addr_k3 = stack_s + 4;
   z3::expr k3 = to_expr("k3", 8);
   predicate_st8(k3, addr_k3, v(0), sv.mem_var); // *addr_k3 = k3 (addr_k3 in the stack)
-  f = f && predicate_map_lookup_helper(map_s, addr_k3, p1, sv, m_layout);
-  f = f && predicate_map_lookup_helper(map_s_2, addr_k3, p2, sv, m_layout);
+  f = f && predicate_map_lookup_helper(map1, addr_k3, p1, sv, m_layout);
+  f = f && predicate_map_lookup_helper(map2, addr_k3, p2, sv, m_layout);
   f_expected = z3::implies(f && (k3 != k1) && (k3 != k2),
                            (p1 == NULL_ADDR) || ((uge(p1, map_s) && uge(map_e, p1)))) &&
                z3::implies(f && (k3 != k1) && (k3 != k2),
@@ -528,19 +530,19 @@ void test8() {
   z3::expr out = new_out();
   predicate_st8(k1, addr_k1, v(0), sv.mem_var);
   predicate_st8(v1, addr_v1, v(0), sv.mem_var);
-  f = predicate_map_delete_helper(map_s, addr_k1, out, sv, m_layout);
+  f = predicate_map_delete_helper(map1, addr_k1, out, sv, m_layout);
   f_expected = z3::implies(f && (out != MAP_DEL_RET_IF_KEY_INEXIST), out == MAP_DEL_RET_IF_KEY_EXIST) &&
                z3::implies(f && (out != MAP_DEL_RET_IF_KEY_EXIST), out == MAP_DEL_RET_IF_KEY_INEXIST);
   print_test_res(is_valid(f_expected), "ret_val(delete &k m) == EXIST or INEXIST");
 
-  f = f && predicate_map_update_helper(map_s, addr_k1, addr_v1, new_out(), sv, m_layout);
+  f = f && predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv, m_layout);
   out = new_out();
-  f = f && predicate_map_delete_helper(map_s, addr_k1, out, sv, m_layout);
+  f = f && predicate_map_delete_helper(map1, addr_k1, out, sv, m_layout);
   f_expected = z3::implies(f, out == MAP_DEL_RET_IF_KEY_EXIST);
   print_test_res(is_valid(f_expected), "ret_val(delete &k (update &k &v (delete &k m))) == EXIST");
 
   out = new_out();
-  f = f && predicate_map_delete_helper(map_s, addr_k1, out, sv, m_layout);
+  f = f && predicate_map_delete_helper(map1, addr_k1, out, sv, m_layout);
   f_expected = z3::implies(f, out == MAP_DEL_RET_IF_KEY_INEXIST);
   print_test_res(is_valid(f_expected), "ret_val(delete &k (delete &k (update &k &v (delete &k m)))) == INEXIST");
 }
@@ -595,6 +597,7 @@ void test9() {
   z3::expr map1_e = stack_e + 512;
   z3::expr map2_s = map1_e + 1;
   z3::expr map2_e = map1_e + 512;
+  int map1 = 0, map2 = 1;
   m_layout.set_stack_range(stack_s, stack_e);
   m_layout.add_map(map1_s, map1_s);
   m_layout.add_map(map2_s, map2_e);
@@ -618,68 +621,68 @@ void test9() {
   cout << "1.1" << endl;
   cout << "m1_1 = update &k2 &v2 (update &k1 &v1 m1_0)" << endl;
   cout << "m2_1 = update &k2 &v1 (update &k1 &v2 m2_0)" << endl;
-  z3::expr f = predicate_map_update_helper(map1_s, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
-  f = f && predicate_map_update_helper(map1_s, addr_k2, addr_v2, new_out(), sv, m_layout); // m1[k2] = v2
-  f = f && predicate_map_update_helper(map2_s, addr_k1, addr_v2, new_out(), sv, m_layout); // m2[k1] = v2
-  f = f && predicate_map_update_helper(map2_s, addr_k2, addr_v1, new_out(), sv, m_layout); // m2[k2] = v1
+  z3::expr f = predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
+  f = f && predicate_map_update_helper(map1, addr_k2, addr_v2, new_out(), sv, m_layout); // m1[k2] = v2
+  f = f && predicate_map_update_helper(map2, addr_k1, addr_v2, new_out(), sv, m_layout); // m2[k1] = v2
+  f = f && predicate_map_update_helper(map2, addr_k2, addr_v1, new_out(), sv, m_layout); // m2[k2] = v1
   // check lookup m1[k1]
-  MAP_LOOKUP_AND_LD(map1_s, addr_k1, v1)
+  MAP_LOOKUP_AND_LD(map1, addr_k1, v1)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m1_1)) == v1");
   // check lookup m1[k2]
-  MAP_LOOKUP_AND_LD(map1_s, addr_k2, v2)
+  MAP_LOOKUP_AND_LD(map1, addr_k2, v2)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m1_1)) == v2");
   // check lookup m2[k1]
-  MAP_LOOKUP_AND_LD(map2_s, addr_k1, v2)
+  MAP_LOOKUP_AND_LD(map2, addr_k1, v2)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m2_1)) == v2");
   // check lookup m2[k2]
-  MAP_LOOKUP_AND_LD(map2_s, addr_k2, v1)
+  MAP_LOOKUP_AND_LD(map2, addr_k2, v1)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m2_1)) == v1");
 
   cout << "1.2" << endl;
   cout << "m1_2 = delete &k1 m1_1" << endl;
-  f = f && predicate_map_delete_helper(map1_s, addr_k1, new_out(), sv, m_layout); // del m1[k1]
-  MAP_LOOKUP(map1_s, addr_k1, NULL_ADDR)
+  f = f && predicate_map_delete_helper(map1, addr_k1, new_out(), sv, m_layout); // del m1[k1]
+  MAP_LOOKUP(map1, addr_k1, NULL_ADDR)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m1_2) == NULL");
-  MAP_LOOKUP_AND_LD(map1_s, addr_k2, v2)
+  MAP_LOOKUP_AND_LD(map1, addr_k2, v2)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m1_2)) == v2");
-  MAP_LOOKUP_AND_LD(map2_s, addr_k1, v2)
+  MAP_LOOKUP_AND_LD(map2, addr_k1, v2)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m2_1)) == v2");
-  MAP_LOOKUP_AND_LD(map2_s, addr_k2, v1)
+  MAP_LOOKUP_AND_LD(map2, addr_k2, v1)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m2_1)) == v1");
 
   cout << "1.3" << endl;
   cout << "m1_3 = delete &k2 m1_2" << endl;
   cout << "m2_2 = delete &k2 (delete &k1 m2_1)" << endl;
-  f = f && predicate_map_delete_helper(map1_s, addr_k2, new_out(), sv, m_layout); // del m1[k2]
-  f = f && predicate_map_delete_helper(map2_s, addr_k1, new_out(), sv, m_layout); // del m2[k1]
-  f = f && predicate_map_delete_helper(map2_s, addr_k2, new_out(), sv, m_layout); // del m2[k2]
-  MAP_LOOKUP(map1_s, addr_k1, NULL_ADDR)
+  f = f && predicate_map_delete_helper(map1, addr_k2, new_out(), sv, m_layout); // del m1[k2]
+  f = f && predicate_map_delete_helper(map2, addr_k1, new_out(), sv, m_layout); // del m2[k1]
+  f = f && predicate_map_delete_helper(map2, addr_k2, new_out(), sv, m_layout); // del m2[k2]
+  MAP_LOOKUP(map1, addr_k1, NULL_ADDR)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m1_3) == NULL");
-  MAP_LOOKUP(map1_s, addr_k2, NULL_ADDR)
+  MAP_LOOKUP(map1, addr_k2, NULL_ADDR)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k2 m1_3) == NULL");
-  MAP_LOOKUP(map2_s, addr_k1, NULL_ADDR)
+  MAP_LOOKUP(map2, addr_k1, NULL_ADDR)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m2_2) == NULL");
-  MAP_LOOKUP(map2_s, addr_k2, NULL_ADDR)
+  MAP_LOOKUP(map2, addr_k2, NULL_ADDR)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k2 m2_2) == NULL");
 
   cout << "1.4" << endl;
   cout << "m1_4 = update &k2 &v2 (update &k1 &v1 m1_3)" << endl;
   cout << "m2_3 = update &k2 &v1 (update &k1 &v2 m2_2)" << endl;
-  f = f && predicate_map_update_helper(map1_s, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
-  f = f && predicate_map_update_helper(map1_s, addr_k2, addr_v2, new_out(), sv, m_layout); // m1[k2] = v2
-  f = f && predicate_map_update_helper(map2_s, addr_k1, addr_v2, new_out(), sv, m_layout); // m2[k1] = v2
-  f = f && predicate_map_update_helper(map2_s, addr_k2, addr_v1, new_out(), sv, m_layout); // m2[k2] = v1
+  f = f && predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
+  f = f && predicate_map_update_helper(map1, addr_k2, addr_v2, new_out(), sv, m_layout); // m1[k2] = v2
+  f = f && predicate_map_update_helper(map2, addr_k1, addr_v2, new_out(), sv, m_layout); // m2[k1] = v2
+  f = f && predicate_map_update_helper(map2, addr_k2, addr_v1, new_out(), sv, m_layout); // m2[k2] = v1
   // check lookup m1[k1]
-  MAP_LOOKUP_AND_LD(map1_s, addr_k1, v1)
+  MAP_LOOKUP_AND_LD(map1, addr_k1, v1)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m1_4)) == v1");
   // check lookup m1[k2]
-  MAP_LOOKUP_AND_LD(map1_s, addr_k2, v2)
+  MAP_LOOKUP_AND_LD(map1, addr_k2, v2)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m1_4)) == v2");
   // check lookup m2[k1]
-  MAP_LOOKUP_AND_LD(map2_s, addr_k1, v2)
+  MAP_LOOKUP_AND_LD(map2, addr_k1, v2)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m2_3)) == v2");
   // check lookup m2[k2]
-  MAP_LOOKUP_AND_LD(map2_s, addr_k2, v1)
+  MAP_LOOKUP_AND_LD(map2, addr_k2, v1)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m2_3)) == v1");
 
   // test the return value of delete
@@ -689,19 +692,19 @@ void test9() {
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
   predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
   z3::expr out = new_out();
-  f = predicate_map_delete_helper(map1_s, addr_k1, out, sv, m_layout); // del m1[k2]
+  f = predicate_map_delete_helper(map1, addr_k1, out, sv, m_layout); // del m1[k2]
   f_expected = (eval_output(f, out) == MAP_DEL_RET_IF_KEY_INEXIST);
   print_test_res(is_valid(f_expected), "eval_ret(delete &k m) == MAP_DEL_RET_IF_KEY_INEXIST");
 
-  f = predicate_map_update_helper(map1_s, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
+  f = predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
   out = new_out();
-  f = f && predicate_map_delete_helper(map1_s, addr_k1, out, sv, m_layout);
+  f = f && predicate_map_delete_helper(map1, addr_k1, out, sv, m_layout);
   f_expected = (eval_output(f, out) == MAP_DEL_RET_IF_KEY_EXIST);
   print_test_res(is_valid(f_expected), "eval_ret(delete &k (update &k &v (delete &k m))) "\
                  "== MAP_DEL_RET_IF_KEY_EXIST");
 
   out = new_out();
-  f = f && predicate_map_delete_helper(map1_s, addr_k1, out, sv, m_layout);
+  f = f && predicate_map_delete_helper(map1, addr_k1, out, sv, m_layout);
   f_expected = (eval_output(f, out) == MAP_DEL_RET_IF_KEY_INEXIST);
   print_test_res(is_valid(f_expected), "eval_ret(delete &k (delete &k (update &k &v (delete &k m)))) "\
                  "== MAP_DEL_RET_IF_KEY_INEXIST");
