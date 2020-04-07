@@ -610,12 +610,12 @@ void test9() {
   z3::expr addr_v_lookup = string_to_expr("true");
   z3::expr v_lookup = string_to_expr("true");
   z3::expr f_expected = string_to_expr("true");
+  cout << "  1 test lookup after deletes/updates" << endl;
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
   predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
   predicate_st8(k2, addr_k2, v(0), sv.mem_var);
   predicate_st8(v2, addr_v2, v(0), sv.mem_var);
-
-  cout << "1. test 1" << endl;
+  cout << "1.1" << endl;
   cout << "m1_1 = update &k2 &v2 (update &k1 &v1 m1_0)" << endl;
   cout << "m2_1 = update &k2 &v1 (update &k1 &v2 m2_0)" << endl;
   z3::expr f = predicate_map_update_helper(map1_s, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
@@ -627,15 +627,15 @@ void test9() {
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m1_1)) == v1");
   // check lookup m1[k2]
   MAP_LOOKUP_AND_LD(map1_s, addr_k2, v2)
-  print_test_res(f_expected == string_to_expr("true"), "eval(*(lookup &k2 m1_1)) == v2");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m1_1)) == v2");
   // check lookup m2[k1]
   MAP_LOOKUP_AND_LD(map2_s, addr_k1, v2)
-  print_test_res(f_expected == string_to_expr("true"), "eval(*(lookup &k1 m2_1)) == v2");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m2_1)) == v2");
   // check lookup m2[k2]
   MAP_LOOKUP_AND_LD(map2_s, addr_k2, v1)
-  print_test_res(f_expected == string_to_expr("true"), "eval(*(lookup &k2 m2_1)) == v1");
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m2_1)) == v1");
 
-  cout << "2. test 2" << endl;
+  cout << "1.2" << endl;
   cout << "m1_2 = delete &k1 m1_1" << endl;
   f = f && predicate_map_delete_helper(map1_s, addr_k1, new_out(), sv, m_layout); // del m1[k1]
   MAP_LOOKUP(map1_s, addr_k1, NULL_ADDR)
@@ -647,7 +647,7 @@ void test9() {
   MAP_LOOKUP_AND_LD(map2_s, addr_k2, v1)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m2_1)) == v1");
 
-  cout << "3. test 3" << endl;
+  cout << "1.3" << endl;
   cout << "m1_3 = delete &k2 m1_2" << endl;
   cout << "m2_2 = delete &k2 (delete &k1 m2_1)" << endl;
   f = f && predicate_map_delete_helper(map1_s, addr_k2, new_out(), sv, m_layout); // del m1[k2]
@@ -662,8 +662,28 @@ void test9() {
   MAP_LOOKUP(map2_s, addr_k2, NULL_ADDR)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k2 m2_2) == NULL");
 
+  cout << "1.4" << endl;
+  cout << "m1_4 = update &k2 &v2 (update &k1 &v1 m1_3)" << endl;
+  cout << "m2_3 = update &k2 &v1 (update &k1 &v2 m2_2)" << endl;
+  f = f && predicate_map_update_helper(map1_s, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
+  f = f && predicate_map_update_helper(map1_s, addr_k2, addr_v2, new_out(), sv, m_layout); // m1[k2] = v2
+  f = f && predicate_map_update_helper(map2_s, addr_k1, addr_v2, new_out(), sv, m_layout); // m2[k1] = v2
+  f = f && predicate_map_update_helper(map2_s, addr_k2, addr_v1, new_out(), sv, m_layout); // m2[k2] = v1
+  // check lookup m1[k1]
+  MAP_LOOKUP_AND_LD(map1_s, addr_k1, v1)
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m1_4)) == v1");
+  // check lookup m1[k2]
+  MAP_LOOKUP_AND_LD(map1_s, addr_k2, v2)
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m1_4)) == v2");
+  // check lookup m2[k1]
+  MAP_LOOKUP_AND_LD(map2_s, addr_k1, v2)
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k1 m2_3)) == v2");
+  // check lookup m2[k2]
+  MAP_LOOKUP_AND_LD(map2_s, addr_k2, v1)
+  print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(*(lookup &k2 m2_3)) == v1");
+
   // test the return value of delete
-  cout << "4. test return value of delete" << endl;
+  cout << "  2 test return value of delete" << endl;
   sv.clear();
   sv.mem_var.init_addrs_map_v_next(m_layout);
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
