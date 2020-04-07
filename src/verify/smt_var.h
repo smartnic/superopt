@@ -69,6 +69,7 @@ class smt_wt {
   vector<z3::expr> val;  // 8-bit bitvector
   void add(z3::expr a, z3::expr v) {addr.push_back(a); val.push_back(v);}
   void clear() {addr.clear(); val.clear();}
+  unsigned int size() {return addr.size();}
   smt_wt& operator=(const smt_wt &rhs);
   bool operator==(const smt_wt &rhs);
   friend ostream& operator<<(ostream& out, const smt_wt& s);
@@ -92,6 +93,7 @@ class smt_map_wt {
     addr_v.push_back(v);
   }
   void clear() {addr_map.clear(); key.clear(); addr_v.clear();}
+  unsigned int size() {return addr_map.size();}
   friend ostream& operator<<(ostream& out, const smt_map_wt& s);
 };
 

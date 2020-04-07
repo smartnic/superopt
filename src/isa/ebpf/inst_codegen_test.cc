@@ -14,7 +14,7 @@ bool is_valid(z3::expr smt) {
     case z3::unsat: return true;
     case z3::sat: {
       z3::model m = s.get_model();
-      cout << m << endl;
+      // cout << m << endl;
       return false;
     }
     case z3::unknown:
@@ -849,6 +849,71 @@ void test9() {
 #undef MAP_LOOKUP_AND_LD
 #undef MAP_LOOKUP
 
+void test10() {
+  cout << "Test 10: Map equivalence check" << endl;
+  unsigned int prog_id = 0, node_id = 0, num_regs = 11;
+  smt_var sv1(prog_id, node_id, num_regs);
+  prog_id = 1;
+  smt_var sv2(prog_id, node_id, num_regs);
+  mem_layout m_layout;
+  // set memory layout: stack | map
+  z3::expr stack_s = v((uint64_t)0xff12000000001234);
+  z3::expr stack_e = stack_s + 511;
+  z3::expr map1_s = stack_e + 1, map1_e = stack_e + 512;
+  int addr_map1 = 0;
+  m_layout.set_stack_range(stack_s, stack_e);
+  m_layout.add_map(map1_s, map1_s);
+  sv1.mem_var.init_addrs_map_v_next(m_layout);
+  sv2.mem_var.init_addrs_map_v_next(m_layout);
+  z3::expr k1 = to_expr("k1", 8), v1 = to_expr("v1", 8);
+  z3::expr k2 = to_expr("k2", 8), v2 = to_expr("v2", 8);
+  z3::expr addr_k1 = stack_s + 0, addr_v1 = stack_s + 1;
+  z3::expr addr_k2 = stack_s + 2, addr_v2 = stack_s + 3;
+  // test map without process, i.e., no elements in map tables
+  cout << "1. case: both map WTs are empty" << endl;
+  z3::expr f = string_to_expr("true");
+  z3::expr f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
+  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_0 == m_p2_0 (maps without process)");
+  cout << "2. case: keys can be found in both map WTs" << endl;
+  // 1.1 update &k1 m_p1_0 == update &k1 m_p2_0
+  predicate_st8(k1, addr_k1, v(0), sv1.mem_var);
+  predicate_st8(v1, addr_v1, v(0), sv1.mem_var);
+  predicate_st8(k2, addr_k2, v(0), sv1.mem_var);
+  predicate_st8(v2, addr_v2, v(0), sv1.mem_var);
+  predicate_st8(k1, addr_k1, v(0), sv2.mem_var);
+  predicate_st8(v1, addr_v1, v(0), sv2.mem_var);
+  predicate_st8(k2, addr_k2, v(0), sv2.mem_var);
+  predicate_st8(v2, addr_v2, v(0), sv2.mem_var);
+  f = (k1 != k2) && (v1 != v2);
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout);
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2, m_layout);
+  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
+  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_1 == m_p2_1, "\
+                 "m_p1_1 = update &k1 &v1 m_p1, m_p2_1 = update &k1 &v1 m_p2");
+  // test latest write
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v2, new_out(), sv2, m_layout);
+  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
+  print_test_res(!is_valid(z3::implies(f, f_equal)), "m_p1_2 != m_p2_1, m_p1_2 = update &k1 &v2 m_p1_1");
+  // test latest write
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2, m_layout);
+  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
+  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_3 == m_p2_1, m_p1_3 = update &k1 &v1 m_p1_2");
+  // test delete
+  f = f && predicate_map_delete_helper(addr_map1, addr_k1, new_out(), sv2, m_layout);
+  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
+  print_test_res(!is_valid(z3::implies(f, f_equal)), "m_p1_4 != m_p2_1, m_p1_4 = delete &k1 m_p1_3");
+
+  f = f && predicate_map_delete_helper(addr_map1, addr_k1, new_out(), sv1, m_layout);
+  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
+  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_4 == m_p2_2, m_p2_2 = delete &k1 m_p2_1");
+
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v2, new_out(), sv1, m_layout);
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v2, new_out(), sv2, m_layout);
+  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
+  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_5 == m_p2_3, "\
+                 "m_p1_5 = update &k1 &v2 m_p1_4, m_p2_3 = update &k1 &v2 m_p2_2");
+}
+
 int main() {
   test1();
   test2();
@@ -859,6 +924,7 @@ int main() {
   test7();
   test8();
   test9();
+  test10();
 
   return 0;
 }

@@ -126,6 +126,57 @@ z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, mem_range& r) {
   return f;
 }
 
+z3::expr key_not_found_after_idx(z3::expr key, int idx, int addr_map, smt_map_wt& m_wt) {
+  z3::expr f = string_to_expr("true");
+  for (int i = m_wt.size() - 1; i > idx; i--) {
+    if (addr_map != m_wt.addr_map[i]) continue;
+    f = f && (key != m_wt.key[i]);
+  }
+  return f;
+}
+
+z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
+  z3::expr f = string_to_expr("true");
+  int map_id = addr_map;
+  int v_sz = m_layout._maps_attr[addr_map].val_sz;
+  // case 1: keys that are in pgm1's map WT and pgm2's map WT
+  // if the key is found, m_pgm1[k] == m_pgm2[k]
+  map_wt& map1 = sv1.mem_var._map_table, map2 = sv2.mem_var._map_table;
+  for (int i = map1._wt.size() - 1; i >= 0; i--) {
+    if (addr_map != map1._wt.addr_map[i]) continue; // check the specific map in map1 WT
+    z3::expr k1 = map1._wt.key[i];
+    z3::expr v1 = sv1.update_val(v_sz);
+    z3::expr addr_v1 = map1._wt.addr_v[i];
+    z3::expr f_k1_map1_latest_write = key_not_found_after_idx(k1, i, addr_map, map1._wt);
+    z3::expr f_v1 = (addr_v1 != NULL_ADDR) &&
+                    predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, map1._wt.addr_v[i],
+                                         sv1.mem_var, v1, m_layout);
+
+    z3::expr f_k1_found_after_j = string_to_expr("false");
+    for (int j = map2._wt.size() - 1; j >= 0; j--) {
+      if (addr_map != map2._wt.addr_map[j]) continue; // check the specific map in map1 WT
+      z3::expr f_k1_map2_latest_write = (k1 == map2._wt.key[j]) && (!f_k1_found_after_j); // the same key
+      z3::expr f_found_same_key = f_k1_map1_latest_write && f_k1_map2_latest_write;
+      z3::expr v2 = sv2.update_val(v_sz);
+      z3::expr addr_v2 = map2._wt.addr_v[j];
+      z3::expr f_v2 = (addr_v2 != NULL_ADDR) &&
+                      predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, map2._wt.addr_v[j],
+                                           sv2.mem_var, v2, m_layout);
+      f = f && z3::implies(f_found_same_key && f_v1 && f_v2, v1 == v2);
+      z3::expr f_k1_del_in_one_map = ((addr_v1 == NULL_ADDR) && (addr_v2 != NULL_ADDR)) ||
+                                     ((addr_v1 != NULL_ADDR) && (addr_v2 == NULL_ADDR));
+      f = f && z3::implies(f_found_same_key && f_k1_del_in_one_map,
+                           string_to_expr("false"));
+      f_k1_found_after_j = f_k1_found_after_j || (k1 == map2._wt.key[j]);
+    }
+  }
+
+  return f;
+  // case 2: keys that are only in one of pgm1's map WT and pgm2's map WT
+  // if the key is found, this pgm must read the k/v first and then write back (latest write) the same k/v.
+  // it indicate this key should be found in map URT, and the latest m[k] in WT == m[k] in the map URT
+}
+
 // TODO: in order to test, stack is checked
 // need to modify later, since stack does not need to be checked
 z3::expr smt_mem_eq_chk(smt_mem& x, smt_mem& y, mem_layout& m_layout) {
