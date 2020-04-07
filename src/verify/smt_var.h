@@ -51,9 +51,12 @@ class mem_layout {
   vector<mem_range> _maps;
   vector<map_attr> _maps_attr;
 
-  void add_map(z3::expr s, z3::expr e) {
+  void add_map(z3::expr s, z3::expr e, map_attr m_attr = map_attr(NUM_BYTE_BITS, NUM_BYTE_BITS)) {
     _maps.push_back(mem_range(s, e));
-    _maps_attr.push_back(map_attr(NUM_BYTE_BITS, NUM_BYTE_BITS));
+    _maps_attr.push_back(m_attr);
+  }
+  void set_map_attr(int map_id, map_attr m_attr) {
+    _maps_attr[map_id] = m_attr;
   }
   void set_stack_range(z3::expr s, z3::expr e) {_stack.set_range(s, e);}
 };
@@ -137,8 +140,8 @@ class smt_var {
   z3::expr get_cur_reg_var(unsigned int reg_id);
   z3::expr get_init_reg_var(unsigned int reg_id);
   // map related functions
-  z3::expr update_key();
-  z3::expr update_val();
+  z3::expr update_key(unsigned int k_sz = NUM_BYTE_BITS);
+  z3::expr update_val(unsigned int v_sz = NUM_BYTE_BITS);
   z3::expr update_addr_v();
   void clear();
 };

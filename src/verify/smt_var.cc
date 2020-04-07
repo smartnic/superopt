@@ -111,16 +111,16 @@ z3::expr smt_var::get_init_reg_var(unsigned int reg_id) {
   return string_to_expr(name);
 }
 
-z3::expr smt_var::update_key() {
+z3::expr smt_var::update_key(unsigned int k_sz) {
   key_cur_id++;
   string name = "k_" + _name + "_" + to_string(key_cur_id);
-  return to_expr(name, NUM_BYTE_BITS);
+  return to_expr(name, k_sz);
 }
 
-z3::expr smt_var::update_val() {
+z3::expr smt_var::update_val(unsigned int v_sz) {
   val_cur_id++;
   string name = "v_" + _name + "_" + to_string(val_cur_id);
-  return to_expr(name, NUM_BYTE_BITS);
+  return to_expr(name, v_sz);
 }
 
 z3::expr smt_var::update_addr_v() {
