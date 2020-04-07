@@ -661,6 +661,30 @@ void test9() {
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k1 m2_2) == NULL");
   MAP_LOOKUP(map2_s, addr_k2, NULL_ADDR)
   print_test_res(is_valid(f_expected == string_to_expr("true")), "eval(lookup &k2 m2_2) == NULL");
+
+  // test the return value of delete
+  cout << "4. test return value of delete" << endl;
+  sv.clear();
+  sv.mem_var.init_addrs_map_v_next(m_layout);
+  predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
+  predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
+  z3::expr out = new_out();
+  f = predicate_map_delete_helper(map1_s, addr_k1, out, sv, m_layout); // del m1[k2]
+  f_expected = (eval_output(f, out) == MAP_DEL_RET_IF_KEY_INEXIST);
+  print_test_res(is_valid(f_expected), "eval_ret(delete &k m) == MAP_DEL_RET_IF_KEY_INEXIST");
+
+  f = predicate_map_update_helper(map1_s, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
+  out = new_out();
+  f = f && predicate_map_delete_helper(map1_s, addr_k1, out, sv, m_layout);
+  f_expected = (eval_output(f, out) == MAP_DEL_RET_IF_KEY_EXIST);
+  print_test_res(is_valid(f_expected), "eval_ret(delete &k (update &k &v (delete &k m))) "\
+                 "== MAP_DEL_RET_IF_KEY_EXIST");
+
+  out = new_out();
+  f = f && predicate_map_delete_helper(map1_s, addr_k1, out, sv, m_layout);
+  f_expected = (eval_output(f, out) == MAP_DEL_RET_IF_KEY_INEXIST);
+  print_test_res(is_valid(f_expected), "eval_ret(delete &k (delete &k (update &k &v (delete &k m)))) "\
+                 "== MAP_DEL_RET_IF_KEY_INEXIST");
 }
 
 #undef MAP_LOOKUP_AND_LD
