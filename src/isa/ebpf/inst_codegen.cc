@@ -135,10 +135,95 @@ z3::expr key_not_found_after_idx(z3::expr key, int idx, int addr_map, smt_map_wt
   return f;
 }
 
+z3::expr predicate_ld_byte_from_wt(z3::expr addr, smt_wt& wt, z3::expr out) {
+  if (wt.addr.size() <= 0) return string_to_expr("false");
+  z3::expr a = addr;
+  z3::expr f = string_to_expr("true");
+  z3::expr f_found_after_i = string_to_expr("false");
+  for (int i = wt.addr.size() - 1; i >= 0; i--) {
+    f = f && z3::implies((!f_found_after_i) && (a == wt.addr[i]), out == wt.val[i]);
+    f_found_after_i = f_found_after_i || (a == wt.addr[i]);
+  }
+  f = f && (!addr_not_in_wt(addr, wt.addr)); // if addr not in wt, the result is false
+  return f;
+}
+
+z3::expr predicate_ld_n_bytes_from_wt(int n, z3::expr addr, smt_wt& wt, z3::expr out) {
+  z3::expr f = string_to_expr("true");
+  for (int i = 0; i < n; i++) {
+    f = f && predicate_ld_byte_from_wt(addr + i, wt, out.extract(8 * i + 7, 8 * i));
+  }
+  return f;
+}
+
+z3::expr predicate_ld_byte_from_urt(z3::expr addr, smt_wt& urt, z3::expr out) {
+  if (urt.addr.size() <= 0) return string_to_expr("false");
+  z3::expr a = addr;
+  z3::expr f = string_to_expr("true");
+  for (int i = 0; i < urt.addr.size(); i++) {
+    f = f && z3::implies(a == urt.addr[i], out == urt.val[i]);
+  }
+  f = f && (!addr_not_in_wt(addr, urt.addr)); // if addr not in urt, the result is false
+  return f;
+}
+
+z3::expr predicate_ld_n_bytes_from_urt(int n, z3::expr addr, smt_wt& urt, z3::expr out) {
+  z3::expr f = string_to_expr("true");
+  for (int i = 0; i < n; i++) {
+    f = f && predicate_ld_byte_from_urt(addr + i, urt, out.extract(8 * i + 7, 8 * i));
+  }
+  return f;
+}
+
+// keys found in map of sv1, not in map of sv2
+// for each key(k) in these keys, the latest write m[k] should be equal to the input
+// thus, before writing, this k/v should be read from the map, that is, the element can be found in map URT
+z3::expr keys_found_in_one_map(int addr_map, smt_var& sv1, smt_map_wt& map2_wt, mem_layout& m_layout) {
+  smt_map_wt& map_wt = sv1.mem_var._map_table._wt;
+  smt_map_wt& map_urt = sv1.mem_var._map_table._urt;
+  z3::expr f = string_to_expr("true");
+  int map_id = addr_map;
+  int v_sz = m_layout._maps_attr[map_id].val_sz;
+  for (int i = map_wt.size() - 1; i >= 0; i--) {
+    if (addr_map != map_wt.addr_map[i]) continue; // check the specific map in map1 WT
+    z3::expr k1 = map_wt.key[i];
+    z3::expr v1 = sv1.update_val(v_sz);
+    z3::expr addr_v1 = map_wt.addr_v[i]; // addr_v1 is NULL -> false
+    z3::expr f_k1_map1_wt_latest_write = key_not_found_after_idx(k1, i, addr_map, map_wt);
+    z3::expr f_not_found_in_map2 = key_not_found_after_idx(k1, -1, addr_map, map2_wt);
+    z3::expr f_v1 = (addr_v1 != NULL_ADDR) &&
+                    predicate_ld_n_bytes_from_wt(v_sz / NUM_BYTE_BITS, addr_v1,
+                        sv1.mem_var._mem_table._wt, v1);
+
+    f = f && z3::implies(f_k1_map1_wt_latest_write && f_not_found_in_map2 && (addr_v1 == NULL_ADDR),
+                         string_to_expr("false"));
+    // k1 should be found in map1._urt
+    if (map_urt.size() <= 0) {
+      f = f && z3::implies(f_k1_map1_wt_latest_write && f_not_found_in_map2, string_to_expr("false"));
+    }
+    for (int j = map_urt.size() - 1; j >= 0; j--) {
+      if (addr_map != map_urt.addr_map[j]) continue; // check the specific map in map1 URT
+      z3::expr f_found_same_key = f_k1_map1_wt_latest_write && f_not_found_in_map2 &&
+                                  (k1 == map_urt.key[j]);
+      z3::expr v2 = sv1.update_val(v_sz);
+      z3::expr addr_v2 = map_urt.addr_v[j];
+      z3::expr f_v2 = (addr_v2 != NULL_ADDR) &&
+                      predicate_ld_n_bytes_from_urt(v_sz / NUM_BYTE_BITS, addr_v2,
+                          sv1.mem_var._mem_table._urt, v2);
+      // if key is "deleted" in both WT and URT, the result is true
+      z3::expr f_key_both_del = ((addr_v1 == NULL_ADDR) && (addr_v2 == NULL_ADDR));
+      z3::expr f_key_one_del = ((addr_v1 != NULL_ADDR) && (addr_v2 == NULL_ADDR)) ||
+                               ((addr_v1 == NULL_ADDR) && (addr_v2 != NULL_ADDR));
+      f = f && z3::implies(f_found_same_key && f_v1 && f_v2, v1 == v2);
+    }
+  }
+  return f;
+}
+
 z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   int map_id = addr_map;
-  int v_sz = m_layout._maps_attr[addr_map].val_sz;
+  int v_sz = m_layout._maps_attr[map_id].val_sz;
   // case 1: keys that are in pgm1's map WT and pgm2's map WT
   // if the key is found, m_pgm1[k] == m_pgm2[k]
   map_wt& map1 = sv1.mem_var._map_table, map2 = sv2.mem_var._map_table;
@@ -162,19 +247,22 @@ z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout
       z3::expr f_v2 = (addr_v2 != NULL_ADDR) &&
                       predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, map2._wt.addr_v[j],
                                            sv2.mem_var, v2, m_layout);
-      f = f && z3::implies(f_found_same_key && f_v1 && f_v2, v1 == v2);
       z3::expr f_k1_del_in_one_map = ((addr_v1 == NULL_ADDR) && (addr_v2 != NULL_ADDR)) ||
                                      ((addr_v1 != NULL_ADDR) && (addr_v2 == NULL_ADDR));
-      f = f && z3::implies(f_found_same_key && f_k1_del_in_one_map,
-                           string_to_expr("false"));
+      z3::expr f_k1_both_del = ((addr_v1 == NULL_ADDR) && (addr_v2 == NULL_ADDR));
+      // f = f && z3::implies(f_found_same_key && f_k1_both_del, string_to_expr("false"));
+      f = f && z3::implies(f_found_same_key && f_v1 && f_v2, v1 == v2);
+      f = f && z3::implies(f_found_same_key && f_k1_del_in_one_map, string_to_expr("false"));
       f_k1_found_after_j = f_k1_found_after_j || (k1 == map2._wt.key[j]);
     }
   }
 
-  return f;
   // case 2: keys that are only in one of pgm1's map WT and pgm2's map WT
   // if the key is found, this pgm must read the k/v first and then write back (latest write) the same k/v.
   // it indicate this key should be found in map URT, and the latest m[k] in WT == m[k] in the map URT
+  f = f && keys_found_in_one_map(addr_map, sv1, map2._wt, m_layout) &&
+      keys_found_in_one_map(addr_map, sv2, map1._wt, m_layout);
+  return f;
 }
 
 // TODO: in order to test, stack is checked
@@ -204,6 +292,31 @@ z3::expr key_not_in_map_wt(int addr_map, z3::expr k, smt_map_wt& m_wt) {
   return (!f);
 }
 
+z3::expr predicate_map_lookup_k_in_map_wt(int addr_map, z3::expr k, z3::expr addr_map_v, smt_map_wt& m_wt) {
+  z3::expr f = string_to_expr("true");
+  z3::expr key_found_after_i = string_to_expr("false");
+  for (int i = m_wt.key.size() - 1; i >= 0; i--) {
+    if (addr_map != m_wt.addr_map[i]) continue; // the same map
+    z3::expr key_found_i = (k == m_wt.key[i]); // the same key
+    f = f && z3::implies((!key_found_after_i) && key_found_i, // latest write of key-value pair in the map
+                         addr_map_v == m_wt.addr_v[i]);
+    key_found_after_i = key_found_after_i || key_found_i;
+  }
+  return f;
+}
+
+// constrain: (k not in map WT) && (map == map_i) && (k == k_i) => addr_v == addr_vi
+z3::expr predicate_map_lookup_k_in_map_urt(int addr_map, z3::expr k, z3::expr addr_map_v, map_wt& map_table) {
+  z3::expr f = string_to_expr("true");
+  z3::expr f1 = key_not_in_map_wt(addr_map, k, map_table._wt);
+  for (int i = map_table._urt.key.size() - 1; i >= 0; i--) {
+    if (addr_map != map_table._urt.addr_map[i]) continue;
+    z3::expr f2 = (k == map_table._urt.key[i]);
+    f = f && z3::implies(f1 && f2, addr_map_v == map_table._urt.addr_v[i]);
+  }
+  return f;
+}
+
 // "addr_map_v" is the return value
 z3::expr predicate_map_lookup_helper(int addr_map, z3::expr addr_k, z3::expr addr_map_v,
                                      smt_var& sv, mem_layout& m_layout) {
@@ -214,27 +327,15 @@ z3::expr predicate_map_lookup_helper(int addr_map, z3::expr addr_k, z3::expr add
   z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, mem, k, m_layout);
 
   // case 1: k in the map WT
-  z3::expr key_found_after_i = string_to_expr("false");
-  for (int i = mem._map_table._wt.key.size() - 1; i >= 0; i--) {
-    if (addr_map != mem._map_table._wt.addr_map[i]) continue; // the same map
-    z3::expr key_found_i = (k == mem._map_table._wt.key[i]); // the same key
-    f = f && z3::implies((!key_found_after_i) && key_found_i, // latest write of key-value pair in the map
-                         addr_map_v == mem._map_table._wt.addr_v[i]);
-    key_found_after_i = key_found_after_i || key_found_i;
-  }
+  f = f && predicate_map_lookup_k_in_map_wt(addr_map, k, addr_map_v, mem._map_table._wt);
 
   // case 2: k not in the map WT
   // add the constrain of the new element in map URT
-  // constrain: (k not in map WT) && (map == map_i) && (k == k_i) => addr_v == addr_vi or
-  z3::expr f1 = key_not_in_map_wt(addr_map, k, mem._map_table._wt);
-  for (int i = mem._map_table._urt.key.size() - 1; i >= 0; i--) {
-    if (addr_map != mem._map_table._urt.addr_map[i]) continue;
-    z3::expr f2 = (k == mem._map_table._urt.key[i]);
-    f = f && z3::implies(f1 && f2, addr_map_v == mem._map_table._urt.addr_v[i]);
-  }
+  f = f && predicate_map_lookup_k_in_map_urt(addr_map, k, addr_map_v, mem._map_table);
 
   // constrain: (k not in map WT) && (k not in map URT)
   // => the addr_map_v is next address of the map value in the specific map or NULL
+  z3::expr f1 = key_not_in_map_wt(addr_map, k, mem._map_table._wt);
   z3::expr f2 = key_not_in_map_wt(addr_map, k, mem._map_table._urt);
   f = f && z3::implies(f1 && f2,
                        (addr_map_v == NULL_ADDR) ||
@@ -286,21 +387,29 @@ z3::expr predicate_map_update_helper(int addr_map, z3::expr addr_k, z3::expr add
 
 // "out" is the return value
 // if key not in the map, out = 0xfffffffe, else out = 0
+// delete cannot use predicate_map_lookup_helper directly, since lookup helper will add an element in map URT,
+// while in the map equivalence check, it is assumed that the element in map URT only added by lookup operation
 z3::expr predicate_map_delete_helper(int addr_map, z3::expr addr_k, z3::expr out,
                                      smt_var& sv, mem_layout& m_layout) {
-  z3::expr addr_map_v = sv.update_addr_v();
-  z3::expr f = predicate_map_lookup_helper(addr_map, addr_k, addr_map_v, sv, m_layout);
-  f = f && z3::implies(addr_map_v == NULL_ADDR, out == MAP_DEL_RET_IF_KEY_INEXIST);
-  f = f && z3::implies(addr_map_v != NULL_ADDR, out == MAP_DEL_RET_IF_KEY_EXIST);
-
-  // if key in the map, insert an element in map table to delete this key
   smt_mem& mem = sv.mem_var;
   int map_id = addr_map;
   int k_sz = m_layout._maps_attr[map_id].key_sz;
   z3::expr k = sv.update_key(k_sz);
-  // FOL formula of the constrain on "k"
-  f = f && predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv.mem_var, k, m_layout);
+  z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, mem, k, m_layout);
+  z3::expr addr_map_v = sv.update_addr_v();
+  // if k is in the map WT
+  f = f && predicate_map_lookup_k_in_map_wt(addr_map, k, addr_map_v, mem._map_table._wt);
+  // if k is not in the map WT
+  f = f && predicate_map_lookup_k_in_map_urt(addr_map, k, addr_map_v, mem._map_table);
 
+  z3::expr f1 = key_not_in_map_wt(addr_map, k, mem._map_table._wt);
+  z3::expr f2 = key_not_in_map_wt(addr_map, k, mem._map_table._urt);
+  z3::expr f3 = f1 && f2;
+  f = f && z3::implies((!f3) && (addr_map_v == NULL_ADDR), out == MAP_DEL_RET_IF_KEY_INEXIST);
+  f = f && z3::implies((!f3) && (addr_map_v != NULL_ADDR), out == MAP_DEL_RET_IF_KEY_EXIST);
+
+  f = f && z3::implies(f3, (out == MAP_DEL_RET_IF_KEY_INEXIST) || (out == MAP_DEL_RET_IF_KEY_EXIST));
+  // if key in the map, insert an element in map table to delete this key
   mem._map_table._wt.add(addr_map, k, NULL_ADDR);
   return f;
 }
