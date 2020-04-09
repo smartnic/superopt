@@ -224,7 +224,9 @@ z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout
   int map_id = addr_map;
   int v_sz = m_layout._maps_attr[map_id].val_sz;
   // case 1: keys that are in pgm1's map WT and pgm2's map WT
-  // if the key is found, m_pgm1[k] == m_pgm2[k]
+  // if the key is found && load v1 from mem1 WT && load v2 from mem2 WT => 1 or 2
+  // 1. addr_v1 == addr_v2 == NULL
+  // 2. addr_v1 != NULL && addr_v2 != NULL && v1 == v2
   map_wt& map1 = sv1.mem_var._map_table, map2 = sv2.mem_var._map_table;
   for (int i = map1._wt.size() - 1; i >= 0; i--) {
     if (addr_map != map1._wt.addr_map[i]) continue; // check the specific map in map1 WT
@@ -255,8 +257,12 @@ z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout
   }
 
   // case 2: keys that are only in one of pgm1's map WT and pgm2's map WT
-  // if the key is found, this pgm must read the k/v first and then write back (latest write) the same k/v.
-  // it indicate this key should be found in map URT, and the latest m[k] in WT == m[k] in the map URT
+  // if the key is found, the ouput should be the same as the input
+  // take map1 for an example,
+  // if the key not found in map2 && k_out == k_in &&load v_out from mem1 WT &&
+  // load v_in from mem1 URT => 1 or 2
+  // 1. addr_v_out == addr_v_in == NULL
+  // 2. addr_v_out != NULL && addr_v_in != NULL && v_in == v_out
   f = f && keys_found_in_one_map(addr_map, sv1, map2._wt, m_layout) &&
       keys_found_in_one_map(addr_map, sv2, map1._wt, m_layout);
   return f;
@@ -264,9 +270,9 @@ z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout
 
 // add the constrains on the input equivalence setting
 // the same k/v in map_p1 URT == map_p2 URT
-// each key "k" in map_p1 URT, if "k" is in map_p2 URT =>
-// 1. "k" is not in the input map, i.e., the corresponding addr_v both NULL or
-// 2. "k" is in the input map, the corresponding v_p1 == v_p2
+// each key "k" in map_p1 URT, if "k" is in map_p2 URT => 1 or 2
+// 1. "k" is not in the input map, i.e., the corresponding addr_v both NULL
+// 2. "k" is in the input map, load v_p1 and v_p2 from mem URT, the corresponding v_p1 == v_p2
 z3::expr one_map_set_same_input_map(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   int map_id = addr_map;
