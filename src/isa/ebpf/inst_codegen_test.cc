@@ -962,7 +962,12 @@ void test10() {
 
   f = f && predicate_map_delete_helper(addr_map1, addr_k1, new_out(), sv1, m_layout); // del m_p1[k1]
   test_name = "m_p1_2 != m_p2_1, m_p1_2 = delete &k1 m_p1_1";
-  MAP_EQ_CHK(addr_map1, test_name, false)
+  f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
+  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
+  print_test_res(!is_valid(z3::implies(f && f_same_input, f_equal)), test_name);
+  test_name = "m_p1_2 != m_p2_1, m_p1_2 = delete &k1 m_p1_1, if k1 not in the input map";
+  z3::expr f_path_cond = (addr_v_lookup_p1 != NULL_ADDR);
+  print_test_res(!is_valid(z3::implies(f && f_same_input && f_path_cond, f_equal)), test_name);
 
   f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p1, new_out(), sv1, m_layout);
   test_name = "m_p1_3 != m_p2_1, m_p1_3 = update &k1 &v_lookup_k1_p1 m_p1_2";
@@ -970,7 +975,7 @@ void test10() {
   test_name = "m_p1_3 == m_p2_1, if k1 in m_p1_0";
   f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
   f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  z3::expr f_path_cond = (addr_v_lookup_p1 != NULL_ADDR);
+  f_path_cond = (addr_v_lookup_p1 != NULL_ADDR);
   print_test_res(is_valid(z3::implies(f && f_same_input && f_path_cond, f_equal)), test_name);
 
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout);
@@ -991,6 +996,12 @@ void test10() {
   f_path_cond = (addr_v_lookup_p1 != NULL_ADDR);
   print_test_res(is_valid(z3::implies(f && f_same_input && f_path_cond, f_equal)), test_name);
 
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout);
+  test_name = "m_p1_5 != m_p2_3, m_p2_3 = update &k1 &v1 m_p2_2 if k1 in the input map";
+  f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
+  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
+  f_path_cond = (addr_v_lookup_p2 != NULL_ADDR);
+  print_test_res(!is_valid(z3::implies(f && f_same_input && f_path_cond, f_equal)), test_name);
 
   z3::expr addr_v_lookup = new_addr_v_lookup();
   z3::expr v_lookup = new_v_lookup();
