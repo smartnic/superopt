@@ -213,7 +213,7 @@ z3::expr keys_found_in_one_map(int addr_map, smt_var& sv1, smt_map_wt& map2_wt, 
       z3::expr f_k_both_exist = (addr_v_out != NULL_ADDR) && (addr_v_in != NULL_ADDR);
 
       f = f && z3::implies(f_found_same_k && f_v_out && f_v_in,
-                           f_k_both_inexist || f_k_both_exist && (v_out == v_in));
+                           f_k_both_inexist || (f_k_both_exist && (v_out == v_in)));
     }
   }
   return f;
