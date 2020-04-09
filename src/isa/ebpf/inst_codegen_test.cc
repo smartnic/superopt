@@ -876,6 +876,7 @@ void test10() {
   // test map without process, i.e., no elements in map tables
   cout << "1. case: both map WTs are empty" << endl;
   z3::expr f = string_to_expr("true");
+  z3::expr f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
   z3::expr f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
   print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_0 == m_p2_0 (maps without process)");
   cout << "2. case: keys can be found in both map WTs" << endl;
@@ -891,31 +892,36 @@ void test10() {
   f = (k1 != k2) && (v1 != v2);
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout);
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2, m_layout);
-  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_1 == m_p2_1, "\
-                 "m_p1_1 = update &k1 &v1 m_p1, m_p2_1 = update &k1 &v1 m_p2");
+
+#define MAP_EQ_CHK(addr_map, test_name, test_res) \
+  f_same_input = one_map_set_same_input_map(addr_map, sv1, sv2, m_layout); \
+  f_equal = smt_one_map_eq_chk(addr_map, sv1, sv2, m_layout); \
+  print_test_res(is_valid(z3::implies(f && f_same_input, f_equal)) == test_res, test_name);
+
+  string test_name = "m_p1_1 == m_p2_1, m_p1_1 = update &k1 &v1 m_p1, m_p2_1 = update &k1 &v1 m_p2";
+  MAP_EQ_CHK(addr_map1, test_name, true)
+
   // test latest write
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v2, new_out(), sv2, m_layout);
-  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(!is_valid(z3::implies(f, f_equal)), "m_p1_2 != m_p2_1, m_p1_2 = update &k1 &v2 m_p1_1");
+  test_name = "m_p1_2 != m_p2_1, m_p1_2 = update &k1 &v2 m_p1_1";
+  MAP_EQ_CHK(addr_map1, test_name, false)
   // test latest write
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2, m_layout);
-  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_3 == m_p2_1, m_p1_3 = update &k1 &v1 m_p1_2");
+  test_name = "m_p1_3 == m_p2_1, m_p1_3 = update &k1 &v1 m_p1_2";
+  MAP_EQ_CHK(addr_map1, test_name, true)
   // test delete
   f = f && predicate_map_delete_helper(addr_map1, addr_k1, new_out(), sv2, m_layout);
-  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(!is_valid(z3::implies(f, f_equal)), "m_p1_4 != m_p2_1, m_p1_4 = delete &k1 m_p1_3");
+  test_name = "m_p1_4 != m_p2_1, m_p1_4 = delete &k1 m_p1_3";
+  MAP_EQ_CHK(addr_map1, test_name, false)
 
   f = f && predicate_map_delete_helper(addr_map1, addr_k1, new_out(), sv1, m_layout);
-  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_4 == m_p2_2, m_p2_2 = delete &k1 m_p2_1");
+  test_name = "m_p1_4 == m_p2_2, m_p2_2 = delete &k1 m_p2_1";
+  MAP_EQ_CHK(addr_map1, test_name, true)
 
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v2, new_out(), sv1, m_layout);
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v2, new_out(), sv2, m_layout);
-  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_5 == m_p2_3, "\
-                 "m_p1_5 = update &k1 &v2 m_p1_4, m_p2_3 = update &k1 &v2 m_p2_2");
+  test_name = "m_p1_5 == m_p2_3, m_p1_5 = update &k1 &v2 m_p1_4, m_p2_3 = update &k1 &v2 m_p2_2";
+  MAP_EQ_CHK(addr_map1, test_name, true)
 
   cout << "3. case: there is(are) key(s) that can only be found in one map WT" << endl;
   sv1.clear(); sv2.clear();
@@ -930,35 +936,63 @@ void test10() {
   predicate_st8(k2, addr_k2, v(0), sv2.mem_var);
   predicate_st8(v2, addr_v2, v(0), sv2.mem_var);
   f = (k1 != k2) && (v1 != v2);
-  z3::expr addr_v_lookup = new_addr_v_lookup();
-  z3::expr v_lookup = new_v_lookup();
-  f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup, sv1, m_layout);
-  f = f && predicate_ld8(addr_v_lookup, v(0), sv1.mem_var, v_lookup, m_layout);
+  // store v_lookup_k1_p1 (= m_p1[k1]) in the stack (addr: stack_addr_v_lookup_p1)
+  z3::expr addr_v_lookup_p1 = new_addr_v_lookup();
+  z3::expr v_lookup_p1 = new_v_lookup();
+  f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p1, sv1, m_layout);
+  f = f && predicate_ld8(addr_v_lookup_p1, v(0), sv1.mem_var, v_lookup_p1, m_layout);
+  z3::expr stack_addr_v_lookup_p1 = stack_s + 4;
+  predicate_st8(v_lookup_p1, stack_addr_v_lookup_p1, v(0), sv1.mem_var);
+  // store v_lookup_k1_p2 (= m_p2[k1]) in the stack (addr: stack_addr_v_lookup_p2)
+  z3::expr addr_v_lookup_p2 = new_addr_v_lookup();
+  z3::expr v_lookup_p2 = new_v_lookup();
+  f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p2, sv2, m_layout);
+  f = f && predicate_ld8(addr_v_lookup_p2, v(0), sv2.mem_var, v_lookup_p2, m_layout);
+  z3::expr stack_addr_v_lookup_p2 = stack_s + 5;
+  predicate_st8(v_lookup_p2, stack_addr_v_lookup_p2, v(0), sv2.mem_var);
 
-  z3::expr stack_addr_v_lookup = stack_s + 4;
-  predicate_st8(v_lookup, stack_addr_v_lookup, v(0), sv1.mem_var);
+  test_name = "m_p1_0 == m_p2_0";
+  MAP_EQ_CHK(addr_map1, test_name, true)
 
   f = f && predicate_map_update_helper(addr_map1, addr_k2, addr_v2, new_out(), sv1, m_layout); // m_p1[k2] = v2
   f = f && predicate_map_update_helper(addr_map1, addr_k2, addr_v2, new_out(), sv2, m_layout); // m_p2[k2] = v2
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout); // m_p1[k1] = v1
-  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(!is_valid(z3::implies(f, f_equal)), "m_p1_1 != m_p2_1, "\
-                 "m_p1_1 = update &k1 &v1 (update &k2 &v2 m_p1_0), m_p2_1 = update &k2 &v2 m_p2_0");
+  test_name = "m_p1_1 != m_p2_1, m_p1_1 = update &k1 &v1 (update &k2 &v2 m_p1_0), m_p2_1 = update &k2 &v2 m_p2_0";
+  MAP_EQ_CHK(addr_map1, test_name, false)
 
   f = f && predicate_map_delete_helper(addr_map1, addr_k1, new_out(), sv1, m_layout); // del m_p1[k1]
-  f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(!is_valid(z3::implies(f && (addr_v_lookup != NULL_ADDR), f_equal)), "m_p1_2 != m_p2_1, "\
-                 "m_p1_2 = delete &k1 m_p1_1, if k1 in m_p1_0");
-  print_test_res(is_valid(z3::implies(f && (addr_v_lookup == NULL_ADDR), f_equal)), "m_p1_2 == m_p2_1, "\
-                 "m_p1_2 = delete &k1 m_p1_1, if k1 not in m_p1_0");
+  test_name = "m_p1_2 != m_p2_1, m_p1_2 = delete &k1 m_p1_1";
+  MAP_EQ_CHK(addr_map1, test_name, false)
 
-  f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup, new_out(), sv1, m_layout);
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p1, new_out(), sv1, m_layout);
+  test_name = "m_p1_3 == m_p2_1, m_p1_3 = update &k1 &v_lookup_k1_p1 m_p1_2 if k1 in m_p1_0";
+  f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
   f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_3 == m_p2_1, m_p1_3 = update &k1 &v_lookup_k1 m_p1_2");
+  print_test_res(is_valid(z3::implies(f && f_same_input && (addr_v_lookup_p1 != NULL_ADDR), f_equal)), test_name);
 
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout);
+  test_name = "m_p1_4 != m_p2_1, m_p1_4 = update &k1 &v1 m_p1_3";
+  MAP_EQ_CHK(addr_map1, test_name, false)
+  f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
+
+  // test input equivalence constrain
+  cout << "4. test input equivalence constrain" << endl;
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p1, new_out(), sv1, m_layout);
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p2, new_out(), sv2, m_layout);
+  test_name = "m_p1_5 == m_p2_2, m_p1_5 = update &k1 &v_lookup_k1_p1 m_p1_4, "\
+              "m_p2_2 = update &k1 &v_lookup_k1_p2 m_p2_1, if k1 in the input map";
+  f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
   f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(!is_valid(z3::implies(f, f_equal)), "m_p1_4 != m_p2_1, m_p1_4 = update &k1 &v1 m_p1_3");
+  print_test_res(is_valid(z3::implies(f && f_same_input && (addr_v_lookup_p1 != NULL_ADDR), f_equal)), test_name);
+
+  z3::expr addr_v_lookup = new_addr_v_lookup();
+  z3::expr v_lookup = new_v_lookup();
+  f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup, sv1, m_layout);
+  f = f && predicate_ld8(addr_v_lookup, v(0), sv1.mem_var, v_lookup, m_layout);
+  addr_v_lookup = new_addr_v_lookup();
+  f = f && predicate_map_lookup_helper(addr_map1, addr_k2, addr_v_lookup, sv2, m_layout);
+  test_name = "lookup does not affect map equivalence check";
+  MAP_EQ_CHK(addr_map1, test_name, true)
 }
 
 int main() {

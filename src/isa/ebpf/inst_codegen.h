@@ -84,6 +84,7 @@ z3::expr predicate_map_delete_helper(int addr_map, z3::expr addr_k, z3::expr out
                                      smt_var& sv, mem_layout& m_layout);
 // return the FOL formula that check whether two memories have the same values
 z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, mem_range& r);
+z3::expr one_map_set_same_input_map(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout& m_layout);
 z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1,
                             smt_var& sv2, mem_layout& m_layout);
 // return the FOL formula that check whether two programs have the same output memories
