@@ -247,9 +247,9 @@ void test5() {
   print_test_res(is_valid(smt), "predicate_st32/ld64");
   s->clear();
 
-  // safety check
-  smt = predicate_ld8(NULL_ADDR, v(0), m, v(x), m_layout);
-  print_test_res(is_valid(smt == string_to_expr("false")), "safety check when ld from NULL_ADDR");
+  // // safety check
+  // smt = predicate_ld8(NULL_ADDR, v(0), m, v(x), m_layout);
+  // print_test_res(is_valid(smt == string_to_expr("false")), "safety check when ld from NULL_ADDR");
 }
 
 void test6() {
@@ -288,18 +288,18 @@ void test7() {
   smt_mem m;
   z3::expr v1 = v(0xff);
 
-  // stack safety check, read before write within stack address range implies "false"
-  print_test_res(is_valid(predicate_ld8(stack_s, v(0), m, v1, m_layout) == string_to_expr("false")),
-                 "safety check 1");
-  predicate_st8(v1, stack_s, v(0), m);
-  print_test_res(is_valid(predicate_ld8(stack_s, v(0), m, v1, m_layout) == string_to_expr("true")),
-                 "safety check 2");
-  print_test_res(is_valid(predicate_ld8(stack_s, v(8), m, v1, m_layout) == string_to_expr("false")),
-                 "safety check 3");
-  print_test_res(is_valid(predicate_ld8(stack_s, v(511), m, v1, m_layout) == string_to_expr("false")),
-                 "safety check 4");
-  print_test_res(is_valid(predicate_ld8(stack_s, v(512), m, v1, m_layout) == string_to_expr("true")),
-                 "safety check 5");
+  // // stack safety check, read before write within stack address range implies "false"
+  // print_test_res(is_valid(predicate_ld8(stack_s, v(0), m, v1, m_layout) == string_to_expr("false")),
+  //                "safety check 1");
+  // predicate_st8(v1, stack_s, v(0), m);
+  // print_test_res(is_valid(predicate_ld8(stack_s, v(0), m, v1, m_layout) == string_to_expr("true")),
+  //                "safety check 2");
+  // print_test_res(is_valid(predicate_ld8(stack_s, v(8), m, v1, m_layout) == string_to_expr("false")),
+  //                "safety check 3");
+  // print_test_res(is_valid(predicate_ld8(stack_s, v(511), m, v1, m_layout) == string_to_expr("false")),
+  //                "safety check 4");
+  // print_test_res(is_valid(predicate_ld8(stack_s, v(512), m, v1, m_layout) == string_to_expr("true")),
+  //                "safety check 5");
 
   // test constrain on URT element (addr within map address range)
   // if addr cannot be found in the WT but found in URT,
@@ -965,10 +965,13 @@ void test10() {
   MAP_EQ_CHK(addr_map1, test_name, false)
 
   f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p1, new_out(), sv1, m_layout);
-  test_name = "m_p1_3 == m_p2_1, m_p1_3 = update &k1 &v_lookup_k1_p1 m_p1_2 if k1 in m_p1_0";
+  test_name = "m_p1_3 != m_p2_1, m_p1_3 = update &k1 &v_lookup_k1_p1 m_p1_2";
+  MAP_EQ_CHK(addr_map1, test_name, false)
+  test_name = "m_p1_3 == m_p2_1, if k1 in m_p1_0";
   f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
   f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(is_valid(z3::implies(f && f_same_input && (addr_v_lookup_p1 != NULL_ADDR), f_equal)), test_name);
+  z3::expr f_path_cond = (addr_v_lookup_p1 != NULL_ADDR);
+  print_test_res(is_valid(z3::implies(f && f_same_input && f_path_cond, f_equal)), test_name);
 
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout);
   test_name = "m_p1_4 != m_p2_1, m_p1_4 = update &k1 &v1 m_p1_3";
@@ -978,12 +981,16 @@ void test10() {
   // test input equivalence constrain
   cout << "4. test input equivalence constrain" << endl;
   f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p1, new_out(), sv1, m_layout);
-  f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p2, new_out(), sv2, m_layout);
-  test_name = "m_p1_5 == m_p2_2, m_p1_5 = update &k1 &v_lookup_k1_p1 m_p1_4, "\
-              "m_p2_2 = update &k1 &v_lookup_k1_p2 m_p2_1, if k1 in the input map";
   f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
   f_equal = smt_one_map_eq_chk(addr_map1, sv1, sv2, m_layout);
-  print_test_res(is_valid(z3::implies(f && f_same_input && (addr_v_lookup_p1 != NULL_ADDR), f_equal)), test_name);
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p2, new_out(), sv2, m_layout);
+  test_name = "m_p1_5 != m_p2_2, m_p1_5 = update &k1 &v_lookup_k1_p1 m_p1_4, "\
+              "m_p2_2 = update &k1 &v_lookup_k1_p2 m_p2_1";
+  print_test_res(!is_valid(z3::implies(f && f_same_input, f_equal)), test_name);
+  test_name = "m_p1_5 == m_p2_2, if k1 in the input map";
+  f_path_cond = (addr_v_lookup_p1 != NULL_ADDR);
+  print_test_res(is_valid(z3::implies(f && f_same_input && f_path_cond, f_equal)), test_name);
+
 
   z3::expr addr_v_lookup = new_addr_v_lookup();
   z3::expr v_lookup = new_v_lookup();

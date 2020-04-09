@@ -55,6 +55,7 @@ z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, mem_layout& 
   // add element in urt
   m._mem_table._urt.add(a, out);
 
+  // TODO: find another way to process safety check
   // // safety check
   // // address "a" within the memory range that does not allow ur
   // // if "a" cannot be found in memory WT, the result is false
