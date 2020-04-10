@@ -87,9 +87,10 @@ z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, mem_range& r);
 z3::expr one_map_set_same_input_map(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout& m_layout);
 z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1,
                             smt_var& sv2, mem_layout& m_layout);
+z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2, mem_layout& m_layout, z3::expr& f_pc);
 // return the FOL formula that check whether two programs have the same output memories
-z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_mem>& mem1,
-                            vector<z3::expr>& pc2, vector<smt_mem>& mem2,
+z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
+                            vector<z3::expr>& pc2, vector<smt_var>& sv2,
                             mem_layout& m_layout);
 /* APIs exposed to the externals end */
 

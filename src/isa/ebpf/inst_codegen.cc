@@ -329,19 +329,27 @@ z3::expr one_map_set_same_input_map(int addr_map, smt_var& sv1, smt_var& sv2, me
   return f;
 }
 
-// TODO: in order to test, stack is checked
-// need to modify later, since stack does not need to be checked
-z3::expr smt_mem_eq_chk(smt_mem& x, smt_mem& y, mem_layout& m_layout) {
-  return smt_stack_eq_chk(x._mem_table._wt, y._mem_table._wt, m_layout._stack);
+z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2, mem_layout& m_layout, z3::expr& f_pc) {
+  z3::expr f = string_to_expr("true");
+  for (int i = 0; i < m_layout._maps.size(); i++) {
+    int addr_map = i;
+    z3::expr f_input = one_map_set_same_input_map(addr_map, sv1, sv2, m_layout);
+    z3::expr f_equal = smt_one_map_eq_chk(addr_map, sv1, sv2, m_layout);
+    f = f && z3::implies(f_input && f_pc, f_equal);
+  }
+  return f;
 }
 
-z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_mem>& mem1,
-                            vector<z3::expr>& pc2, vector<smt_mem>& mem2,
+z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
+                            vector<z3::expr>& pc2, vector<smt_var>& sv2,
                             mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < pc1.size(); i++) {
     for (int j = 0; j < pc2.size(); j++) {
-      f = f && z3::implies((pc1[i] && pc2[j]), smt_mem_eq_chk(mem1[i], mem2[j], m_layout));
+      z3::expr f_pc = pc1[i] && pc2[j];
+      f = f && z3::implies(f_pc, smt_stack_eq_chk(sv1[i].mem_var._mem_table._wt,
+                           sv2[j].mem_var._mem_table._wt, m_layout._stack));
+      f = f && smt_map_eq_chk(sv1[i], sv2[j], m_layout, f_pc);
     }
   }
   return f;

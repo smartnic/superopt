@@ -866,7 +866,7 @@ void test10() {
   z3::expr map1_s = stack_e + 1, map1_e = stack_e + 512;
   int map1 = 0, addr_map1 = 0;
   m_layout.set_stack_range(stack_s, stack_e);
-  m_layout.add_map(map1_s, map1_s);
+  m_layout.add_map(map1_s, map1_e);
   sv1.mem_var.init_addrs_map_v_next(m_layout);
   sv2.mem_var.init_addrs_map_v_next(m_layout);
   z3::expr k1 = to_expr("k1", 8), v1 = to_expr("v1", 8);
@@ -1063,6 +1063,30 @@ void test10() {
   f_path_cond = (addr_v_lookup_p1 != NULL_ADDR);
   test_name = "m_p1_3 == m_p2_2, m_p2_2 = update &k1 &v_lookup_k1_p2 m_p2_1, if k1 in the input map";
   MAP_EQ_CHK_WITH_PC(addr_map1, test_name, true)
+
+  cout << "6. test mutiple maps" << endl;
+  sv1.clear(); sv2.clear();
+  z3::expr map2_s = map1_e + 1, map2_e = map1_e + 512;
+  int map2 = 1, addr_map2 = 1;
+  m_layout.set_map_attr(map1, map_attr(8, 8));
+  m_layout.add_map(map2_s, map2_e);
+  sv1.mem_var.init_addrs_map_v_next(m_layout);
+  sv2.mem_var.init_addrs_map_v_next(m_layout);
+  k1 = to_expr("k1", 8), v1 = to_expr("v1", 8);
+  addr_k1 = stack_s + 0, addr_v1 = stack_s + 1;
+  predicate_st8(k1, addr_k1, v(0), sv1.mem_var);
+  predicate_st8(v1, addr_v1, v(0), sv1.mem_var);
+  predicate_st8(k1, addr_k1, v(0), sv2.mem_var);
+  predicate_st8(v1, addr_v1, v(0), sv2.mem_var);
+  f = predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout);
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2, m_layout);
+  f_path_cond = string_to_expr("true");
+  z3::expr f_map_chk = smt_map_eq_chk(sv1, sv2, m_layout, f_path_cond);
+  print_test_res(is_valid(z3::implies(f, f_map_chk) == string_to_expr("true")), "1");
+  f = f && predicate_map_update_helper(addr_map2, addr_k1, addr_v1, new_out(), sv1, m_layout);
+  f = f && predicate_map_update_helper(addr_map2, addr_k1, addr_v1, new_out(), sv2, m_layout);
+  f_map_chk = smt_map_eq_chk(sv1, sv2, m_layout, f_path_cond);
+  print_test_res(is_valid(z3::implies(f, f_map_chk) == string_to_expr("true")), "2");
 }
 
 int main() {
