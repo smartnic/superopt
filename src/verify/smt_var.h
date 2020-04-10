@@ -30,12 +30,12 @@ struct map_attr { // map attribute
   map_attr(int k_sz, int v_sz) {key_sz = k_sz; val_sz = v_sz;}
 };
 
-class mem_range {
+class smt_mem_range {
  public:
   z3::expr start = string_to_expr("true"); // start address, 64-bit bitvector
   z3::expr end = string_to_expr("true"); // end address, 64-bit bitvector
-  mem_range() {}
-  mem_range(z3::expr s, z3::expr e) {
+  smt_mem_range() {}
+  smt_mem_range(z3::expr s, z3::expr e) {
     start = s;
     end = e;
   }
@@ -45,14 +45,14 @@ class mem_range {
   }
 };
 
-class mem_layout {
+class smt_mem_layout {
  public:
-  mem_range _stack;
-  vector<mem_range> _maps;
+  smt_mem_range _stack;
+  vector<smt_mem_range> _maps;
   vector<map_attr> _maps_attr;
 
   void add_map(z3::expr s, z3::expr e, map_attr m_attr = map_attr(NUM_BYTE_BITS, NUM_BYTE_BITS)) {
-    _maps.push_back(mem_range(s, e));
+    _maps.push_back(smt_mem_range(s, e));
     _maps_attr.push_back(m_attr);
   }
   void set_map_attr(int map_id, map_attr m_attr) {
@@ -111,7 +111,7 @@ class smt_mem {
   vector<z3::expr> _addrs_map_v_next;
 
   smt_mem() {}
-  void init_addrs_map_v_next(mem_layout& m_layout);
+  void init_addrs_map_v_next(smt_mem_layout& m_layout);
   z3::expr get_and_update_addr_v_next(int map_id);
   void clear() {_mem_table.clear(); _map_table.clear(); _addrs_map_v_next.clear();}
   friend ostream& operator<<(ostream& out, const smt_mem& s);

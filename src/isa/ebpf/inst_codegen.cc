@@ -40,7 +40,7 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, mem_wt& x) {
   return f;
 }
 
-z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, mem_layout& m_layout) {
+z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, smt_mem_layout& m_layout) {
   smt_wt *s = &m._mem_table._wt;
   z3::expr a = addr;
   z3::expr c = string_to_expr("false");
@@ -67,7 +67,7 @@ z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, mem_layout& 
   return f;
 }
 
-z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_mem& m, z3::expr out, mem_layout& m_layout) {
+z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_mem& m, z3::expr out, smt_mem_layout& m_layout) {
   z3::expr f = predicate_ld_byte(addr, m, out.extract(7, 0), m_layout);
   for (int i = 1; i < n; i++) {
     f = f && predicate_ld_byte(addr + i, m, out.extract(8 * i + 7, 8 * i), m_layout);
@@ -95,7 +95,7 @@ z3::expr addr_not_in_wt(z3::expr& a, vector<z3::expr>& x) {
   return f;
 }
 
-z3::expr stack_addr_in_one_wt(smt_wt& x, smt_wt& y, mem_range& r) {
+z3::expr stack_addr_in_one_wt(smt_wt& x, smt_wt& y, smt_mem_range& r) {
   z3::expr f = string_to_expr("true");
   for (int i = x.addr.size() - 1; i >= 0; i--) {
     f = f && z3::implies(addr_in_range(x.addr[i], r.start, r.end) &&
@@ -106,7 +106,7 @@ z3::expr stack_addr_in_one_wt(smt_wt& x, smt_wt& y, mem_range& r) {
 }
 
 // need memory WTs, stack memory range
-z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, mem_range& r) {
+z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, smt_mem_range& r) {
   z3::expr f = string_to_expr("true");
   // case 1: addrs can be found in both WTs
   z3::expr f_addr_x = string_to_expr("true");
@@ -177,7 +177,7 @@ z3::expr ld_n_bytes_from_urt(int n, z3::expr addr, smt_wt& urt, z3::expr out) {
 // keys found in map of sv1, not in map of sv2
 // for each key(k) in these keys, the latest write m[k] should be equal to the input
 // thus, before writing, this k/v should be read from the map, that is, the element can be found in map URT
-z3::expr keys_found_in_one_map(int addr_map, smt_var& sv1, smt_map_wt& map2_wt, mem_layout& m_layout) {
+z3::expr keys_found_in_one_map(int addr_map, smt_var& sv1, smt_map_wt& map2_wt, smt_mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   smt_map_wt& map_wt = sv1.mem_var._map_table._wt;
   smt_map_wt& map_urt = sv1.mem_var._map_table._urt;
@@ -228,7 +228,7 @@ z3::expr keys_found_in_one_map(int addr_map, smt_var& sv1, smt_map_wt& map2_wt, 
   return f;
 }
 
-z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
+z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   int map_id = addr_map;
   int v_sz = m_layout._maps_attr[map_id].val_sz;
@@ -290,7 +290,7 @@ z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout
 // each key "k" in map_p1 URT, if "k" is in map_p2 URT => 1 or 2
 // 1. "k" is not in the input map, i.e., the corresponding addr_v both NULL
 // 2. "k" is in the input map, load v_p1 and v_p2 from mem URT, the corresponding v_p1 == v_p2
-z3::expr smt_one_map_set_same_input(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
+z3::expr smt_one_map_set_same_input(int addr_map, smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   int map_id = addr_map;
   int v_sz = m_layout._maps_attr[map_id].val_sz;
@@ -329,7 +329,7 @@ z3::expr smt_one_map_set_same_input(int addr_map, smt_var& sv1, smt_var& sv2, me
   return f;
 }
 
-z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
+z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < m_layout._maps.size(); i++) {
     int addr_map = i;
@@ -338,7 +338,7 @@ z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2, mem_layout& m_layout
   return f;
 }
 
-z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
+z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < m_layout._maps.size(); i++) {
     int addr_map = i;
@@ -347,7 +347,7 @@ z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
   return f;
 }
 
-z3::expr smt_mem_eq_chk(smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
+z3::expr smt_mem_eq_chk(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
   return (smt_stack_eq_chk(sv1.mem_var._mem_table._wt,
                            sv2.mem_var._mem_table._wt, m_layout._stack) &&
           smt_map_eq_chk(sv1, sv2, m_layout));
@@ -355,7 +355,7 @@ z3::expr smt_mem_eq_chk(smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
 
 z3::expr smt_pgm_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
                             vector<z3::expr>& pc2, vector<smt_var>& sv2,
-                            mem_layout& m_layout) {
+                            smt_mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < pc1.size(); i++) {
     for (int j = 0; j < pc2.size(); j++) {
@@ -401,7 +401,7 @@ z3::expr predicate_map_lookup_k_in_map_urt(int addr_map, z3::expr k, z3::expr ad
 
 // "addr_map_v" is the return value
 z3::expr predicate_map_lookup_helper(int addr_map, z3::expr addr_k, z3::expr addr_map_v,
-                                     smt_var& sv, mem_layout& m_layout) {
+                                     smt_var& sv, smt_mem_layout& m_layout) {
   smt_mem& mem = sv.mem_var;
   int map_id = addr_map;
   int k_sz = m_layout._maps_attr[map_id].key_sz;
@@ -430,7 +430,7 @@ z3::expr predicate_map_lookup_helper(int addr_map, z3::expr addr_k, z3::expr add
 
 // "out" is the return value
 z3::expr predicate_map_update_helper(int addr_map, z3::expr addr_k, z3::expr addr_v,
-                                     z3::expr out, smt_var& sv, mem_layout& m_layout) {
+                                     z3::expr out, smt_var& sv, smt_mem_layout& m_layout) {
   smt_mem& mem = sv.mem_var;
   int map_id = addr_map;
   int k_sz = m_layout._maps_attr[map_id].key_sz;
@@ -472,7 +472,7 @@ z3::expr predicate_map_update_helper(int addr_map, z3::expr addr_k, z3::expr add
 // delete cannot use predicate_map_lookup_helper directly, since lookup helper will add an element in map URT,
 // while in the map equivalence check, it is assumed that the element in map URT only added by lookup operation
 z3::expr predicate_map_delete_helper(int addr_map, z3::expr addr_k, z3::expr out,
-                                     smt_var& sv, mem_layout& m_layout) {
+                                     smt_var& sv, smt_mem_layout& m_layout) {
   smt_mem& mem = sv.mem_var;
   int map_id = addr_map;
   int k_sz = m_layout._maps_attr[map_id].key_sz;

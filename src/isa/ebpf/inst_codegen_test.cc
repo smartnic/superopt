@@ -178,7 +178,7 @@ void test5() {
   vector<z3::expr> offs = {v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7)};
   vector<uint8_t> vals = {0x12, 0x34};
   z3::expr addr = v((uint64_t)0xff12000000001234);
-  mem_layout m_layout;
+  smt_mem_layout m_layout;
   m_layout._stack.set_range(addr, addr + 511);
   smt_mem m;
   smt_wt *s = &m._mem_table._wt;
@@ -254,7 +254,7 @@ void test5() {
 
 void test6() {
   cout << "Test 6: Memory output equivalence check" << endl;
-  mem_layout m_layout;
+  smt_mem_layout m_layout;
   z3::expr stack_s = v((uint64_t)0xff12000000001234);
   z3::expr stack_e = stack_s + 511;
   m_layout._stack.set_range(stack_s, stack_e);
@@ -278,7 +278,7 @@ void test6() {
 
 void test7() {
   cout << "Test 7: Uninitialized read in ld" << endl;
-  mem_layout m_layout;
+  smt_mem_layout m_layout;
   z3::expr stack_s = v((uint64_t)0xff12000000001234);
   z3::expr stack_e = stack_s + 511;
   m_layout._stack.set_range(stack_s, stack_e);
@@ -339,7 +339,7 @@ void test8() {
   unsigned int node_id = 0;
   unsigned int num_regs = 11;
   smt_var sv(prog_id, node_id, num_regs);
-  mem_layout m_layout;
+  smt_mem_layout m_layout;
   // set memory layout: stack | map
   z3::expr stack_s = v((uint64_t)0xff12000000001234);
   z3::expr stack_e = stack_s + 511;
@@ -654,7 +654,7 @@ void test9() {
   cout << "Test 9: Map helper functions evaluation check" << endl;
   unsigned int prog_id = 0, node_id = 0, num_regs = 11;
   smt_var sv(prog_id, node_id, num_regs);
-  mem_layout m_layout;
+  smt_mem_layout m_layout;
   // set memory layout: stack | map1 | map2
   z3::expr stack_s = v((uint64_t)0xff12000000001234);
   z3::expr stack_e = stack_s + 511;
@@ -859,7 +859,7 @@ void test10() {
   smt_var sv1(prog_id, node_id, num_regs);
   prog_id = 1;
   smt_var sv2(prog_id, node_id, num_regs);
-  mem_layout m_layout;
+  smt_mem_layout m_layout;
   // set memory layout: stack | map
   z3::expr stack_s = v((uint64_t)0xff12000000001234);
   z3::expr stack_e = stack_s + 511;

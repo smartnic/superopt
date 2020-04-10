@@ -55,7 +55,7 @@ ostream& operator<<(ostream& out, const smt_map_wt& s) {
 /* class smt_map_wt start */
 
 /* class smt_wt end */
-void smt_mem::init_addrs_map_v_next(mem_layout& m_layout) {
+void smt_mem::init_addrs_map_v_next(smt_mem_layout& m_layout) {
   for (int i = 0; i < m_layout._maps.size(); i++) {
     _addrs_map_v_next.push_back(m_layout._maps[i].start);
   }

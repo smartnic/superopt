@@ -66,10 +66,10 @@ inline void predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m)
 inline void predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m);
 inline void predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m);
 // out == (read addr+off, sz, m); type: addr, off, out: bv64;
-inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout);
-inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout);
-inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout);
-inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout);
+inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, smt_mem_layout& m_layout);
+inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, smt_mem_layout& m_layout);
+inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, smt_mem_layout& m_layout);
+inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, smt_mem_layout& m_layout);
 // map helper functions
 // return map lookup FOL formula, addr_v = lookup k map, where k is key,
 // addr_v is the address of key's value, map is the map address
@@ -77,25 +77,25 @@ inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr
 #define MAP_DEL_RET_IF_KEY_INEXIST to_expr((int64_t)0xfffffffe)
 #define MAP_DEL_RET_IF_KEY_EXIST to_expr(0)
 z3::expr predicate_map_lookup_helper(int addr_map, z3::expr addr_k, z3::expr addr_map_v,
-                                     smt_var& sv, mem_layout& m_layout);
+                                     smt_var& sv, smt_mem_layout& m_layout);
 z3::expr predicate_map_update_helper(int addr_map, z3::expr addr_k, z3::expr addr_v, z3::expr out,
-                                     smt_var& sv, mem_layout& m_layout);
+                                     smt_var& sv, smt_mem_layout& m_layout);
 z3::expr predicate_map_delete_helper(int addr_map, z3::expr addr_k, z3::expr out,
-                                     smt_var& sv, mem_layout& m_layout);
+                                     smt_var& sv, smt_mem_layout& m_layout);
 // return the FOL formula that set two programs the same inputs (support: same input maps now)
-z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2, mem_layout& m_layout);
+z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout);
 // return the FOL formula that check whether two programs have the same output memories
 z3::expr smt_pgm_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
                             vector<z3::expr>& pc2, vector<smt_var>& sv2,
-                            mem_layout& m_layout);
+                            smt_mem_layout& m_layout);
 /* APIs exposed to the externals end */
 
 /* APIS for unit tests start */
-z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, mem_range& r);
-z3::expr smt_one_map_set_same_input(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout& m_layout);
+z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, smt_mem_range& r);
+z3::expr smt_one_map_set_same_input(int addr_map, smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout);
 z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1,
-                            smt_var& sv2, mem_layout& m_layout);
-z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2, mem_layout& m_layout);
+                            smt_var& sv2, smt_mem_layout& m_layout);
+z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout);
 /* APIS for unit tests end */
 
 /* Inputs in, out must be side-effect-free expressions. */
@@ -328,20 +328,20 @@ inline void predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_mem& m)
 }
 
 // implemented in inst_codegen.cc
-z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, mem_layout& m_layout);
+z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, smt_mem_layout& m_layout);
 
-inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout) {
+inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, smt_mem_layout& m_layout) {
   return ((out.extract(63, 8) == to_expr(0, 56)) &&
           predicate_ld_byte(addr + off, m, out.extract(7, 0), m_layout));
 }
 
-inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout) {
+inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, smt_mem_layout& m_layout) {
   return ((out.extract(63, 16) == to_expr(0, 48)) &&
           predicate_ld_byte(addr + off, m, out.extract(7, 0), m_layout) &&
           predicate_ld_byte(addr + off + 1, m, out.extract(15, 8), m_layout));
 }
 
-inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout) {
+inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, smt_mem_layout& m_layout) {
   return ((out.extract(63, 32) == to_expr(0, 32)) &&
           predicate_ld_byte(addr + off, m, out.extract(7, 0), m_layout) &&
           predicate_ld_byte(addr + off + 1, m, out.extract(15, 8), m_layout) &&
@@ -349,7 +349,7 @@ inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_mem& m, z3::expr
           predicate_ld_byte(addr + off + 3, m, out.extract(31, 24), m_layout));
 }
 
-inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, mem_layout& m_layout) {
+inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr out, smt_mem_layout& m_layout) {
   z3::expr f = predicate_ld_byte(addr + off, m, out.extract(7, 0), m_layout);
   for (int i = 1; i < 8; i++) {
     f = f && predicate_ld_byte(addr + off + i, m, out.extract(8 * i + 7, 8 * i), m_layout);
