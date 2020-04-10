@@ -290,7 +290,7 @@ z3::expr smt_one_map_eq_chk(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout
 // each key "k" in map_p1 URT, if "k" is in map_p2 URT => 1 or 2
 // 1. "k" is not in the input map, i.e., the corresponding addr_v both NULL
 // 2. "k" is in the input map, load v_p1 and v_p2 from mem URT, the corresponding v_p1 == v_p2
-z3::expr one_map_set_same_input_map(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
+z3::expr smt_one_map_set_same_input(int addr_map, smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   int map_id = addr_map;
   int v_sz = m_layout._maps_attr[map_id].val_sz;
@@ -333,7 +333,7 @@ z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2, mem_layout& m_layout
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < m_layout._maps.size(); i++) {
     int addr_map = i;
-    f = f && one_map_set_same_input_map(addr_map, sv1, sv2, m_layout);
+    f = f && smt_one_map_set_same_input(addr_map, sv1, sv2, m_layout);
   }
   return f;
 }
@@ -353,7 +353,7 @@ z3::expr smt_mem_eq_chk(smt_var& sv1, smt_var& sv2, mem_layout& m_layout) {
           smt_map_eq_chk(sv1, sv2, m_layout));
 }
 
-z3::expr pgm_smt_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
+z3::expr smt_pgm_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
                             vector<z3::expr>& pc2, vector<smt_var>& sv2,
                             mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
