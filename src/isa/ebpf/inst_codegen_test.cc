@@ -1080,13 +1080,14 @@ void test10() {
   predicate_st8(v1, addr_v1, v(0), sv2.mem_var);
   f = predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout);
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2, m_layout);
-  f_path_cond = string_to_expr("true");
-  z3::expr f_map_chk = smt_map_eq_chk(sv1, sv2, m_layout, f_path_cond);
-  print_test_res(is_valid(z3::implies(f, f_map_chk) == string_to_expr("true")), "1");
+  f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
+  f_equal = smt_map_eq_chk(sv1, sv2, m_layout);
+  print_test_res(is_valid(z3::implies(f && f_same_input, f_equal) == string_to_expr("true")), "1");
   f = f && predicate_map_update_helper(addr_map2, addr_k1, addr_v1, new_out(), sv1, m_layout);
   f = f && predicate_map_update_helper(addr_map2, addr_k1, addr_v1, new_out(), sv2, m_layout);
-  f_map_chk = smt_map_eq_chk(sv1, sv2, m_layout, f_path_cond);
-  print_test_res(is_valid(z3::implies(f, f_map_chk) == string_to_expr("true")), "2");
+  f_same_input = one_map_set_same_input_map(addr_map1, sv1, sv2, m_layout);
+  f_equal = smt_map_eq_chk(sv1, sv2, m_layout);
+  print_test_res(is_valid(z3::implies(f && f_same_input, f_equal) == string_to_expr("true")), "2");
 }
 
 int main() {
