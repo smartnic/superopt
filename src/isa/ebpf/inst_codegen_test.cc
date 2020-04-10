@@ -864,7 +864,7 @@ void test10() {
   z3::expr stack_s = v((uint64_t)0xff12000000001234);
   z3::expr stack_e = stack_s + 511;
   z3::expr map1_s = stack_e + 1, map1_e = stack_e + 512;
-  int addr_map1 = 0;
+  int map1 = 0, addr_map1 = 0;
   m_layout.set_stack_range(stack_s, stack_e);
   m_layout.add_map(map1_s, map1_s);
   sv1.mem_var.init_addrs_map_v_next(m_layout);
@@ -897,6 +897,11 @@ void test10() {
   f_same_input = one_map_set_same_input_map(addr_map, sv1, sv2, m_layout); \
   f_equal = smt_one_map_eq_chk(addr_map, sv1, sv2, m_layout); \
   print_test_res(is_valid(z3::implies(f && f_same_input, f_equal)) == test_res, test_name);
+
+#define MAP_EQ_CHK_WITH_PC(addr_map, test_name, test_res) \
+  f_same_input = one_map_set_same_input_map(addr_map, sv1, sv2, m_layout); \
+  f_equal = smt_one_map_eq_chk(addr_map, sv1, sv2, m_layout); \
+  print_test_res(is_valid(z3::implies(f && f_same_input && f_path_cond, f_equal)) == test_res, test_name);
 
   string test_name = "m_p1_1 == m_p2_1, m_p1_1 = update &k1 &v1 m_p1, m_p2_1 = update &k1 &v1 m_p2";
   MAP_EQ_CHK(addr_map1, test_name, true)
@@ -1011,6 +1016,53 @@ void test10() {
   f = f && predicate_map_lookup_helper(addr_map1, addr_k2, addr_v_lookup, sv2, m_layout);
   test_name = "lookup does not affect map equivalence check";
   MAP_EQ_CHK(addr_map1, test_name, true)
+
+  cout << "5. test k/v size > 1 byte" << endl;
+  sv1.clear(); sv2.clear();
+  m_layout.set_map_attr(map1, map_attr(32, 16));
+  sv1.mem_var.init_addrs_map_v_next(m_layout);
+  sv2.mem_var.init_addrs_map_v_next(m_layout);
+  k1 = to_expr("k1", 32), v1 = to_expr("v1", 16);
+  addr_k1 = stack_s + 0, addr_v1 = stack_s + 4;
+  predicate_st32(k1, addr_k1, v(0), sv1.mem_var);
+  predicate_st16(v1, addr_v1, v(0), sv1.mem_var);
+  predicate_st32(k1, addr_k1, v(0), sv2.mem_var);
+  predicate_st16(v1, addr_v1, v(0), sv2.mem_var);
+  addr_v_lookup_p1 = new_addr_v_lookup();
+  addr_v_lookup_p2 = new_addr_v_lookup();
+  v_lookup_p1 = new_v_lookup();
+  v_lookup_p2 = new_v_lookup();
+  f = predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p1, sv1, m_layout);
+  f = f && predicate_ld16(addr_v_lookup_p1, v(0), sv1.mem_var, v_lookup_p1, m_layout);
+  f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p2, sv2, m_layout);
+  f = f && predicate_ld16(addr_v_lookup_p2, v(0), sv2.mem_var, v_lookup_p2, m_layout);
+  stack_addr_v_lookup_p1 = stack_s + 6;
+  stack_addr_v_lookup_p2 = stack_s + 8;
+  predicate_st16(v_lookup_p1, stack_addr_v_lookup_p1, v(0), sv1.mem_var);
+  predicate_st16(v_lookup_p2, stack_addr_v_lookup_p2, v(0), sv2.mem_var);
+  test_name = "m_p1_1 != m_p2_0, m_p1_1 = update &k1 &v1 m_p1_0";
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout);
+  MAP_EQ_CHK(addr_map1, test_name, false)
+
+  f = f && predicate_map_delete_helper(addr_map1, addr_k1, new_out(), sv1, m_layout);
+  test_name = "m_p1_2 != m_p2_0, m_p1_2 = delete &k1 m_p1_1";
+  MAP_EQ_CHK(addr_map1, test_name, false)
+  f_path_cond = (addr_v_lookup_p1 == NULL_ADDR);
+  test_name = "m_p1_2 == m_p2_0, if k1 not in the input map";
+  MAP_EQ_CHK_WITH_PC(addr_map1, test_name, true)
+
+  f = f && predicate_map_delete_helper(addr_map1, addr_k1, new_out(), sv2, m_layout);
+  test_name = "m_p1_2 == m_p2_1, m_p2_1 = delete &k1 m_p2_0";
+  MAP_EQ_CHK(addr_map1, test_name, true)
+
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p1, new_out(), sv1, m_layout);
+  f_path_cond = (addr_v_lookup_p1 != NULL_ADDR);
+  test_name = "m_p1_3 != m_p2_1, m_p1_3 = update &k1 &v_lookup_k1_p1 m_p1_2, if k1 in the input map";
+  MAP_EQ_CHK_WITH_PC(addr_map1, test_name, false)
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p2, new_out(), sv2, m_layout);
+  f_path_cond = (addr_v_lookup_p1 != NULL_ADDR);
+  test_name = "m_p1_3 == m_p2_2, m_p2_2 = update &k1 &v_lookup_k1_p2 m_p2_1, if k1 in the input map";
+  MAP_EQ_CHK_WITH_PC(addr_map1, test_name, true)
 }
 
 int main() {
