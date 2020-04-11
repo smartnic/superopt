@@ -1,8 +1,12 @@
 #pragma once
 
+#include <sstream>
+#include <iostream>
+#include <iomanip>
 #include "z3++.h"
 #include "../../../src/utils.h"
 #include "../../../src/verify/smt_var.h"
+#include "inst_var.h"
 
 using namespace std;
 
@@ -10,6 +14,15 @@ using namespace std;
    APIs exposed to the externals,
    Should ensure all parameters do NOT have side effects.
 */
+#define NULL_ADDR 0
+#define MAP_UPD_RET 0
+#define MAP_DEL_RET_IF_KEY_INEXIST (int64_t)0xfffffffe
+#define MAP_DEL_RET_IF_KEY_EXIST 0
+
+#define NULL_ADDR_EXPR to_expr(NULL_ADDR)
+#define MAP_UPD_RET_EXPR to_expr(MAP_UPD_RET)
+#define MAP_DEL_RET_IF_KEY_INEXIST_EXPR to_expr(MAP_DEL_RET_IF_KEY_INEXIST)
+#define MAP_DEL_RET_IF_KEY_EXIST_EXPR to_expr(MAP_DEL_RET_IF_KEY_EXIST)
 // type of parameters (in, in1, in2, out) and return value is int64_t
 // return (out = op in)
 inline int64_t compute_mov(int64_t in, int64_t out = 0);
@@ -40,7 +53,10 @@ inline void compute_st8(int64_t in, uint64_t addr, int64_t off);
 inline void compute_st16(int64_t in, uint64_t addr, int64_t off);
 inline void compute_st32(int64_t in, uint64_t addr, int64_t off);
 inline void compute_st64(int64_t in, uint64_t addr, int64_t off);
-
+// map helper functions
+uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m);
+uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_v, mem_t& m);
+uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, mem_t& m);
 /* type of parameters (in, in1, in2, out) is z3 64-bit bitvector */
 // return (out == op in)
 inline z3::expr predicate_mov(z3::expr in, z3::expr out);
@@ -73,9 +89,6 @@ inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr
 // map helper functions
 // return map lookup FOL formula, addr_v = lookup k map, where k is key,
 // addr_v is the address of key's value, map is the map address
-#define MAP_UPD_RET to_expr(0)
-#define MAP_DEL_RET_IF_KEY_INEXIST to_expr((int64_t)0xfffffffe)
-#define MAP_DEL_RET_IF_KEY_EXIST to_expr(0)
 z3::expr predicate_map_lookup_helper(int addr_map, z3::expr addr_k, z3::expr addr_map_v,
                                      smt_var& sv, smt_mem_layout& m_layout);
 z3::expr predicate_map_update_helper(int addr_map, z3::expr addr_k, z3::expr addr_v, z3::expr out,
@@ -356,3 +369,5 @@ inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_mem& m, z3::expr
   }
   return f;
 }
+
+string ld_n_bytes_from_addr(const uint8_t *v, const size_t s);

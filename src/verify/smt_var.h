@@ -12,8 +12,6 @@ using namespace std;
 // reference: https://github.com/Z3Prover/z3/blob/master/src/api/python/z3/z3.py
 extern z3::context smt_c;
 
-#define NULL_ADDR to_expr(0)
-
 // convert string s into expr e
 // if e = "true"/"false" the type of e is bool_val
 // else the type of e is int_const
@@ -25,10 +23,14 @@ z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(string s, unsigned sz);
 
 struct map_attr { // map attribute
-  int key_sz;
-  int val_sz;
-  map_attr(int k_sz, int v_sz) {key_sz = k_sz; val_sz = v_sz;}
+  unsigned int key_sz;
+  unsigned int val_sz;
+  unsigned int max_entries;
+  map_attr(unsigned int k_sz, unsigned int v_sz, unsigned int n_entries = 0) {
+    key_sz = k_sz; val_sz = v_sz; max_entries = n_entries;
+  }
 };
+ostream& operator<<(ostream& out, const map_attr& m_attr);
 
 class smt_mem_range {
  public:

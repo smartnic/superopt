@@ -5,6 +5,11 @@ using namespace std;
 
 z3::context smt_c;
 
+ostream& operator<<(ostream& out, const map_attr& m_attr) {
+  out << m_attr.key_sz << " " << m_attr.val_sz << " " << m_attr.max_entries;
+  return out;
+}
+
 /* class smt_wt start */
 bool smt_wt::is_equal(z3::expr e1, z3::expr e2) {
   z3::tactic t = z3::tactic(smt_c, "bv");

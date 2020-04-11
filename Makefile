@@ -34,8 +34,8 @@ inst_codegen_test_toy_isa.out: inst_codegen_z3_toy_isa.o $(SRC)utils.cc $(SRC)ut
 inst_codegen_z3_toy_isa.o: $(TOY_ISA)inst_codegen_test.cc
 	$(CXX) $(TOY_ISA_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(TOY_ISA)inst_codegen_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(TOY_ISA)inst_codegen_test.cc
 
-inst_codegen_test_ebpf.out: inst_codegen_z3_ebpf.o $(SRC)utils.cc $(SRC)utils.h $(EBPF)inst_codegen.h $(EBPF)inst_codegen.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h
-	g++ $(EBPF_FLAG) -std=c++11 -fvisibility=hidden $(EBPF)inst_codegen_z3.o $(SRC)utils.cc $(EBPF)inst_codegen.cc $(ISA)inst.cc $(VERIFY)smt_var.cc -o $(EBPF)inst_codegen_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+inst_codegen_test_ebpf.out: inst_codegen_z3_ebpf.o $(SRC)utils.cc $(SRC)utils.h $(EBPF)inst_codegen.h $(EBPF)inst_codegen.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(EBPF)inst_var.h $(EBPF)inst_var.cc
+	g++ $(EBPF_FLAG) -std=c++11 -fvisibility=hidden $(EBPF)inst_codegen_z3.o $(SRC)utils.cc $(EBPF)inst_codegen.cc $(ISA)inst.cc $(VERIFY)smt_var.cc $(EBPF)inst_var.cc -o $(EBPF)inst_codegen_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 inst_codegen_z3_ebpf.o: $(EBPF)inst_codegen_test.cc
 	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(EBPF)inst_codegen_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(EBPF)inst_codegen_test.cc
