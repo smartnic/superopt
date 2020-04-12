@@ -26,10 +26,10 @@ uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m) {
   // get key from memory
   string k = ld_n_bytes_from_addr((uint8_t*)addr_k, k_sz);
   map_t& mp = m._maps[map_id];
-  auto it = mp._k2off.find(k);
-  if (it == mp._k2off.end()) return NULL_ADDR;
-  int v_map_off = it->second;
-  int v_mem_off = m.get_mem_off_by_map_off(map_id, v_map_off);
+  auto it = mp._k2idx.find(k);
+  if (it == mp._k2idx.end()) return NULL_ADDR;
+  int v_idx_in_map = it->second;
+  int v_mem_off = m.get_mem_off_by_idx_in_map(map_id, v_idx_in_map);
   return (uint64_t)&m._mem[v_mem_off];
 }
 
@@ -40,15 +40,15 @@ uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_
   // get key and value from memory
   string k = ld_n_bytes_from_addr((uint8_t*)addr_k, k_sz);
   map_t& mp = m._maps[map_id];
-  auto it = mp._k2off.find(k);
-  unsigned int v_map_off;
-  if (it == mp._k2off.end()) {
-    v_map_off = mp.get_next_off();
-    mp._k2off[k] = v_map_off;
+  auto it = mp._k2idx.find(k);
+  unsigned int v_idx_in_map;
+  if (it == mp._k2idx.end()) {
+    v_idx_in_map = mp.get_next_idx();
+    mp._k2idx[k] = v_idx_in_map;
   } else {
-    v_map_off = it->second;
+    v_idx_in_map = it->second;
   }
-  int v_mem_off = m.get_mem_off_by_map_off(map_id, v_map_off);
+  int v_mem_off = m.get_mem_off_by_idx_in_map(map_id, v_idx_in_map);
   uint64_t addr_v_dst = (uint64_t)&m._mem[v_mem_off];
   memcpy((void*)addr_v_dst, (void*)addr_v, v_sz);
   return MAP_UPD_RET;
@@ -59,12 +59,12 @@ uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, mem_t& m) {
   int k_sz = mem_t::_layout._maps_attr[map_id].key_sz / NUM_BYTE_BITS;
   string k = ld_n_bytes_from_addr((uint8_t*)addr_k, k_sz);
   map_t& mp = m._maps[map_id];
-  auto it = mp._k2off.find(k);
-  if (it == mp._k2off.end()) {
+  auto it = mp._k2idx.find(k);
+  if (it == mp._k2idx.end()) {
     return MAP_DEL_RET_IF_KEY_INEXIST;
   }
-  mp.add_next_off(it->second);
-  mp._k2off.erase(it);
+  mp.add_next_idx(it->second);
+  mp._k2idx.erase(it);
   return MAP_DEL_RET_IF_KEY_EXIST;
 }
 

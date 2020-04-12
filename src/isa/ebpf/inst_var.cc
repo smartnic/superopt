@@ -11,31 +11,31 @@ ostream& operator<<(ostream& out, const mem_layout& layout) {
   return out;
 }
 
-unsigned int map_t::get_next_off() {
-  unsigned int next_off = 0;
-  if (!_next_off_q.empty()) {
-    next_off = _next_off_q.front();
-    _next_off_q.pop();
+unsigned int map_t::get_next_idx() {
+  unsigned int next_idx = 0;
+  if (!_next_idx_q.empty()) {
+    next_idx = _next_idx_q.front();
+    _next_idx_q.pop();
   } else {
     if (_cur_max_entries >= _max_entries) {
       cout << "Error: the number of entries is the maximum, "\
            "cannnot insert more entries" << endl;
       return 0;
     }
-    next_off = _cur_max_entries;
+    next_idx = _cur_max_entries;
     _cur_max_entries++;
   }
-  return next_off;
+  return next_idx;
 }
 
-void map_t::add_next_off(unsigned int off) {
-  _next_off_q.push(off);
+void map_t::add_next_idx(unsigned int off) {
+  _next_idx_q.push(off);
 }
 
 void map_t::clear() {
-  _k2off.clear();
+  _k2idx.clear();
   queue<unsigned int> empty;
-  _next_off_q.swap(empty);
+  _next_idx_q.swap(empty);
   _cur_max_entries = 0;
 }
 
@@ -76,9 +76,9 @@ void mem_t::set_map_attr(int map_id, map_attr m_attr) {
   _layout._maps_attr[map_id] = m_attr;
 }
 
-unsigned int mem_t::get_mem_off_by_map_off(int map_id, unsigned int map_off) {
+unsigned int mem_t::get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map) {
   return (_layout._maps_start[map_id] +
-          map_off * (_layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS));
+          idx_in_map * (_layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS));
 }
 uint8_t* mem_t::get_stack_start_s() {
   return &_mem[_layout._stack_start];
