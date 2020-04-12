@@ -13,9 +13,9 @@ ostream& operator<<(ostream& out, const mem_layout& layout) {
 
 unsigned int map_t::get_next_idx() {
   unsigned int next_idx = 0;
-  if (!_next_idx_q.empty()) {
-    next_idx = _next_idx_q.front();
-    _next_idx_q.pop();
+  if (!_available_idx_q.empty()) {
+    next_idx = _available_idx_q.front();
+    _available_idx_q.pop();
   } else {
     if (_cur_max_entries >= _max_entries) {
       cout << "Error: the number of entries is the maximum, "\
@@ -28,14 +28,14 @@ unsigned int map_t::get_next_idx() {
   return next_idx;
 }
 
-void map_t::add_next_idx(unsigned int off) {
-  _next_idx_q.push(off);
+void map_t::add_available_idx(unsigned int off) {
+  _available_idx_q.push(off);
 }
 
 void map_t::clear() {
   _k2idx.clear();
   queue<unsigned int> empty;
-  _next_idx_q.swap(empty);
+  _available_idx_q.swap(empty);
   _cur_max_entries = 0;
 }
 

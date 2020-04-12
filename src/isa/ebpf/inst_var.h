@@ -25,13 +25,13 @@ class map_t {
   unordered_map<string, unsigned int> _k2idx;
   // next available idx for each map, starts from empty queue,
   // map delete may push an item in the queue
-  queue<unsigned int> _next_idx_q;
+  queue<unsigned int> _available_idx_q;
   // maximum number of entries in map from the beginning to now
   unsigned int _cur_max_entries = 0;
   unsigned int _max_entries;
   map_t(unsigned int max_entries) {_max_entries = max_entries;}
   unsigned int get_next_idx();
-  void add_next_idx(unsigned int idx);
+  void add_available_idx(unsigned int idx);
   void clear();
 };
 

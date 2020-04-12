@@ -63,7 +63,7 @@ uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, mem_t& m) {
   if (it == mp._k2idx.end()) {
     return MAP_DEL_RET_IF_KEY_INEXIST;
   }
-  mp.add_next_idx(it->second);
+  mp.add_available_idx(it->second);
   mp._k2idx.erase(it);
   return MAP_DEL_RET_IF_KEY_EXIST;
 }
