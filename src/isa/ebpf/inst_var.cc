@@ -50,7 +50,7 @@ mem_t::mem_t() {
   }
   _mem = new uint8_t[_mem_size];
   for (int i = 0; i < n_maps; i++) {
-    _maps.push_back(map_t{_layout._maps_attr[n_maps - 1].max_entries});
+    _maps.push_back(map_t{_layout._maps_attr[i].max_entries});
   }
 }
 
