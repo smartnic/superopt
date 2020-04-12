@@ -17,7 +17,7 @@ unsigned int map_t::get_next_off() {
     next_off = _next_off_q.front();
     _next_off_q.pop();
   } else {
-    if (_cur_max_entries >= _max_entries - 1) {
+    if (_cur_max_entries >= _max_entries) {
       cout << "Error: the number of entries is the maximum, "\
            "cannnot insert more entries" << endl;
       return 0;
