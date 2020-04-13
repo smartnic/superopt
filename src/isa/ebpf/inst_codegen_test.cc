@@ -657,14 +657,14 @@ z3::expr eval_output(z3::expr smt, z3::expr output) {
   f = f && predicate_map_lookup_helper(map, v(addr_k), addr_v_lookup_expr, sv, m_layout); \
   f = f && predicate_ld8(addr_v_lookup_expr, v(0), sv.mem_var, v_lookup_expr, m_layout); \
   f_expected = (eval_output(f, v_lookup_expr) == v(v_lookup)); \
-  print_test_res(is_valid(f_expected == string_to_expr("true") && (v_lookup == v_expected)), test_name);
+  print_test_res(is_valid(f_expected == string_to_expr("true")) && (v_lookup == v_expected), test_name);
 
 #define MAP_LOOKUP(map, addr_k, addr_v_expected, test_name) \
   addr_v_lookup_expr = new_addr_v_lookup(); \
   addr_v_lookup = compute_map_lookup_helper(map, addr_k, m); \
   f = f && predicate_map_lookup_helper(map, v(addr_k), addr_v_lookup_expr, sv, m_layout); \
   f_expected = (eval_output(f, addr_v_lookup_expr) == v(addr_v_lookup)); \
-  print_test_res(is_valid(f_expected == string_to_expr("true") && (addr_v_lookup == addr_v_expected)), test_name);
+  print_test_res(is_valid(f_expected == string_to_expr("true")) && (addr_v_lookup == addr_v_expected), test_name);
 
 mem_layout mem_t::_layout;
 
@@ -848,7 +848,7 @@ void test9() {
   f = f && predicate_map_lookup_helper(map1, v(addr_k1), addr_v_lookup_expr, sv, m_layout); \
   f = f && predicate_ld8(addr_v_lookup_expr, v(0), sv.mem_var, v_lookup_expr, m_layout); \
   f_expected = (eval_output(f, v_lookup_expr) == v(v_lookup)); \
-  print_test_res(is_valid(f_expected == string_to_expr("true") && (v_lookup == v_expected)), test_name);
+  print_test_res(is_valid(f_expected == string_to_expr("true")) && (v_lookup == v_expected), test_name);
 
 #define MAP2_LOOKUP_AND_LD(v_expected, test_name) \
   addr_v_lookup_expr = new_addr_v_lookup(); \
@@ -858,7 +858,7 @@ void test9() {
   f = f && predicate_map_lookup_helper(map2, v(addr_k2), addr_v_lookup_expr, sv, m_layout); \
   f = f && predicate_ld32(addr_v_lookup_expr, v(0), sv.mem_var, v_lookup_expr, m_layout); \
   f_expected = (eval_output(f, v_lookup_expr) == v(v_lookup)); \
-  print_test_res(is_valid(f_expected == string_to_expr("true") && (v_lookup == v_expected)), test_name);
+  print_test_res(is_valid(f_expected == string_to_expr("true")) && (v_lookup == v_expected), test_name);
 
 #define MAP1_LOOKUP(addr_v_expected, test_name) \
   addr_v_lookup_expr = new_addr_v_lookup(); \
