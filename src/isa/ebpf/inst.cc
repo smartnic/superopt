@@ -8,7 +8,7 @@ using namespace std;
 void prog_state::print() {
   prog_state_base::print();
   cout << "Memory:" << endl;
-  for (int i = 0; i < mem_t::MEM_SIZE; i++) {
+  for (int i = 0; i < _mem._mem_size; i++) {
     cout << (unsigned int)_mem._mem[i] << " ";
   }
   cout << endl;
@@ -16,7 +16,7 @@ void prog_state::print() {
 
 void prog_state::clear() {
   prog_state_base::clear();
-  memset(_mem._mem, 0, sizeof(_mem._mem));
+  _mem.clear();
 }
 
 inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
@@ -136,7 +136,7 @@ int16_t inst::get_min_off() const {
   int op_type = get_opcode_type();
   switch (op_type) {
     case OP_LD:
-    case OP_ST: return -mem_t::MEM_SIZE; // assume only stack
+    case OP_ST: return -STACK_SIZE; // assume only stack
     case OP_UNCOND_JMP:
     case OP_COND_JMP: return 0; // assume only jump forward
     default: cout << "Error: no off in instruction: ";
@@ -199,6 +199,7 @@ string inst::opcode_to_str(int opcode) const {
     case JGTXY: return "jgtxy";
     case JSGTXC: return "jsgtxc";
     case JSGTXY: return "jsgtxy";
+    case CALL: return "call";
     case EXIT: return "exit";
     default: return "unknown opcode";
   }
@@ -334,13 +335,13 @@ void inst::set_as_nop_inst() {
 #define NEWDST newDst
 #define CURDST curDst
 #define CURSRC curSrc
-#define STACK sv.mem_var
+#define MEM sv.mem_var
 #define IMM to_expr(imm)
 #define OFF to_expr(off)
 #define CURSRC_L6 (CURSRC & to_expr((int64_t)0x3f))
 #define CURSRC_L5 (CURSRC & to_expr((int64_t)0x1f))
 
-z3::expr inst::smt_inst(smt_var& sv) const {
+z3::expr inst::smt_inst(smt_var& sv, smt_mem_layout& m_layout) const {
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
   // If opcode is valid, then define curDst, curSrc, imm and newDst
   int op_type = get_opcode_type();
@@ -396,14 +397,15 @@ z3::expr inst::smt_inst(smt_var& sv) const {
         default: cout << "Error: imm " << imm << " is not 16, 32, 64" << endl;
           return string_to_expr("false");
       }
-    case LDXB: return predicate_ld8(CURSRC, OFF, STACK, NEWDST);
-    case LDXH: return predicate_ld16(CURSRC, OFF, STACK, NEWDST);
-    case LDXW: return predicate_ld32(CURSRC, OFF, STACK, NEWDST);
-    case LDXDW: return predicate_ld64(CURSRC, OFF, STACK, NEWDST);
-    case STXB: predicate_st8(CURSRC, CURDST, OFF, STACK); return string_to_expr("true");
-    case STXH: predicate_st16(CURSRC, CURDST, OFF, STACK); return string_to_expr("true");
-    case STXW: predicate_st32(CURSRC, CURDST, OFF, STACK); return string_to_expr("true");
-    case STXDW: predicate_st64(CURSRC, CURDST, OFF, STACK); return string_to_expr("true");
+    case LDXB: return predicate_ld8(CURSRC, OFF, MEM, NEWDST, m_layout);
+    case LDXH: return predicate_ld16(CURSRC, OFF, MEM, NEWDST, m_layout);
+    case LDXW: return predicate_ld32(CURSRC, OFF, MEM, NEWDST, m_layout);
+    case LDXDW: return predicate_ld64(CURSRC, OFF, MEM, NEWDST, m_layout);
+    case STXB: predicate_st8(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
+    case STXH: predicate_st16(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
+    case STXW: predicate_st32(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
+    case STXDW: predicate_st64(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
+    case CALL: return string_to_expr("true"); // TODO: to modifty later
     default: return string_to_expr("false");
   }
 }
@@ -466,6 +468,7 @@ int opcode_2_idx(int opcode) {
     case JGTXY: return IDX_JGTXY;
     case JSGTXC: return IDX_JSGTXC;
     case JSGTXY: return IDX_JSGTXY;
+    case CALL: return IDX_CALL;
     case EXIT: return IDX_EXIT;
     default: cout << "unknown opcode" << endl; return 0;
   }
@@ -479,18 +482,19 @@ string inst::get_bytecode_str() const {
           + "}");
 }
 
-// safe address: [ps._mem._stack_addr - mem_t:MEM_SIZE, ps._mem._stack_addr)
+// safe address: [ps._mem.get_mem_start_addr(), ps._mem.get_mem_end_addr()]
 inline void memory_access_check(uint64_t addr, uint64_t num_bytes, prog_state &ps) {
-  if (!((addr >= ps._mem._stack_addr - mem_t::MEM_SIZE) &&
-        (addr < (ps._mem._stack_addr - (num_bytes - 1))))) {
+  if (!((addr >= (uint64_t)ps._mem.get_mem_start_addr()) &&
+        ((addr + num_bytes - 1) <= (uint64_t)ps._mem.get_mem_end_addr()))) {
     string err_msg = "unsafe memory access";
     throw (err_msg);
   }
 }
 
-int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
+int64_t interpret(inst* program, int length, prog_state &ps, int64_t input, const mem_t* input_mem) {
 #undef IMM
 #undef OFF
+#undef MEM
 // type: int64_t
 #define DST ps._regs[insn->_dst_reg]
 #define SRC ps._regs[insn->_src_reg]
@@ -503,6 +507,14 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
 #define UDST (uint64_t)DST
 #define USRC (uint64_t)SRC
 #define UIMM (uint64_t)IMM
+
+#define MEM ps._mem
+#define R0 ps._regs[0]
+#define R1 ps._regs[1]
+#define R2 ps._regs[2]
+#define R3 ps._regs[3]
+#define R4 ps._regs[4]
+#define R5 ps._regs[5]
 
 #define ALU_UNARY(OPCODE, OP, OPERAND)                             \
   INSN_##OPCODE:                                                   \
@@ -545,8 +557,11 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
   inst* insn = program;
   ps.clear();
   ps._regs[1] = input;
+  if (input_mem != nullptr) {
+    ps._mem.cp_input_mem(*input_mem);
+  }
   // set r10 as frame pointer, the bottom of the stack
-  ps._regs[10] = ps._mem._stack_addr;
+  ps._regs[10] = (uint64_t)ps._mem.get_stack_bottom_addr();
 
   static void *jumptable[NUM_INSTR] = {
     [IDX_NOP]      = && INSN_NOP,
@@ -587,6 +602,7 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input) {
     [IDX_JGTXY]    = && INSN_JGTXY,
     [IDX_JSGTXC]   = && INSN_JSGTXC,
     [IDX_JSGTXY]   = && INSN_JSGTXY,
+    [IDX_CALL]     = && INSN_CALL,
     [IDX_EXIT]     = && INSN_EXIT,
   };
 
@@ -643,6 +659,10 @@ INSN_JA:
   COND_JMP(JGTXY, >, UDST, USRC)
   COND_JMP(JSGTXC, >, DST, IMM)
   COND_JMP(JSGTXY, >, DST, SRC)
+
+INSN_CALL:
+  R0 = compute_helper_function(IMM, R1, R2, R3, R4, R5, MEM);
+  CONT;
 
 INSN_EXIT:
   return ps._regs[0];

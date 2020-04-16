@@ -14,6 +14,13 @@ using namespace std;
    APIs exposed to the externals,
    Should ensure all parameters do NOT have side effects.
 */
+/* Function ID */
+enum BPF_FUNC_IDS {
+  BPF_FUNC_map_lookup = 0,
+  BPF_FUNC_map_update,
+  BPF_FUNC_map_delete,
+};
+
 #define NULL_ADDR 0
 #define MAP_UPD_RET 0
 #define MAP_DEL_RET_IF_KEY_INEXIST (int64_t)0xfffffffe
@@ -54,6 +61,8 @@ inline void compute_st16(int64_t in, uint64_t addr, int64_t off);
 inline void compute_st32(int64_t in, uint64_t addr, int64_t off);
 inline void compute_st64(int64_t in, uint64_t addr, int64_t off);
 // map helper functions
+uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
+                                 uint64_t r4, uint64_t r5, mem_t& m);
 uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m);
 uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_v, mem_t& m);
 uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, mem_t& m);

@@ -62,18 +62,19 @@ void validator::smt_pre(expr& pre, expr e) {
 }
 
 void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2,
-                         vector<expr>& op_pc_synth, vector<smt_mem>& op_mem_synth) {
+                         vector<expr>& op_pc_synth, vector<smt_mem>& op_mem_synth,
+                         smt_mem_layout& m_layout) {
   pst = (string_to_expr("output" + to_string(prog_id1)) == \
          string_to_expr("output" + to_string(prog_id2))) &&
-        pgm_smt_mem_eq_chk(_op_pc_orig, _op_mem_orig, op_pc_synth, op_mem_synth);
+        smt_pgm_mem_eq_chk(_op_pc_orig, _op_mem_orig, op_pc_synth, op_mem_synth, m_layout);
 }
 
 // calculate and store pre_orig, ps_orign
-void validator::set_orig(inst* orig, int length) {
+void validator::set_orig(inst* orig, int length, smt_mem_layout& m_layout) {
   smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg());
   smt_prog ps_orig;
   try {
-    _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, length);
+    _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, length, m_layout);
   } catch (const string err_msg) {
     throw (err_msg);
     return;

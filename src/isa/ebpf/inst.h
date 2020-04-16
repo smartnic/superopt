@@ -9,6 +9,7 @@
 #include "../../../src/verify/smt_var.h"
 #include "../../../src/isa/inst.h"
 #include "inst_codegen.h"
+#include "inst_var.h"
 
 using namespace std;
 
@@ -66,6 +67,7 @@ enum OPCODE_IDX {
   IDX_JGTXY,
   IDX_JSGTXC,
   IDX_JSGTXY,
+  IDX_CALL, // function call
   // Exit
   IDX_EXIT,
   NUM_INSTR, // Number of opcode types
@@ -85,6 +87,7 @@ enum OPCODE_IDX {
 #define OPCODE_BPF_JMP_IMM(OP) BPF_JMP | BPF_OP(OP) | BPF_K
 #define OPCODE_BPF_JMP_REG(OP) BPF_JMP | BPF_OP(OP) | BPF_X
 #define OPCODE_BPF_JMP_A BPF_JMP | BPF_JA
+#define OPCODE_BPF_FUNC_CALL BPF_JMP | BPF_CALL
 #define OPCODE_BPF_EXIT_INSN BPF_JMP | BPF_EXIT
 
 // Instruction opcodes
@@ -127,6 +130,7 @@ enum OPCODES {
   JGTXY    = OPCODE_BPF_JMP_REG(BPF_JGT),
   JSGTXC   = OPCODE_BPF_JMP_IMM(BPF_JSGT),
   JSGTXY   = OPCODE_BPF_JMP_REG(BPF_JSGT),
+  CALL     = OPCODE_BPF_FUNC_CALL,
   EXIT     = OPCODE_BPF_EXIT_INSN,
 };
 
@@ -170,6 +174,7 @@ static const int idx_2_opcode[NUM_INSTR] = {
   [IDX_JGTXY] = JGTXY,
   [IDX_JSGTXC] = JSGTXC,
   [IDX_JSGTXY] = JSGTXY,
+  [IDX_CALL] = CALL,
   [IDX_EXIT] = EXIT,
 };
 
@@ -212,6 +217,7 @@ static const int num_operands[NUM_INSTR] = {
   [IDX_JGTXY]    = 3,
   [IDX_JSGTXC]   = 3,
   [IDX_JSGTXY]   = 3,
+  [IDX_CALL]     = 1,
   [IDX_EXIT]     = 0,
 };
 
@@ -256,6 +262,7 @@ static const int insn_num_regs[NUM_INSTR] = {
   [IDX_JGTXY]    = 2,
   [IDX_JSGTXC]   = 1,
   [IDX_JSGTXY]   = 2,
+  [IDX_CALL]     = 0,
   [IDX_EXIT]     = 0,
 };
 
@@ -298,6 +305,7 @@ static const int opcode_type[NUM_INSTR] = {
   [IDX_JGTXY]    = OP_COND_JMP,
   [IDX_JSGTXC]   = OP_COND_JMP,
   [IDX_JSGTXY]   = OP_COND_JMP,
+  [IDX_CALL]     = OP_OTHERS,
   [IDX_EXIT]     = OP_RET,
 };
 
@@ -335,6 +343,7 @@ enum OPERANDS {
 #define JA_OPS (FSTOP(OP_OFF) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 #define JMP_OPS_IMM (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_OFF))
 #define JMP_OPS_REG (FSTOP(OP_DST_REG) | SNDOP(OP_SRC_REG) | TRDOP(OP_OFF))
+#define CALL_OPS (FSTOP(OP_IMM) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 #define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 static const int optable[NUM_INSTR] = {
   [IDX_NOP]      = UNUSED_OPS,
@@ -375,6 +384,7 @@ static const int optable[NUM_INSTR] = {
   [IDX_JGTXY]    = JMP_OPS_REG,
   [IDX_JSGTXC]   = JMP_OPS_IMM,
   [IDX_JSGTXY]   = JMP_OPS_REG,
+  [IDX_CALL]     = CALL_OPS,
   [IDX_EXIT]     = UNUSED_OPS,
 };
 #undef FSTOP
@@ -387,16 +397,17 @@ static const int optable[NUM_INSTR] = {
 #undef STX_OPS
 #undef JMP_OPS_IMM
 #undef JMP_OPS_REG
+#undef CALL_OPS
 #undef UNUSED_OPS
 
-class mem_t {
- public:
-  static const int MEM_SIZE = 512;
-  // should ensure memory is contiguous, because of the assumption in memory_access_check
-  uint8_t _mem[MEM_SIZE];
-  // stack address is the bottom of the stack
-  uint64_t _stack_addr = (uint64_t)&_mem[MEM_SIZE - 1] + 1;
-};
+// class mem_t {
+//  public:
+//   static const int MEM_SIZE = 512;
+//   // should ensure memory is contiguous, because of the assumption in memory_access_check
+//   uint8_t _mem[MEM_SIZE];
+//   // stack address is the bottom of the stack
+//   uint64_t _stack_addr = (uint64_t)&_mem[MEM_SIZE - 1] + 1;
+// };
 
 class prog_state: public prog_state_base {
  public:
@@ -450,10 +461,10 @@ class inst: public inst_base {
   int get_insn_num_regs() const {return insn_num_regs[opcode_2_idx(_opcode)];}
   int get_opcode_type() const {return opcode_type[opcode_2_idx(_opcode)];}
   // smt
-  z3::expr smt_inst(smt_var& sv) const;
+  z3::expr smt_inst(smt_var& sv, smt_mem_layout& m_layout) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;
 
   string get_bytecode_str() const;
 };
 
-int64_t interpret(inst* program, int length, prog_state &ps, int64_t input = 0);
+int64_t interpret(inst* program, int length, prog_state &ps, int64_t input = 0, const mem_t* input_mem = 0);

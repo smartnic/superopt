@@ -16,6 +16,7 @@ class mem_layout {
   unsigned int _stack_start = 0;
   vector<map_attr> _maps_attr;
   vector<unsigned int> _maps_start;
+  void clear() {_maps_attr.clear(); _maps_start.clear();}
   friend ostream& operator<<(ostream& out, const mem_layout& layout);
 };
 
@@ -40,15 +41,22 @@ class mem_t {
   int _mem_size; // size unit: byte
   // should ensure memory is contiguous, because of the assumption in memory_access_check
   uint8_t *_mem;
-  // stack address is the bottom of the stack
-  uint64_t _stack_addr; // = (uint64_t)&_mem[STACK_SIZE - 1] + 1;
   vector<map_t> _maps;
   static mem_layout _layout;
   mem_t();
   ~mem_t();
   static void add_map(map_attr m_attr);
+  // 1. compute "_mem_size" and according to "_layout";
+  // 2. allocate memory for "_mem"
+  void init_mem_by_layout();
   static void set_map_attr(int map_id, map_attr m_attr);
   unsigned int get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map);
-  uint8_t* get_stack_start_s();
+  uint8_t* get_stack_start_addr();
+  // designed for r10
+  uint8_t* get_stack_bottom_addr();
+  uint8_t* get_mem_start_addr();
+  uint8_t* get_mem_end_addr();
+  mem_t& operator=(const mem_t &rhs);
+  void cp_input_mem(const mem_t &rhs);
   void clear();
 };

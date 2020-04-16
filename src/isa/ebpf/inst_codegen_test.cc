@@ -673,10 +673,11 @@ void test9() {
   mem_t::add_map(map_attr(8, 8, 512)); // add two maps with 1-byte k/v size, 512 max entries
   mem_t::add_map(map_attr(8, 8, 512));
   mem_t m;
+  m.init_mem_by_layout();
   int map1 = 0, map2 = 1;
   int64_t k1 = 0x1, v1 = 0x11;
   int64_t k2 = 0x2, v2 = 0x22;
-  uint64_t stack_s = (uint64_t)m.get_stack_start_s();
+  uint64_t stack_s = (uint64_t)m.get_stack_start_addr();
   uint64_t addr_k1 = stack_s, addr_v1 = stack_s + 1;
   uint64_t addr_k2 = stack_s + 2, addr_v2 = stack_s + 3;
 
@@ -827,7 +828,7 @@ void test9() {
   sv.mem_var.init_addrs_map_v_next(m_layout);
   k1 = 0x1, v1 = 0x11; // used by map1
   k2 = 0x1111, v2 = (int64_t)0xffffffff; //used by map2
-  stack_s = (uint64_t)m.get_stack_start_s();
+  stack_s = (uint64_t)m.get_stack_start_addr();
   addr_k1 = stack_s, addr_v1 = stack_s + 1;
   addr_k2 = stack_s + 2, addr_v2 = stack_s + 4;
   f = string_to_expr("true");

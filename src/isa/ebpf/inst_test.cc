@@ -142,9 +142,57 @@ inst instructions20[3] = {inst(STXH, 10, -2, 1),
                           inst(LDXB, 0, 10, -2),
                           inst(EXIT),
                          };
+// TODO: when safety check is added, these map related programs need to be modified
+// after calling map_update function, r1-r5 are unreadable.
+// r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
+inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+                           inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                           inst(STXB, 10, -1, 1),
+                           inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                           inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                           inst(ADD64XC, 2, -1),
+                           inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                           inst(ADD64XC, 3, -2),
+                           inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[r1] = 0x11
+                           inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                           inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
+                           inst(LDXB, 0, 0, 0),
+                           inst(EXIT),
+                          };
+// r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
+inst instructions22[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+                           inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                           inst(STXB, 10, -1, 1),
+                           inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                           inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                           inst(ADD64XC, 2, -1),
+                           inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                           inst(ADD64XC, 3, -2),
+                           inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[r1] = 0x11
+                           inst(CALL, BPF_FUNC_map_delete), // delete map0[k]
+                           inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                           inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
+                           inst(LDXB, 0, 0, 0),
+                           inst(EXIT),
+                          };
+// r0 = *(lookup &k m), where k = 0x11, v = L8(input)
+inst instructions23[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                          inst(STXB, 10, -1, 1),
+                          inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                          inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                          inst(ADD64XC, 2, -1),
+                          inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                          inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
+                          inst(LDXB, 0, 0, 0),
+                          inst(EXIT),
+                         };
+
+mem_layout mem_t::_layout;
 
 void test1() {
+  mem_t::add_map(map_attr(8, 8, 512));
   prog_state ps;
+  ps._mem.init_mem_by_layout();
   cout << "Test 1: full interpretation check" << endl;
 
   int64_t expected = 0xfffffffffffffffe;
@@ -223,6 +271,37 @@ void test1() {
   print_test_res(interpret(instructions20, 3, ps, 1) == expected, "interpret ldxb & stxh 1");
   expected = 0x78;
   print_test_res(interpret(instructions20, 3, ps, 0x12345678) == expected, "interpret ldxb & stxh 2");
+
+  expected = 0x56;
+  print_test_res(interpret(instructions21, 13, ps, 0x123456) == expected, "interpret map helper function 1.1");
+  expected = 0x0f;
+  print_test_res(interpret(instructions21, 13, ps, expected) == expected, "interpret map helper function 1.2");
+
+  expected = 0;
+  print_test_res(interpret(instructions22, 14, ps, 0x56) == expected, "interpret map helper function 2.1");
+  expected = 0;
+  print_test_res(interpret(instructions22, 14, ps, 0x0f) == expected, "interpret map helper function 2.2");
+
+  mem_t input_mem;
+  input_mem.init_mem_by_layout();
+  int64_t v = 0x1f;
+  expected = v;
+  // r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
+  interpret(instructions21, 13, ps, v);
+  input_mem = ps._mem;
+  // r0 = *(lookup &k m), where k = 0x11
+  print_test_res(interpret(instructions23, 9, ps, 0, &input_mem) == expected, "interpret map input 1");
+  input_mem = ps._mem;
+  expected = 0;
+  // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
+  interpret(instructions22, 14, ps, v, &input_mem);
+  input_mem = ps._mem;
+  print_test_res(interpret(instructions23, 9, ps, 0, &input_mem) == expected, "interpret map input 2");
+  input_mem = ps._mem;
+  expected = v;
+  interpret(instructions21, 13, ps, v);
+  input_mem = ps._mem;
+  print_test_res(interpret(instructions23, 9, ps, 0, &input_mem) == expected, "interpret map input 3");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output) {
@@ -238,8 +317,10 @@ int64_t eval_output(z3::expr smt, z3::expr output) {
 }
 
 bool is_valid(z3::expr smt) {
-  z3::solver s(smt_c);
-  s.add(smt);
+  // use bv tactic to accelerate
+  z3::tactic t = z3::tactic(smt_c, "bv");
+  z3::solver s = t.mk_solver();
+  s.add(!smt);
   switch (s.check()) {
     case z3::unsat: return true;
     case z3::sat: return false;
@@ -260,20 +341,24 @@ void test2() {
 // may compute B first.
 #define SMT_CHECK_XC(dst_input, dst_expected, test_name)                         \
   smt = (CURDST == to_expr((int64_t)dst_input));                                 \
-  smt = smt && insn.smt_inst(sv);                                                \
+  smt = smt && insn.smt_inst(sv, m_layout);                                      \
   output = CURDST;                                                               \
   print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
 #define SMT_CHECK_XY(dst_input, src_input, dst_expected, test_name)              \
   smt = (CURDST == to_expr((int64_t)dst_input)) &&                               \
         (CURSRC == to_expr((int64_t)src_input));                                 \
-  smt = smt && insn.smt_inst(sv);                                                \
+  smt = smt && insn.smt_inst(sv, m_layout);                                      \
   output = CURDST;                                                               \
   print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
   inst insn = (NOP);
   int prog_id = 0, node_id = 0;
   smt_var sv(prog_id, node_id, NUM_REGS);
+  smt_mem_layout m_layout;
+  z3::expr stack_s = to_expr((uint64_t)0xff12000000001234);
+  z3::expr stack_e = stack_s + 511;
+  m_layout.set_stack_range(stack_s, stack_e);
   z3::expr smt = string_to_expr("false");
   z3::expr output = string_to_expr("false");
 
@@ -371,13 +456,13 @@ void test2() {
 
 #define SMT_JMP_CHECK_XC(dst_input, bool_expected, test_name)                        \
   smt = z3::implies(CURDST == to_expr((int64_t)dst_input), insn.smt_inst_jmp(sv));   \
-  print_test_res(is_valid(!smt) == (bool)bool_expected, test_name);
+  print_test_res(is_valid(smt) == (bool)bool_expected, test_name);
 
 #define SMT_JMP_CHECK_XY(dst_input, src_input, bool_expected, test_name)             \
   smt = (CURDST == to_expr((int64_t)dst_input)) &&                                   \
         (CURSRC == to_expr((int64_t)src_input));                                     \
   smt = z3::implies(smt, insn.smt_inst_jmp(sv));                                     \
-  print_test_res(is_valid(!smt) == (bool)bool_expected, test_name);
+  print_test_res(is_valid(smt) == (bool)bool_expected, test_name);
 
   insn = inst(JEQXC, 0, 0xffffffff, 1);
   SMT_JMP_CHECK_XC(0xffffffffffffffff, true, "smt JEQXC 1");
@@ -428,8 +513,8 @@ void test2() {
 // the first one is ST and the second is LD
 #define SMT_CHECK_LDST(st_input, ld_output, test_name, insns)                \
   smt = (CURSRC(insns[0]) == to_expr((int64_t)st_input));                    \
-  smt = smt && insns[0].smt_inst(sv);                                        \
-  smt = smt && insns[1].smt_inst(sv);                                        \
+  smt = smt && insns[0].smt_inst(sv, m_layout);                              \
+  smt = smt && insns[1].smt_inst(sv, m_layout);                              \
   output = CURDST(insns[1]);                                                 \
   print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
 
@@ -534,6 +619,7 @@ void test3() {
                   inst(JGTXY, 3, 1, 2),
                   inst(JSGTXC, 3, 1, 2),
                   inst(JSGTXY, 3, 1, 2),
+                  inst(CALL, 1),
                   inst(EXIT),
                  };
   expected = "{7, 3, 0, 0, 1},"\
@@ -573,6 +659,7 @@ void test3() {
              "{45, 3, 1, 2, 0},"\
              "{101, 3, 0, 2, 1},"\
              "{109, 3, 1, 2, 0},"\
+             "{133, 0, 0, 0, 1},"\
              "{149, 0, 0, 0, 0},";
   prog_bytecode = "";
   for (int i = 0; i < NUM_INSTR - 1; i++) {
@@ -598,6 +685,8 @@ void test4() {
 void test5() {
   cout << endl << "Test 5: memory access safety check" << endl;
   prog_state ps;
+  mem_t::_layout.clear();
+  ps._mem.init_mem_by_layout();
   string msg = "";
 #define SMT_CHECK_MEM_SAFE(insns, len, check_expr, test_name) \
   msg = "";\

@@ -5,6 +5,16 @@ using namespace std;
 z3::expr latest_write_element(int idx, vector<z3::expr>& x);
 z3::expr addr_not_in_wt(z3::expr& a, vector<z3::expr>& x);
 
+uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
+                                 uint64_t r4, uint64_t r5, mem_t& m) {
+  switch (func_id) {
+    case BPF_FUNC_map_lookup: return compute_map_lookup_helper(r1, r2, m);
+    case BPF_FUNC_map_update: return compute_map_update_helper(r1, r2, r3, m);
+    case BPF_FUNC_map_delete: return compute_map_delete_helper(r1, r2, m);
+    default: cout << "Error: unknown function id " << func_id << endl; return -1;
+  }
+}
+
 // designed for little endian
 // convert uint8_t array to hex string
 // e.g. addr[2] = {0x1, 0xff}, hex string: "ff01"
