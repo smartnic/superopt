@@ -43,12 +43,13 @@ smt_prog::smt_prog() {}
 smt_prog::~smt_prog() {}
 
 // assume Block has no branch and is an ordered sequence of instructions
-void smt_prog::smt_block(expr& smt_b, inst* program, int start, int end, smt_var& sv) {
+void smt_prog::smt_block(expr& smt_b, inst* program, int start, int end,
+                         smt_var& sv, smt_mem_layout& m_layout) {
   expr p = string_to_expr("true");
   for (size_t i = start; i <= end; i++) {
     int op_type = program[i].get_opcode_type();
     if ((op_type != OP_OTHERS) && (op_type != OP_LD) && (op_type != OP_ST)) continue;
-    p = p and program[i].smt_inst(sv);
+    p = p and program[i].smt_inst(sv, m_layout);
   }
   smt_b = p.simplify();
 }
@@ -60,7 +61,7 @@ void smt_prog::init(unsigned int num_regs) {
   reg_iv.clear();
   bl.clear();
   post.clear();
-  post_mem_val.clear();
+  post_sv.clear();
 
   size_t block_num = g.nodes.size();
 
@@ -72,7 +73,7 @@ void smt_prog::init(unsigned int num_regs) {
     post_reg_val[i].resize(num_regs, string_to_expr("true"));
   }
 
-  post_mem_val.resize(block_num);
+  post_sv.resize(block_num);
 
   path_con.resize(block_num);
   for (size_t i = 0; i < block_num; i++) {
@@ -104,9 +105,10 @@ void smt_prog::topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vecto
 }
 
 // may need to modify
-void smt_prog::gen_block_prog_logic(expr& e, smt_var& sv, size_t cur_bid, inst* inst_lst) {
+void smt_prog::gen_block_prog_logic(expr& e, smt_var& sv, smt_mem_layout& m_layout,
+                                    size_t cur_bid, inst* inst_lst) {
   e = string_to_expr("true");
-  smt_block(e, inst_lst, g.nodes[cur_bid]._start, g.nodes[cur_bid]._end, sv);
+  smt_block(e, inst_lst, g.nodes[cur_bid]._start, g.nodes[cur_bid]._end, sv, m_layout);
   bl[cur_bid] = e; // store
 }
 
@@ -226,7 +228,7 @@ void smt_prog::process_output(expr& f_p_output, inst* inst_lst, unsigned int pro
   f_p_output = e;
 }
 
-expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
+expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length, smt_mem_layout& m_layout) {
   try {
     // generate a cfg
     // illegal input would be detected: 1. program with loop
@@ -255,15 +257,16 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   for (size_t i = 0; i < blocks.size(); i++) {
     unsigned int b = blocks[i];
     smt_var sv(prog_id, b, num_regs);
+    sv.mem_var.init_addrs_map_v_next(m_layout);
     if (b == 0) {
       // generate f_bl: the block program logic
       expr f_bl = string_to_expr("true");
-      gen_block_prog_logic(f_bl, sv, b, inst_lst);
+      gen_block_prog_logic(f_bl, sv, m_layout, b, inst_lst);
       // basic block 0 does not have pre path condition
       // and its f_iv is the whole program's pre condition which is stored in variable pre of class validator
       f_block[0] = f_bl;
-      // store the memory write table of basic block 0 into post_mem_val
-      post_mem_val[0].push_back(sv.mem_var);
+      // store the memory write table of basic block 0 into post_sv
+      post_sv[0].push_back(sv);
     } else {
       for (size_t j = 0; j < g.nodes_in[b].size(); j++) {
         // generate f_iv: the logic that the initial values are fed by the last basic block
@@ -275,13 +278,13 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
           // are the same for different initial path conditions of this block
           sv.clear();
           // update sv with the memory write table from the previous basic block
-          sv.mem_var = post_mem_val[g.nodes_in[b][j]][k];
+          sv.mem_var = post_sv[g.nodes_in[b][j]][k].mem_var;
           // generate f_bl: the block program logic
           expr f_bl = string_to_expr("true");
-          gen_block_prog_logic(f_bl, sv, b, inst_lst);
+          gen_block_prog_logic(f_bl, sv, m_layout, b, inst_lst);
           f_block[b] = f_block[b] && implies(path_con[b][j][k], f_iv && f_bl);
-          // store the current memory write table into post_mem_val
-          post_mem_val[b].push_back(sv.mem_var);
+          // store the current memory write table into post_sv
+          post_sv[b].push_back(sv);
         }
       }
     }
@@ -303,7 +306,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   return pl;
 }
 
-void smt_prog::get_output_pc_mem(vector<expr>& pc, vector<smt_mem>& mv) {
+void smt_prog::get_output_pc_mem(vector<expr>& pc, vector<smt_var>& mv) {
   pc.clear();
   mv.clear();
   for (size_t i = 0; i < g.nodes.size(); i++) {
@@ -313,8 +316,8 @@ void smt_prog::get_output_pc_mem(vector<expr>& pc, vector<smt_mem>& mv) {
     for (size_t j = 0; j < path_con[i].size(); j++)
       for (size_t k = 0; k < path_con[i][j].size(); k++)
         pc.push_back(path_con[i][j][k]);
-    for (size_t j = 0; j < post_mem_val[i].size(); j++)
-      mv.push_back(post_mem_val[i][j]);
+    for (size_t j = 0; j < post_sv[i].size(); j++)
+      mv.push_back(post_sv[i][j]);
   }
 }
 /* class smt_prog end */

@@ -53,7 +53,7 @@ class smt_mem_layout {
   vector<smt_mem_range> _maps;
   vector<map_attr> _maps_attr;
 
-  void add_map(z3::expr s, z3::expr e, map_attr m_attr = map_attr(NUM_BYTE_BITS, NUM_BYTE_BITS)) {
+  void add_map(z3::expr s, z3::expr e, map_attr m_attr = map_attr(NUM_BYTE_BITS, NUM_BYTE_BITS, 512)) {
     _maps.push_back(smt_mem_range(s, e));
     _maps_attr.push_back(m_attr);
   }
@@ -61,6 +61,7 @@ class smt_mem_layout {
     _maps_attr[map_id] = m_attr;
   }
   void set_stack_range(z3::expr s, z3::expr e) {_stack.set_range(s, e);}
+  z3::expr get_stack_bottom_addr() {return (_stack.end + 1);}
 };
 
 class smt_wt {
@@ -84,17 +85,22 @@ class mem_wt {
   void clear() {_wt.clear(); _urt.clear();}
 };
 
+#define Z3_true string_to_expr("true")
+#define Z3_false string_to_expr("false")
+
 class smt_map_wt {
  public:
-  vector<int> addr_map;
+  vector<z3::expr> is_valid; // flag, indicate whether this entry is valid or not
+  vector<z3::expr> addr_map;
   vector<z3::expr> key;
   vector<z3::expr> addr_v;
-  void add(int a, z3::expr k, z3::expr v) {
+  void add(z3::expr iv, z3::expr a, z3::expr k, z3::expr v) {
+    is_valid.push_back(iv);
     addr_map.push_back(a);
     key.push_back(k);
     addr_v.push_back(v);
   }
-  void clear() {addr_map.clear(); key.clear(); addr_v.clear();}
+  void clear() {is_valid.clear(); addr_map.clear(); key.clear(); addr_v.clear();}
   unsigned int size() {return addr_map.size();}
   friend ostream& operator<<(ostream& out, const smt_map_wt& s);
 };
@@ -114,7 +120,7 @@ class smt_mem {
 
   smt_mem() {}
   void init_addrs_map_v_next(smt_mem_layout& m_layout);
-  z3::expr get_and_update_addr_v_next(int map_id);
+  z3::expr get_and_update_addr_v_next(int map_id, smt_mem_layout& m_layout);
   void clear() {_mem_table.clear(); _map_table.clear(); _addrs_map_v_next.clear();}
   friend ostream& operator<<(ostream& out, const smt_mem& s);
 };
@@ -132,7 +138,8 @@ class smt_var {
   vector<unsigned int> reg_cur_id;
   vector<z3::expr> reg_var;
   // store the curId of map related variables
-  unsigned int key_cur_id, val_cur_id, addr_v_cur_id;
+  unsigned int mem_addr_id, is_vaild_id, key_cur_id,
+           val_cur_id, addr_v_cur_id, map_helper_func_ret_cur_id;
  public:
   smt_mem mem_var;
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
@@ -144,8 +151,11 @@ class smt_var {
   z3::expr get_cur_reg_var(unsigned int reg_id);
   z3::expr get_init_reg_var(unsigned int reg_id);
   // map related functions
+  z3::expr update_mem_addr();
+  z3::expr update_is_valid();
   z3::expr update_key(unsigned int k_sz = NUM_BYTE_BITS);
   z3::expr update_val(unsigned int v_sz = NUM_BYTE_BITS);
   z3::expr update_addr_v();
+  z3::expr update_map_helper_func_ret();
   void clear();
 };

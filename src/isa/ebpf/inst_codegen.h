@@ -109,6 +109,10 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
                                      smt_var& sv, smt_mem_layout& m_layout);
 // return the FOL formula that set two programs the same inputs (support: same input maps now)
 z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout);
+
+z3::expr smt_pgm_set_same_input(vector<z3::expr>& pc1, vector<smt_var>& sv1,
+                                vector<z3::expr>& pc2, vector<smt_var>& sv2,
+                                smt_mem_layout& m_layout);
 // return the FOL formula that check whether two programs have the same output memories
 z3::expr smt_pgm_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
                             vector<z3::expr>& pc2, vector<smt_var>& sv2,

@@ -340,6 +340,12 @@ void inst::set_as_nop_inst() {
 #define OFF to_expr(off)
 #define CURSRC_L6 (CURSRC & to_expr((int64_t)0x3f))
 #define CURSRC_L5 (CURSRC & to_expr((int64_t)0x1f))
+#define R0 newDst
+#define R1 sv.get_cur_reg_var(1)
+#define R2 sv.get_cur_reg_var(2)
+#define R3 sv.get_cur_reg_var(3)
+#define R4 sv.get_cur_reg_var(4)
+#define R5 sv.get_cur_reg_var(5)
 
 z3::expr inst::smt_inst(smt_var& sv, smt_mem_layout& m_layout) const {
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
@@ -354,7 +360,9 @@ z3::expr inst::smt_inst(smt_var& sv, smt_mem_layout& m_layout) const {
   z3::expr curSrc = sv.get_cur_reg_var(_src_reg);
   z3::expr newDst = string_to_expr("false");
   // update register according to the opcode type
-  if ((op_type == OP_OTHERS) || (op_type == OP_LD)) {
+  if (_opcode == CALL) {
+    newDst = sv.update_reg_var(0); // r0 contains return value
+  } else if ((op_type == OP_OTHERS) || (op_type == OP_LD)) {
     newDst = sv.update_reg_var(_dst_reg);
   }
   int64_t imm = (int64_t)_imm;
@@ -405,7 +413,7 @@ z3::expr inst::smt_inst(smt_var& sv, smt_mem_layout& m_layout) const {
     case STXH: predicate_st16(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
     case STXW: predicate_st32(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
     case STXDW: predicate_st64(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
-    case CALL: return string_to_expr("true"); // TODO: to modifty later
+    case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv, m_layout);
     default: return string_to_expr("false");
   }
 }
@@ -474,6 +482,17 @@ int opcode_2_idx(int opcode) {
   }
 }
 
+z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv, smt_mem_layout& m_layout) {
+  z3::expr f = string_to_expr("true");
+  f = (sv.get_cur_reg_var(1) == input) &&
+      (sv.get_cur_reg_var(10) == m_layout.get_stack_bottom_addr()) &&
+      (sv.get_cur_reg_var(0) == 0);
+  for (size_t i = 2; i < 10; i++) {
+    f = f && (sv.get_cur_reg_var(i) == 0);
+  }
+  return f;
+}
+
 string inst::get_bytecode_str() const {
   return ("{"
           + to_string(_opcode) + ", " + to_string(_dst_reg) + ", "
@@ -495,6 +514,12 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input, cons
 #undef IMM
 #undef OFF
 #undef MEM
+#undef R0
+#undef R1
+#undef R2
+#undef R3
+#undef R4
+#undef R5
 // type: int64_t
 #define DST ps._regs[insn->_dst_reg]
 #define SRC ps._regs[insn->_src_reg]

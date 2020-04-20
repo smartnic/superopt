@@ -44,7 +44,7 @@ class validator {
   expr _pre_orig = string_to_expr("true");
   expr _pl_orig = string_to_expr("true");
   vector<expr> _op_pc_orig;
-  vector<smt_mem> _op_mem_orig;
+  vector<smt_var> _op_mem_orig;
   // last counterexample
   inout _last_counterex;
   /* store variables start */
@@ -58,27 +58,30 @@ class validator {
   expr _store_f = string_to_expr("true");
   /* store variables end */
   validator();
-  validator(inst* orig, int length);
+  validator(inst* orig, int length, smt_mem_layout& m_layout);
   validator(expr fx, expr input, expr output);
   ~validator();
   // calculate and store pre_orig, ps_orign
-  void set_orig(inst* orig, int length);
+  void set_orig(inst* orig, int length, smt_mem_layout& m_layout);
   // fx is the original FOL formula, input/output is the input/output variable of fx
   void set_orig(expr fx, expr input, expr output);
   // check whether synth is equal to orig
   // return 0: not equal; return 1: equal; return -1: synth is illegal
-  int is_equal_to(inst* synth, int length);
+  int is_equal_to(inst* synth, int length, smt_mem_layout& m_layout);
   // given input and register to store the input, return the output of the original
-  reg_t get_orig_output(reg_t input, unsigned int num_regs, unsigned int input_reg);
+  reg_t get_orig_output(reg_t input, unsigned int num_regs,
+                        unsigned int input_reg, smt_mem_layout& m_layout);
   // move from `private` to `public` for testing time
   bool is_smt_valid(expr& smt);
   void gen_counterex(model& m);
   // set register 0 in basic block 0 as input[prog_id]
-  void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg);
+  void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs,
+               unsigned int input_reg, smt_mem_layout& m_layout);
   // set the input variable of FOL formula as input[prog_id]
   void smt_pre(expr& pre, expr e);
   // setting outputs of two programs are equal
   void smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2,
-                vector<expr>& op_pc_synth, vector<smt_mem>& op_mem_synth);
+                vector<expr>& op_pc_synth, vector<smt_var>& op_mem_synth,
+                smt_mem_layout& m_layout);
 
 };

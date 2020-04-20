@@ -463,6 +463,7 @@ class inst: public inst_base {
   // smt
   z3::expr smt_inst(smt_var& sv, smt_mem_layout& m_layout) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;
+  static z3::expr smt_set_pre(z3::expr input, smt_var& sv, smt_mem_layout& m_layout);
 
   string get_bytecode_str() const;
 };

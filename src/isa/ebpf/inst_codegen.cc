@@ -471,6 +471,19 @@ z3::expr smt_mem_eq_chk(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
           smt_map_eq_chk(sv1, sv2, m_layout));
 }
 
+z3::expr smt_pgm_set_same_input(vector<z3::expr>& pc1, vector<smt_var>& sv1,
+                                vector<z3::expr>& pc2, vector<smt_var>& sv2,
+                                smt_mem_layout& m_layout) {
+  z3::expr f = string_to_expr("true");
+  for (int i = 0; i < pc1.size(); i++) {
+    for (int j = 0; j < pc2.size(); j++) {
+      f = f && z3::implies(pc1[i] && pc2[j],
+                           smt_map_set_same_input(sv1[i], sv2[j], m_layout));
+    }
+  }
+  return f;
+}
+
 z3::expr smt_pgm_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
                             vector<z3::expr>& pc2, vector<smt_var>& sv2,
                             smt_mem_layout& m_layout) {

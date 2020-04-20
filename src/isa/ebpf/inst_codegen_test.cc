@@ -933,7 +933,7 @@ void test10() {
   z3::expr f = string_to_expr("true");
   z3::expr f_same_input = smt_one_map_set_same_input(map1, sv1, sv2, m_layout);
   z3::expr f_equal = smt_one_map_eq_chk(map1, sv1, sv2, m_layout);
-  print_test_res(is_valid(z3::implies(f, f_equal)), "m_p1_0 == m_p2_0 (maps without process)");
+  print_test_res(is_valid(z3::implies(f && f_same_input, f_equal)), "m_p1_0 == m_p2_0 (maps without process)");
   cout << "2. case: keys can be found in both map WTs" << endl;
   // 1.1 update &k1 m_p1_0 == update &k1 m_p2_0
   predicate_st8(k1, addr_k1, v(0), sv1.mem_var);

@@ -51,7 +51,7 @@ ostream& operator<<(ostream& out, const smt_wt& s) {
 
 ostream& operator<<(ostream& out, const smt_map_wt& s) {
   for (int i = 0; i < s.key.size(); i++) {
-    out << i << ": " << s.addr_map[i] << " "
+    out << i << ": " << s.is_valid[i] << " " << s.addr_map[i] << " "
         << s.key[i].simplify() << " " << s.addr_v[i].simplify() << endl;
   }
   return out;
@@ -66,9 +66,10 @@ void smt_mem::init_addrs_map_v_next(smt_mem_layout& m_layout) {
   }
 }
 
-z3::expr smt_mem::get_and_update_addr_v_next(int map_id) {
+z3::expr smt_mem::get_and_update_addr_v_next(int map_id, smt_mem_layout& m_layout) {
   z3::expr res = _addrs_map_v_next[map_id];
-  _addrs_map_v_next[map_id] = _addrs_map_v_next[map_id] + 1;
+  _addrs_map_v_next[map_id] = _addrs_map_v_next[map_id] +
+                              to_expr((uint64_t)m_layout._maps_attr[map_id].val_sz);
   return res;
 }
 
@@ -91,9 +92,12 @@ smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_re
     string name = name_prefix + to_string(i) + "_0";
     reg_var.push_back(string_to_expr(name));
   }
+  mem_addr_id = 0;
+  is_vaild_id = 0;
   key_cur_id = 0;
   val_cur_id = 0;
   addr_v_cur_id = 0;
+  map_helper_func_ret_cur_id = 0;
 }
 
 smt_var::~smt_var() {
@@ -116,6 +120,18 @@ z3::expr smt_var::get_init_reg_var(unsigned int reg_id) {
   return string_to_expr(name);
 }
 
+z3::expr smt_var::update_mem_addr() {
+  mem_addr_id++;
+  string name = "ma_" + _name + "_" + to_string(mem_addr_id);
+  return string_to_expr(name);
+}
+
+z3::expr smt_var::update_is_valid() {
+  is_vaild_id++;
+  string name = "iv_" + _name + "_" + to_string(is_vaild_id);
+  return to_bool_expr(name);
+}
+
 z3::expr smt_var::update_key(unsigned int k_sz) {
   key_cur_id++;
   string name = "k_" + _name + "_" + to_string(key_cur_id);
@@ -134,14 +150,23 @@ z3::expr smt_var::update_addr_v() {
   return to_expr(name, NUM_ADDR_BITS);
 }
 
+z3::expr smt_var::update_map_helper_func_ret() {
+  map_helper_func_ret_cur_id++;
+  string name = "func_ret_" + _name + "_" + to_string(map_helper_func_ret_cur_id);
+  return string_to_expr(name);
+}
+
 void smt_var::clear() {
   for (size_t i = 0; i < reg_var.size(); i++) {
     reg_cur_id[i] = 0;
     string name = "r_" + _name + "_" + to_string(i) + "_0";
     reg_var[i] = string_to_expr(name);
+    mem_addr_id = 0;
+    is_vaild_id = 0;
     key_cur_id = 0;
     val_cur_id = 0;
     addr_v_cur_id = 0;
+    map_helper_func_ret_cur_id = 0;
   }
   mem_var.clear();
 }

@@ -5,6 +5,8 @@
 
 using namespace z3;
 
+mem_layout mem_t::_layout;
+
 void test1() {
   std::cout << "test 1:" << endl;
   inst instructions1[9] = {inst(MOV32XC, 0, -1),         /* r0 = 0x00000000ffffffff */
@@ -28,10 +30,13 @@ void test1() {
                            inst(MOV64XC, 0, 0),
                            inst(EXIT),
                           };
-
-  validator vld(instructions1, 9);
-  print_test_res(vld.is_equal_to(instructions1, 9), "instructions1 == instructions1");
-  print_test_res(vld.is_equal_to(instructions2, 9), "instructions1 == instructions2");
+  smt_mem_layout m_layout;
+  z3::expr stack_s = to_expr((uint64_t)0xff12000000001234);
+  z3::expr stack_e = stack_s + 511;
+  m_layout.set_stack_range(stack_s, stack_e);
+  validator vld(instructions1, 9, m_layout);
+  print_test_res(vld.is_equal_to(instructions1, 9, m_layout), "instructions1 == instructions1");
+  print_test_res(vld.is_equal_to(instructions2, 9, m_layout), "instructions1 == instructions2");
 
   // output = L32(input)
   inst instructions3[2] = {inst(MOV32XY, 0, 1),
@@ -42,9 +47,9 @@ void test1() {
                            inst(LDXW, 0, 10, -4),
                            inst(EXIT),
                           };
-  vld.set_orig(instructions3, 2);
+  vld.set_orig(instructions3, 2, m_layout);
   // TODO: to pass the stack output equal check temporarily
-  print_test_res(!vld.is_equal_to(instructions4, 3), "instructions3 == instructions4");
+  print_test_res(!vld.is_equal_to(instructions4, 3, m_layout), "instructions3 == instructions4");
 
   inst instructions5[3] = {inst(STXDW, 10, -8, 1),
                            inst(LDXDW, 0, 10, -8),
@@ -65,12 +70,16 @@ void test1() {
                            inst(LDXDW, 0, 9, -8),
                            inst(EXIT),
                           };
-  vld.set_orig(instructions5, 3);
-  print_test_res(vld.is_equal_to(instructions6, 9), "instructions5 == instructions6");
-  print_test_res(vld.is_equal_to(instructions7, 4), "instructions5 == instructions7");
+  vld.set_orig(instructions5, 3, m_layout);
+  print_test_res(vld.is_equal_to(instructions6, 9, m_layout), "instructions5 == instructions6");
+  print_test_res(vld.is_equal_to(instructions7, 4, m_layout), "instructions5 == instructions7");
 }
 
 void test2() {
+  smt_mem_layout m_layout;
+  z3::expr stack_s = to_expr((uint64_t)0xff12000000001234);
+  z3::expr stack_e = stack_s + 511;
+  m_layout.set_stack_range(stack_s, stack_e);
   // check branch with ld/st
   inst p1[6] = {inst(STXB, 10, -1, 1),
                 inst(JEQXC, 1, 0x12, 2),
@@ -84,8 +93,8 @@ void test2() {
                 inst(LDXB, 0, 10, -1),
                 inst(EXIT),
                };
-  validator vld(p1, 6);
-  print_test_res(vld.is_equal_to(p2, 4), "p1 == p2");
+  validator vld(p1, 6, m_layout);
+  print_test_res(vld.is_equal_to(p2, 4, m_layout), "p1 == p2");
 
   inst p3[5] = {inst(STXB, 10, -1, 1),
                 inst(JEQXY, 0, 1, 0),
@@ -98,8 +107,8 @@ void test2() {
                 inst(LDXB, 0, 10, -1),
                 inst(EXIT),
                };
-  vld.set_orig(p3, 5);
-  print_test_res(vld.is_equal_to(p4, 4), "p3 == p4");
+  vld.set_orig(p3, 5, m_layout);
+  print_test_res(vld.is_equal_to(p4, 4, m_layout), "p3 == p4");
 
   // test no jmp
   inst p5[8] = {inst(STXB, 10, -1, 1),
@@ -119,13 +128,107 @@ void test2() {
                 inst(LDXB, 0, 10, -1),
                 inst(EXIT),
                };
-  vld.set_orig(p5, 8);
-  print_test_res(vld.is_equal_to(p6, 7), "p5 == p6");
+  vld.set_orig(p5, 8, m_layout);
+  print_test_res(vld.is_equal_to(p6, 7, m_layout), "p5 == p6");
+}
+
+void test3() {
+  smt_mem_layout m_layout;
+  // set memory layout: stack | map1
+  uint64_t stack_s = (uint64_t)0xff12000000001234;
+  z3::expr stack_s_expr = to_expr(stack_s);
+  z3::expr stack_e_expr = stack_s_expr + 511;
+  z3::expr map_s_expr = stack_e_expr + 1;
+  z3::expr map_e_expr = stack_e_expr + 512;
+  m_layout.set_stack_range(stack_s_expr, stack_e_expr);
+  m_layout.add_map(map_s_expr, map_e_expr, map_attr(8, 8, 512));
+  map_s_expr = map_e_expr + 1;
+  map_e_expr = map_s_expr + 511;
+  m_layout.add_map(map_s_expr, map_e_expr, map_attr(8, 8, 512));
+  // TODO: when safety check is added, these map related programs need to be modified
+  // after calling map_update function, r1-r5 are unreadable.
+  // r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
+  inst p1[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+                 inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                 inst(STXB, 10, -1, 1),
+                 inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                 inst(ADD64XC, 2, -1),
+                 inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                 inst(ADD64XC, 3, -2),
+                 inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[r1] = 0x11
+                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                 inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
+                 inst(LDXB, 0, 0, 0),
+                 inst(EXIT),
+                };
+  inst p11[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+                  inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                  inst(STXB, 10, -1, 1),
+                  inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                  inst(ADD64XC, 2, -1),
+                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                  inst(ADD64XC, 3, -2),
+                  inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[r1] = 0x11
+                  inst(LDXB, 0, 10, -2),
+                  inst(EXIT),
+                 };
+  validator vld(p1, 13, m_layout);
+  print_test_res(vld.is_equal_to(p1, 13, m_layout), "map helper function 1.1");
+  print_test_res(vld.is_equal_to(p11, 11, m_layout), "map helper function 1.2");
+  // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
+  inst p2[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+                 inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                 inst(STXB, 10, -1, 1),
+                 inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                 inst(ADD64XC, 2, -1),
+                 inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                 inst(ADD64XC, 3, -2),
+                 inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[r1] = 0x11
+                 inst(CALL, BPF_FUNC_map_delete), // delete map0[k]
+                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                 inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
+                 inst(LDXB, 0, 0, 0),
+                 inst(EXIT),
+                };
+  inst p21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+                  inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                  inst(STXB, 10, -1, 1),
+                  inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                  inst(ADD64XC, 2, -1),
+                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                  inst(ADD64XC, 3, -2),
+                  inst(CALL, BPF_FUNC_map_delete), // delete map0[k]
+                  inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                  inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
+                  inst(LDXB, 0, 0, 0),
+                  inst(EXIT),
+                 };
+  vld.set_orig(p2, 14, m_layout);
+  print_test_res(vld.is_equal_to(p2, 14, m_layout), "map helper function 2.1");
+  print_test_res(vld.is_equal_to(p21, 13, m_layout), "map helper function 2.2");
+  // r0 = *(lookup &k m), where k = 0x11, v = L8(input)
+  inst p3[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                inst(STXB, 10, -1, 1),
+                inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                inst(ADD64XC, 2, -1),
+                inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
+                inst(LDXB, 0, 0, 0),
+                inst(EXIT),
+               };
+  vld.set_orig(p3, 9, m_layout);
+  print_test_res(vld.is_equal_to(p3, 9, m_layout), "map helper function 3.1");
 }
 
 int main() {
   test1();
   test2();
+  test3();
 
   return 0;
 }

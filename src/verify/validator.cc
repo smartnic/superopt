@@ -9,8 +9,8 @@ using namespace z3;
 validator::validator() {
 }
 
-validator::validator(inst* orig, int length) {
-  set_orig(orig, length);
+validator::validator(inst* orig, int length, smt_mem_layout& m_layout) {
+  set_orig(orig, length, m_layout);
 }
 
 validator::validator(expr fx, expr input, expr output) {
@@ -45,15 +45,15 @@ bool validator::is_smt_valid(expr& smt) {
 }
 
 // assgin input r0 "input", other registers 0
-void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg) {
+// for eBPF, r10=bottom_of_stack
+// todo: move pre constrain setting as a call from class inst
+void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs,
+                        unsigned int input_reg, smt_mem_layout& m_layout) {
   smt_var sv(prog_id, 0, num_regs);
   expr input = string_to_expr("input");
   // TODO: set input limit, need to be generalized
   expr p = (input >= -1024) && (input <= 1024);
-  p = p and (sv.get_cur_reg_var(input_reg) == input);
-  for (size_t i = 0; i < num_regs; i++) {
-    if (i != input_reg) p = p and (sv.get_cur_reg_var(i) == 0);
-  }
+  p = p && inst::smt_set_pre(input, sv, m_layout);
   pre = p;
 }
 
@@ -62,7 +62,7 @@ void validator::smt_pre(expr& pre, expr e) {
 }
 
 void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2,
-                         vector<expr>& op_pc_synth, vector<smt_mem>& op_mem_synth,
+                         vector<expr>& op_pc_synth, vector<smt_var>& op_mem_synth,
                          smt_mem_layout& m_layout) {
   pst = (string_to_expr("output" + to_string(prog_id1)) == \
          string_to_expr("output" + to_string(prog_id2))) &&
@@ -71,7 +71,7 @@ void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2
 
 // calculate and store pre_orig, ps_orign
 void validator::set_orig(inst* orig, int length, smt_mem_layout& m_layout) {
-  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg());
+  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg(), m_layout);
   smt_prog ps_orig;
   try {
     _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, length, m_layout);
@@ -90,33 +90,36 @@ void validator::set_orig(expr fx, expr input, expr output) {
   // no storing store_ps_orig here
 }
 
-int validator::is_equal_to(inst* synth, int length) {
+int validator::is_equal_to(inst* synth, int length, smt_mem_layout& m_layout) {
   expr pre_synth = string_to_expr("true");
-  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg());
+  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg(), m_layout);
   smt_prog ps_synth;
   expr pl_synth = string_to_expr("true");
   try {
-    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length);
+    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length, m_layout);
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
     // cerr << err_msg << endl;
     return -1;
   }
   vector<expr> op_pc_synth;
-  vector<smt_mem> op_mem_synth;
+  vector<smt_var> op_mem_synth;
   ps_synth.get_output_pc_mem(op_pc_synth, op_mem_synth);
+  expr pre_same_mem = smt_pgm_set_same_input(_op_pc_orig, _op_mem_orig,
+                      op_pc_synth, op_mem_synth, m_layout);
   expr post = string_to_expr("true");
-  smt_post(post, VLD_PROG_ID_ORIG, VLD_PROG_ID_SYNTH, op_pc_synth, op_mem_synth);
-  expr smt = implies(_pre_orig && pre_synth && _pl_orig && pl_synth, post);
+  smt_post(post, VLD_PROG_ID_ORIG, VLD_PROG_ID_SYNTH, op_pc_synth, op_mem_synth, m_layout);
+  expr smt = implies(pre_same_mem && _pre_orig && pre_synth && _pl_orig && pl_synth, post);
   // store
   _store_post = post;
   _store_f = smt;
   return (int)is_smt_valid(smt);
 }
 
-reg_t validator::get_orig_output(reg_t input, unsigned int num_regs, unsigned int input_reg) {
+reg_t validator::get_orig_output(reg_t input, unsigned int num_regs,
+                                 unsigned int input_reg, smt_mem_layout& m_layout) {
   expr input_logic = string_to_expr("false");
-  smt_pre(input_logic, VLD_PROG_ID_ORIG, num_regs, input_reg);
+  smt_pre(input_logic, VLD_PROG_ID_ORIG, num_regs, input_reg, m_layout);
   input_logic = (string_to_expr("input") == to_expr(input)) && input_logic;
   tactic t = tactic(smt_c, "bv");
   solver s = t.mk_solver();
