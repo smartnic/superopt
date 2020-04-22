@@ -68,8 +68,8 @@ void smt_mem::init_addrs_map_v_next(smt_mem_layout& m_layout) {
 
 z3::expr smt_mem::get_and_update_addr_v_next(int map_id, smt_mem_layout& m_layout) {
   z3::expr res = _addrs_map_v_next[map_id];
-  _addrs_map_v_next[map_id] = _addrs_map_v_next[map_id] +
-                              to_expr((uint64_t)m_layout._maps_attr[map_id].val_sz);
+  unsigned int v_sz = m_layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS;
+  _addrs_map_v_next[map_id] = _addrs_map_v_next[map_id] + to_expr((uint64_t)v_sz);
   return res;
 }
 
