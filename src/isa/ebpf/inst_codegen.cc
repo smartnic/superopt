@@ -92,11 +92,8 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v,
                                z3::expr& f_not_found_in_wt, smt_wt& urt) {
   z3::expr f = string_to_expr("true");
   // add constrains on the new symbolic value "v" according to the following cases:
-  // case 1: "a" can be found in wt(addr1).
-  // if addr1 is the latest write address in wt and a is equal to addr1,
-  // it implies v is equal to the value of addr1
-  // The constrains of this case can be removed, since if the addr exists in the memory WT,
-  // the value in that address is read from WT but not URT.
+  // case 1: "a" can be found in wt(addr1), the case is processed in
+  // function "predicate_ld_byte", that is urt.add(new_addr, out)
 
   // case 2: "a" cannot be found in wt, but urt(addr1).
   // if there is no address equal to a in wt and addr1 in urt is equal to
@@ -134,6 +131,14 @@ z3::expr predicate_ld_byte(z3::expr addr, smt_var& sv, z3::expr out, smt_mem_lay
   // if "a" can be found in wt, set "new_addr" as NULL_ADDR
   // to indicate that this entry to be added in the urt is invalid. else,
   // "new_addr" is "a"
+  // An example that will cause a problem in equvialence check if just add (a, out) in urt
+  // and add an entry in map URT using the same approach
+  // example: pgm1: update k v m, lookup k m; pgm2: lookup k m
+  // expected: pgm1 != pgm2, but if add (a, out) in urt, pgm1 == pgm2
+  // Reason why pgm1 == pgm2: for the lookup in pgm1, because of the update, "k" can be found
+  // in map WT, then the constrain on "addr_v" is that addr_v == addr_v' found in map WT,
+  // and mem[addr_v'] == v because of the update. Thus, for pgm1, the update v is the same
+  // as uninitialized lookup v.
   f = f && z3::implies(f_found_in_wt_after_i, new_addr == NULL_ADDR_EXPR);
   f = f && z3::implies(!f_found_in_wt_after_i, new_addr == a);
   urt.add(new_addr, out);
