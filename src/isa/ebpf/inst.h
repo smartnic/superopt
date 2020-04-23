@@ -468,4 +468,4 @@ class inst: public inst_base {
   string get_bytecode_str() const;
 };
 
-int64_t interpret(inst* program, int length, prog_state &ps, int64_t input = 0, const mem_t* input_mem = 0);
+int64_t interpret(inst* program, int length, prog_state &ps, int64_t input = 0, const mem_t* input_mem = nullptr);
