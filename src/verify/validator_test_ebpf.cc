@@ -280,9 +280,20 @@ void test4() {
   mem_t input_mem_expected;
   input_mem_expected.init_mem_by_layout();
   input_mem_expected.update_kv_in_map(map0, k1_str, (uint8_t*)(&v1));
-  bool res = (vld.is_equal_to(p11, 11, m_layout) == 0) && // 0: not equal
-             (vld._last_counterex_mem == input_mem_expected);
-  print_test_res(res == true, "1");
+  // check counter example is generated and the value of input memory
+  bool res_expected = (vld.is_equal_to(p11, 11, m_layout) == 0) && // 0: not equal
+                      (vld._last_counterex_mem == input_mem_expected);
+
+  prog_state ps;
+  ps._mem.init_mem_by_layout();
+  // check the outputs of p1 and p11 with/without input memory
+  int64_t output0 = interpret(p1, 14, ps);
+  int64_t output1 = interpret(p11, 11, ps, 0);
+  res_expected = res_expected && (output0 == 0) && (output1 == 0);
+  output0 = interpret(p1, 14, ps, 0, &vld._last_counterex_mem);
+  output1 = interpret(p11, 11, ps, 0, &vld._last_counterex_mem);
+  res_expected = res_expected && (output0 == 0xff) && (output1 == 0);
+  print_test_res(res_expected, "1");
 }
 
 int main() {
