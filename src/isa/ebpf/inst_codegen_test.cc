@@ -595,7 +595,6 @@ void test8() {
   f = f && predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv, m_layout);
   out = new_out();
   f = f && predicate_map_delete_helper(map1, addr_k1, out, sv, m_layout);
-  cout << "out: " << out << endl;
   f_expected = z3::implies(f, out == MAP_DEL_RET_IF_KEY_EXIST_EXPR);
   print_test_res(is_valid(f_expected, true), "ret_val(delete &k (update &k &v (delete &k m))) == EXIST");
 
