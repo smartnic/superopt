@@ -471,9 +471,7 @@ z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
 }
 
 z3::expr smt_mem_eq_chk(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
-  return (smt_stack_eq_chk(sv1.mem_var._mem_table._wt,
-                           sv2.mem_var._mem_table._wt, m_layout._stack) &&
-          smt_map_eq_chk(sv1, sv2, m_layout));
+  return smt_map_eq_chk(sv1, sv2, m_layout);
 }
 
 z3::expr smt_pgm_set_same_input(vector<z3::expr>& pc1, vector<smt_var>& sv1,

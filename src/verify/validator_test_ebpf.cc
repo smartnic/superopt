@@ -48,8 +48,7 @@ void test1() {
                            inst(EXIT),
                           };
   vld.set_orig(instructions3, 2, m_layout);
-  // TODO: to pass the stack output equal check temporarily
-  print_test_res(!vld.is_equal_to(instructions4, 3, m_layout), "instructions3 == instructions4");
+  print_test_res(vld.is_equal_to(instructions4, 3, m_layout), "instructions3 == instructions4");
 
   inst instructions5[3] = {inst(STXDW, 10, -8, 1),
                            inst(LDXDW, 0, 10, -8),
