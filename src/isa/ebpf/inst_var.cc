@@ -24,12 +24,16 @@ ostream& operator<<(ostream& out, const map_t& mp) {
 
 ostream& operator<<(ostream& out, const mem_t& mem) {
 #define MEM_PRINT_GAP 32
+  if (mem._mem == nullptr) return out;
+
   out << "1. stack related memory: ";
   for (int i = 0; i < STACK_SIZE; i++) {
     if ((i % MEM_PRINT_GAP) == 0) out << endl;
     out << hex << setfill('0') << setw(2) << static_cast<int>(mem._mem[i]) << " " << dec;
   }
   out << endl;
+  if (mem._maps.size() == 0) return out;
+
   out << "2. map" << endl;
   for (int i = 0; i < mem._maps.size(); i++) {
     out << "map" << i << endl
@@ -109,8 +113,10 @@ mem_t::mem_t() {
 }
 
 mem_t::~mem_t() {
-  delete []_mem;
-  _mem = NULL;
+  if (_mem != nullptr) {
+    delete []_mem;
+    _mem = nullptr;
+  }
 }
 
 void mem_t::add_map(map_attr m_attr) {

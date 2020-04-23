@@ -44,7 +44,7 @@ class mem_t {
  public:
   int _mem_size; // size unit: byte
   // should ensure memory is contiguous, because of the assumption in memory_access_check
-  uint8_t *_mem;
+  uint8_t *_mem = nullptr;
   vector<map_t> _maps;
   static mem_layout _layout;
   mem_t();
