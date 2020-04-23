@@ -1029,6 +1029,24 @@ void test10() {
   sv2.mem_var.init_addrs_map_v_next(m_layout);
   predicate_st8(k1, addr_k1, v(0), sv1.mem_var);
   predicate_st8(v1, addr_v1, v(0), sv1.mem_var);
+  predicate_st8(k1, addr_k1, v(0), sv2.mem_var);
+  predicate_st8(v1, addr_v1, v(0), sv2.mem_var);
+  // test for lookup, if key can be found in WT, the entry added into URT should be invalid
+  z3::expr addr_v_lookup = new_addr_v_lookup();
+  f = predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout); // m_p1[k1] = v1
+  f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup, sv1, m_layout);
+  f = f && predicate_ld8(addr_v_lookup, v(0), sv1, new_v_lookup(), m_layout);
+  addr_v_lookup = new_addr_v_lookup();
+  f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup, sv2, m_layout);
+  f = f && predicate_ld8(addr_v_lookup, v(0), sv1, new_v_lookup(), m_layout);
+  test_name = "lookup not affect map equivalence check";
+  MAP_EQ_CHK(map1, test_name, false)
+
+  sv1.clear(); sv2.clear();
+  sv1.mem_var.init_addrs_map_v_next(m_layout);
+  sv2.mem_var.init_addrs_map_v_next(m_layout);
+  predicate_st8(k1, addr_k1, v(0), sv1.mem_var);
+  predicate_st8(v1, addr_v1, v(0), sv1.mem_var);
   predicate_st8(k2, addr_k2, v(0), sv1.mem_var);
   predicate_st8(v2, addr_v2, v(0), sv1.mem_var);
   predicate_st8(k1, addr_k1, v(0), sv2.mem_var);
@@ -1102,7 +1120,7 @@ void test10() {
   f_equal = smt_one_map_eq_chk(map1, sv1, sv2, m_layout);
   print_test_res(!is_valid(z3::implies(f && f_same_input, f_equal)), test_name);
 
-  z3::expr addr_v_lookup = new_addr_v_lookup();
+  addr_v_lookup = new_addr_v_lookup();
   z3::expr v_lookup = new_v_lookup();
   f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p1, new_out(), sv1, m_layout);
   f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup, sv1, m_layout);

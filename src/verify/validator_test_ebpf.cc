@@ -146,6 +146,9 @@ void test3() {
   map_s_expr = map_e_expr + 1;
   map_e_expr = map_s_expr + 511;
   m_layout.add_map(map_s_expr, map_e_expr, map_attr(8, 8, 512));
+  mem_t::_layout.clear();
+  mem_t::add_map(map_attr(8, 8, 512)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
+  mem_t::add_map(map_attr(8, 8, 512));
   // TODO: when safety check is added, these map related programs need to be modified
   // after calling map_update function, r1-r5 are unreadable.
   // r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
@@ -224,6 +227,33 @@ void test3() {
                };
   vld.set_orig(p3, 9, m_layout);
   print_test_res(vld.is_equal_to(p3, 9, m_layout), "map helper function 3.1");
+
+  inst p4[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+                 inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                 inst(STXB, 10, -1, 1),
+                 inst(MOV64XC, 1, 0), // r1 = 0
+                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                 inst(ADD64XC, 2, -1),
+                 inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                 inst(ADD64XC, 3, -2),
+                 inst(CALL, BPF_FUNC_map_update),
+                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
+                 inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = map0[k1]
+                 inst(LDXB, 0, 0, 0),  // r0 = map0[k1]
+                 inst(EXIT),
+                };
+  inst p41[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                 inst(STXB, 10, -1, 1),
+                 inst(MOV64XC, 1, 0), // r1 = map0
+                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                 inst(ADD64XC, 2, -1),
+                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
+                 inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = map0[k1]
+                 inst(LDXB, 0, 0, 0),  // r0 = map0[k1]
+                 inst(EXIT),
+                };
+  vld.set_orig(p4, 13, m_layout);
+  print_test_res(vld.is_equal_to(p41, 9, m_layout) == 0, "map helper function 4.1");
 }
 
 void test4() {
