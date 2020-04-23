@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iomanip>
+#include <iostream>
 #include <vector>
 #include <unordered_map>
 #include <queue>
@@ -31,9 +33,11 @@ class map_t {
   unsigned int _cur_max_entries = 0;
   unsigned int _max_entries;
   map_t(unsigned int max_entries) {_max_entries = max_entries;}
-  unsigned int get_next_idx();
+  unsigned int get_and_update_next_idx();
   void add_available_idx(unsigned int idx);
   void clear();
+  bool operator==(const map_t &rhs);
+  friend ostream& operator<<(ostream& out, const map_t& mp);
 };
 
 class mem_t {
@@ -50,13 +54,16 @@ class mem_t {
   // 2. allocate memory for "_mem"
   void init_mem_by_layout();
   static void set_map_attr(int map_id, map_attr m_attr);
-  unsigned int get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map);
-  uint8_t* get_stack_start_addr();
+  unsigned int get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map) const;
+  void update_kv_in_map(int map_id, string k, uint8_t* addr_v); // get v_sz from layout
+  uint8_t* get_stack_start_addr() const;
   // designed for r10
-  uint8_t* get_stack_bottom_addr();
-  uint8_t* get_mem_start_addr();
-  uint8_t* get_mem_end_addr();
+  uint8_t* get_stack_bottom_addr() const;
+  uint8_t* get_mem_start_addr() const;
+  uint8_t* get_mem_end_addr() const;
   mem_t& operator=(const mem_t &rhs);
+  bool operator==(const mem_t &rhs);
   void cp_input_mem(const mem_t &rhs);
   void clear();
+  friend ostream& operator<<(ostream& out, const mem_t& mem);
 };

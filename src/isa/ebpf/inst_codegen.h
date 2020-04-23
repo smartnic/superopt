@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <utility>
 #include "z3++.h"
 #include "../../../src/utils.h"
 #include "../../../src/verify/smt_var.h"
@@ -125,6 +126,13 @@ z3::expr smt_one_map_set_same_input(int map_id, smt_var& sv1, smt_var& sv2, smt_
 z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1,
                             smt_var& sv2, smt_mem_layout& m_layout);
 z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout);
+// For the conversion from counterexample (z3 model from validator)
+// to input memory (mem_t) for interpreter
+string z3_bv_2_hex_str(z3::expr z3_bv);
+void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl,
+                               smt_map_wt& map_urt, smt_wt& mem_urt,
+                               smt_mem_layout& m_layout);
+
 /* APIS for unit tests end */
 
 /* Inputs in, out must be side-effect-free expressions. */

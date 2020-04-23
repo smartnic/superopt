@@ -38,17 +38,19 @@ class smt_mem_range {
   z3::expr end = string_to_expr("true"); // end address, 64-bit bitvector
   smt_mem_range() {}
   smt_mem_range(z3::expr s, z3::expr e) {
-    start = s;
-    end = e;
+    start = s.simplify();
+    end = e.simplify();
   }
   void set_range(z3::expr s, z3::expr e) {
-    start = s;
-    end = e;
+    start = s.simplify();
+    end = e.simplify();
   }
 };
 
 class smt_mem_layout {
  public:
+  // Assmue that stack and maps next to each other
+  // stack | map1 | map2 | ...
   smt_mem_range _stack;
   vector<smt_mem_range> _maps;
   vector<map_attr> _maps_attr;

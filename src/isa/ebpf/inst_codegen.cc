@@ -46,21 +46,9 @@ uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m) {
 uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_v, mem_t& m) {
   int map_id = addr_map;
   int k_sz = mem_t::_layout._maps_attr[map_id].key_sz / NUM_BYTE_BITS;
-  int v_sz = mem_t::_layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS;
   // get key and value from memory
   string k = ld_n_bytes_from_addr((uint8_t*)addr_k, k_sz);
-  map_t& mp = m._maps[map_id];
-  auto it = mp._k2idx.find(k);
-  unsigned int v_idx_in_map;
-  if (it == mp._k2idx.end()) {
-    v_idx_in_map = mp.get_next_idx();
-    mp._k2idx[k] = v_idx_in_map;
-  } else {
-    v_idx_in_map = it->second;
-  }
-  int v_mem_off = m.get_mem_off_by_idx_in_map(map_id, v_idx_in_map);
-  uint64_t addr_v_dst = (uint64_t)&m._mem[v_mem_off];
-  memcpy((void*)addr_v_dst, (void*)addr_v, v_sz);
+  m.update_kv_in_map(map_id, k, (uint8_t*)addr_v);
   return MAP_UPD_RET;
 }
 
@@ -702,5 +690,96 @@ z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::ex
     return predicate_map_delete_helper(r1, r2, r0, sv, m_layout);
   } else {
     cout << "Error: unknown function id " << func_id << endl; return string_to_expr("true");
+  }
+}
+
+// should make sure that the input "z3_bv8" is a z3 bv8 but not a formula
+inline string z3_bv8_2_hex_str(z3::expr z3_bv8) {
+  int i = z3_bv8.get_numeral_int();
+  stringstream ss;
+  ss << hex << setfill('0') << setw(2) << i;
+  return ss.str();
+}
+
+string z3_bv_2_hex_str(z3::expr z3_bv) {
+  int sz = z3_bv.get_sort().bv_size();
+  string hex_str = "";
+  for (int i = sz - 1; i >= 0; i -= 8) {
+    // simplify() simplifies the "z3_bv.extract(i, i - 7)" formula to a z3 bv8
+    hex_str += z3_bv8_2_hex_str(z3_bv.extract(i, i - 7).simplify());
+  }
+  return hex_str;
+}
+
+void get_map_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
+                          z3::model& mdl, smt_wt& mem_urt,
+                          smt_mem_layout& m_layout) {
+  int map_sz = m_layout._maps.size();
+  if (map_sz == 0) return;
+  for (int i = 0; i < mem_urt.size(); i++) {
+    z3::expr z3_addr = mem_urt.addr[i];
+    uint64_t addr = mdl.eval(z3_addr).get_numeral_uint64();
+    if (addr == NULL_ADDR) continue;
+    // Assmue that stack and maps next to each other
+    uint64_t map_start = m_layout._maps[0].start.get_numeral_uint64();
+    uint64_t map_end = m_layout._maps[map_sz - 1].end.get_numeral_uint64();
+    if ((addr < map_start) || (addr > map_end)) continue;
+
+    z3::expr z3_val = mem_urt.val[i]; // z3 bv8
+    uint8_t val = (uint8_t)mdl.eval(z3_val).get_numeral_int();
+    mem_addr_val.push_back(make_pair(addr, val));
+  }
+}
+
+void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
+                       vector<pair<uint64_t, uint8_t>>& mem_addr_val) {
+  for (int i = 0; i < v.size(); i++) {
+    uint64_t addr = addr_v + i;
+    for (int j = 0; j < mem_addr_val.size(); j++) {
+      if (addr == mem_addr_val[j].first) {
+        v[i] = mem_addr_val[j].second;
+        break;
+      }
+    }
+  }
+}
+
+void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl,
+                               smt_map_wt& map_urt, smt_wt& mem_urt,
+                               smt_mem_layout& m_layout) {
+  vector<pair< uint64_t, uint8_t>> mem_addr_val;
+  get_map_mem_from_mdl(mem_addr_val, mdl, mem_urt, m_layout);
+
+  uint64_t stack_start = m_layout._stack.start.get_numeral_uint64();
+  for (int i = 0; i < map_urt.size(); i++) {
+    z3::expr z3_is_valid = map_urt.is_valid[i];
+    int is_valid = mdl.eval(z3_is_valid).bool_value();
+    if (is_valid == -1) continue; // -1 means z3 false, 1 means z3 true
+
+    z3::expr z3_addr_v = map_urt.addr_v[i];
+    uint64_t addr_v = mdl.eval(z3_addr_v).get_numeral_uint64();
+    if (addr_v == 0) continue;
+
+    z3::expr z3_addr_map = mdl.eval(map_urt.addr_map[i]);
+    int map_id = z3_addr_map.get_numeral_int();
+    z3::expr z3_k = mdl.eval(map_urt.key[i]);
+    string k = z3_bv_2_hex_str(z3_k);
+    map_t& mp = input_mem._maps[map_id];
+    if (mp._k2idx.find(k) == mp._k2idx.end()) {
+      unsigned int idx = mp._cur_max_entries;
+      mp._cur_max_entries++;
+      mp._k2idx[k] = idx;
+      unsigned int val_sz = m_layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS;
+
+      vector<uint8_t> v(val_sz);
+      // get the corresponding "v" according to "addr_v"
+      get_v_from_addr_v(v, addr_v, mem_addr_val);
+      // get memory off according to the idx
+      unsigned int mem_off = input_mem.get_mem_off_by_idx_in_map(map_id, idx);
+      // copy "v" to the memory
+      for (int i = 0; i < v.size(); i++) {
+        input_mem._mem[mem_off + i] = v[i];
+      }
+    }
   }
 }

@@ -1148,7 +1148,8 @@ void test10() {
 }
 
 void test11() {
-  cout << "Test 11: load n bytes from address" << endl;
+  cout << "Test 11: small functions" << endl;
+  cout << "1. ld_n_bytes_from_addr" << endl;
   uint8_t a[2] = {0x1, 0xff};
   string s = ld_n_bytes_from_addr(a, 2);
   print_test_res(s == "ff01", "1");
@@ -1156,6 +1157,145 @@ void test11() {
   uint8_t a1[4] = {0x12, 0x34, 0x56, 0x08};
   s = ld_n_bytes_from_addr(a1, 4);
   print_test_res(s == "08563412", "2");
+
+  cout << "2. z3_bv_2_hex_str" << endl;
+  uint64_t x = 0x1234567890abcdef;
+  uint64_t y = 0xfedcba0987654321;
+  uint8_t z = 0x1;
+  z3::expr z3_bv64 = to_expr(z, 8);
+  string expected = "01";
+  print_test_res(z3_bv_2_hex_str(z3_bv64) == expected, "1");
+  z3_bv64 = to_expr(x, 64);
+  expected = "1234567890abcdef";
+  print_test_res(z3_bv_2_hex_str(z3_bv64) == expected, "2");
+  z3_bv64 = to_expr(y, 64);
+  expected = "fedcba0987654321";
+  print_test_res(z3_bv_2_hex_str(z3_bv64) == expected, "3");
+  z3_bv64 = z3::concat(v(x), v(y));
+  expected = "1234567890abcdeffedcba0987654321";
+  print_test_res(z3_bv_2_hex_str(z3_bv64) == expected, "4");
+}
+
+bool get_counterex_model(z3::model& m, z3::expr& smt) {
+  // Compared to the default tactic, 'bv' tactic is faster
+  // for z3 check when processing bit vector
+  z3::tactic t = z3::tactic(smt_c, "bv");
+  z3::solver s = t.mk_solver();
+  s.add(!smt);
+  switch (s.check()) {
+    case z3::unsat: return true;
+    case z3::sat: {
+      m = s.get_model();
+      return false;
+    }
+    case z3::unknown: return false;
+  }
+  return false;
+}
+
+void get_input_mem_after_lookup_ld(mem_t& input_mem, z3::expr v_ulookup,
+                                   z3::expr addr_map, z3::expr addr_k, unsigned int v_sz,
+                                   z3::expr& f, z3::expr& f_pc,
+                                   smt_var& sv1, smt_var& sv2,
+                                   smt_mem_layout& m_layout) {
+  z3::expr addr_v_lookup = new_addr_v_lookup();
+  z3::expr v_lookup = new_v_lookup();
+  f = f && predicate_map_lookup_helper(addr_map, addr_k, addr_v_lookup, sv1, m_layout);
+  if (v_sz == 8) {
+    f = f && predicate_ld8(addr_v_lookup, v(0), sv1.mem_var, v_lookup, m_layout);
+  } else if (v_sz == 32) {
+    f = f && predicate_ld32(addr_v_lookup, v(0), sv1.mem_var, v_lookup, m_layout);
+  }
+  z3::expr f_same_input = smt_map_set_same_input(sv1, sv2, m_layout);
+  z3::expr f_equal = smt_map_eq_chk(sv1, sv2, m_layout);
+  f_pc = f_pc && (addr_v_lookup != NULL_ADDR_EXPR);
+  f_pc = f_pc && (v_lookup == v_ulookup);
+  z3::expr smt = z3::implies(f && f_same_input && f_pc, f_equal);
+  z3::model mdl(smt_c);
+  get_counterex_model(mdl, smt);
+  smt_map_wt& sv1_map_urt = sv1.mem_var._map_table._urt;
+  smt_wt& sv1_mem_urt = sv1.mem_var._mem_table._urt;
+  counterex_urt_2_input_map(input_mem, mdl, sv1_map_urt, sv1_mem_urt, m_layout);
+}
+
+void test12() {
+  cout << "Test 12: coversion from counter example to input memory" << endl;
+  // init input map and layout for interpreter
+  // memory layout: stack | map1 | map2
+  mem_t::_layout.clear();
+  mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
+  mem_t::add_map(map_attr(16, 32, 32)); // k_sz: 16 bits; v_sz: 32 bits; max_entirs: 32
+  // init smt tables, layout for validator
+  smt_mem_layout m_layout;
+  int map1 = 0, map2 = 1;
+  z3::expr addr_map1 = v(0), addr_map2 = v(1);
+  z3::expr stack_s = v((uint64_t)0xff12000000001234);
+  z3::expr stack_e = stack_s + 511;
+  m_layout.set_stack_range(stack_s, stack_e);
+  z3::expr map1_s = stack_e + 1, map1_e = stack_e + 32;
+  m_layout.add_map(map1_s, map1_e, map_attr(8, 8, 32));
+  z3::expr map2_s = map1_e + 1, map2_e = map1_e + 32 * 4;
+  m_layout.add_map(map2_s, map2_e, map_attr(16, 32, 32));
+  unsigned int prog_id = 0, node_id = 0, num_regs = 11;
+  smt_var sv1(prog_id, node_id, num_regs);
+  prog_id = 1;
+  smt_var sv2(prog_id, node_id, num_regs);
+  sv1.mem_var.init_addrs_map_v_next(m_layout);
+  sv2.mem_var.init_addrs_map_v_next(m_layout);
+
+  z3::expr k1 = to_expr(0x01, 8), v1 = to_expr("v1", 8);
+  z3::expr k2 = to_expr(0x0202, 16), v2 = to_expr("v2", 32);
+  z3::expr k3 = to_expr(0x03, 8), v3 = to_expr("v3", 8);
+  z3::expr k4 = to_expr(0x04, 8), v4 = to_expr("v4", 8);
+  string k1_str = "01", k2_str = "0202", k3_str = "03";
+  z3::expr addr_k1 = stack_s + 0, addr_v1 = stack_s + 1;
+  z3::expr addr_k2 = stack_s + 2, addr_v2 = stack_s + 4;
+  z3::expr addr_k3 = stack_s + 8, addr_v3 = stack_s + 9;
+  z3::expr addr_k4 = stack_s + 10, addr_v4 = stack_s + 11;
+#define PRED_ST(key, k_sz, val, v_sz, addr_k, addr_v) \
+  predicate_st##k_sz(key, addr_k, v(0), sv1.mem_var); \
+  predicate_st##k_sz(key, addr_k, v(0), sv2.mem_var); \
+  predicate_st##v_sz(val, addr_v, v(0), sv1.mem_var); \
+  predicate_st##v_sz(val, addr_v, v(0), sv2.mem_var);
+
+  PRED_ST(k1, 8, v1, 8, addr_k1, addr_v1)
+  PRED_ST(k2, 16, v2, 32, addr_k2, addr_v2)
+  PRED_ST(k3, 8, v3, 8, addr_k3, addr_v3)
+  PRED_ST(k4, 8, v4, 8, addr_k4, addr_v4)
+#undef PRED_ST
+
+  // update to help create counter-example model
+  z3::expr f = predicate_map_update_helper(addr_map1, addr_k4, addr_v4, new_out(), sv1, m_layout);
+  mem_t input_mem;
+  input_mem.init_mem_by_layout();
+  mem_t input_mem_expected;
+  input_mem_expected.init_mem_by_layout();
+  z3::expr f_pc = Z3_true;
+  // test 1: uinitialized lookup of map1[k1]
+  uint8_t v_ulookup_k1[1] = {0x12};
+  z3::expr v_ulookup_k1_expr = v(0x12);
+  get_input_mem_after_lookup_ld(input_mem, v_ulookup_k1_expr, addr_map1, addr_k1, 8,
+                                f, f_pc, sv1, sv2, m_layout);
+  input_mem_expected.update_kv_in_map(map1, k1_str, v_ulookup_k1);
+  print_test_res(input_mem == input_mem_expected, "uinitialized lookup of map1[k1]");
+  // test 2: uinitialized lookup of map2[k2]
+  uint8_t v_ulookup_k2[4] = {0x78, 0x56, 0x04, 0x03}; // little endian
+  z3::expr v_ulookup_k2_expr = v(0x03045678);
+  get_input_mem_after_lookup_ld(input_mem, v_ulookup_k2_expr, addr_map2, addr_k2, 32,
+                                f, f_pc, sv1, sv2, m_layout);
+  input_mem_expected.update_kv_in_map(map2, k2_str, v_ulookup_k2);
+  print_test_res(input_mem == input_mem_expected, "uinitialized lookup of map2[k2]");
+  // test 3: another uinitialized lookup of map1[k1]
+  get_input_mem_after_lookup_ld(input_mem, v_ulookup_k1_expr, addr_map1, addr_k1, 8,
+                                f, f_pc, sv1, sv2, m_layout);
+  print_test_res(input_mem == input_mem_expected, "uinitialized lookup of map1[k1]");
+  // test 4: another uinitialized lookup of map1[k3]
+  uint8_t v_ulookup_k3[1] = {0x09};
+  z3::expr v_ulookup_k3_expr = v(0x09);
+  get_input_mem_after_lookup_ld(input_mem, v_ulookup_k3_expr, addr_map1, addr_k3, 8,
+                                f, f_pc, sv1, sv2, m_layout);
+  input_mem_expected.update_kv_in_map(map1, k3_str, v_ulookup_k3);
+  print_test_res(input_mem == input_mem_expected, "uinitialized lookup of map1[k3]");
 }
 
 int main() {
@@ -1170,6 +1310,7 @@ int main() {
   test9();
   test10();
   test11();
+  test12();
 
   return 0;
 }

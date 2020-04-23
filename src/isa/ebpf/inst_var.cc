@@ -11,7 +11,47 @@ ostream& operator<<(ostream& out, const mem_layout& layout) {
   return out;
 }
 
-unsigned int map_t::get_next_idx() {
+ostream& operator<<(ostream& out, const map_t& mp) {
+  out << "cur_max_entries: " << mp._cur_max_entries << ", "
+      << "max_entries: " << mp._max_entries << ", "
+      << "available_idx_q size: " << mp._available_idx_q.size() << endl;
+  out << "k2idx:" << endl << "key\tlocal index in map: " << endl;
+  for (auto it = mp._k2idx.begin(); it != mp._k2idx.end(); it++) {
+    out << "0x" << it->first << "\t" << it->second << endl;
+  }
+  return out;
+}
+
+ostream& operator<<(ostream& out, const mem_t& mem) {
+#define MEM_PRINT_GAP 32
+  out << "1. stack related memory: ";
+  for (int i = 0; i < STACK_SIZE; i++) {
+    if ((i % MEM_PRINT_GAP) == 0) out << endl;
+    out << hex << setfill('0') << setw(2) << static_cast<int>(mem._mem[i]) << " " << dec;
+  }
+  out << endl;
+  out << "2. map" << endl;
+  for (int i = 0; i < mem._maps.size(); i++) {
+    out << "map" << i << endl
+        << mem._maps[i]
+        << "memory: ";
+    int val_sz_byte = mem_t::_layout._maps_attr[i].val_sz / NUM_BYTE_BITS;
+    // print value one by one, regardless of value size
+    for (int j = 0; j < mem_t::_layout._maps_attr[i].max_entries; j++) {
+      if (((j * val_sz_byte) % MEM_PRINT_GAP) == 0) out << endl;
+      unsigned int off = mem.get_mem_off_by_idx_in_map(i, j);
+      for (int k = 0; k < val_sz_byte; k++) {
+        out << hex << setfill('0') << setw(2) << static_cast<int>(mem._mem[off + k]) << dec;
+      }
+      out << " ";
+    }
+    out << endl;
+  }
+  return out;
+#undef MEM_PRINT_GAP
+}
+
+unsigned int map_t::get_and_update_next_idx() {
   unsigned int next_idx = 0;
   if (!_available_idx_q.empty()) {
     next_idx = _available_idx_q.front();
@@ -37,6 +77,32 @@ void map_t::clear() {
   queue<unsigned int> empty;
   _available_idx_q.swap(empty);
   _cur_max_entries = 0;
+}
+
+bool map_t::operator==(const map_t &rhs) {
+  bool is_equal = (_cur_max_entries == rhs._cur_max_entries) &&
+                  (_max_entries == rhs._max_entries) &&
+                  (_k2idx.size() == rhs._k2idx.size()) &&
+                  (_available_idx_q.size() == rhs._available_idx_q.size());
+  if (!is_equal) return false;
+  // check _k2idx, if the sizes of k2idx are equal, just need to check
+  // whether each element in _k2idx is the same as that in rhs._k2idx
+  for (auto it = _k2idx.begin(); it != _k2idx.end(); it++) {
+    auto rhs_it = rhs._k2idx.find(it->first);
+    if (rhs_it == rhs._k2idx.end()) {
+      return false;
+    }
+    if (it->second != rhs_it->second) return false;
+  }
+  // check _available_idx_q
+  queue<unsigned int> q1 = _available_idx_q;
+  queue<unsigned int> q2 = rhs._available_idx_q;
+  for (int i = 0; i < q1.size(); i++) {
+    if (q1.front() != q2.front()) return false;
+    q1.pop();
+    q2.pop();
+  }
+  return true;
 }
 
 mem_t::mem_t() {
@@ -71,6 +137,7 @@ void mem_t::init_mem_by_layout() {
                 (m_attr.val_sz / NUM_BYTE_BITS) * m_attr.max_entries;
   }
   _mem = new uint8_t[_mem_size];
+  memset(_mem, 0, sizeof(uint8_t)*_mem_size);
   for (int i = 0; i < n_maps; i++) {
     _maps.push_back(map_t{_layout._maps_attr[i].max_entries});
   }
@@ -80,24 +147,40 @@ void mem_t::set_map_attr(int map_id, map_attr m_attr) {
   _layout._maps_attr[map_id] = m_attr;
 }
 
-unsigned int mem_t::get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map) {
+unsigned int mem_t::get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map) const {
   return (_layout._maps_start[map_id] +
           idx_in_map * (_layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS));
 }
 
-uint8_t* mem_t::get_stack_start_addr() {
+void mem_t::update_kv_in_map(int map_id, string k, uint8_t* addr_v) {
+  map_t& mp = _maps[map_id];
+  auto it = mp._k2idx.find(k);
+  unsigned int idx = 0;
+  if (it == mp._k2idx.end()) {
+    idx = mp.get_and_update_next_idx();
+    mp._k2idx[k] = idx;
+  } else {
+    idx = it->second;
+  }
+  unsigned int v_sz = _layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS;
+  unsigned int off = get_mem_off_by_idx_in_map(map_id, idx);
+  uint8_t* addr_v_dst = &_mem[off];
+  memcpy(addr_v_dst, addr_v, sizeof(uint8_t)*v_sz);
+}
+
+uint8_t* mem_t::get_stack_start_addr() const {
   return &_mem[_layout._stack_start];
 }
 
-uint8_t* mem_t::get_stack_bottom_addr() {
+uint8_t* mem_t::get_stack_bottom_addr() const {
   return &_mem[STACK_SIZE - 1] + 1;
 }
 
-uint8_t* mem_t::get_mem_start_addr() {
+uint8_t* mem_t::get_mem_start_addr() const {
   return &_mem[0];
 }
 
-uint8_t* mem_t::get_mem_end_addr() {
+uint8_t* mem_t::get_mem_end_addr() const {
   return &_mem[_mem_size - 1];
 }
 
@@ -105,6 +188,19 @@ mem_t& mem_t::operator=(const mem_t &rhs) {
   memcpy(_mem, rhs._mem, sizeof(uint8_t)*_mem_size);
   for (int i = 0; i < rhs._maps.size(); i++) _maps[i] = rhs._maps[i];
   return *this;
+}
+
+bool mem_t::operator==(const mem_t &rhs) {
+  bool is_equal = (_mem_size == rhs._mem_size) &&
+                  (_maps.size() == rhs._maps.size());
+  if (!is_equal) return false;
+  for (int i = 0; i < _mem_size; i++) {
+    if (_mem[i] != rhs._mem[i]) return false;
+  }
+  for (int i = 0; i < _maps.size(); i++) {
+    if (! (_maps[i] == rhs._maps[i])) return false;
+  }
+  return true;
 }
 
 // need to make sure memory size is the same and has allocated memory.
