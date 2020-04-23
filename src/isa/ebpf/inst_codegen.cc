@@ -137,7 +137,6 @@ z3::expr predicate_ld_byte(z3::expr addr, smt_var& sv, z3::expr out, smt_mem_lay
   f = f && z3::implies(f_found_in_wt_after_i, new_addr == NULL_ADDR_EXPR);
   f = f && z3::implies(!f_found_in_wt_after_i, new_addr == a);
   urt.add(new_addr, out);
-
   // TODO: find another way to process safety check
   // // safety check
   // // address "a" within the memory range that does not allow ur
@@ -734,7 +733,9 @@ void get_map_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
   if (map_sz == 0) return;
   for (int i = 0; i < mem_urt.size(); i++) {
     z3::expr z3_addr = mem_urt.addr[i];
-    uint64_t addr = mdl.eval(z3_addr).get_numeral_uint64();
+    z3::expr z3_addr_eval = mdl.eval(z3_addr);
+    if (!z3_addr_eval.is_numeral()) continue;
+    uint64_t addr = z3_addr_eval.get_numeral_uint64();
     if (addr == NULL_ADDR) continue;
     // Assmue that stack and maps next to each other
     uint64_t map_start = m_layout._maps[0].start.get_numeral_uint64();
@@ -765,7 +766,6 @@ void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl,
                                smt_mem_layout& m_layout) {
   vector<pair< uint64_t, uint8_t>> mem_addr_val;
   get_map_mem_from_mdl(mem_addr_val, mdl, mem_urt, m_layout);
-
   uint64_t stack_start = m_layout._stack.start.get_numeral_uint64();
   for (int i = 0; i < map_urt.size(); i++) {
     z3::expr z3_is_valid = map_urt.is_valid[i];
@@ -798,4 +798,46 @@ void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl,
       }
     }
   }
+}
+
+void counterex_2_input_mem(mem_t& input_mem, z3::model& mdl,
+                           vector<z3::expr>& pc1, vector<smt_var>& sv1,
+                           vector<z3::expr>& pc2, vector<smt_var>& sv2,
+                           smt_mem_layout& m_layout) {
+  input_mem.clear();
+  // Get the memory tables generated the true path condition, i.e.,
+  // the path condition that program1 and program2 execute for the
+  // input of counter example model. These tables are the final outputs
+  // of counter example.
+  int sv1_id = -1, sv2_id = -1;
+  z3::expr f = string_to_expr("true");
+  bool true_pc_found = false;
+  for (int i = 0; i < pc1.size(); i++) {
+    for (int j = 0; j < pc2.size(); j++) {
+      z3::expr f_pc = pc1[i] && pc2[j];
+      int is_this_pc = mdl.eval(f_pc).bool_value();
+      if (is_this_pc == 1) { // 1 means true, -1 means false
+        sv1_id = i;
+        sv2_id = j;
+        true_pc_found = true;
+        break;
+      }
+    }
+    if (true_pc_found) break;
+  }
+  if ((sv1_id == -1) || (sv2_id == -1)) {
+    cout << "Error: counterex_2_input_mem not find a "\
+         "path condition for counterexample." << endl;
+    return;
+  }
+
+  // TODO: update input memory for other path conditions first
+
+  // update input memory for executing path condition
+  smt_map_wt& map_urt = sv1[sv1_id].mem_var._map_table._urt;
+  smt_wt& mem_urt = sv1[sv1_id].mem_var._mem_table._urt;
+  counterex_urt_2_input_map(input_mem, mdl, map_urt, mem_urt, m_layout);
+  map_urt = sv2[sv2_id].mem_var._map_table._urt;
+  mem_urt = sv2[sv2_id].mem_var._mem_table._urt;
+  counterex_urt_2_input_map(input_mem, mdl, map_urt, mem_urt, m_layout);
 }

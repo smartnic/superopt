@@ -7,10 +7,12 @@ using namespace z3;
 
 /* class validator start */
 validator::validator() {
+  _last_counterex_mem.init_mem_by_layout();
 }
 
 validator::validator(inst* orig, int length, smt_mem_layout& m_layout) {
   set_orig(orig, length, m_layout);
+  _last_counterex_mem.init_mem_by_layout();
 }
 
 validator::validator(expr fx, expr input, expr output) {
@@ -19,29 +21,31 @@ validator::validator(expr fx, expr input, expr output) {
 
 validator::~validator() {}
 
-void validator::gen_counterex(model& m) {
+void validator::gen_counterex(model& m, vector<expr>& op_pc_synth,
+                              vector<smt_var>& op_mem_synth,
+                              smt_mem_layout& m_layout) {
   expr input_orig = string_to_expr("input");
   expr output_orig = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
   _last_counterex.set_in_out((reg_t)m.eval(input_orig).get_numeral_uint64(), \
                              (reg_t)m.eval(output_orig).get_numeral_uint64());
+  counterex_2_input_mem(_last_counterex_mem, m, _op_pc_orig, _op_mem_orig,
+                        op_pc_synth, op_mem_synth, m_layout);
 }
 
-bool validator::is_smt_valid(expr& smt) {
+int validator::is_smt_valid(expr& smt, model& mdl) {
   // Compared to the default tactic, 'bv' tactic is faster
   // for z3 check when processing bit vector
   tactic t = tactic(smt_c, "bv");
   solver s = t.mk_solver();
   s.add(!smt);
   switch (s.check()) {
-    case unsat: return true;
+    case unsat: return 1;
     case sat: {
-      model m = s.get_model();
-      gen_counterex(m);
-      return false;
+      mdl = s.get_model();
+      return 0;
     }
-    case unknown: return false;
+    case unknown: return -1;
   }
-  return false;
 }
 
 // assgin input r0 "input", other registers 0
@@ -113,7 +117,12 @@ int validator::is_equal_to(inst* synth, int length, smt_mem_layout& m_layout) {
   // store
   _store_post = post;
   _store_f = smt;
-  return (int)is_smt_valid(smt);
+  model mdl(smt_c);
+  int is_equal = is_smt_valid(smt, mdl);
+  if (is_equal == 0) {
+    gen_counterex(mdl, op_pc_synth, op_mem_synth, m_layout);
+  }
+  return is_equal;
 }
 
 reg_t validator::get_orig_output(reg_t input, unsigned int num_regs,

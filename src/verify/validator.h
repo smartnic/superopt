@@ -4,6 +4,7 @@
 #include "../../src/utils.h"
 #include "../../src/inout.h"
 #include "../../src/isa/inst_header.h"
+#include "../../src/isa/ebpf/inst_var.h"
 #include "smt_prog.h"
 
 using namespace z3;
@@ -47,6 +48,7 @@ class validator {
   vector<smt_var> _op_mem_orig;
   // last counterexample
   inout _last_counterex;
+  mem_t _last_counterex_mem;
   /* store variables start */
   // ps_: program logic formula, including basic program logic
   // and the formula of capturing the output of the program in the variable output[prog_id]
@@ -72,8 +74,10 @@ class validator {
   reg_t get_orig_output(reg_t input, unsigned int num_regs,
                         unsigned int input_reg, smt_mem_layout& m_layout);
   // move from `private` to `public` for testing time
-  bool is_smt_valid(expr& smt);
-  void gen_counterex(model& m);
+  int is_smt_valid(expr& smt, model& mdl);
+  void gen_counterex(model& m, vector<expr>& op_pc_synth,
+                     vector<smt_var>& op_mem_synth,
+                     smt_mem_layout& m_layout);
   // set register 0 in basic block 0 as input[prog_id]
   void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs,
                unsigned int input_reg, smt_mem_layout& m_layout);

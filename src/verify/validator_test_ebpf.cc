@@ -76,6 +76,7 @@ void test1() {
 }
 
 void test2() {
+  std::cout << "test 2:" << endl;
   smt_mem_layout m_layout;
   z3::expr stack_s = to_expr((uint64_t)0xff12000000001234);
   z3::expr stack_e = stack_s + 511;
@@ -133,6 +134,7 @@ void test2() {
 }
 
 void test3() {
+  std::cout << "test 3:" << endl;
   smt_mem_layout m_layout;
   // set memory layout: stack | map1
   uint64_t stack_s = (uint64_t)0xff12000000001234;
@@ -225,10 +227,69 @@ void test3() {
   print_test_res(vld.is_equal_to(p3, 9, m_layout), "map helper function 3.1");
 }
 
+void test4() {
+  std::cout << "test 4: conversion from counter example to input memory "\
+            "for interpreter" << endl;
+  smt_mem_layout m_layout;
+  // set memory layout: stack | map1
+  uint64_t stack_s = (uint64_t)0xff12000000001234;
+  z3::expr stack_s_expr = to_expr(stack_s);
+  z3::expr stack_e_expr = stack_s_expr + 511;
+  z3::expr map_s_expr = stack_e_expr + 1;
+  z3::expr map_e_expr = stack_e_expr + 32;
+  m_layout.set_stack_range(stack_s_expr, stack_e_expr);
+  m_layout.add_map(map_s_expr, map_e_expr, map_attr(8, 8, 32));
+  map_s_expr = map_e_expr + 1;
+  map_e_expr = map_s_expr - 1 + 32 * 4;
+  m_layout.add_map(map_s_expr, map_e_expr, map_attr(16, 32, 32));
+  mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
+  mem_t::add_map(map_attr(16, 32, 32)); // k_sz: 16 bits; v_sz: 32 bits; max_entirs: 32
+  int map0 = 0, map1 = 1;
+  int k1 = 0x11, v1 = 0xff;
+  string k1_str = "11";
+  // p1: r0 = v1 if map0[k1] == v1, else r0 = 0
+  inst p1[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+                 inst(MOV64XC, 1, k1), // *addr_k = 0x11
+                 inst(STXB, 10, -1, 1),
+                 inst(MOV64XC, 1, map0), // r1 = map0
+                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                 inst(ADD64XC, 2, -1),
+                 inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                 inst(ADD64XC, 3, -2),
+                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
+                 inst(JEQXC, 0, 0, 3), // if r0 == 0, exit else r0 = map0[k1]
+                 inst(LDXB, 0, 0, 0),  // r0 = map0[k1]
+                 inst(JEQXC, 0, v1, 1), //if r0 == v1 exit else r0 = 0
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  // p11: r0 = 0
+  inst p11[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+                  inst(MOV64XC, 1, k1), // *addr_k = k1
+                  inst(STXB, 10, -1, 1),
+                  inst(MOV64XC, 1, map0), // r1 = map0
+                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                  inst(ADD64XC, 2, -1),
+                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                  inst(ADD64XC, 3, -2),
+                  inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
+                  inst(MOV64XC, 0, 0), // set the return value r0 = 0
+                  inst(EXIT),
+                 };
+  validator vld(p1, 14, m_layout);
+  mem_t input_mem_expected;
+  input_mem_expected.init_mem_by_layout();
+  input_mem_expected.update_kv_in_map(map0, k1_str, (uint8_t*)(&v1));
+  bool res = (vld.is_equal_to(p11, 11, m_layout) == 0) && // 0: not equal
+             (vld._last_counterex_mem == input_mem_expected);
+  print_test_res(res == true, "1");
+}
+
 int main() {
   test1();
   test2();
   test3();
+  test4();
 
   return 0;
 }
