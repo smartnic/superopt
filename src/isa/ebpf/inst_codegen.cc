@@ -88,42 +88,55 @@ inline z3::expr addr_in_range(z3::expr addr, z3::expr start, z3::expr end) {
   return (uge(addr, start) && uge(end, addr));
 }
 
-z3::expr urt_element_constrain(z3::expr a, z3::expr v, mem_wt& x) {
+z3::expr urt_element_constrain(z3::expr a, z3::expr v,
+                               z3::expr& f_not_found_in_wt, smt_wt& urt) {
   z3::expr f = string_to_expr("true");
   // add constrains on the new symbolic value "v" according to the following cases:
-  // case 1: "a" can be found in x._wt(addr1).
-  // if addr1 is the latest write address in x._wt and a is equal to addr1,
+  // case 1: "a" can be found in wt(addr1).
+  // if addr1 is the latest write address in wt and a is equal to addr1,
   // it implies v is equal to the value of addr1
   // The constrains of this case can be removed, since if the addr exists in the memory WT,
   // the value in that address is read from WT but not URT.
 
-  // case 2: "a" cannot be found in x._wt, but x._urt(addr1).
-  // if there is no address equal to a in x._wt and addr1 in x._urt is equal to
+  // case 2: "a" cannot be found in wt, but urt(addr1).
+  // if there is no address equal to a in wt and addr1 in urt is equal to
   // a, it implies v is equal to the value of addr1
-  z3::expr f1 = addr_not_in_wt(a, x._wt.addr);
-  for (int i = x._urt.addr.size() - 1; i >= 0; i--) {
-    f = f && z3::implies(f1 && (a != NULL_ADDR_EXPR) && (a == x._urt.addr[i]),
-                         v == x._urt.val[i]);
+  for (int i = urt.addr.size() - 1; i >= 0; i--) {
+    f = f && z3::implies(f_not_found_in_wt &&
+                         (a != NULL_ADDR_EXPR) &&
+                         (a == urt.addr[i]),
+                         v == urt.val[i]);
   }
-  // case 3: "a" cannot be found in x._wt or x._urt.
+  // case 3: "a" cannot be found in wt or urt.
   // there is no constrains on the new symbolic value "v"
   return f;
 }
 
-z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, smt_mem_layout& m_layout) {
-  smt_wt *s = &m._mem_table._wt;
+z3::expr predicate_ld_byte(z3::expr addr, smt_var& sv, z3::expr out, smt_mem_layout& m_layout) {
+  smt_wt& wt = sv.mem_var._mem_table._wt;
   z3::expr a = addr;
-  z3::expr c = string_to_expr("false");
+  z3::expr f_found_in_wt_after_i = string_to_expr("false");
   z3::expr f = string_to_expr("true");
-  for (int i = s->addr.size() - 1; i >= 0; i--) {
-    f = f && z3::implies((!c) && (a == s->addr[i]) && (a != NULL_ADDR_EXPR), out == s->val[i]);
-    c = c || (a == s->addr[i]);
+  for (int i = wt.addr.size() - 1; i >= 0; i--) {
+    f = f && z3::implies((!f_found_in_wt_after_i) &&
+                         (a == wt.addr[i]) && (a != NULL_ADDR_EXPR),
+                         out == wt.val[i]);
+    f_found_in_wt_after_i = f_found_in_wt_after_i ||
+                            ((a == wt.addr[i]) && (a != NULL_ADDR_EXPR));
   }
 
   // add constrains on the element(a, out)
-  f = f && urt_element_constrain(a, out, m._mem_table);
+  smt_wt& urt = sv.mem_var._mem_table._urt;
+  z3::expr f_not_found_in_wt = (!f_found_in_wt_after_i);
+  f = f && urt_element_constrain(a, out, f_not_found_in_wt, urt);
   // add element in urt
-  m._mem_table._urt.add(a, out);
+  z3::expr new_addr = sv.update_mem_addr();
+  // if "a" can be found in wt, set "new_addr" as NULL_ADDR
+  // to indicate that this entry to be added in the urt is invalid. else,
+  // "new_addr" is "a"
+  f = f && z3::implies(f_found_in_wt_after_i, new_addr == NULL_ADDR_EXPR);
+  f = f && z3::implies(!f_found_in_wt_after_i, new_addr == a);
+  urt.add(new_addr, out);
 
   // TODO: find another way to process safety check
   // // safety check
@@ -137,10 +150,10 @@ z3::expr predicate_ld_byte(z3::expr addr, smt_mem& m, z3::expr out, smt_mem_layo
   return f;
 }
 
-z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_mem& m, z3::expr out, smt_mem_layout& m_layout) {
-  z3::expr f = predicate_ld_byte(addr, m, out.extract(7, 0), m_layout);
+z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, smt_mem_layout& m_layout) {
+  z3::expr f = predicate_ld_byte(addr, sv, out.extract(7, 0), m_layout);
   for (int i = 1; i < n; i++) {
-    f = f && predicate_ld_byte(addr + i, m, out.extract(8 * i + 7, 8 * i), m_layout);
+    f = f && predicate_ld_byte(addr + i, sv, out.extract(8 * i + 7, 8 * i), m_layout);
   }
   return f;
 }
@@ -160,7 +173,7 @@ z3::expr latest_write_element(int idx, vector<z3::expr>& x) {
 z3::expr addr_not_in_wt(z3::expr& a, vector<z3::expr>& x) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < x.size(); i++) {
-    f = f && (a != x[i]);
+    f = f && ((a != NULL_ADDR_EXPR) && (a != x[i]));
   }
   return f;
 }
@@ -540,7 +553,7 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
     z3::expr k = sv.update_key(k_sz);
 
     /* add constrains on k */
-    z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, mem, k, m_layout);
+    z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, m_layout);
 
     /* add constrains on addr_map_v for the following cases
        if key is in the target map, addr_map_v is the same as the corresponding
@@ -560,8 +573,11 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 
     z3::expr is_valid = sv.update_is_valid(); // z3 boolean const
     /* add the constrains on "is_valid" */
-    f_ret = f_ret && z3::implies(cur_addr_map != addr_map, is_valid == Z3_false);
-    f_ret = f_ret && z3::implies(cur_addr_map == addr_map, (is_valid == Z3_true) && f);
+    // if k is in map WT, set is_valid is false to
+    // indicate this entry to be added in the map URT is invalid.
+    f_ret = f_ret && z3::implies((cur_addr_map != addr_map) || (!f1), is_valid == Z3_false);
+    f_ret = f_ret && z3::implies((cur_addr_map == addr_map) && f1, is_valid == Z3_true);
+    f_ret = f_ret && z3::implies((cur_addr_map == addr_map), f);
 
     mem._map_table._urt.add(is_valid, cur_addr_map, k, addr_map_v);
   }
@@ -582,8 +598,8 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
     z3::expr addr_map_v = sv.update_addr_v();
     /* add constrains on "out", "k", "v" */
     z3::expr f = (out == MAP_UPD_RET_EXPR) &&
-                 predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, mem, k, m_layout) &&
-                 predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, mem, v, m_layout);
+                 predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, m_layout) &&
+                 predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, sv, v, m_layout);
     /* add constrains on "addr_map_v".
        if the key is in the target map, the value address is same as the corresponding
        value address in the map. if the key is not in the target map, assign a new
@@ -646,7 +662,7 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
     int k_sz = m_layout._maps_attr[map_id].key_sz;
     z3::expr k = sv.update_key(k_sz);
     /* add the constrains on "k" */
-    z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, mem, k, m_layout);
+    z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, m_layout);
 
     /* add the constrains on "addr_map_v" according to "k" */
     z3::expr addr_map_v = sv.update_addr_v();

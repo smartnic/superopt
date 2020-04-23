@@ -176,6 +176,7 @@ void test4() {
   print_test_res(compute_ld64((uint64_t)expected4, 0) == x, "compute ld64");
 }
 
+z3::expr new_out();
 void test5() {
   cout << "Test 5: Memory st/ld check" << endl;
   vector<z3::expr> offs = {v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7)};
@@ -183,70 +184,100 @@ void test5() {
   z3::expr addr = v((uint64_t)0xff12000000001234);
   smt_mem_layout m_layout;
   m_layout._stack.set_range(addr, addr + 511);
-  smt_mem m;
+  unsigned int prog_id = 0;
+  unsigned int node_id = 0;
+  unsigned int num_regs = 11;
+  smt_var sv(prog_id, node_id, num_regs);
+  smt_mem& m = sv.mem_var;
   smt_wt *s = &m._mem_table._wt;
   // (write addr+off, 8, in, s)
   // out == (read addr+off, 8, s)
   predicate_st8(v(vals[0]), addr, offs[0], m);
   z3::expr smt = (s->addr[0] == (addr + offs[0])) && (s->val[0] == to_expr(vals[0], 8));
   print_test_res(is_valid(smt), "predicate_st8 1");
-  smt = predicate_ld8(addr, offs[0], m, v(vals[0]), m_layout);
-  print_test_res(is_valid(smt), "predicate_ld8 1");
+  z3::expr out = new_out();
+  smt = predicate_ld8(addr, offs[0], sv, out, m_layout);
+  smt = z3::implies(smt, out == v(vals[0]));
+  print_test_res(is_valid(smt, true), "predicate_ld8 1");
 
   predicate_st8(v(vals[1]), addr, offs[1], m);
   smt = (s->addr[1] == (addr + offs[1])) && (s->val[1] == to_expr(vals[1], 8));
   print_test_res(is_valid(smt), "predicate_st8 2");
-  smt = predicate_ld8(addr, offs[1], m, v(vals[1]), m_layout);
+  out = new_out();
+  smt = predicate_ld8(addr, offs[1], sv, out, m_layout);
+  smt = z3::implies(smt, out == v(vals[1]));
   print_test_res(is_valid(smt), "predicate_ld8 2");
 
   // test rewrite
   predicate_st8(v(vals[1]), addr, offs[0], m);
   smt = (s->addr[2] == (addr + offs[0])) && (s->val[2] == to_expr(vals[1], 8));
   print_test_res(is_valid(smt), "predicate_st8 3");
-  smt = predicate_ld8(addr, offs[0], m, v(vals[1]), m_layout);
+  out = new_out();
+  smt = predicate_ld8(addr, offs[0], sv, out, m_layout);
+  smt = z3::implies(smt, out == v(vals[1]));
   print_test_res(is_valid(smt), "predicate_ld8 3");
   s->clear();
 
   // test st16 && ld16
   uint64_t x = 0x0123456789abcdef;
   predicate_st16(v(x), addr, offs[0], m);
-  smt = predicate_ld8(addr, offs[0], m, v(x & 0xff), m_layout) &&
-        predicate_ld8(addr, offs[1], m, v((x >> 8) & 0xff), m_layout);
+  z3::expr out1 = new_out(), out2 = new_out();
+  smt = predicate_ld8(addr, offs[0], sv, out1, m_layout) &&
+        predicate_ld8(addr, offs[1], sv, out2, m_layout);
+  smt = z3::implies(smt, (out1 == v(x & 0xff)) && (out2 == v((x >> 8) & 0xff)));
   print_test_res(is_valid(smt), "predicate_st16/ld8");
-  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff), m_layout);
+
+  out = new_out();
+  smt = predicate_ld16(addr, offs[0], sv, out, m_layout);
+  smt = z3::implies(smt, out == v(x & 0xffff));
   print_test_res(is_valid(smt), "predicate_st16/ld16");
   s->clear();
   predicate_st8(v(x), addr, offs[0], m);
   predicate_st8(v(x >> 8), addr, offs[1], m);
-  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff), m_layout);
+  out = new_out();
+  smt = predicate_ld16(addr, offs[0], sv, out, m_layout);
+  smt = z3::implies(smt, out == v(x & 0xffff));
   print_test_res(is_valid(smt), "predicate_st8/ld16");
   s->clear();
 
   // test st32 && ld32
   predicate_st32(v(x), addr, offs[0], m);
-  smt = predicate_ld16(addr, offs[0], m, v(x & 0xffff), m_layout) &&
-        predicate_ld16(addr, offs[2], m, v((x >> 16) & 0xffff), m_layout);
+  out1 = new_out(), out2 = new_out();
+  smt = predicate_ld16(addr, offs[0], sv, out1, m_layout) &&
+        predicate_ld16(addr, offs[2], sv, out2, m_layout);
+  smt = z3::implies(smt, (out1 == v(x & 0xffff)) && (out2 == v((x >> 16) & 0xffff)));
   print_test_res(is_valid(smt), "predicate_st32/ld16");
-  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff), m_layout);
+  out = new_out();
+  smt = predicate_ld32(addr, offs[0], sv, out, m_layout);
+  smt = z3::implies(smt, out == v(x & 0xffffffff));
   print_test_res(is_valid(smt), "predicate_st32/ld32");
   s->clear();
   predicate_st16(v(x), addr, offs[0], m);
   predicate_st16(v(x >> 16), addr, offs[2], m);
-  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff), m_layout);
+  out = new_out();
+  smt = predicate_ld32(addr, offs[0], sv, out, m_layout);
+  smt = z3::implies(smt, out == v(x & 0xffffffff));
   print_test_res(is_valid(smt), "predicate_st16/ld32");
   s->clear();
 
   // test st64 && ld64
   predicate_st64(v(x), addr, offs[0], m);
-  smt = predicate_ld32(addr, offs[0], m, v(x & 0xffffffff), m_layout) &&
-        predicate_ld32(addr, offs[4], m, v((x >> 32) & 0xffffffff), m_layout);
+  out1 = new_out(), out2 = new_out();
+  smt = predicate_ld32(addr, offs[0], sv, out1, m_layout) &&
+        predicate_ld32(addr, offs[4], sv, out2, m_layout);
+  smt = z3::implies(smt, (out1 == v(x & 0xffffffff)) &&
+                    (out2 == v((x >> 32) & 0xffffffff)));
   print_test_res(is_valid(smt), "predicate_st64/ld32");
-  smt = predicate_ld64(addr, offs[0], m, v(x), m_layout);
+  out = new_out();
+  smt = predicate_ld64(addr, offs[0], sv, out, m_layout);
+  smt = z3::implies(smt, out == v(x));
   print_test_res(is_valid(smt), "predicate_st64/ld64");
   s->clear();
   predicate_st32(v(x), addr, offs[0], m);
   predicate_st32(v(x >> 32), addr, offs[4], m);
-  smt = predicate_ld64(addr, offs[0], m, v(x), m_layout);
+  out = new_out();
+  smt = predicate_ld64(addr, offs[0], sv, out, m_layout);
+  smt = z3::implies(smt, out == v(x));
   print_test_res(is_valid(smt), "predicate_st32/ld64");
   s->clear();
 
@@ -288,7 +319,10 @@ void test7() {
   z3::expr map_s = stack_e + 1;
   z3::expr map_e = stack_e + 512;
   m_layout.add_map(map_s, map_e);
-  smt_mem m;
+  unsigned int prog_id = 0;
+  unsigned int node_id = 0;
+  unsigned int num_regs = 11;
+  smt_var sv(prog_id, node_id, num_regs);
   z3::expr v1 = v(0xff);
 
   // // stack safety check, read before write within stack address range implies "false"
@@ -307,12 +341,18 @@ void test7() {
   // test constrain on URT element (addr within map address range)
   // if addr cannot be found in the WT but found in URT,
   // the value in element is equal to the value(s) of the addr(s) in URT
-  m.clear();
-  predicate_ld8(map_s, v(0), m, v1, m_layout);
-  print_test_res(is_valid(predicate_ld8(map_s, v(0), m, v1, m_layout) == string_to_expr("true")),
-                 "URT element constrain 1");
-  print_test_res(is_valid(predicate_ld8(map_s, v(0), m, v(0xfe), m_layout) == string_to_expr("false")),
-                 "URT element constrain 2");
+  sv.clear();
+  z3::expr out = new_out();
+  z3::expr smt = (out == v1) &&
+                 predicate_ld8(map_s, v(0), sv, out, m_layout);
+  out = new_out();
+  smt = smt && predicate_ld8(map_s, v(0), sv, out, m_layout);
+  z3::expr smt_chk = z3::implies(smt, out == v1);
+  print_test_res(is_valid(smt_chk), "URT element constrain 1");
+  out = new_out();
+  smt = smt && predicate_ld8(map_s, v(0), sv, out, m_layout);
+  smt_chk = z3::implies(smt_chk, out != v1);
+  print_test_res(!is_valid(smt_chk), "URT element constrain 2");
 }
 
 z3::expr new_out() {
@@ -365,7 +405,7 @@ void test8() {
   predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
   z3::expr f = predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv, m_layout);
   f = f && predicate_map_lookup_helper(map1, addr_k1, addr_v_lookup_1, sv, m_layout);
-  f = f && predicate_ld8(addr_v_lookup_1, v(0), sv.mem_var, v_lookup_1, m_layout);
+  f = f && predicate_ld8(addr_v_lookup_1, v(0), sv, v_lookup_1, m_layout);
   z3::expr f_expected = z3::implies(f, v_lookup_1.extract(7, 0) == v1);
   print_test_res(is_valid(f_expected), "*(lookup &k1 (update &k1 &v1 m)) == v1");
 
@@ -381,7 +421,7 @@ void test8() {
   z3::expr addr_v_lookup_2 = v("addr_v_lookup_2");
   f = f && predicate_map_update_helper(map1, addr_k2, addr_v2, new_out(), sv, m_layout);
   f = f && predicate_map_lookup_helper(map1, addr_k1, addr_v_lookup_2, sv, m_layout);
-  f = f && predicate_ld8(addr_v_lookup_2, v(0), sv.mem_var, v_lookup_2, m_layout);
+  f = f && predicate_ld8(addr_v_lookup_2, v(0), sv, v_lookup_2, m_layout);
   f_expected = z3::implies(f && (k2 != k1), v_lookup_2.extract(7, 0) == v1);
   print_test_res(is_valid(f_expected), "*(lookup &k1 (update &k2 &v2 (update &k1 &v1 m))) == v1, if k2 != k1");
   f_expected = z3::implies(f && (k2 == k1), v_lookup_2.extract(7, 0) == v2);
@@ -391,7 +431,7 @@ void test8() {
   z3::expr v_lookup_3 = v("v_lookup_3");
   z3::expr addr_v_lookup_3 = v("addr_v_lookup_3");
   f = f && predicate_map_lookup_helper(map1, addr_k2, addr_v_lookup_3, sv, m_layout);
-  f = f && predicate_ld8(addr_v_lookup_3, v(0), sv.mem_var, v_lookup_3, m_layout);
+  f = f && predicate_ld8(addr_v_lookup_3, v(0), sv, v_lookup_3, m_layout);
   f_expected = z3::implies(f, v_lookup_3.extract(7, 0) == v2);
   print_test_res(is_valid(f_expected), "*(lookup &k2 (update &k2 &v2 (update &k1 &v1 m))) == v2");
 
@@ -406,7 +446,7 @@ void test8() {
   z3::expr v_lookup_5 = v("v_lookup_5");
   z3::expr addr_v_lookup_5 = v("addr_v_lookup_5");
   f = f && predicate_map_lookup_helper(map1, addr_k1, addr_v_lookup_5, sv, m_layout);
-  f = f && predicate_ld8(addr_v_lookup_5, v(0), sv.mem_var, v_lookup_5, m_layout);
+  f = f && predicate_ld8(addr_v_lookup_5, v(0), sv, v_lookup_5, m_layout);
   f_expected = z3::implies(f && (k1 != k2), v_lookup_5.extract(7, 0) == v1);
   print_test_res(is_valid(f_expected), "*(lookup &k1 (delete &k2 (update &k2 &v2 (update &k1 &v1 m)))) == v1, if k2 != k1");
 
@@ -422,8 +462,8 @@ void test8() {
   z3::expr addr_v_lookup_7 = v("addr_v_lookup_7");
   z3::expr f1 = predicate_map_lookup_helper(map1, addr_k1, addr_v_lookup_6, sv, m_layout);
   z3::expr f2 = predicate_map_lookup_helper(map1, addr_k2, addr_v_lookup_7, sv, m_layout);
-  z3::expr f3 = predicate_ld8(addr_v_lookup_6, v(0), sv.mem_var, v_lookup_6, m_layout);
-  z3::expr f4 = predicate_ld8(addr_v_lookup_7, v(0), sv.mem_var, v_lookup_7, m_layout);
+  z3::expr f3 = predicate_ld8(addr_v_lookup_6, v(0), sv, v_lookup_6, m_layout);
+  z3::expr f4 = predicate_ld8(addr_v_lookup_7, v(0), sv, v_lookup_7, m_layout);
 
   cout << "a. address range" << endl;
   f_expected = z3::implies(f1 && (addr_v_lookup_6 != NULL_ADDR_EXPR),
@@ -475,7 +515,7 @@ void test8() {
   f = f && predicate_map_lookup_helper(map1, addr_k1, p1, sv, m_layout); // p1 = &m[k1]
   f = f && predicate_map_lookup_helper(map1, addr_k1, p2, sv, m_layout); // p2 = &m[k1]
   predicate_st8(v2, p1, v(0), sv.mem_var); // modify the map[k1] by p1
-  f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout);
+  f = f && predicate_ld8(p2, v(0), sv, v_p2, m_layout);
   f_expected = z3::implies(f && (v1 != v2), v_p2.extract(7, 0) == v2);
   print_test_res(is_valid(f_expected), "test 1");
 
@@ -493,9 +533,9 @@ void test8() {
   f = predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv, m_layout); // m1[k1] = v1
   f = f && predicate_map_update_helper(map2, addr_k1, addr_v2, new_out(), sv, m_layout); // m2[k1] = v2
   f = f && predicate_map_lookup_helper(map1, addr_k1, p1, sv, m_layout); // p1 = &m1[k1]
-  f = f && predicate_ld8(p1, v(0), sv.mem_var, v_p1, m_layout); // v_p1 = *p1
+  f = f && predicate_ld8(p1, v(0), sv, v_p1, m_layout); // v_p1 = *p1
   f = f && predicate_map_lookup_helper(map2, addr_k1, p2, sv, m_layout); // p2 = &m2[k1]
-  f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout); // v_p2 = *p2
+  f = f && predicate_ld8(p2, v(0), sv, v_p2, m_layout); // v_p2 = *p2
   f_expected = z3::implies(f, v_p1.extract(7, 0) == v1);// &&
   z3::implies(f, v_p2.extract(7, 0) == v2);
   print_test_res(is_valid(f_expected), "*(lookup &k1 (update &k1 &v1 m1)) == v1 and "\
@@ -508,8 +548,8 @@ void test8() {
   predicate_st8(v3, p1, v(0), sv.mem_var); // modify the m1[k1] by p1
   v_p1 = v("v_p1_1");
   v_p2 = v("v_p2_1");
-  f = f && predicate_ld8(p1, v(0), sv.mem_var, v_p1, m_layout);
-  f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout);
+  f = f && predicate_ld8(p1, v(0), sv, v_p1, m_layout);
+  f = f && predicate_ld8(p2, v(0), sv, v_p2, m_layout);
   f_expected = z3::implies(f, (v_p1.extract(7, 0) == v3) && (v_p2.extract(7, 0) == v2));
   print_test_res(is_valid(f_expected), "modify m1[k1] not affect m2[k1]");
 
@@ -519,13 +559,13 @@ void test8() {
   f = f && predicate_map_delete_helper(map1, addr_k1, new_out(), sv, m_layout);
   f = f && predicate_map_lookup_helper(map1, addr_k1, p3, sv, m_layout);
   f = f && predicate_map_lookup_helper(map2, addr_k1, p4, sv, m_layout);
-  f = f && predicate_ld8(p4, v(0), sv.mem_var, v_p4, m_layout);
+  f = f && predicate_ld8(p4, v(0), sv, v_p4, m_layout);
   f_expected = z3::implies(f, (p3 == NULL_ADDR_EXPR) && (p4 == p2) && (v_p4.extract(7, 0) == v2));
   print_test_res(is_valid(f_expected), "delete m1[k1] not affect m2[k1]");
 
   f = f && predicate_map_update_helper(map1, addr_k2, addr_v1, new_out(), sv, m_layout);
   f = f && predicate_map_lookup_helper(map2, addr_k2, p2, sv, m_layout);
-  f = f && predicate_ld8(p2, v(0), sv.mem_var, v_p2, m_layout);
+  f = f && predicate_ld8(p2, v(0), sv, v_p2, m_layout);
   f_expected = z3::implies(f && (k1 != k2) && (!(uge(p2, map_s_2) && uge(map_e_2, p2))), p2 == NULL_ADDR_EXPR) &&
                z3::implies(f && (k1 != k2) && (p2 != NULL_ADDR_EXPR), (uge(p2, map_s_2) && uge(map_e_2, p2)));
   print_test_res(is_valid(f_expected), "m1 update not affect m2 uninitialized lookup");
@@ -588,14 +628,14 @@ void test8() {
   addr_v_lookup = new_addr_v_lookup(); \
   v_lookup = new_v_lookup(); \
   f = f && predicate_map_lookup_helper(map1, addr_k1, addr_v_lookup, sv, m_layout); \
-  f = f && predicate_ld16(addr_v_lookup, v(0), sv.mem_var, v_lookup, m_layout); \
+  f = f && predicate_ld16(addr_v_lookup, v(0), sv, v_lookup, m_layout); \
   f_expected = z3::implies(f, v_lookup.extract(7, 0) == v_expected);
 
 #define MAP2_LOOKUP_AND_LD(v_expected) \
   addr_v_lookup = new_addr_v_lookup(); \
   v_lookup = new_v_lookup(); \
   f = f && predicate_map_lookup_helper(map2, addr_k2, addr_v_lookup, sv, m_layout); \
-  f = f && predicate_ld32(addr_v_lookup, v(0), sv.mem_var, v_lookup, m_layout); \
+  f = f && predicate_ld32(addr_v_lookup, v(0), sv, v_lookup, m_layout); \
   f_expected = z3::implies(f, v_lookup.extract(31, 0) == v_expected);
 
 #define MAP_LOOKUP(map, addr_k, addr_v_expected) \
@@ -658,7 +698,7 @@ z3::expr eval_output(z3::expr smt, z3::expr output) {
   addr_v_lookup = compute_map_lookup_helper(map, addr_k, m); \
   v_lookup = compute_ld8(addr_v_lookup, 0); \
   f = f && predicate_map_lookup_helper(v(map), v(addr_k), addr_v_lookup_expr, sv, m_layout); \
-  f = f && predicate_ld8(addr_v_lookup_expr, v(0), sv.mem_var, v_lookup_expr, m_layout); \
+  f = f && predicate_ld8(addr_v_lookup_expr, v(0), sv, v_lookup_expr, m_layout); \
   f_expected = (eval_output(f, v_lookup_expr) == v(v_lookup)); \
   print_test_res(is_valid(f_expected == string_to_expr("true")) && (v_lookup == v_expected), test_name);
 
@@ -850,7 +890,7 @@ void test9() {
   addr_v_lookup = compute_map_lookup_helper(map1, addr_k1, m); \
   v_lookup = compute_ld8(addr_v_lookup, 0); \
   f = f && predicate_map_lookup_helper(v(map1), v(addr_k1), addr_v_lookup_expr, sv, m_layout); \
-  f = f && predicate_ld8(addr_v_lookup_expr, v(0), sv.mem_var, v_lookup_expr, m_layout); \
+  f = f && predicate_ld8(addr_v_lookup_expr, v(0), sv, v_lookup_expr, m_layout); \
   f_expected = (eval_output(f, v_lookup_expr) == v(v_lookup)); \
   print_test_res(is_valid(f_expected == string_to_expr("true")) && (v_lookup == v_expected), test_name);
 
@@ -860,7 +900,7 @@ void test9() {
   addr_v_lookup = compute_map_lookup_helper(map2, addr_k2, m); \
   v_lookup = compute_ld32(addr_v_lookup, 0); \
   f = f && predicate_map_lookup_helper(v(map2), v(addr_k2), addr_v_lookup_expr, sv, m_layout); \
-  f = f && predicate_ld32(addr_v_lookup_expr, v(0), sv.mem_var, v_lookup_expr, m_layout); \
+  f = f && predicate_ld32(addr_v_lookup_expr, v(0), sv, v_lookup_expr, m_layout); \
   f_expected = (eval_output(f, v_lookup_expr) == v(v_lookup)); \
   print_test_res(is_valid(f_expected == string_to_expr("true")) && (v_lookup == v_expected), test_name);
 
@@ -1001,14 +1041,14 @@ void test10() {
   z3::expr addr_v_lookup_p1 = new_addr_v_lookup();
   z3::expr v_lookup_p1 = new_v_lookup();
   f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p1, sv1, m_layout);
-  f = f && predicate_ld8(addr_v_lookup_p1, v(0), sv1.mem_var, v_lookup_p1, m_layout);
+  f = f && predicate_ld8(addr_v_lookup_p1, v(0), sv1, v_lookup_p1, m_layout);
   z3::expr stack_addr_v_lookup_p1 = stack_s + 4;
   predicate_st8(v_lookup_p1, stack_addr_v_lookup_p1, v(0), sv1.mem_var);
   // store v_lookup_k1_p2 (= m_p2[k1]) in the stack (addr: stack_addr_v_lookup_p2)
   z3::expr addr_v_lookup_p2 = new_addr_v_lookup();
   z3::expr v_lookup_p2 = new_v_lookup();
   f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p2, sv2, m_layout);
-  f = f && predicate_ld8(addr_v_lookup_p2, v(0), sv2.mem_var, v_lookup_p2, m_layout);
+  f = f && predicate_ld8(addr_v_lookup_p2, v(0), sv2, v_lookup_p2, m_layout);
   z3::expr stack_addr_v_lookup_p2 = stack_s + 5;
   predicate_st8(v_lookup_p2, stack_addr_v_lookup_p2, v(0), sv2.mem_var);
 
@@ -1058,20 +1098,22 @@ void test10() {
   print_test_res(is_valid(z3::implies(f && f_same_input && f_path_cond, f_equal)), test_name);
 
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1, m_layout);
-  test_name = "m_p1_5 != m_p2_3, m_p2_3 = update &k1 &v1 m_p2_2 if k1 in the input map";
+  test_name = "m_p1_5 != m_p2_3, m_p2_3 = update &k1 &v1 m_p2_2";
   f_same_input = smt_one_map_set_same_input(map1, sv1, sv2, m_layout);
   f_equal = smt_one_map_eq_chk(map1, sv1, sv2, m_layout);
-  f_path_cond = (addr_v_lookup_p2 != NULL_ADDR_EXPR);
-  print_test_res(!is_valid(z3::implies(f && f_same_input && f_path_cond, f_equal)), test_name);
+  print_test_res(!is_valid(z3::implies(f && f_same_input, f_equal)), test_name);
 
   z3::expr addr_v_lookup = new_addr_v_lookup();
   z3::expr v_lookup = new_v_lookup();
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, stack_addr_v_lookup_p1, new_out(), sv1, m_layout);
   f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup, sv1, m_layout);
-  f = f && predicate_ld8(addr_v_lookup, v(0), sv1.mem_var, v_lookup, m_layout);
+  f = f && predicate_ld8(addr_v_lookup, v(0), sv1, v_lookup, m_layout);
+  f_same_input = smt_one_map_set_same_input(map1, sv1, sv2, m_layout);
+  f_equal = smt_one_map_eq_chk(map1, sv1, sv2, m_layout);
   addr_v_lookup = new_addr_v_lookup();
   f = f && predicate_map_lookup_helper(addr_map1, addr_k2, addr_v_lookup, sv2, m_layout);
   test_name = "lookup does not affect map equivalence check";
-  MAP_EQ_CHK(map1, test_name, true)
+  MAP_EQ_CHK_WITH_PC(map1, test_name, true)
 
   cout << "5. test k/v size > 1 byte" << endl;
   sv1.clear(); sv2.clear();
@@ -1089,9 +1131,9 @@ void test10() {
   v_lookup_p1 = new_v_lookup();
   v_lookup_p2 = new_v_lookup();
   f = predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p1, sv1, m_layout);
-  f = f && predicate_ld16(addr_v_lookup_p1, v(0), sv1.mem_var, v_lookup_p1, m_layout);
+  f = f && predicate_ld16(addr_v_lookup_p1, v(0), sv1, v_lookup_p1, m_layout);
   f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p2, sv2, m_layout);
-  f = f && predicate_ld16(addr_v_lookup_p2, v(0), sv2.mem_var, v_lookup_p2, m_layout);
+  f = f && predicate_ld16(addr_v_lookup_p2, v(0), sv2, v_lookup_p2, m_layout);
   stack_addr_v_lookup_p1 = stack_s + 6;
   stack_addr_v_lookup_p2 = stack_s + 8;
   predicate_st16(v_lookup_p1, stack_addr_v_lookup_p1, v(0), sv1.mem_var);
@@ -1202,9 +1244,9 @@ void get_input_mem_after_lookup_ld(mem_t& input_mem, z3::expr v_ulookup,
   z3::expr v_lookup = new_v_lookup();
   f = f && predicate_map_lookup_helper(addr_map, addr_k, addr_v_lookup, sv1, m_layout);
   if (v_sz == 8) {
-    f = f && predicate_ld8(addr_v_lookup, v(0), sv1.mem_var, v_lookup, m_layout);
+    f = f && predicate_ld8(addr_v_lookup, v(0), sv1, v_lookup, m_layout);
   } else if (v_sz == 32) {
-    f = f && predicate_ld32(addr_v_lookup, v(0), sv1.mem_var, v_lookup, m_layout);
+    f = f && predicate_ld32(addr_v_lookup, v(0), sv1, v_lookup, m_layout);
   }
   z3::expr f_same_input = smt_map_set_same_input(sv1, sv2, m_layout);
   z3::expr f_equal = smt_map_eq_chk(sv1, sv2, m_layout);

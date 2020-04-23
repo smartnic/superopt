@@ -405,10 +405,10 @@ z3::expr inst::smt_inst(smt_var& sv, smt_mem_layout& m_layout) const {
         default: cout << "Error: imm " << imm << " is not 16, 32, 64" << endl;
           return string_to_expr("false");
       }
-    case LDXB: return predicate_ld8(CURSRC, OFF, MEM, NEWDST, m_layout);
-    case LDXH: return predicate_ld16(CURSRC, OFF, MEM, NEWDST, m_layout);
-    case LDXW: return predicate_ld32(CURSRC, OFF, MEM, NEWDST, m_layout);
-    case LDXDW: return predicate_ld64(CURSRC, OFF, MEM, NEWDST, m_layout);
+    case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, m_layout);
+    case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, m_layout);
+    case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, m_layout);
+    case LDXDW: return predicate_ld64(CURSRC, OFF, sv, NEWDST, m_layout);
     case STXB: predicate_st8(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
     case STXH: predicate_st16(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
     case STXW: predicate_st32(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
