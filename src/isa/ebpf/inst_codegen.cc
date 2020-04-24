@@ -602,10 +602,11 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
     z3::expr f = (out == MAP_UPD_RET_EXPR) &&
                  predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, m_layout) &&
                  predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, sv, v, m_layout);
+    z3::expr next_addr_map_v = mem.get_and_update_addr_v_next(map_id, m_layout);
     /* add constrains on "addr_map_v".
-       if the key is in the target map, the value address is same as the corresponding
-       value address in the map. if the key is not in the target map, assign a new
-       address to the value address.
+       if the key is in the target map WT. if the corresponding value address is NULL,
+       the value address is the same as the corresponding value address.
+       else, assign a new address to the value address.
     */
     // case 1, key is in the map WT
     z3::expr f_key_found_after_i = string_to_expr("false");
@@ -614,10 +615,10 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
       if (m_wt.key[i].get_sort().bv_size() != k_sz) continue;
       z3::expr key_found_i = (m_wt.is_valid[i] == Z3_true) && // valid entry
                              (m_wt.addr_map[i] == addr_map) && // the same map
-                             (k == m_wt.key[i]) && // the same key
-                             (m_wt.addr_v[i] != NULL_ADDR_EXPR); // address is not NULL
-      f = f && z3::implies((!f_key_found_after_i) && key_found_i,
-                           addr_map_v == m_wt.addr_v[i]);
+                             (k == m_wt.key[i]); //&& // the same key
+      z3::expr f1 = z3::implies(m_wt.addr_v[i] != NULL_ADDR_EXPR, addr_map_v == m_wt.addr_v[i]);
+      f1 = f1 && z3::implies(m_wt.addr_v[i] == NULL_ADDR_EXPR, addr_map_v == next_addr_map_v);
+      f = f && z3::implies((!f_key_found_after_i) && key_found_i, f1);
 
       f_key_found_after_i = f_key_found_after_i || key_found_i;
     }
@@ -629,15 +630,14 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
       if (m_urt.key[i].get_sort().bv_size() != k_sz) continue;
       z3::expr key_found_i = (m_urt.is_valid[i] == Z3_true) && // valid entry
                              (m_urt.addr_map[i] == addr_map) && // the same map
-                             (k == m_urt.key[i]) && // the same key
-                             (m_urt.addr_v[i] != NULL_ADDR_EXPR); // address is not NULL
-      f = f && z3::implies(f_not_found_in_wt && key_found_i,
-                           addr_map_v == m_urt.addr_v[i]);
+                             (k == m_urt.key[i]);// && // the same key
+      z3::expr f1 = z3::implies(m_urt.addr_v[i] != NULL_ADDR_EXPR, addr_map_v == m_urt.addr_v[i]);
+      f1 = f1 && z3::implies(m_urt.addr_v[i] == NULL_ADDR_EXPR, addr_map_v == m_urt.addr_v[i]);
+      f = f && z3::implies((!f_key_found_after_i) && key_found_i, f1);
 
       f_found_in_urt = f_found_in_urt || key_found_i;
     }
     // case 3: if the key is not in the target map
-    z3::expr next_addr_map_v = mem.get_and_update_addr_v_next(map_id, m_layout);
     f = f && z3::implies(f_not_found_in_wt && (!f_found_in_urt), addr_map_v == next_addr_map_v);
     /* add the constrains on "is_valid" */
     z3::expr is_valid = sv.update_is_valid();
@@ -653,8 +653,6 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 
 // "out" is the return value
 // if key not in the map, out = 0xfffffffe, else out = 0
-// delete cannot use predicate_map_lookup_helper directly, since lookup helper will add an entry in map URT,
-// while in the map equivalence check, it is assumed that the element in map URT only added by lookup operation
 z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::expr out,
                                      smt_var & sv, smt_mem_layout & m_layout) {
   z3::expr f_ret = string_to_expr("true");
@@ -676,23 +674,28 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
     z3::expr f1 = key_not_in_map_wt(cur_addr_map, k, mem._map_table._wt);
     z3::expr f2 = key_not_in_map_wt(cur_addr_map, k, mem._map_table._urt);
     z3::expr f3 = f1 && f2;
+    // if k is neither in the map WT nor the map URT
+    f = f && z3::implies(f3, (addr_map_v == NULL_ADDR_EXPR) || (addr_map_v != NULL_ADDR_EXPR));
 
     z3::expr f_the_same_map = (cur_addr_map == addr_map);
     /* add the constrains on "out" according to "addr_map_v" */
-    f = f && z3::implies(f_the_same_map && (!f3) && (addr_map_v == NULL_ADDR_EXPR),
+    f = f && z3::implies(f_the_same_map && (addr_map_v == NULL_ADDR_EXPR),
                          out == MAP_DEL_RET_IF_KEY_INEXIST_EXPR);
-    f = f && z3::implies(f_the_same_map && (!f3) && (addr_map_v != NULL_ADDR_EXPR),
+    f = f && z3::implies(f_the_same_map && (addr_map_v != NULL_ADDR_EXPR),
                          out == MAP_DEL_RET_IF_KEY_EXIST_EXPR);
-
-    f = f && z3::implies(f_the_same_map && f3,
-                         (out == MAP_DEL_RET_IF_KEY_INEXIST_EXPR) ||
-                         (out == MAP_DEL_RET_IF_KEY_EXIST_EXPR));
+    f_ret = f_ret && z3::implies(f_the_same_map, f);
 
     z3::expr is_valid = sv.update_is_valid();
-    f_ret = f_ret && z3::implies(!f_the_same_map, is_valid == Z3_false);
-    f_ret = f_ret && z3::implies(f_the_same_map, (is_valid == Z3_true) && f);
     // add an entry in map WT to delete this key
+    f_ret = f_ret && z3::implies((!f_the_same_map), is_valid == Z3_false);
+    f_ret = f_ret && z3::implies(f_the_same_map, is_valid == Z3_true);
     mem._map_table._wt.add(is_valid, cur_addr_map, k, NULL_ADDR_EXPR);
+    // add an entry in map URT to show lookup
+    // only it is the target map, and k cannot be found in map WT is valid
+    is_valid = sv.update_is_valid();
+    f_ret = f_ret && z3::implies(!(f_the_same_map && f1), is_valid == Z3_false);
+    f_ret = f_ret && z3::implies(f_the_same_map && f1, is_valid == Z3_true);
+    mem._map_table._urt.add(is_valid, cur_addr_map, k, addr_map_v);
   }
   return f_ret;
 }
