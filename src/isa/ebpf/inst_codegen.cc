@@ -837,8 +837,18 @@ void counterex_2_input_mem(mem_t& input_mem, z3::model& mdl,
     return;
   }
 
-  // TODO: update input memory for other path conditions first
-
+  // update input memory for other path conditions first
+  for (int i = 0; i < pc1.size(); i++) {
+    for (int j = 0; j < pc2.size(); j++) {
+      if ((i == sv1_id) && (j == sv2_id)) continue;
+      smt_map_wt& map_urt = sv1[i].mem_var._map_table._urt;
+      smt_wt& mem_urt = sv1[i].mem_var._mem_table._urt;
+      counterex_urt_2_input_map(input_mem, mdl, map_urt, mem_urt, m_layout);
+      smt_map_wt& map_urt_2 = sv2[j].mem_var._map_table._urt;
+      smt_wt& mem_urt_2 = sv2[j].mem_var._mem_table._urt;
+      counterex_urt_2_input_map(input_mem, mdl, map_urt_2, mem_urt_2, m_layout);
+    }
+  }
   // update input memory for executing path condition
   smt_map_wt& map_urt = sv1[sv1_id].mem_var._map_table._urt;
   smt_wt& mem_urt = sv1[sv1_id].mem_var._mem_table._urt;
