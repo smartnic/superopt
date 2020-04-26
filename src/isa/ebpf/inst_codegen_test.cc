@@ -1204,6 +1204,23 @@ void test10() {
   f_same_input = smt_one_map_set_same_input(map1, sv1, sv2, m_layout);
   f_equal = smt_map_eq_chk(sv1, sv2, m_layout);
   print_test_res(is_valid(z3::implies(f && f_same_input, f_equal) == string_to_expr("true")), "2");
+
+  cout << "7. test map helper functions with store" << endl;
+  sv1.clear(); sv2.clear();
+  sv1.mem_var.init_addrs_map_v_next(m_layout);
+  sv2.mem_var.init_addrs_map_v_next(m_layout);
+  predicate_st8(k1, addr_k1, v(0), sv1.mem_var);
+  predicate_st8(v1, addr_v1, v(0), sv1.mem_var);
+  predicate_st8(k1, addr_k1, v(0), sv2.mem_var);
+  predicate_st8(v1, addr_v1, v(0), sv2.mem_var);
+  addr_v_lookup_p1 = new_addr_v_lookup();
+  f = predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p1, sv1, m_layout);
+  predicate_st8(v1, addr_v_lookup_p1, v(0), sv1.mem_var);
+  f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2, m_layout);
+  z3::expr f_pc = (addr_v_lookup_p1 != NULL_ADDR_EXPR);
+  f_same_input = smt_one_map_set_same_input(map1, sv1, sv2, m_layout);
+  f_equal = smt_map_eq_chk(sv1, sv2, m_layout);
+  print_test_res(is_valid(z3::implies(f && f_same_input && f_pc, f_equal) == Z3_true), "1");
 }
 
 void test11() {
