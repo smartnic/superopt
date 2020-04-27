@@ -2,6 +2,9 @@
 
 using namespace std;
 
+default_random_engine gen;
+uniform_real_distribution<double> unidist(0.0, 1.0);
+
 z3::expr latest_write_element(int idx, vector<z3::expr>& x);
 z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& x);
 z3::expr key_not_found_after_idx(z3::expr key, int idx, z3::expr addr_map, smt_map_wt& m_wt);
@@ -871,16 +874,30 @@ void get_map_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
   }
 }
 
+// load v from addr_v in mem_addr_val;
+// if v does not in mem_addr_val, generate a random value
 void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
                        vector<pair<uint64_t, uint8_t>>& mem_addr_val) {
+  bool found = true;
   for (int i = 0; i < v.size(); i++) {
+    bool found_i = false;
     uint64_t addr = addr_v + i;
     for (int j = 0; j < mem_addr_val.size(); j++) {
       if (addr == mem_addr_val[j].first) {
         v[i] = mem_addr_val[j].second;
+        found_i = true;
         break;
       }
     }
+    if (!found_i) {
+      found = false;
+      break;
+    }
+  }
+  // if v does not in mem_addr_val, generate a random value
+  if (found) return;
+  for (int i = 0; i < v.size(); i++) {
+    v[i] = unidist(gen) * (double)0xff; // uint8_t: 0 - 0xff
   }
 }
 

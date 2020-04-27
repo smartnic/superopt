@@ -397,8 +397,8 @@ void test4() {
   input_mem_expected.init_mem_by_layout();
   input_mem_expected.update_kv_in_map(map0, k1_str, (uint8_t*)(&v1));
   // check counter example is generated and the value of input memory
-  bool res_expected = (vld.is_equal_to(p11, 11, m_layout) == 0) && // 0: not equal
-                      (vld._last_counterex_mem == input_mem_expected);
+  bool res_expected = (vld.is_equal_to(p11, 2, m_layout) == 0);// 0: not equal
+  res_expected = res_expected && (vld._last_counterex_mem == input_mem_expected);
 
   prog_state ps;
   ps._mem.init_mem_by_layout();
@@ -410,6 +410,33 @@ void test4() {
   output1 = interpret(p11, 11, ps, vld._last_counterex.input, &vld._last_counterex_mem);
   res_expected = res_expected && (output0 == 0xff) && (output1 == 0);
   print_test_res(res_expected, "1");
+
+  // update k1 0 map0, output r0 = 0
+  inst p12[14] = {inst(MOV64XC, 1, 0), // *addr_v = 0
+                  inst(STXB, 10, -2, 1),
+                  inst(MOV64XC, 1, k1), // *addr_k = 0x11
+                  inst(STXB, 10, -1, 1),
+                  inst(MOV64XC, 1, map0), // r1 = map0
+                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                  inst(ADD64XC, 2, -1),
+                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                  inst(ADD64XC, 3, -2),
+                  inst(CALL, BPF_FUNC_map_lookup),
+                  inst(JEQXC, 0, 0, 1),
+                  inst(CALL, BPF_FUNC_map_update),
+                  inst(MOV64XC, 0, 0),
+                  inst(EXIT),
+                 };
+  inst p13[2] = {inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  vld.set_orig(p12, 14, m_layout);
+  // check counter example is generated and the value of input memory
+  res_expected = (vld.is_equal_to(p13, 2, m_layout) == 0); // 0: not equal
+  res_expected = res_expected &&
+                 (vld._last_counterex_mem._maps[map0]._k2idx.find(k1_str) !=
+                  vld._last_counterex_mem._maps[map0]._k2idx.end());
+  print_test_res(res_expected, "1.1");
 
   // p2: r0 = map1[k1] if k1 in map1, else r0 = 0
   inst p2[9] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <utility>
+#include <random>
 #include "z3++.h"
 #include "../../../src/utils.h"
 #include "../../../src/verify/smt_var.h"
@@ -399,3 +400,6 @@ inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::exp
 }
 
 string ld_n_bytes_from_addr(const uint8_t *v, const size_t s);
+
+void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
+                       vector<pair<uint64_t, uint8_t>>& mem_addr_val);

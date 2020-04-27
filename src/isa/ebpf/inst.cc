@@ -482,6 +482,7 @@ int opcode_2_idx(int opcode) {
   }
 }
 
+// TODO: set the stack memory as 0
 z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv, smt_mem_layout& m_layout) {
   z3::expr f = string_to_expr("true");
   f = (sv.get_cur_reg_var(1) == input) &&
