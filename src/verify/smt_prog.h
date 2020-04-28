@@ -21,10 +21,10 @@ class smt_prog {
   // which are initial values for NEXT basic blocks
   vector<vector<expr> > post_reg_val;
   // return the SMT for the given program without branch and loop
-  void smt_block(expr& smt_b, inst* program, int start, int end, smt_var& sv, smt_mem_layout& m_layout);
+  void smt_block(expr& smt_b, inst* program, int start, int end, smt_var& sv);
   void init(unsigned int num_regs);
   void topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vector<bool>& finished);
-  void gen_block_prog_logic(expr& e, smt_var& sv, smt_mem_layout& m_layout, size_t cur_bid, inst* inst_lst);
+  void gen_block_prog_logic(expr& e, smt_var& sv, size_t cur_bid, inst* inst_lst);
   void store_post_reg_val(smt_var& sv, size_t cur_bid, unsigned int num_regs);
   void add_path_cond(expr p_con, size_t cur_bid, size_t next_bId);
   void gen_post_path_con(smt_var& sv, size_t cur_bid, inst& inst_end);
@@ -59,7 +59,7 @@ class smt_prog {
   ~smt_prog();
   // Return the program logic FOL formula 'PL' including basic program logic
   // and the formula of capturing the output of the program in the variable output[prog_id]
-  expr gen_smt(unsigned int prog_id, inst* inst_lst, int length, smt_mem_layout& m_layout);
+  expr gen_smt(unsigned int prog_id, inst* inst_lst, int length);
   // get all the path conditions and the corresponding memory.
   // should call this function after calling gen_smt()
   void get_output_pc_mem(vector<expr>& pc, vector<smt_var>& mv);

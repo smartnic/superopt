@@ -5,6 +5,7 @@
 using namespace z3;
 
 #define v(x) string_to_expr(x)
+mem_layout mem_t::_layout;
 
 void test1() {
   // branch test for st/ld
@@ -27,13 +28,13 @@ void test1() {
   //  2 in:1 0  out:
   smt_wt s0, s1, s21, s22;
   s0.add(v("r_0_0_10_0") + to_expr(-1), v("r_0_0_1_0").extract(7, 0));
-  bool res = (s0 == ps.post_mem_val[0][0]._stack._wt);
+  bool res = (s0 == ps.post_sv[0][0].mem_var._mem_table._wt);
   s1 = s0;
   s1.add(v("r_0_1_10_0") + to_expr(-1), v("r_0_1_1_1").extract(7, 0));
-  res = res && (s1 == ps.post_mem_val[1][0]._stack._wt);
+  res = res && (s1 == ps.post_sv[1][0].mem_var._mem_table._wt);
   s21 = s1;
   s22 = s0;
-  res = res && (s21 == ps.post_mem_val[2][0]._stack._wt) && (s22 == ps.post_mem_val[2][1]._stack._wt);
+  res = res && (s21 == ps.post_sv[2][0].mem_var._mem_table._wt) && (s22 == ps.post_sv[2][1].mem_var._mem_table._wt);
   print_test_res(res, "post stack write table 1");
 
   // test jmp 0
@@ -51,11 +52,11 @@ void test1() {
   //  1 in:0 0  out:
   smt_wt s;
   s.add(v("r_0_0_10_0") + to_expr(-1), v("r_0_0_1_0").extract(7, 0));
-  res = (s == ps.post_mem_val[0][0]._stack._wt);
+  res = (s == ps.post_sv[0][0].mem_var._mem_table._wt);
   s.add(v("r_0_1_10_0") + to_expr(-1), v("r_0_1_1_0").extract(7, 0));
   res = res &&
-        (s == ps.post_mem_val[1][0]._stack._wt) &&
-        (s == ps.post_mem_val[1][1]._stack._wt);
+        (s == ps.post_sv[1][0].mem_var._mem_table._wt) &&
+        (s == ps.post_sv[1][1].mem_var._mem_table._wt);
   print_test_res(res, "post stack write table 2");
 
   // test jmp 0 with other jmps
@@ -93,15 +94,15 @@ void test1() {
   s.clear();
   // 0 -> 1 -> 2 -> 3
   s.add(w_addr[0], w_val[0]); s.add(w_addr[1], w_val[1]); s.add(w_addr[2], w_val[2]);
-  res = (s == ps.post_mem_val[3][0]._stack._wt) && (s == ps.post_mem_val[3][2]._stack._wt);
+  res = (s == ps.post_sv[3][0].mem_var._mem_table._wt) && (s == ps.post_sv[3][2].mem_var._mem_table._wt);
   // 0 -> 2 -> 3
   s.clear();
   s.add(w_addr[0], w_val[0]); s.add(w_addr[2], w_val[2]);
-  res = res && (s == ps.post_mem_val[3][1]._stack._wt) && (s == ps.post_mem_val[3][3]._stack._wt);
+  res = res && (s == ps.post_sv[3][1].mem_var._mem_table._wt) && (s == ps.post_sv[3][3].mem_var._mem_table._wt);
   // 0 -> 1 -> 3
   s.clear();
   s.add(w_addr[0], w_val[0]); s.add(w_addr[1], w_val[1]);
-  res = res && (s == ps.post_mem_val[3][4]._stack._wt);
+  res = res && (s == ps.post_sv[3][4].mem_var._mem_table._wt);
   print_test_res(res, "post stack write table 3");
 }
 

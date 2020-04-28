@@ -94,8 +94,8 @@ smt_prog_test.out: smt_prog_z3.o $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERI
 smt_prog_z3.o: $(VERIFY)smt_prog_test.cc
 	$(CXX) $(TOY_ISA_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(VERIFY)smt_prog_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)smt_prog_test.cc
 
-smt_prog_test_ebpf.out: smt_prog_z3_ebpf.o $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(EBPF)inst_codegen.h $(EBPF)inst_codegen.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.cc $(EBPF)inst.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(SRC)utils.cc $(SRC)utils.h
-	g++ $(EBPF_FLAG) -std=c++11 -fvisibility=hidden $(VERIFY)smt_prog_z3_ebpf.o $(VERIFY)smt_prog.cc $(VERIFY)smt_var.cc $(EBPF)inst_codegen.cc $(ISA)inst.cc $(EBPF)inst.cc $(VERIFY)cfg.cc $(SRC)utils.cc -o $(VERIFY)smt_prog_test_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+smt_prog_test_ebpf.out: smt_prog_z3_ebpf.o $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(VERIFY)smt_var.cc $(VERIFY)smt_var.h $(EBPF)inst_codegen.h $(EBPF)inst_codegen.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.cc $(EBPF)inst.h $(EBPF)inst_var.cc $(EBPF)inst_var.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(SRC)utils.cc $(SRC)utils.h
+	g++ $(EBPF_FLAG) -std=c++11 -fvisibility=hidden $(VERIFY)smt_prog_z3_ebpf.o $(VERIFY)smt_prog.cc $(VERIFY)smt_var.cc $(EBPF)inst_codegen.cc $(ISA)inst.cc $(EBPF)inst.cc $(EBPF)inst_var.cc $(VERIFY)cfg.cc $(SRC)utils.cc -o $(VERIFY)smt_prog_test_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 smt_prog_z3_ebpf.o: $(VERIFY)smt_prog_test_ebpf.cc
 	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(VERIFY)smt_prog_z3_ebpf.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)smt_prog_test_ebpf.cc
