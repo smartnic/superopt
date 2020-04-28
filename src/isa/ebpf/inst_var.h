@@ -176,6 +176,7 @@ class smt_var {
   z3::expr update_map_helper_func_ret();
   z3::expr get_stack_start_addr() {return mem_var._stack_start;} // return value: z3 bv64
   z3::expr get_stack_end_addr() {return (mem_var._stack_start + STACK_SIZE);} // return value: z3 bv64
+  z3::expr get_stack_bottom_addr() {return (mem_var._stack_start + STACK_SIZE + 1);}
   z3::expr get_map_start_addr(int map_id); // return value: z3 bv64
   z3::expr get_map_end_addr(int map_id); // return value: z3 bv64
   void clear();

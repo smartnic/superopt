@@ -461,9 +461,9 @@ class inst: public inst_base {
   int get_insn_num_regs() const {return insn_num_regs[opcode_2_idx(_opcode)];}
   int get_opcode_type() const {return opcode_type[opcode_2_idx(_opcode)];}
   // smt
-  z3::expr smt_inst(smt_var& sv, smt_mem_layout& m_layout) const;
+  z3::expr smt_inst(smt_var& sv) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;
-  static z3::expr smt_set_pre(z3::expr input, smt_var& sv, smt_mem_layout& m_layout);
+  static z3::expr smt_set_pre(z3::expr input, smt_var& sv);
 
   string get_bytecode_str() const;
 };

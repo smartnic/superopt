@@ -347,7 +347,7 @@ void inst::set_as_nop_inst() {
 #define R4 sv.get_cur_reg_var(4)
 #define R5 sv.get_cur_reg_var(5)
 
-z3::expr inst::smt_inst(smt_var& sv, smt_mem_layout& m_layout) const {
+z3::expr inst::smt_inst(smt_var& sv) const {
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
   // If opcode is valid, then define curDst, curSrc, imm and newDst
   int op_type = get_opcode_type();
@@ -405,15 +405,15 @@ z3::expr inst::smt_inst(smt_var& sv, smt_mem_layout& m_layout) const {
         default: cout << "Error: imm " << imm << " is not 16, 32, 64" << endl;
           return string_to_expr("false");
       }
-    case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, m_layout);
-    case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, m_layout);
-    case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, m_layout);
-    case LDXDW: return predicate_ld64(CURSRC, OFF, sv, NEWDST, m_layout);
+    case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST);
+    case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST);
+    case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST);
+    case LDXDW: return predicate_ld64(CURSRC, OFF, sv, NEWDST);
     case STXB: predicate_st8(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
     case STXH: predicate_st16(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
     case STXW: predicate_st32(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
     case STXDW: predicate_st64(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
-    case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv, m_layout);
+    case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv);
     default: return string_to_expr("false");
   }
 }
@@ -483,10 +483,10 @@ int opcode_2_idx(int opcode) {
 }
 
 // TODO: set the stack memory as 0
-z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv, smt_mem_layout& m_layout) {
+z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
   z3::expr f = string_to_expr("true");
   f = (sv.get_cur_reg_var(1) == input) &&
-      (sv.get_cur_reg_var(10) == m_layout.get_stack_bottom_addr()) &&
+      (sv.get_cur_reg_var(10) == sv.get_stack_bottom_addr()) &&
       (sv.get_cur_reg_var(0) == 0);
   for (size_t i = 2; i < 10; i++) {
     f = f && (sv.get_cur_reg_var(i) == 0);
