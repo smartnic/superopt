@@ -114,7 +114,7 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v,
   return f;
 }
 
-z3::expr predicate_ld_byte(z3::expr addr, smt_var& sv, z3::expr out, smt_mem_layout& m_layout) {
+z3::expr predicate_ld_byte(z3::expr addr, smt_var& sv, z3::expr out) {
   smt_wt& wt = sv.mem_var._mem_table._wt;
   z3::expr a = addr;
   z3::expr f_found_in_wt_after_i = string_to_expr("false");
@@ -159,10 +159,10 @@ z3::expr predicate_ld_byte(z3::expr addr, smt_var& sv, z3::expr out, smt_mem_lay
   return f;
 }
 
-z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, smt_mem_layout& m_layout) {
-  z3::expr f = predicate_ld_byte(addr, sv, out.extract(7, 0), m_layout);
+z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out) {
+  z3::expr f = predicate_ld_byte(addr, sv, out.extract(7, 0));
   for (int i = 1; i < n; i++) {
-    f = f && predicate_ld_byte(addr + i, sv, out.extract(8 * i + 7, 8 * i), m_layout);
+    f = f && predicate_ld_byte(addr + i, sv, out.extract(8 * i + 7, 8 * i));
   }
   return f;
 }
@@ -187,10 +187,11 @@ z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& x) {
   return f;
 }
 
-z3::expr stack_addr_in_one_wt(smt_wt& x, smt_wt& y, smt_mem_range& r) {
+z3::expr stack_addr_in_one_wt(smt_wt& x, smt_wt& y,
+                              z3::expr stack_start_addr, z3::expr stack_end_addr) {
   z3::expr f = string_to_expr("true");
   for (int i = x.addr.size() - 1; i >= 0; i--) {
-    f = f && z3::implies(addr_in_range(x.addr[i], r.start, r.end) &&
+    f = f && z3::implies(addr_in_range(x.addr[i], stack_start_addr, stack_end_addr) &&
                          (!addr_in_addrs(x.addr[i], y.addr)),
                          false);
   }
@@ -198,16 +199,17 @@ z3::expr stack_addr_in_one_wt(smt_wt& x, smt_wt& y, smt_mem_range& r) {
 }
 
 // need memory WTs, stack memory range
-z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, smt_mem_range& r) {
+z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y,
+                          z3::expr stack_start_addr, z3::expr stack_end_addr) {
   z3::expr f = string_to_expr("true");
   // case 1: addrs can be found in both WTs
   z3::expr f_addr_x = string_to_expr("true");
   z3::expr f_addr_y = string_to_expr("true");
   for (int i = x.addr.size() - 1; i >= 0; i--) {
-    f_addr_x = addr_in_range(x.addr[i], r.start, r.end) &&
+    f_addr_x = addr_in_range(x.addr[i], stack_start_addr, stack_end_addr) &&
                latest_write_element(i, x.addr);
     for (int j = y.addr.size() - 1; j >= 0; j--) {
-      f_addr_y = addr_in_range(y.addr[j], r.start, r.end) &&
+      f_addr_y = addr_in_range(y.addr[j], stack_start_addr, stack_end_addr) &&
                  latest_write_element(j, y.addr);
       f = f && z3::implies(f_addr_x && f_addr_y && (x.addr[i] == y.addr[j]),
                            x.val[i] == y.val[j]);
@@ -215,7 +217,8 @@ z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y, smt_mem_range& r) {
   }
   // case 2: addrs can only be found in one WT.
   // If these addrs are found, the result is false.
-  f = f && stack_addr_in_one_wt(x, y, r) && stack_addr_in_one_wt(y, x, r);
+  f = f && stack_addr_in_one_wt(x, y, stack_start_addr, stack_end_addr) &&
+      stack_addr_in_one_wt(y, x, stack_start_addr, stack_end_addr);
   return f;
 }
 
@@ -285,16 +288,16 @@ z3::expr ld_n_bytes_from_urt(int n, z3::expr addr, smt_wt& urt, z3::expr out) {
 // premise: 1. key not in map2 wt 2. !(key in map2 URT and mem2 WT)
 // for each key(k) in these keys, the latest write m[k] should be equal to the input
 // thus, before writing, this k/v should be read from the map, that is, the element can be found in map URT
-z3::expr keys_found_in_one_map(int map_id, smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
+z3::expr keys_found_in_one_map(int map_id, smt_var& sv1, smt_var& sv2) {
   z3::expr f = string_to_expr("true");
   z3::expr addr_map = to_expr((int64_t)map_id);
-  int k_sz = m_layout._maps_attr[map_id].key_sz;
+  int k_sz = mem_t::map_key_sz(map_id);
 
   smt_map_wt& map_wt = sv1.mem_var._map_table._wt, map2_wt = sv2.mem_var._map_table._wt;
   smt_map_wt& map_urt = sv1.mem_var._map_table._urt, map2_urt = sv2.mem_var._map_table._urt;
   smt_wt& mem_wt = sv1.mem_var._mem_table._wt, mem2_wt = sv2.mem_var._mem_table._wt;
   smt_wt& mem_urt = sv1.mem_var._mem_table._urt;
-  int v_sz = m_layout._maps_attr[map_id].val_sz;
+  int v_sz = mem_t::map_val_sz(map_id);
   int v_sz_byte = v_sz / NUM_BYTE_BITS;
 
   // compute and store memory load constrains on v for map URT
@@ -446,11 +449,11 @@ z3::expr one_key_found_in_both_maps(bool is_map1_wt, z3::expr k1, z3::expr addr_
   return f;
 }
 
-z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
+z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1, smt_var& sv2) {
   z3::expr f = string_to_expr("true");
   z3::expr addr_map = to_expr((int64_t)map_id);
-  int k_sz = m_layout._maps_attr[map_id].key_sz;
-  int v_sz = m_layout._maps_attr[map_id].val_sz;
+  int k_sz = mem_t::map_key_sz(map_id);
+  int v_sz = mem_t::map_val_sz(map_id);
   // case 1: keys that are in pgm1's map WT and pgm2's map WT
   // if the key is found && load v1 from mem1 WT && load v2 from mem2 WT => 1 or 2
   // 1. addr_v1 == addr_v2 == NULL
@@ -527,8 +530,8 @@ z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1, smt_var& sv2, smt_mem_layo
   // load v_in from mem1 URT => 1 or 2
   // 1. addr_v_out == addr_v_in == NULL
   // 2. addr_v_out != NULL && addr_v_in != NULL && v_in == v_out
-  f = f && keys_found_in_one_map(map_id, sv1, sv2, m_layout) &&
-      keys_found_in_one_map(map_id, sv2, sv1, m_layout);
+  f = f && keys_found_in_one_map(map_id, sv1, sv2) &&
+      keys_found_in_one_map(map_id, sv2, sv1);
   return f;
 }
 
@@ -537,11 +540,11 @@ z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1, smt_var& sv2, smt_mem_layo
 // each key "k" in map_p1 URT, if "k" is in map_p2 URT => 1 or 2
 // 1. "k" is not in the input map, i.e., the corresponding addr_v both NULL
 // 2. "k" is in the input map, load v_p1 and v_p2 from mem URT, the corresponding v_p1 == v_p2
-z3::expr smt_one_map_set_same_input(int map_id, smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
+z3::expr smt_one_map_set_same_input(int map_id, smt_var& sv1, smt_var& sv2) {
   z3::expr f = string_to_expr("true");
   z3::expr addr_map = to_expr((int64_t)map_id);
-  int k_sz = m_layout._maps_attr[map_id].key_sz;
-  int v_sz = m_layout._maps_attr[map_id].val_sz;
+  int k_sz = mem_t::map_key_sz(map_id);
+  int v_sz = mem_t::map_val_sz(map_id);
   smt_map_wt& map1_urt = sv1.mem_var._map_table._urt, map2_urt = sv2.mem_var._map_table._urt;
   // compute and store memory load constrains on v for map2 URT
   // to avoid repetitive computation
@@ -586,46 +589,44 @@ z3::expr smt_one_map_set_same_input(int map_id, smt_var& sv1, smt_var& sv2, smt_
   return f;
 }
 
-z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
+z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2) {
   z3::expr f = string_to_expr("true");
-  for (int map_id = 0; map_id < m_layout._maps.size(); map_id++) {
-    f = f && smt_one_map_set_same_input(map_id, sv1, sv2, m_layout);
+  for (int map_id = 0; map_id < mem_t::maps_number(); map_id++) {
+    f = f && smt_one_map_set_same_input(map_id, sv1, sv2);
   }
   return f;
 }
 
-z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
+z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2) {
   z3::expr f = string_to_expr("true");
-  for (int map_id = 0; map_id < m_layout._maps.size(); map_id++) {
-    f = f && smt_one_map_eq_chk(map_id, sv1, sv2, m_layout);
+  for (int map_id = 0; map_id < mem_t::maps_number(); map_id++) {
+    f = f && smt_one_map_eq_chk(map_id, sv1, sv2);
   }
   return f;
 }
 
-z3::expr smt_mem_eq_chk(smt_var& sv1, smt_var& sv2, smt_mem_layout& m_layout) {
-  return smt_map_eq_chk(sv1, sv2, m_layout);
+z3::expr smt_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
+  return smt_map_eq_chk(sv1, sv2);
 }
 
 z3::expr smt_pgm_set_same_input(vector<z3::expr>& pc1, vector<smt_var>& sv1,
-                                vector<z3::expr>& pc2, vector<smt_var>& sv2,
-                                smt_mem_layout& m_layout) {
+                                vector<z3::expr>& pc2, vector<smt_var>& sv2) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < pc1.size(); i++) {
     for (int j = 0; j < pc2.size(); j++) {
       f = f && z3::implies(pc1[i] && pc2[j],
-                           smt_map_set_same_input(sv1[i], sv2[j], m_layout));
+                           smt_map_set_same_input(sv1[i], sv2[j]));
     }
   }
   return f;
 }
 
 z3::expr smt_pgm_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
-                            vector<z3::expr>& pc2, vector<smt_var>& sv2,
-                            smt_mem_layout& m_layout) {
+                            vector<z3::expr>& pc2, vector<smt_var>& sv2) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < pc1.size(); i++) {
     for (int j = 0; j < pc2.size(); j++) {
-      f = f && z3::implies(pc1[i] && pc2[j], smt_mem_eq_chk(sv1[i], sv2[j], m_layout));
+      f = f && z3::implies(pc1[i] && pc2[j], smt_mem_eq_chk(sv1[i], sv2[j]));
     }
   }
   return f;
@@ -666,16 +667,16 @@ z3::expr predicate_map_lookup_k_in_map_urt(z3::expr addr_map, z3::expr k, z3::ex
 
 // "addr_map_v" is the return value
 z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
-                                     smt_var& sv, smt_mem_layout& m_layout) {
+                                     smt_var& sv) {
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
-  for (int map_id = 0; map_id < m_layout._maps.size(); map_id++) {
+  for (int map_id = 0; map_id < mem_t::maps_number(); map_id++) {
     z3::expr cur_addr_map = to_expr((int64_t)map_id);
-    int k_sz = m_layout._maps_attr[map_id].key_sz;
+    int k_sz = mem_t::map_key_sz(map_id);
     z3::expr k = sv.update_key(k_sz);
 
     /* add constrains on k */
-    z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, m_layout);
+    z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k);
 
     /* add constrains on addr_map_v for the following cases
        if key is in the target map, addr_map_v is the same as the corresponding
@@ -691,7 +692,7 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
     z3::expr f2 = key_not_in_map_wt(cur_addr_map, k, mem._map_table._urt);
     f = f && z3::implies(f1 && f2,
                          (addr_map_v == NULL_ADDR_EXPR) ||
-                         (addr_map_v == mem.get_and_update_addr_v_next(map_id, m_layout)));
+                         (addr_map_v == mem.get_and_update_addr_v_next(map_id)));
 
     z3::expr is_valid = sv.update_is_valid(); // z3 boolean const
     /* add the constrains on "is_valid" */
@@ -708,21 +709,21 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 
 // "out" is the return value
 z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_v,
-                                     z3::expr out, smt_var& sv, smt_mem_layout& m_layout) {
+                                     z3::expr out, smt_var& sv) {
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
-  for (int map_id = 0; map_id < m_layout._maps.size(); map_id++) {
+  for (int map_id = 0; map_id < mem_t::maps_number(); map_id++) {
     z3::expr cur_addr_map = to_expr((int64_t)map_id);
-    int k_sz = m_layout._maps_attr[map_id].key_sz;
-    int v_sz = m_layout._maps_attr[map_id].val_sz;
+    int k_sz = mem_t::map_key_sz(map_id);
+    int v_sz = mem_t::map_val_sz(map_id);
     z3::expr k = sv.update_key(k_sz);
     z3::expr v = sv.update_val(v_sz);
     z3::expr addr_map_v = sv.update_addr_v();
     /* add constrains on "out", "k", "v" */
     z3::expr f = (out == MAP_UPD_RET_EXPR) &&
-                 predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, m_layout) &&
-                 predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, sv, v, m_layout);
-    z3::expr next_addr_map_v = mem.get_and_update_addr_v_next(map_id, m_layout);
+                 predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k) &&
+                 predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, sv, v);
+    z3::expr next_addr_map_v = mem.get_and_update_addr_v_next(map_id);
     /* add constrains on "addr_map_v".
        if the key is in the target map WT. if the corresponding value address is NULL,
        the value address is the same as the corresponding value address.
@@ -774,15 +775,15 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 // "out" is the return value
 // if key not in the map, out = 0xfffffffe, else out = 0
 z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::expr out,
-                                     smt_var & sv, smt_mem_layout & m_layout) {
+                                     smt_var& sv) {
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
-  for (int map_id = 0; map_id < m_layout._maps.size(); map_id++) {
+  for (int map_id = 0; map_id < mem_t::maps_number(); map_id++) {
     z3::expr cur_addr_map = to_expr((int64_t)map_id);
-    int k_sz = m_layout._maps_attr[map_id].key_sz;
+    int k_sz = mem_t::map_key_sz(map_id);
     z3::expr k = sv.update_key(k_sz);
     /* add the constrains on "k" */
-    z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, m_layout);
+    z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k);
 
     /* add the constrains on "addr_map_v" according to "k" */
     z3::expr addr_map_v = sv.update_addr_v();
@@ -822,13 +823,13 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 
 z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::expr r3,
                                    z3::expr r4, z3::expr r5, z3::expr r0,
-                                   smt_var & sv, smt_mem_layout & m_layout) {
+                                   smt_var & sv) {
   if (func_id == BPF_FUNC_map_lookup) {
-    return predicate_map_lookup_helper(r1, r2, r0, sv, m_layout);
+    return predicate_map_lookup_helper(r1, r2, r0, sv);
   } else if (func_id == BPF_FUNC_map_update) {
-    return predicate_map_update_helper(r1, r2, r3, r0, sv, m_layout);
+    return predicate_map_update_helper(r1, r2, r3, r0, sv);
   } else if (func_id == BPF_FUNC_map_delete) {
-    return predicate_map_delete_helper(r1, r2, r0, sv, m_layout);
+    return predicate_map_delete_helper(r1, r2, r0, sv);
   } else {
     cout << "Error: unknown function id " << func_id << endl; return string_to_expr("true");
   }
@@ -853,9 +854,9 @@ string z3_bv_2_hex_str(z3::expr z3_bv) {
 }
 
 void get_map_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
-                          z3::model& mdl, smt_wt& mem_urt,
-                          smt_mem_layout& m_layout) {
-  int map_sz = m_layout._maps.size();
+                          z3::model& mdl, smt_var& sv) {
+  smt_wt& mem_urt = sv.mem_var._mem_table._urt;
+  int map_sz = mem_t::maps_number();
   if (map_sz == 0) return;
   for (int i = 0; i < mem_urt.size(); i++) {
     z3::expr z3_addr = mem_urt.addr[i];
@@ -864,8 +865,8 @@ void get_map_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
     uint64_t addr = z3_addr_eval.get_numeral_uint64();
     if (addr == NULL_ADDR) continue;
     // Assmue that stack and maps next to each other
-    uint64_t map_start = m_layout._maps[0].start.get_numeral_uint64();
-    uint64_t map_end = m_layout._maps[map_sz - 1].end.get_numeral_uint64();
+    uint64_t map_start = sv.get_map_start_addr(0).get_numeral_uint64();
+    uint64_t map_end = sv.get_map_end_addr(map_sz - 1).get_numeral_uint64();
     if ((addr < map_start) || (addr > map_end)) continue;
 
     z3::expr z3_val = mem_urt.val[i]; // z3 bv8
@@ -901,12 +902,12 @@ void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
   }
 }
 
-void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl,
-                               smt_map_wt& map_urt, smt_wt& mem_urt,
-                               smt_mem_layout& m_layout) {
+void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl, smt_var& sv) {
+  smt_map_wt& map_urt = sv.mem_var._map_table._urt;
+  smt_wt& mem_urt = sv.mem_var._mem_table._urt;
   vector<pair< uint64_t, uint8_t>> mem_addr_val;
-  get_map_mem_from_mdl(mem_addr_val, mdl, mem_urt, m_layout);
-  uint64_t stack_start = m_layout._stack.start.get_numeral_uint64();
+  get_map_mem_from_mdl(mem_addr_val, mdl, sv);
+  uint64_t stack_start = sv.get_stack_start_addr().get_numeral_uint64();
   for (int i = 0; i < map_urt.size(); i++) {
     z3::expr z3_is_valid = map_urt.is_valid[i];
     int is_valid = mdl.eval(z3_is_valid).bool_value();
@@ -925,7 +926,7 @@ void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl,
       unsigned int idx = mp._cur_max_entries;
       mp._cur_max_entries++;
       mp._k2idx[k] = idx;
-      unsigned int val_sz = m_layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS;
+      unsigned int val_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
 
       vector<uint8_t> v(val_sz);
       // get the corresponding "v" according to "addr_v"
@@ -942,8 +943,7 @@ void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl,
 
 void counterex_2_input_mem(mem_t& input_mem, z3::model& mdl,
                            vector<z3::expr>& pc1, vector<smt_var>& sv1,
-                           vector<z3::expr>& pc2, vector<smt_var>& sv2,
-                           smt_mem_layout& m_layout) {
+                           vector<z3::expr>& pc2, vector<smt_var>& sv2) {
   input_mem.clear();
   // Get the memory tables generated the true path condition, i.e.,
   // the path condition that program1 and program2 execute for the
@@ -974,10 +974,10 @@ void counterex_2_input_mem(mem_t& input_mem, z3::model& mdl,
   // update input memory for executing path condition first
   smt_map_wt& map_urt = sv1[sv1_id].mem_var._map_table._urt;
   smt_wt& mem_urt = sv1[sv1_id].mem_var._mem_table._urt;
-  counterex_urt_2_input_map(input_mem, mdl, map_urt, mem_urt, m_layout);
+  counterex_urt_2_input_map(input_mem, mdl, sv1[sv1_id]);
   smt_map_wt& map_urt_2 = sv2[sv2_id].mem_var._map_table._urt;
   smt_wt& mem_urt_2 = sv2[sv2_id].mem_var._mem_table._urt;
-  counterex_urt_2_input_map(input_mem, mdl, map_urt_2, mem_urt_2, m_layout);
+  counterex_urt_2_input_map(input_mem, mdl, sv2[sv2_id]);
 
   // update input memory for other path conditions later,
   // kv pairs that has been updated into the input mem won't be modified
@@ -985,12 +985,12 @@ void counterex_2_input_mem(mem_t& input_mem, z3::model& mdl,
     if (i == sv1_id) continue;
     smt_map_wt& map_urt = sv1[i].mem_var._map_table._urt;
     smt_wt& mem_urt = sv1[i].mem_var._mem_table._urt;
-    counterex_urt_2_input_map(input_mem, mdl, map_urt, mem_urt, m_layout);
+    counterex_urt_2_input_map(input_mem, mdl, sv1[i]);
   }
   for (int i = 0; i < pc2.size(); i++) {
     if (i == sv2_id) continue;
     smt_map_wt& map_urt_2 = sv2[i].mem_var._map_table._urt;
     smt_wt& mem_urt_2 = sv2[i].mem_var._mem_table._urt;
-    counterex_urt_2_input_map(input_mem, mdl, map_urt_2, mem_urt_2, m_layout);
+    counterex_urt_2_input_map(input_mem, mdl, sv2[i]);
   }
 }

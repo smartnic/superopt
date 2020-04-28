@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include "../../src/utils.h"
 #include "../../src/verify/smt_var.h"
+#include "../../src/isa/ebpf/inst_var.h"
 
 using namespace std;
 
