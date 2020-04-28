@@ -12,6 +12,8 @@ using namespace std;
 // reference: https://github.com/Z3Prover/z3/blob/master/src/api/python/z3/z3.py
 extern z3::context smt_c;
 
+#define STACK_SIZE 512 // 512 bytes
+
 // convert string s into expr e
 // if e = "true"/"false" the type of e is bool_val
 // else the type of e is int_const
@@ -55,14 +57,15 @@ class smt_mem_layout {
   vector<smt_mem_range> _maps;
   vector<map_attr> _maps_attr;
 
-  void add_map(z3::expr s, z3::expr e, map_attr m_attr = map_attr(NUM_BYTE_BITS, NUM_BYTE_BITS, 512)) {
-    _maps.push_back(smt_mem_range(s, e));
-    _maps_attr.push_back(m_attr);
+  smt_mem_layout(uint64_t stack_start = (uint64_t)0xff12000000001234) {
+    z3::expr s = to_expr(stack_start);
+    z3::expr e = s - 1 + STACK_SIZE;
+    _stack.set_range(s, e);
   }
+  void add_map(map_attr m_attr);
   void set_map_attr(int map_id, map_attr m_attr) {
     _maps_attr[map_id] = m_attr;
   }
-  void set_stack_range(z3::expr s, z3::expr e) {_stack.set_range(s, e);}
   z3::expr get_stack_bottom_addr() {return (_stack.end + 1);}
 };
 

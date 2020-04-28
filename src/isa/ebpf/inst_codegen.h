@@ -21,6 +21,7 @@ enum BPF_FUNC_IDS {
   BPF_FUNC_map_lookup = 0,
   BPF_FUNC_map_update,
   BPF_FUNC_map_delete,
+  BPF_MAX_FUNC_ID,
 };
 
 #define NULL_ADDR 0

@@ -31,9 +31,6 @@ void test1() {
                            inst(EXIT),
                           };
   smt_mem_layout m_layout;
-  z3::expr stack_s = to_expr((uint64_t)0xff12000000001234);
-  z3::expr stack_e = stack_s + 511;
-  m_layout.set_stack_range(stack_s, stack_e);
   validator vld(instructions1, 9, m_layout);
   print_test_res(vld.is_equal_to(instructions1, 9, m_layout), "instructions1 == instructions1");
   print_test_res(vld.is_equal_to(instructions2, 9, m_layout), "instructions1 == instructions2");
@@ -77,9 +74,6 @@ void test1() {
 void test2() {
   std::cout << "test 2:" << endl;
   smt_mem_layout m_layout;
-  z3::expr stack_s = to_expr((uint64_t)0xff12000000001234);
-  z3::expr stack_e = stack_s + 511;
-  m_layout.set_stack_range(stack_s, stack_e);
   // check branch with ld/st
   inst p1[6] = {inst(STXB, 10, -1, 1),
                 inst(JEQXC, 1, 0x12, 2),
@@ -135,17 +129,9 @@ void test2() {
 void test3() {
   std::cout << "test 3:" << endl;
   smt_mem_layout m_layout;
-  // set memory layout: stack | map1
-  uint64_t stack_s = (uint64_t)0xff12000000001234;
-  z3::expr stack_s_expr = to_expr(stack_s);
-  z3::expr stack_e_expr = stack_s_expr + 511;
-  z3::expr map_s_expr = stack_e_expr + 1;
-  z3::expr map_e_expr = stack_e_expr + 32;
-  m_layout.set_stack_range(stack_s_expr, stack_e_expr);
-  m_layout.add_map(map_s_expr, map_e_expr, map_attr(8, 8, 32));
-  map_s_expr = map_e_expr + 1;
-  map_e_expr = map_s_expr - 1 + 32 * 4;
-  m_layout.add_map(map_s_expr, map_e_expr, map_attr(16, 32, 32));
+  // set memory layout: stack | map1 | map2
+  m_layout.add_map(map_attr(8, 8, 32));
+  m_layout.add_map(map_attr(16, 32, 32));
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
   mem_t::add_map(map_attr(16, 32, 32));
@@ -346,17 +332,9 @@ void test4() {
   std::cout << "test 4: conversion from counter example to input memory "\
             "for interpreter" << endl;
   smt_mem_layout m_layout;
-  // set memory layout: stack | map1
-  uint64_t stack_s = (uint64_t)0xff12000000001234;
-  z3::expr stack_s_expr = to_expr(stack_s);
-  z3::expr stack_e_expr = stack_s_expr + 511;
-  z3::expr map_s_expr = stack_e_expr + 1;
-  z3::expr map_e_expr = stack_e_expr + 32;
-  m_layout.set_stack_range(stack_s_expr, stack_e_expr);
-  m_layout.add_map(map_s_expr, map_e_expr, map_attr(8, 8, 32));
-  map_s_expr = map_e_expr + 1;
-  map_e_expr = map_s_expr - 1 + 32 * 4;
-  m_layout.add_map(map_s_expr, map_e_expr, map_attr(16, 32, 32));
+  // set memory layout: stack | map1 | map2
+  m_layout.add_map(map_attr(8, 8, 32));
+  m_layout.add_map( map_attr(16, 32, 32));
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
   mem_t::add_map(map_attr(16, 32, 32)); // k_sz: 16 bits; v_sz: 32 bits; max_entirs: 32

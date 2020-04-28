@@ -313,12 +313,7 @@ void test6() {
 void test7() {
   cout << "Test 7: Uninitialized read in ld" << endl;
   smt_mem_layout m_layout;
-  z3::expr stack_s = v((uint64_t)0xff12000000001234);
-  z3::expr stack_e = stack_s + 511;
-  m_layout._stack.set_range(stack_s, stack_e);
-  z3::expr map_s = stack_e + 1;
-  z3::expr map_e = stack_e + 512;
-  m_layout.add_map(map_s, map_e);
+  m_layout.add_map(map_attr(8, 8, 512));
   unsigned int prog_id = 0;
   unsigned int node_id = 0;
   unsigned int num_regs = 11;
@@ -341,6 +336,7 @@ void test7() {
   // test constrain on URT element (addr within map address range)
   // if addr cannot be found in the WT but found in URT,
   // the value in element is equal to the value(s) of the addr(s) in URT
+  z3::expr map_s = m_layout._maps[0].start;
   sv.clear();
   z3::expr out = new_out();
   z3::expr smt = (out == v1) &&
@@ -384,12 +380,11 @@ void test8() {
   smt_var sv(prog_id, node_id, num_regs);
   smt_mem_layout m_layout;
   // set memory layout: stack | map
-  z3::expr stack_s = v((uint64_t)0xff12000000001234);
-  z3::expr stack_e = stack_s + 511;
-  m_layout._stack.set_range(stack_s, stack_e);
-  z3::expr map_s = stack_e + 1;
-  z3::expr map_e = stack_e + 512;
-  m_layout.add_map(map_s, map_e);
+  z3::expr stack_s = m_layout._stack.start;
+  z3::expr stack_e = m_layout._stack.end;
+  m_layout.add_map(map_attr(8, 8, 512));
+  z3::expr map_s = m_layout._maps[0].start;
+  z3::expr map_e = m_layout._maps[0].end;
   z3::expr map1 = v(0);
   sv.mem_var.init_addrs_map_v_next(m_layout);
 
@@ -521,10 +516,10 @@ void test8() {
 
   cout << "  4. test properties of mutiple maps" << endl;;
   sv.clear();
-  z3::expr map_s_2 = map_e + 1;
-  z3::expr map_e_2 = map_e + 512;
   z3::expr map2 = v(1);
-  m_layout.add_map(map_s_2, map_e_2);
+  m_layout.add_map(map_attr(8, 8, 512));
+  z3::expr map_s_2 = m_layout._maps[1].start;
+  z3::expr map_e_2 = m_layout._maps[1].end;  
   sv.mem_var.init_addrs_map_v_next(m_layout);
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
   predicate_st8(k2, addr_k2, v(0), sv.mem_var); // *addr_k2 = k2 (addr_k2 in the stack)
@@ -725,17 +720,16 @@ void test9() {
 
   unsigned int prog_id = 0, node_id = 0, num_regs = 11;
   smt_var sv(prog_id, node_id, num_regs);
-  smt_mem_layout m_layout;
+  smt_mem_layout m_layout(stack_s);
   // set memory layout: stack | map1 | map2
-  z3::expr stack_s_expr = v(stack_s);
-  z3::expr stack_e_expr = stack_s_expr + 511;
-  z3::expr map1_s_expr = stack_e_expr + 1;
-  z3::expr map1_e_expr = stack_e_expr + 512;
-  z3::expr map2_s_expr = map1_e_expr + 1;
-  z3::expr map2_e_expr = map1_e_expr + 512;
-  m_layout.set_stack_range(stack_s_expr, stack_e_expr);
-  m_layout.add_map(map1_s_expr, map1_s_expr);
-  m_layout.add_map(map2_s_expr, map2_e_expr);
+  // z3::expr stack_s_expr = v(stack_s);
+  // z3::expr stack_e_expr = stack_s_expr + 511;
+  // z3::expr map1_s_expr = stack_e_expr + 1;
+  // z3::expr map1_e_expr = stack_e_expr + 512;
+  // z3::expr map2_s_expr = map1_e_expr + 1;
+  // z3::expr map2_e_expr = map1_e_expr + 512;
+  m_layout.add_map(map_attr(8, 8, 512));
+  m_layout.add_map(map_attr(8, 8, 512));
   sv.mem_var.init_addrs_map_v_next(m_layout);
 
   uint64_t addr_v_lookup = 0;
@@ -954,17 +948,14 @@ void test10() {
   smt_var sv2(prog_id, node_id, num_regs);
   smt_mem_layout m_layout;
   // set memory layout: stack | map
-  z3::expr stack_s = v((uint64_t)0xff12000000001234);
-  z3::expr stack_e = stack_s + 511;
-  z3::expr map1_s = stack_e + 1, map1_e = stack_e + 512;
   int map1 = 0;
   z3::expr addr_map1 = v(0);
-  m_layout.set_stack_range(stack_s, stack_e);
-  m_layout.add_map(map1_s, map1_e, map_attr(8, 8, 512));
+  m_layout.add_map(map_attr(8, 8, 512));
   sv1.mem_var.init_addrs_map_v_next(m_layout);
   sv2.mem_var.init_addrs_map_v_next(m_layout);
   z3::expr k1 = to_expr("k1", 8), v1 = to_expr("v1", 8);
   z3::expr k2 = to_expr("k2", 8), v2 = to_expr("v2", 8);
+  z3::expr stack_s = m_layout._stack.start;
   z3::expr addr_k1 = stack_s + 0, addr_v1 = stack_s + 1;
   z3::expr addr_k2 = stack_s + 2, addr_v2 = stack_s + 3;
   // test map without process, i.e., no elements in map tables
@@ -1181,11 +1172,10 @@ void test10() {
 
   cout << "6. test mutiple maps" << endl;
   sv1.clear(); sv2.clear();
-  z3::expr map2_s = map1_e + 1, map2_e = map1_e + 512;
   int map2 = 1;
   z3::expr addr_map2 = v(1);
-  m_layout.set_map_attr(map1, map_attr(8, 8));
-  m_layout.add_map(map2_s, map2_e);
+  m_layout.set_map_attr(map1, map_attr(8, 8, 512));
+  m_layout.add_map(map_attr(8, 8, 512));
   sv1.mem_var.init_addrs_map_v_next(m_layout);
   sv2.mem_var.init_addrs_map_v_next(m_layout);
   k1 = to_expr("k1", 8), v1 = to_expr("v1", 8);
@@ -1305,13 +1295,9 @@ void test12() {
   smt_mem_layout m_layout;
   int map1 = 0, map2 = 1;
   z3::expr addr_map1 = v(0), addr_map2 = v(1);
-  z3::expr stack_s = v((uint64_t)0xff12000000001234);
-  z3::expr stack_e = stack_s + 511;
-  m_layout.set_stack_range(stack_s, stack_e);
-  z3::expr map1_s = stack_e + 1, map1_e = stack_e + 32;
-  m_layout.add_map(map1_s, map1_e, map_attr(8, 8, 32));
-  z3::expr map2_s = map1_e + 1, map2_e = map1_e + 32 * 4;
-  m_layout.add_map(map2_s, map2_e, map_attr(16, 32, 32));
+  z3::expr stack_s = m_layout._stack.start;
+  m_layout.add_map(map_attr(8, 8, 32));
+  m_layout.add_map(map_attr(16, 32, 32));
   unsigned int prog_id = 0, node_id = 0, num_regs = 11;
   smt_var sv1(prog_id, node_id, num_regs);
   prog_id = 1;

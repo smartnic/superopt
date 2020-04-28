@@ -10,6 +10,20 @@ ostream& operator<<(ostream& out, const map_attr& m_attr) {
   return out;
 }
 
+void smt_mem_layout::add_map(map_attr m_attr) {
+  z3::expr s = Z3_true, e = Z3_true;
+  if (_maps.size() == 0) {
+    s = _stack.end + 1;
+  } else {
+    int idx = _maps.size() - 1;
+    s = _maps[idx].end + 1;
+  }
+  int val_range_sz = m_attr.max_entries * (m_attr.val_sz / NUM_BYTE_BITS);
+  e = s - 1 + val_range_sz;
+  _maps.push_back(smt_mem_range(s, e));
+  _maps_attr.push_back(m_attr);
+}
+
 /* class smt_wt start */
 bool smt_wt::is_equal(z3::expr e1, z3::expr e2) {
   z3::tactic t = z3::tactic(smt_c, "bv");
