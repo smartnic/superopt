@@ -982,14 +982,15 @@ void counterex_2_input_mem(mem_t& input_mem, z3::model& mdl,
   // update input memory for other path conditions later,
   // kv pairs that has been updated into the input mem won't be modified
   for (int i = 0; i < pc1.size(); i++) {
-    for (int j = 0; j < pc2.size(); j++) {
-      if ((i == sv1_id) && (j == sv2_id)) continue;
-      smt_map_wt& map_urt = sv1[i].mem_var._map_table._urt;
-      smt_wt& mem_urt = sv1[i].mem_var._mem_table._urt;
-      counterex_urt_2_input_map(input_mem, mdl, map_urt, mem_urt, m_layout);
-      smt_map_wt& map_urt_2 = sv2[j].mem_var._map_table._urt;
-      smt_wt& mem_urt_2 = sv2[j].mem_var._mem_table._urt;
-      counterex_urt_2_input_map(input_mem, mdl, map_urt_2, mem_urt_2, m_layout);
-    }
+    if (i == sv1_id) continue;
+    smt_map_wt& map_urt = sv1[i].mem_var._map_table._urt;
+    smt_wt& mem_urt = sv1[i].mem_var._mem_table._urt;
+    counterex_urt_2_input_map(input_mem, mdl, map_urt, mem_urt, m_layout);
+  }
+  for (int i = 0; i < pc2.size(); i++) {
+    if (i == sv2_id) continue;
+    smt_map_wt& map_urt_2 = sv2[i].mem_var._map_table._urt;
+    smt_wt& mem_urt_2 = sv2[i].mem_var._mem_table._urt;
+    counterex_urt_2_input_map(input_mem, mdl, map_urt_2, mem_urt_2, m_layout);
   }
 }
