@@ -90,6 +90,7 @@ int32_t inst::get_max_imm() const {
     case ARSH32XC: return MAX_IMM_SH32;
     case LE:
     case BE: return MAX_TYPES_IMM_ENDIAN;
+    case CALL: return MAX_CALL_IMM;
     default: cout << "Error: no imm in instruction: ";
       print();
       return 0;
@@ -125,7 +126,8 @@ int32_t inst::get_min_imm() const {
     case RSH32XC:
     case ARSH32XC:
     case LE:
-    case BE: return 0;
+    case BE:
+    case CALL: return 0;
     default: cout << "Error: no imm in instruction: ";
       print();
       return 0;
@@ -502,15 +504,6 @@ string inst::get_bytecode_str() const {
           + "}");
 }
 
-// safe address: [ps._mem.get_mem_start_addr(), ps._mem.get_mem_end_addr()]
-inline void memory_access_check(uint64_t addr, uint64_t num_bytes, prog_state &ps) {
-  if (!((addr >= (uint64_t)ps._mem.get_mem_start_addr()) &&
-        ((addr + num_bytes - 1) <= (uint64_t)ps._mem.get_mem_end_addr()))) {
-    string err_msg = "unsafe memory access";
-    throw (err_msg);
-  }
-}
-
 int64_t interpret(inst* program, int length, prog_state &ps, int64_t input, const mem_t* input_mem) {
 #undef IMM
 #undef OFF
@@ -554,11 +547,11 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input, cons
 
 #define LDST(SIZEOP, SIZE)                                         \
   INSN_LDX##SIZEOP:                                                \
-    memory_access_check(SRC + OFF, SIZE/8, ps);                    \
+    ps._mem.memory_access_check(SRC + OFF, SIZE/8);                \
     DST = compute_ld##SIZE(SRC, OFF);                              \
     CONT;                                                          \
   INSN_STX##SIZEOP:                                                \
-    memory_access_check(DST + OFF, SIZE/8, ps);                    \
+    ps._mem.memory_access_check(DST + OFF, SIZE/8);                \
     compute_st##SIZE(SRC, DST, OFF);                               \
     CONT;
 

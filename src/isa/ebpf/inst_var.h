@@ -61,9 +61,9 @@ class mem_t {
   ~mem_t();
   static void add_map(map_attr m_attr);
   static unsigned int maps_number() {return _layout._maps_attr.size();}
-  static unsigned int map_key_sz(int map_id) {return _layout._maps_attr[map_id].key_sz;}
-  static unsigned int map_val_sz(int map_id) {return _layout._maps_attr[map_id].val_sz;}
-  static unsigned int map_max_entries(int map_id) {return _layout._maps_attr[map_id].max_entries;}
+  static unsigned int map_key_sz(int map_id);
+  static unsigned int map_val_sz(int map_id);
+  static unsigned int map_max_entries(int map_id);
   // 1. compute "_mem_size" and according to "_layout";
   // 2. allocate memory for "_mem"
   void init_mem_by_layout();
@@ -78,6 +78,9 @@ class mem_t {
   mem_t& operator=(const mem_t &rhs);
   bool operator==(const mem_t &rhs);
   void cp_input_mem(const mem_t &rhs);
+  // memory_access_check is used to avoid segmentation fault
+  // If memory access not in the legal range, throw error
+  void memory_access_check(uint64_t addr, uint64_t num_bytes);
   void clear();
   friend ostream& operator<<(ostream& out, const mem_t& mem);
 };

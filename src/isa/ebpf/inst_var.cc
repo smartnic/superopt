@@ -138,6 +138,30 @@ void mem_t::add_map(map_attr m_attr) {
   _layout._maps_start.push_back(start_mem_off);
 }
 
+unsigned int mem_t::map_key_sz(int map_id) {
+  if (map_id >= maps_number()) {
+    string err_msg = "map_id > #maps";
+    throw (err_msg);
+  }
+  return _layout._maps_attr[map_id].key_sz;
+}
+
+unsigned int mem_t::map_val_sz(int map_id) {
+  if (map_id >= maps_number()) {
+    string err_msg = "map_id > #maps";
+    throw (err_msg);
+  }
+  return _layout._maps_attr[map_id].val_sz;
+}
+
+unsigned int mem_t::map_max_entries(int map_id) {
+  if (map_id >= maps_number()) {
+    string err_msg = "map_id > #maps";
+    throw (err_msg);
+  }
+  return _layout._maps_attr[map_id].max_entries;
+}
+
 void mem_t::init_mem_by_layout() {
   int n_maps = _layout._maps_attr.size();
   if (n_maps == 0) {
@@ -174,6 +198,7 @@ void mem_t::update_kv_in_map(int map_id, string k, uint8_t* addr_v) {
     idx = it->second;
   }
   unsigned int v_sz = _layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS;
+  memory_access_check((uint64_t)addr_v, v_sz);
   unsigned int off = get_mem_off_by_idx_in_map(map_id, idx);
   uint8_t* addr_v_dst = &_mem[off];
   memcpy(addr_v_dst, addr_v, sizeof(uint8_t)*v_sz);
@@ -229,6 +254,20 @@ void mem_t::cp_input_mem(const mem_t &rhs) {
     uint8_t* rhs_map_start_addr = &rhs._mem[map_start_mem_off];
     memcpy(map_start_addr, rhs_map_start_addr, sizeof(uint8_t) * map_mem_size);
     for (int i = 0; i < rhs._maps.size(); i++) _maps[i] = rhs._maps[i];
+  }
+}
+
+// safe address: [get_mem_start_addr(), get_mem_end_addr()]
+void mem_t::memory_access_check(uint64_t addr, uint64_t num_bytes) {
+  // to avoid overflow
+  uint64_t start = (uint64_t)get_mem_start_addr();
+  uint64_t end = (uint64_t)get_mem_end_addr();
+  uint64_t max_uint64 = 0xffffffffffffffff;
+  bool legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
+               (addr <= (max_uint64 - num_bytes + 1));
+  if (!legal) {
+    string err_msg = "unsafe memory access";
+    throw (err_msg);
   }
 }
 

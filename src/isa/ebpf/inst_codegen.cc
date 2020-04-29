@@ -2,8 +2,8 @@
 
 using namespace std;
 
-default_random_engine gen;
-uniform_real_distribution<double> unidist(0.0, 1.0);
+default_random_engine gen_codegen;
+uniform_real_distribution<double> unidist_codegen(0.0, 1.0);
 
 z3::expr latest_write_element(int idx, vector<z3::expr>& x);
 z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& x);
@@ -37,7 +37,9 @@ string ld_n_bytes_from_addr(const uint8_t* a, const size_t n) {
 // return addr_v
 uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m) {
   int map_id = addr_map;
-  int k_sz = mem_t::_layout._maps_attr[map_id].key_sz / NUM_BYTE_BITS;
+  int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
+  // safety check to avoid segmentation fault
+  m.memory_access_check(addr_k, k_sz);
   // get key from memory
   string k = ld_n_bytes_from_addr((uint8_t*)addr_k, k_sz);
   map_t& mp = m._maps[map_id];
@@ -50,7 +52,8 @@ uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m) {
 
 uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_v, mem_t& m) {
   int map_id = addr_map;
-  int k_sz = mem_t::_layout._maps_attr[map_id].key_sz / NUM_BYTE_BITS;
+  int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
+  m.memory_access_check(addr_k, k_sz);
   // get key and value from memory
   string k = ld_n_bytes_from_addr((uint8_t*)addr_k, k_sz);
   m.update_kv_in_map(map_id, k, (uint8_t*)addr_v);
@@ -59,7 +62,8 @@ uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_
 
 uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, mem_t& m) {
   int map_id = addr_map;
-  int k_sz = mem_t::_layout._maps_attr[map_id].key_sz / NUM_BYTE_BITS;
+  int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
+  m.memory_access_check(addr_k, k_sz);
   string k = ld_n_bytes_from_addr((uint8_t*)addr_k, k_sz);
   map_t& mp = m._maps[map_id];
   auto it = mp._k2idx.find(k);
@@ -898,7 +902,7 @@ void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
   // if v does not in mem_addr_val, generate a random value
   if (found) return;
   for (int i = 0; i < v.size(); i++) {
-    v[i] = unidist(gen) * (double)0xff; // uint8_t: 0 - 0xff
+    v[i] = unidist_codegen(gen_codegen) * (double)0xff; // uint8_t: 0 - 0xff
   }
 }
 
