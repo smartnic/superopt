@@ -60,32 +60,28 @@ class validator {
   expr _store_f = string_to_expr("true");
   /* store variables end */
   validator();
-  validator(inst* orig, int length, smt_mem_layout& m_layout);
+  validator(inst* orig, int length);
   validator(expr fx, expr input, expr output);
   ~validator();
   // calculate and store pre_orig, ps_orign
-  void set_orig(inst* orig, int length, smt_mem_layout& m_layout);
+  void set_orig(inst* orig, int length);
   // fx is the original FOL formula, input/output is the input/output variable of fx
   void set_orig(expr fx, expr input, expr output);
   // check whether synth is equal to orig
   // return 0: not equal; return 1: equal; return -1: synth is illegal
-  int is_equal_to(inst* synth, int length, smt_mem_layout& m_layout);
+  int is_equal_to(inst* synth, int length);
   // given input and register to store the input, return the output of the original
-  reg_t get_orig_output(reg_t input, unsigned int num_regs,
-                        unsigned int input_reg, smt_mem_layout& m_layout);
+  reg_t get_orig_output(reg_t input, unsigned int num_regs, unsigned int input_reg);
   // move from `private` to `public` for testing time
   int is_smt_valid(expr& smt, model& mdl);
   void gen_counterex(model& m, vector<expr>& op_pc_synth,
-                     vector<smt_var>& op_mem_synth,
-                     smt_mem_layout& m_layout);
+                     vector<smt_var>& op_mem_synth);
   // set register 0 in basic block 0 as input[prog_id]
-  void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs,
-               unsigned int input_reg, smt_mem_layout& m_layout);
+  void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg);
   // set the input variable of FOL formula as input[prog_id]
   void smt_pre(expr& pre, expr e);
   // setting outputs of two programs are equal
   void smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2,
-                vector<expr>& op_pc_synth, vector<smt_var>& op_mem_synth,
-                smt_mem_layout& m_layout);
+                vector<expr>& op_pc_synth, vector<smt_var>& op_mem_synth);
 
 };

@@ -30,10 +30,9 @@ void test1() {
                            inst(MOV64XC, 0, 0),
                            inst(EXIT),
                           };
-  smt_mem_layout m_layout;
-  validator vld(instructions1, 9, m_layout);
-  print_test_res(vld.is_equal_to(instructions1, 9, m_layout), "instructions1 == instructions1");
-  print_test_res(vld.is_equal_to(instructions2, 9, m_layout), "instructions1 == instructions2");
+  validator vld(instructions1, 9);
+  print_test_res(vld.is_equal_to(instructions1, 9), "instructions1 == instructions1");
+  print_test_res(vld.is_equal_to(instructions2, 9), "instructions1 == instructions2");
 
   // output = L32(input)
   inst instructions3[2] = {inst(MOV32XY, 0, 1),
@@ -44,8 +43,8 @@ void test1() {
                            inst(LDXW, 0, 10, -4),
                            inst(EXIT),
                           };
-  vld.set_orig(instructions3, 2, m_layout);
-  print_test_res(vld.is_equal_to(instructions4, 3, m_layout), "instructions3 == instructions4");
+  vld.set_orig(instructions3, 2);
+  print_test_res(vld.is_equal_to(instructions4, 3), "instructions3 == instructions4");
 
   inst instructions5[3] = {inst(STXDW, 10, -8, 1),
                            inst(LDXDW, 0, 10, -8),
@@ -66,14 +65,13 @@ void test1() {
                            inst(LDXDW, 0, 9, -8),
                            inst(EXIT),
                           };
-  vld.set_orig(instructions5, 3, m_layout);
-  print_test_res(vld.is_equal_to(instructions6, 9, m_layout), "instructions5 == instructions6");
-  print_test_res(vld.is_equal_to(instructions7, 4, m_layout), "instructions5 == instructions7");
+  vld.set_orig(instructions5, 3);
+  print_test_res(vld.is_equal_to(instructions6, 9), "instructions5 == instructions6");
+  print_test_res(vld.is_equal_to(instructions7, 4), "instructions5 == instructions7");
 }
 
 void test2() {
   std::cout << "test 2:" << endl;
-  smt_mem_layout m_layout;
   // check branch with ld/st
   inst p1[6] = {inst(STXB, 10, -1, 1),
                 inst(JEQXC, 1, 0x12, 2),
@@ -87,8 +85,8 @@ void test2() {
                 inst(LDXB, 0, 10, -1),
                 inst(EXIT),
                };
-  validator vld(p1, 6, m_layout);
-  print_test_res(vld.is_equal_to(p2, 4, m_layout), "p1 == p2");
+  validator vld(p1, 6);
+  print_test_res(vld.is_equal_to(p2, 4), "p1 == p2");
 
   inst p3[5] = {inst(STXB, 10, -1, 1),
                 inst(JEQXY, 0, 1, 0),
@@ -101,8 +99,8 @@ void test2() {
                 inst(LDXB, 0, 10, -1),
                 inst(EXIT),
                };
-  vld.set_orig(p3, 5, m_layout);
-  print_test_res(vld.is_equal_to(p4, 4, m_layout), "p3 == p4");
+  vld.set_orig(p3, 5);
+  print_test_res(vld.is_equal_to(p4, 4), "p3 == p4");
 
   // test no jmp
   inst p5[8] = {inst(STXB, 10, -1, 1),
@@ -122,16 +120,13 @@ void test2() {
                 inst(LDXB, 0, 10, -1),
                 inst(EXIT),
                };
-  vld.set_orig(p5, 8, m_layout);
-  print_test_res(vld.is_equal_to(p6, 7, m_layout), "p5 == p6");
+  vld.set_orig(p5, 8);
+  print_test_res(vld.is_equal_to(p6, 7), "p5 == p6");
 }
 
 void test3() {
   std::cout << "test 3:" << endl;
-  smt_mem_layout m_layout;
   // set memory layout: stack | map1 | map2
-  m_layout.add_map(map_attr(8, 8, 32));
-  m_layout.add_map(map_attr(16, 32, 32));
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
   mem_t::add_map(map_attr(16, 32, 32));
@@ -140,7 +135,7 @@ void test3() {
   string k1_str = "11";
   // TODO: when safety check is added, these map related programs need to be modified
   // after calling map_update function, r1-r5 are unreadable.
-  // r0 = *(lookup &k (update &k &v m)), where k = k1, v = L8(input)
+  // map0[k1] = L8(input), output = L8(input)
   inst p1[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = k1
                  inst(STXB, 10, -1, 1),
@@ -155,6 +150,7 @@ void test3() {
                  inst(LDXB, 0, 0, 0),
                  inst(EXIT),
                 };
+  // map0[k1] = L8(input), output = L8(input)
   inst p11[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
@@ -167,9 +163,10 @@ void test3() {
                   inst(LDXB, 0, 10, -2),
                   inst(EXIT),
                  };
-  validator vld(p1, 13, m_layout);
-  print_test_res(vld.is_equal_to(p1, 13, m_layout), "map helper function 1.1");
-  print_test_res(vld.is_equal_to(p11, 11, m_layout), "map helper function 1.2");
+  validator vld(p1, 13);
+  print_test_res(vld.is_equal_to(p1, 13), "map helper function 1.1");
+  print_test_res(vld.is_equal_to(p11, 11), "map helper function 1.2");
+
   // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
   inst p2[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
@@ -200,9 +197,9 @@ void test3() {
                   inst(LDXB, 0, 0, 0),
                   inst(EXIT),
                  };
-  vld.set_orig(p2, 14, m_layout);
-  print_test_res(vld.is_equal_to(p2, 14, m_layout), "map helper function 2.1");
-  print_test_res(vld.is_equal_to(p21, 13, m_layout), "map helper function 2.2");
+  vld.set_orig(p2, 14);
+  print_test_res(vld.is_equal_to(p2, 14), "map helper function 2.1");
+  print_test_res(vld.is_equal_to(p21, 13), "map helper function 2.2");
   // r0 = *(lookup &k m), where k = 0x11, v = L8(input)
   inst p3[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                 inst(STXB, 10, -1, 1),
@@ -214,8 +211,8 @@ void test3() {
                 inst(LDXB, 0, 0, 0),
                 inst(EXIT),
                };
-  vld.set_orig(p3, 9, m_layout);
-  print_test_res(vld.is_equal_to(p3, 9, m_layout), "map helper function 3.1");
+  vld.set_orig(p3, 9);
+  print_test_res(vld.is_equal_to(p3, 9), "map helper function 3.1");
 
   inst p4[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
@@ -241,8 +238,8 @@ void test3() {
                  inst(LDXB, 0, 0, 0),  // r0 = map0[k1]
                  inst(EXIT),
                 };
-  vld.set_orig(p4, 13, m_layout);
-  print_test_res(vld.is_equal_to(p41, 9, m_layout) == 0, "map helper function 4.1");
+  vld.set_orig(p4, 13);
+  print_test_res(vld.is_equal_to(p41, 9) == 0, "map helper function 4.1");
 
   // upd &k1 &input (del &k1 m0), output = 0
   inst p5[12] = {inst(STXB, 10, -2, 1), // *addr_v = r1
@@ -271,9 +268,9 @@ void test3() {
                   inst(MOV64XC, 0, 0),
                   inst(EXIT),
                  };
-  vld.set_orig(p5, 12, m_layout);
-  print_test_res(vld.is_equal_to(p5, 12, m_layout) == 1, "map helper function 5.1");
-  print_test_res(vld.is_equal_to(p51, 11, m_layout) == 1, "map helper function 5.2");
+  vld.set_orig(p5, 12);
+  print_test_res(vld.is_equal_to(p5, 12) == 1, "map helper function 5.1");
+  print_test_res(vld.is_equal_to(p51, 11) == 1, "map helper function 5.2");
 
   // if k1 in map0, map0[k1]+=1, output=0
   inst p6[12] = {inst(MOV64XC, 1, k1),
@@ -307,18 +304,18 @@ void test3() {
                   inst(MOV64XC, 0, 0),
                   inst(EXIT),
                  };
-  vld.set_orig(p6, 12, m_layout);
-  print_test_res(vld.is_equal_to(p6, 12, m_layout) == 1, "map helper function 6.1");
-  print_test_res(vld.is_equal_to(p61, 16, m_layout) == 1, "map helper function 6.2");
-  vld.set_orig(p61, 16, m_layout);
-  print_test_res(vld.is_equal_to(p61, 16, m_layout) == 1, "map helper function 6.3");
-  print_test_res(vld.is_equal_to(p6, 12, m_layout) == 1, "map helper function 6.4");
+  vld.set_orig(p6, 12);
+  print_test_res(vld.is_equal_to(p6, 12) == 1, "map helper function 6.1");
+  print_test_res(vld.is_equal_to(p61, 16) == 1, "map helper function 6.2");
+  vld.set_orig(p61, 16);
+  print_test_res(vld.is_equal_to(p61, 16) == 1, "map helper function 6.3");
+  print_test_res(vld.is_equal_to(p6, 12) == 1, "map helper function 6.4");
 }
 
 void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
-    string test_name, validator& vld, prog_state& ps, smt_mem_layout& m_layout) {
-  vld.set_orig(p1, len1, m_layout);
-  bool res_expected = (vld.is_equal_to(p2, len2, m_layout) == 0); // 0: not equal
+    string test_name, validator& vld, prog_state& ps) {
+  vld.set_orig(p1, len1);
+  bool res_expected = (vld.is_equal_to(p2, len2) == 0); // 0: not equal
   int64_t output0 = interpret(p1, len1, ps);
   int64_t output1 = interpret(p2, len2, ps);
   res_expected = res_expected && (output0 == output1);
@@ -331,10 +328,7 @@ void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
 void test4() {
   std::cout << "test 4: conversion from counter example to input memory "\
             "for interpreter" << endl;
-  smt_mem_layout m_layout;
   // set memory layout: stack | map1 | map2
-  m_layout.add_map(map_attr(8, 8, 32));
-  m_layout.add_map( map_attr(16, 32, 32));
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
   mem_t::add_map(map_attr(16, 32, 32)); // k_sz: 16 bits; v_sz: 32 bits; max_entirs: 32
@@ -370,12 +364,12 @@ void test4() {
                   inst(MOV64XC, 0, 0), // set the return value r0 = 0
                   inst(EXIT),
                  };
-  validator vld(p1, 14, m_layout);
+  validator vld(p1, 14);
   mem_t input_mem_expected;
   input_mem_expected.init_mem_by_layout();
   input_mem_expected.update_kv_in_map(map0, k1_str, (uint8_t*)(&v1));
   // check counter example is generated and the value of input memory
-  bool res_expected = (vld.is_equal_to(p11, 2, m_layout) == 0);// 0: not equal
+  bool res_expected = (vld.is_equal_to(p11, 11) == 0);// 0: not equal
   res_expected = res_expected && (vld._last_counterex_mem == input_mem_expected);
 
   prog_state ps;
@@ -408,9 +402,9 @@ void test4() {
   inst p13[2] = {inst(MOV64XC, 0, 0),
                  inst(EXIT),
                 };
-  vld.set_orig(p12, 14, m_layout);
+  vld.set_orig(p12, 14);
   // check counter example is generated and the value of input memory
-  res_expected = (vld.is_equal_to(p13, 2, m_layout) == 0); // 0: not equal
+  res_expected = (vld.is_equal_to(p13, 2) == 0); // 0: not equal
   res_expected = res_expected &&
                  (vld._last_counterex_mem._maps[map0]._k2idx.find(k1_str) !=
                   vld._last_counterex_mem._maps[map0]._k2idx.end());
@@ -444,8 +438,8 @@ void test4() {
                   inst(MOV64XC, 0, 0),
                   inst(EXIT),
                  };
-  chk_counterex_by_vld_to_interpreter(p2, 9, p21, 2, "2.1", vld, ps, m_layout);
-  chk_counterex_by_vld_to_interpreter(p2, 9, p22, 11, "2.2", vld, ps, m_layout);
+  chk_counterex_by_vld_to_interpreter(p2, 9, p21, 2, "2.1", vld, ps);
+  chk_counterex_by_vld_to_interpreter(p2, 9, p22, 11, "2.2", vld, ps);
 
   // r0 = 0xfffffffe if k1 not in map0, else r0 = 0; del map0[k1]
   inst p3[7] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
@@ -460,7 +454,7 @@ void test4() {
   inst p31[2] = {inst(MOV32XC, 0, 0xfffffffe),
                  inst(EXIT),
                 };
-  chk_counterex_by_vld_to_interpreter(p3, 7, p31, 2, "3", vld, ps, m_layout);
+  chk_counterex_by_vld_to_interpreter(p3, 7, p31, 2, "3", vld, ps);
 
   // r0 = &map0[k1] if k1 in map0, else r0 = 0
   inst p4[7] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
@@ -475,7 +469,7 @@ void test4() {
   inst p41[2] = {inst(MOV32XC, 0, 0),
                  inst(EXIT),
                 };
-  chk_counterex_by_vld_to_interpreter(p4, 7, p41, 2, "4", vld, ps, m_layout);
+  chk_counterex_by_vld_to_interpreter(p4, 7, p41, 2, "4", vld, ps);
 }
 
 int main() {

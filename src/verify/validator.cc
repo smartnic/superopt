@@ -10,8 +10,8 @@ validator::validator() {
   _last_counterex_mem.init_mem_by_layout();
 }
 
-validator::validator(inst* orig, int length, smt_mem_layout& m_layout) {
-  set_orig(orig, length, m_layout);
+validator::validator(inst* orig, int length) {
+  set_orig(orig, length);
   _last_counterex_mem.init_mem_by_layout();
 }
 
@@ -22,14 +22,13 @@ validator::validator(expr fx, expr input, expr output) {
 validator::~validator() {}
 
 void validator::gen_counterex(model& m, vector<expr>& op_pc_synth,
-                              vector<smt_var>& op_mem_synth,
-                              smt_mem_layout& m_layout) {
+                              vector<smt_var>& op_mem_synth) {
   expr input_orig = string_to_expr("input");
   expr output_orig = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
   _last_counterex.set_in_out((reg_t)m.eval(input_orig).get_numeral_uint64(), \
                              (reg_t)m.eval(output_orig).get_numeral_uint64());
   counterex_2_input_mem(_last_counterex_mem, m, _op_pc_orig, _op_mem_orig,
-                        op_pc_synth, op_mem_synth, m_layout);
+                        op_pc_synth, op_mem_synth);
 }
 
 int validator::is_smt_valid(expr& smt, model& mdl) {
@@ -52,12 +51,12 @@ int validator::is_smt_valid(expr& smt, model& mdl) {
 // for eBPF, r10=bottom_of_stack
 // todo: move pre constrain setting as a call from class inst
 void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs,
-                        unsigned int input_reg, smt_mem_layout& m_layout) {
+                        unsigned int input_reg) {
   smt_var sv(prog_id, 0, num_regs);
   expr input = string_to_expr("input");
   // TODO: set input limit, need to be generalized
   expr p = (input >= -1024) && (input <= 1024);
-  p = p && inst::smt_set_pre(input, sv, m_layout);
+  p = p && inst::smt_set_pre(input, sv);
   pre = p;
 }
 
@@ -66,19 +65,18 @@ void validator::smt_pre(expr& pre, expr e) {
 }
 
 void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2,
-                         vector<expr>& op_pc_synth, vector<smt_var>& op_mem_synth,
-                         smt_mem_layout& m_layout) {
+                         vector<expr>& op_pc_synth, vector<smt_var>& op_mem_synth) {
   pst = (string_to_expr("output" + to_string(prog_id1)) == \
          string_to_expr("output" + to_string(prog_id2))) &&
-        smt_pgm_mem_eq_chk(_op_pc_orig, _op_mem_orig, op_pc_synth, op_mem_synth, m_layout);
+        smt_pgm_mem_eq_chk(_op_pc_orig, _op_mem_orig, op_pc_synth, op_mem_synth);
 }
 
 // calculate and store pre_orig, ps_orign
-void validator::set_orig(inst* orig, int length, smt_mem_layout& m_layout) {
-  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg(), m_layout);
+void validator::set_orig(inst* orig, int length) {
+  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg());
   smt_prog ps_orig;
   try {
-    _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, length, m_layout);
+    _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, length);
   } catch (const string err_msg) {
     throw (err_msg);
     return;
@@ -94,13 +92,13 @@ void validator::set_orig(expr fx, expr input, expr output) {
   // no storing store_ps_orig here
 }
 
-int validator::is_equal_to(inst* synth, int length, smt_mem_layout& m_layout) {
+int validator::is_equal_to(inst* synth, int length) {
   expr pre_synth = string_to_expr("true");
-  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg(), m_layout);
+  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg());
   smt_prog ps_synth;
   expr pl_synth = string_to_expr("true");
   try {
-    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length, m_layout);
+    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length);
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
     // cerr << err_msg << endl;
@@ -110,9 +108,9 @@ int validator::is_equal_to(inst* synth, int length, smt_mem_layout& m_layout) {
   vector<smt_var> op_mem_synth;
   ps_synth.get_output_pc_mem(op_pc_synth, op_mem_synth);
   expr pre_same_mem = smt_pgm_set_same_input(_op_pc_orig, _op_mem_orig,
-                      op_pc_synth, op_mem_synth, m_layout);
+                      op_pc_synth, op_mem_synth);
   expr post = string_to_expr("true");
-  smt_post(post, VLD_PROG_ID_ORIG, VLD_PROG_ID_SYNTH, op_pc_synth, op_mem_synth, m_layout);
+  smt_post(post, VLD_PROG_ID_ORIG, VLD_PROG_ID_SYNTH, op_pc_synth, op_mem_synth);
   expr smt = implies(pre_same_mem && _pre_orig && pre_synth && _pl_orig && pl_synth, post);
   // store
   _store_post = post;
@@ -120,15 +118,14 @@ int validator::is_equal_to(inst* synth, int length, smt_mem_layout& m_layout) {
   model mdl(smt_c);
   int is_equal = is_smt_valid(smt, mdl);
   if (is_equal == 0) {
-    gen_counterex(mdl, op_pc_synth, op_mem_synth, m_layout);
+    gen_counterex(mdl, op_pc_synth, op_mem_synth);
   }
   return is_equal;
 }
 
-reg_t validator::get_orig_output(reg_t input, unsigned int num_regs,
-                                 unsigned int input_reg, smt_mem_layout& m_layout) {
+reg_t validator::get_orig_output(reg_t input, unsigned int num_regs, unsigned int input_reg) {
   expr input_logic = string_to_expr("false");
-  smt_pre(input_logic, VLD_PROG_ID_ORIG, num_regs, input_reg, m_layout);
+  smt_pre(input_logic, VLD_PROG_ID_ORIG, num_regs, input_reg);
   input_logic = (string_to_expr("input") == to_expr(input)) && input_logic;
   tactic t = tactic(smt_c, "bv");
   solver s = t.mk_solver();
