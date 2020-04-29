@@ -393,7 +393,7 @@ z3::expr smt_var::get_map_start_addr(int map_id) { // return value: z3 bv64
 
 z3::expr smt_var::get_map_end_addr(int map_id) { // return value: z3 bv64
   unsigned int number_entries = mem_t::map_max_entries(map_id);
-  unsigned int map_end_off = mem_t::get_mem_off_by_idx_in_map(map_id, number_entries);
+  unsigned int map_end_off = mem_t::get_mem_off_by_idx_in_map(map_id, number_entries) - 1;
   z3::expr map_end_addr = (mem_var._stack_start + to_expr((uint64_t)map_end_off)).simplify();
   return map_end_addr;
 }
