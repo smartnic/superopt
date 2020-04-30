@@ -1,5 +1,5 @@
 #include "../../src/utils.h"
-#include "../../src/isa/ebpf/inst.h"
+#include "../../src/isa/inst_header.h"
 #include "smt_prog.h"
 
 using namespace z3;

@@ -3,8 +3,13 @@
 #include <vector>
 #include <unordered_set>
 #include "../../src/utils.h"
-#include "../../src/verify/smt_var.h"
+#include "../../src/isa/inst_var.h"
+
+#if ISA_TOY_ISA
+#include "../../src/isa/toy-isa/inst_var.h"
+#elif ISA_EBPF
 #include "../../src/isa/ebpf/inst_var.h"
+#endif
 
 using namespace std;
 
@@ -81,6 +86,7 @@ class inst_base {
   z3::expr smt_inst(smt_var& sv) const {RAISE_EXCEPTION("inst::smt_inst");}
   // return SMT for the given OP_COND_JMP type instruction, other types return false
   z3::expr smt_inst_jmp(smt_var& sv) const {RAISE_EXCEPTION("inst::smt_inst_jmp");}
+  static z3::expr smt_set_pre(z3::expr input, smt_var& sv) {RAISE_EXCEPTION("inst::smt_set_pre");}
 };
 
 struct instHash {

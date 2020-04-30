@@ -6,7 +6,7 @@
 #include "z3++.h"
 #include "bpf.h"
 #include "../../../src/utils.h"
-#include "../../../src/verify/smt_var.h"
+#include "../../../src/isa/inst_var.h"
 #include "../../../src/isa/inst.h"
 #include "inst_codegen.h"
 #include "inst_var.h"

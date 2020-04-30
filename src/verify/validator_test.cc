@@ -1,6 +1,6 @@
 #include <iostream>
 #include "../../src/utils.h"
-#include "../../src/isa/toy-isa/inst.h"
+#include "../../src/isa/inst_header.h"
 #include "validator.h"
 
 using namespace z3;

@@ -7,7 +7,7 @@
 #include <queue>
 #include <string.h>
 #include "../../../src/utils.h"
-#include "../../../src/verify/smt_var.h"
+#include "../../../src/isa/inst_var.h"
 
 using namespace std;
 
@@ -150,14 +150,8 @@ class smt_mem {
 // map key: k_[prog_id]_[node_id]_[version_id]
 // map value: v_[prog_id]_[node_id]_[version_id]
 // map address of value: av_[prog_id]_[node_id]_[version_id]
-class smt_var {
+class smt_var: public smt_var_base {
  private:
-  // _name: [prog_id]_[node_id]
-  string _name;
-  // store the curId
-  vector<unsigned int> reg_cur_id;
-  vector<z3::expr> reg_var;
-  // store the curId of map related variables
   unsigned int mem_addr_id, is_vaild_id, key_cur_id,
            val_cur_id, addr_v_cur_id, map_helper_func_ret_cur_id;
  public:
@@ -166,10 +160,6 @@ class smt_var {
   // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs
   smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
   ~smt_var();
-  // inital value for [versionId] is 0, and increases when updated
-  z3::expr update_reg_var(unsigned int reg_id);
-  z3::expr get_cur_reg_var(unsigned int reg_id);
-  z3::expr get_init_reg_var(unsigned int reg_id);
   // map related functions
   z3::expr update_mem_addr();
   z3::expr update_is_valid();

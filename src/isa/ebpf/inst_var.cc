@@ -198,7 +198,6 @@ void mem_t::update_kv_in_map(int map_id, string k, uint8_t* addr_v) {
     idx = it->second;
   }
   unsigned int v_sz = _layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS;
-  memory_access_check((uint64_t)addr_v, v_sz);
   unsigned int off = get_mem_off_by_idx_in_map(map_id, idx);
   uint8_t* addr_v_dst = &_mem[off];
   memcpy(addr_v_dst, addr_v, sizeof(uint8_t)*v_sz);
@@ -267,6 +266,7 @@ void mem_t::memory_access_check(uint64_t addr, uint64_t num_bytes) {
                (addr <= (max_uint64 - num_bytes + 1));
   if (!legal) {
     string err_msg = "unsafe memory access";
+    cout << err_msg << endl;
     throw (err_msg);
   }
 }
@@ -352,14 +352,8 @@ ostream& operator<<(ostream& out, const smt_mem& s) {
 /* class smt_wt end */
 
 /* class smt_var start */
-smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs) {
-  reg_cur_id.resize(num_regs, 0);
-  _name = to_string(prog_id) + "_" + to_string(node_id);
-  string name_prefix = "r_" + _name + "_";
-  for (size_t i = 0; i < num_regs; i++) {
-    string name = name_prefix + to_string(i) + "_0";
-    reg_var.push_back(string_to_expr(name));
-  }
+smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs)
+  : smt_var_base(prog_id, node_id, num_regs) {
   mem_addr_id = 0;
   is_vaild_id = 0;
   key_cur_id = 0;
@@ -369,23 +363,6 @@ smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_re
 }
 
 smt_var::~smt_var() {
-}
-
-z3::expr smt_var::update_reg_var(unsigned int reg_id) {
-  reg_cur_id[reg_id]++;
-  string name = "r_" + _name + "_" + to_string(reg_id) \
-                + "_" + to_string(reg_cur_id[reg_id]);
-  reg_var[reg_id] = string_to_expr(name);
-  return get_cur_reg_var(reg_id);
-}
-
-z3::expr smt_var::get_cur_reg_var(unsigned int reg_id) {
-  return reg_var[reg_id];
-}
-
-z3::expr smt_var::get_init_reg_var(unsigned int reg_id) {
-  string name = "r_" + _name + "_" + to_string(reg_id) + "_0";
-  return string_to_expr(name);
 }
 
 z3::expr smt_var::update_mem_addr() {
@@ -438,10 +415,8 @@ z3::expr smt_var::get_map_end_addr(int map_id) { // return value: z3 bv64
 }
 
 void smt_var::clear() {
+  smt_var_base::clear();
   for (size_t i = 0; i < reg_var.size(); i++) {
-    reg_cur_id[i] = 0;
-    string name = "r_" + _name + "_" + to_string(i) + "_0";
-    reg_var[i] = string_to_expr(name);
     mem_addr_id = 0;
     is_vaild_id = 0;
     key_cur_id = 0;

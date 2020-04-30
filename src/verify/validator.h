@@ -4,7 +4,6 @@
 #include "../../src/utils.h"
 #include "../../src/inout.h"
 #include "../../src/isa/inst_header.h"
-#include "../../src/isa/ebpf/inst_var.h"
 #include "smt_prog.h"
 
 using namespace z3;

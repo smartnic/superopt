@@ -3,8 +3,9 @@
 #include <vector>
 #include <unordered_set>
 #include "z3++.h"
-#include "../../../src/verify/smt_var.h"
+#include "../../../src/isa/inst_var.h"
 #include "../../../src/isa/inst.h"
+#include "inst_var.h"
 #include "inst_codegen.h"
 
 using namespace std;
@@ -158,6 +159,7 @@ class inst: public inst_base {
   // smt
   z3::expr smt_inst(smt_var& sv) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;
+  static z3::expr smt_set_pre(z3::expr input, smt_var& sv);
 };
 
 int interpret(inst* program, int length, prog_state &ps, int input);

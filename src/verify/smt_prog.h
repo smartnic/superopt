@@ -4,7 +4,6 @@
 #include "z3++.h"
 #include "../../src/utils.h"
 #include "cfg.h"
-#include "smt_var.h"
 #include "../../src/isa/inst_header.h"
 
 using namespace z3;

@@ -7,7 +7,7 @@
 #include <random>
 #include "z3++.h"
 #include "../../../src/utils.h"
-#include "../../../src/verify/smt_var.h"
+#include "../../../src/isa/inst_var.h"
 #include "inst_var.h"
 
 using namespace std;

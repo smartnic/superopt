@@ -182,6 +182,16 @@ z3::expr inst::smt_inst_jmp(smt_var& sv) const {
   }
 }
 
+z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
+  z3::expr f = Z3_true;
+  f = (sv.get_cur_reg_var(0) == input);
+  for (size_t i = 2; i < NUM_REGS; i++) {
+    f = f && (sv.get_cur_reg_var(i) == 0);
+  }
+  return f;
+}
+
+
 int interpret(inst* program, int length, prog_state &ps, int input) {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
