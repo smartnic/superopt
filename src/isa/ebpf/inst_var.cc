@@ -414,6 +414,10 @@ z3::expr smt_var::get_map_end_addr(int map_id) { // return value: z3 bv64
   return map_end_addr;
 }
 
+void smt_var::get_from_previous_block(smt_var& sv) {
+  mem_var = sv.mem_var;
+}
+
 void smt_var::clear() {
   smt_var_base::clear();
   for (size_t i = 0; i < reg_var.size(); i++) {

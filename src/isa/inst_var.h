@@ -43,5 +43,6 @@ class smt_var_base {
   z3::expr update_reg_var(unsigned int reg_id);
   z3::expr get_cur_reg_var(unsigned int reg_id);
   z3::expr get_init_reg_var(unsigned int reg_id);
+  void init() {}
   void clear();
 };

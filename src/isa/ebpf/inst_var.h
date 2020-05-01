@@ -172,5 +172,7 @@ class smt_var: public smt_var_base {
   z3::expr get_stack_bottom_addr() {return (mem_var._stack_start + STACK_SIZE);}
   z3::expr get_map_start_addr(int map_id); // return value: z3 bv64
   z3::expr get_map_end_addr(int map_id); // return value: z3 bv64
+  void init() {mem_var.init_addrs_map_v_next_by_layout();}
+  void get_from_previous_block(smt_var& sv);
   void clear();
 };

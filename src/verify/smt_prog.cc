@@ -255,7 +255,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   for (size_t i = 0; i < blocks.size(); i++) {
     unsigned int b = blocks[i];
     smt_var sv(prog_id, b, num_regs);
-    sv.mem_var.init_addrs_map_v_next_by_layout();
+    sv.init();
     if (b == 0) {
       // generate f_bl: the block program logic
       expr f_bl = string_to_expr("true");
@@ -276,7 +276,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
           // are the same for different initial path conditions of this block
           sv.clear();
           // update sv with the memory write table from the previous basic block
-          sv.mem_var = post_sv[g.nodes_in[b][j]][k].mem_var;
+          sv.get_from_previous_block(post_sv[g.nodes_in[b][j]][k]);
           // generate f_bl: the block program logic
           expr f_bl = string_to_expr("true");
           gen_block_prog_logic(f_bl, sv, b, inst_lst);
