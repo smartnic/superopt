@@ -187,7 +187,7 @@ unsigned int mem_t::get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_ma
           idx_in_map * (_layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS));
 }
 
-void mem_t::update_kv_in_map(int map_id, string k, uint8_t* addr_v) {
+void mem_t::update_kv_in_map(int map_id, string k, const uint8_t* addr_v) {
   map_t& mp = _maps[map_id];
   auto it = mp._k2idx.find(k);
   unsigned int idx = 0;
@@ -201,6 +201,25 @@ void mem_t::update_kv_in_map(int map_id, string k, uint8_t* addr_v) {
   unsigned int off = get_mem_off_by_idx_in_map(map_id, idx);
   uint8_t* addr_v_dst = &_mem[off];
   memcpy(addr_v_dst, addr_v, sizeof(uint8_t)*v_sz);
+}
+
+void mem_t::update_kv_in_map(int map_id, string k, const vector<uint8_t>& v) {
+  map_t& mp = _maps[map_id];
+  auto it = mp._k2idx.find(k);
+  unsigned int idx = 0;
+  if (it == mp._k2idx.end()) {
+    idx = mp.get_and_update_next_idx();
+    mp._k2idx[k] = idx;
+  } else {
+    idx = it->second;
+  }
+  unsigned int v_sz = _layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS;
+  assert(v_sz == v.size());
+  unsigned int off = get_mem_off_by_idx_in_map(map_id, idx);
+  uint8_t* addr_v_dst = &_mem[off];
+  for (int i = 0; i < v_sz; i++) {
+    addr_v_dst[i] = v[i];
+  }
 }
 
 uint8_t* mem_t::get_stack_start_addr() const {
@@ -431,3 +450,113 @@ void smt_var::clear() {
   mem_var.clear();
 }
 /* class smt_var end */
+
+void prog_state::print() const {
+  prog_state_base::print();
+  cout << "Memory:" << endl;
+  cout << _mem << endl;
+}
+
+void prog_state::clear() {
+  prog_state_base::clear();
+  _mem.clear();
+}
+
+// insert/update kv in map
+void inout_t::update_kv(int map_id, string k, vector<uint8_t> v) {
+  assert(map_id < maps.size());
+  auto it = maps[map_id].find(k);
+  maps[map_id][k] = v;
+}
+
+bool inout_t::k_in_map(int map_id, string k) {
+  assert(map_id < maps.size());
+  auto it = maps[map_id].find(k);
+  if (it == maps[map_id].end()) return false;
+  return true;
+}
+
+void inout_t::clear() {
+  reg = 0;
+  for (int i = 0; i < maps.size(); i++) maps[i].clear();
+}
+
+void inout_t::init() {
+  reg = 0;
+  int n_maps = mem_t::maps_number();
+  maps.resize(n_maps);
+}
+
+bool inout_t::operator==(const inout_t &rhs) const {
+  // cout << "==" << endl;
+  // cout << hex << reg << " " << rhs.reg << " " << maps.size() << " " << rhs.maps.size() << dec << endl;
+  bool res = (reg == rhs.reg) && (maps.size() == rhs.maps.size());
+  // cout << res << endl;
+  if (! res) return false;
+  for (int i = 0; i < maps.size(); i++) {
+    // each map should be the same
+    for (auto it = maps[i].begin(); it != maps[i].end(); it++) {
+      // for each key in map, key should be found in rhs.map and
+      // the corresponding values should be equal
+      string k = it->first;
+      auto it_rhs = rhs.maps[i].find(k);
+      if (it_rhs == rhs.maps[i].end()) return false;
+
+      const vector<uint8_t>& v = it->second;
+      const vector<uint8_t>& v_rhs = it_rhs->second;
+      if (v.size() != v_rhs.size()) return false;
+      for (int j = 0; j < v.size(); j++) {
+        if (v[j] != v_rhs[j]) return false;
+      }
+    }
+  }
+  return true;
+}
+
+ostream& operator<<(ostream& out, const inout_t& x) {
+  out << "(hexadecimal)" << endl;
+  out << "register: " << hex << x.reg << dec << endl;
+  for (int i = 0; i < x.maps.size(); i++) {
+    out << "map " << i << ": ";
+    for (auto it = x.maps[i].begin(); it != x.maps[i].end(); it++) {
+      out << it->first << "," << uint8_t_vec_2_hex_str(it->second) << " ";
+    }
+    out << endl;
+  }
+  return out;
+}
+
+
+void update_ps_by_input(prog_state& ps, const inout_t& input) {
+  // cp input register
+  ps._regs[1] = input.reg;
+  // cp input map
+  ps._mem.clear();
+  for (int i = 0; i < input.maps.size(); i++) {
+    for (auto it = input.maps[i].begin(); it != input.maps[i].end(); it++) {
+      ps._mem.update_kv_in_map(i, it->first, it->second);
+    }
+  }
+}
+
+void update_output_by_ps(inout_t& output, const prog_state& ps) {
+  output.clear();
+  // cp register
+  output.reg = ps._regs[0];
+  // cp map
+  int n_maps = ps._mem.maps_number();
+  for (int i = 0; i < n_maps; i++) {
+    const map_t& mp = ps._mem._maps[i];
+    for (auto it = mp._k2idx.begin(); it != mp._k2idx.end(); it++) {
+      string key = it->first;
+      unsigned int idx = it->second;
+      unsigned int off = ps._mem.get_mem_off_by_idx_in_map(i, idx);
+      unsigned int v_sz = mem_t::map_val_sz(i) / NUM_BYTE_BITS;
+      vector<uint8_t> value(v_sz);
+      for (int j = 0; j < v_sz; j++) {
+        value[j] = ps._mem._mem[j + off];
+      }
+      output.update_kv(i, key, value);
+    }
+  }
+}

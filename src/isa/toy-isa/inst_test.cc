@@ -28,20 +28,33 @@ inst instructions4[3] = {inst(JMP, 1),
                          inst(RETX, 0),
                         };
 
-void test1(int input) {
+void test1(int input_reg) {
   prog_state ps;
+  inout_t input, output, expected;
+  input.init();
+  output.init();
+  expected.init();
   cout << "Test 1: full interpretation check" << endl;
-  print_test_res(interpret(instructions, 6, ps, input) == max(input + 4, 15),
-                 "interpret program 1");
 
-  print_test_res(interpret(instructions2, 4, ps, input) == max(input + 4, 15),
-                 "interpret program 2");
+  input.reg = input_reg;
+  expected.reg = max(input_reg + 4, 15);
+  interpret(output, instructions, 6, ps, input);
+  print_test_res(output == expected, "interpret program 1");
 
-  print_test_res(interpret(instructions3, 2, ps, input) == input,
-                 "interpret program 3");
+  input.reg = input_reg;
+  expected.reg = max(input_reg + 4, 15);
+  interpret(output, instructions2, 4, ps, input);
+  print_test_res(output == expected, "interpret program 2");
 
-  print_test_res(interpret(instructions4, 3, ps, input) == input,
-                 "interpret program 4");
+  input.reg = input_reg;
+  expected.reg = input_reg;
+  interpret(output, instructions3, 2, ps, input);
+  print_test_res(output == input, "interpret program 3");
+
+  input.reg = input_reg;
+  expected.reg = input_reg;
+  interpret(output, instructions4, 3, ps, input);
+  print_test_res(output == input, "interpret program 4");
 }
 
 void test2() {

@@ -66,3 +66,16 @@ bool is_little_endian() {
   if (*p == 1) return true;
   return false;
 }
+
+// convert uint8_t vector to hex string
+// e.g. addr[2] = {0x1, 0xff}, hex string: "01ff"
+string uint8_t_vec_2_hex_str(const vector<uint8_t>& a) {
+  stringstream ss;
+  ss << hex << setfill('0');
+
+  for (int i = 0; i < a.size(); i++) {
+    ss << hex << setw(2) << static_cast<int>(a[i]);
+  }
+
+  return ss.str();
+}

@@ -153,7 +153,7 @@ inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                            inst(ADD64XC, 3, -2),
-                           inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[r1] = 0x11
+                           inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[0x11] = L8(input)
                            inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
                            inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
                            inst(LDXB, 0, 0, 0),
@@ -193,115 +193,180 @@ void test1() {
   mem_t::add_map(map_attr(8, 8, 512));
   prog_state ps;
   ps._mem.init_mem_by_layout();
+  inout_t input, output, expected;
+  input.init();
+  output.init();
+  expected.init();
   cout << "Test 1: full interpretation check" << endl;
 
-  int64_t expected = 0xfffffffffffffffe;
-  print_test_res(interpret(instructions1, 3, ps) == expected, "interpret program 1");
+  expected.reg = 0xfffffffffffffffe;
+  interpret(output, instructions1, 3, ps, input);
+  print_test_res(output == expected, "interpret program 1");
 
-  expected = 0xfffffffe;
-  print_test_res(interpret(instructions2, 3, ps) == expected, "interpret program 2");
+  expected.reg = 0xfffffffe;
+  interpret(output, instructions2, 3, ps, input);
+  print_test_res(output == expected, "interpret program 2");
 
-  expected = 0;
-  print_test_res(interpret(instructions3, 9, ps) == expected, "interpret program 3");
+  expected.reg = 0;
+  interpret(output, instructions3, 9, ps, input);
+  print_test_res(output == expected, "interpret program 3");
 
-  expected = 0x100000001;
-  print_test_res(interpret(instructions4, 9, ps) == expected, "interpret program 4");
+  expected.reg = 0x100000001;
+  interpret(output, instructions4, 9, ps, input);
+  print_test_res(output == expected, "interpret program 4");
 
   bool is_le = is_little_endian();
-  if (is_le) expected = 0x4567;
-  else expected = 0x6745;
-  print_test_res(interpret(instructions5, 3, ps) == expected, "interpret program 5");
+  if (is_le) expected.reg = 0x4567;
+  else expected.reg = 0x6745;
+  interpret(output, instructions5, 3, ps, input);
+  print_test_res(output == expected, "interpret program 5");
 
-  if (is_le) expected = 0x01234567;
-  else expected = 0x67452301;
-  print_test_res(interpret(instructions6, 3, ps) == expected, "interpret program 6");
+  if (is_le) expected.reg = 0x01234567;
+  else expected.reg = 0x67452301;
+  interpret(output, instructions6, 3, ps, input);
+  print_test_res(output == expected, "interpret program 6");
 
-  if (is_le) expected = 0x6745;
-  else expected = 0x4567;
-  print_test_res(interpret(instructions7, 3, ps) == expected, "interpret program 7");
+  if (is_le) expected.reg = 0x6745;
+  else expected.reg = 0x4567;
+  interpret(output, instructions7, 3, ps, input);
+  print_test_res(output == expected, "interpret program 7");
 
-  if (is_le) expected = 0x67452301;
-  else expected = 0x01234567;
-  print_test_res(interpret(instructions8, 3, ps) == expected, "interpret program 8");
+  if (is_le) expected.reg = 0x67452301;
+  else expected.reg = 0x01234567;
+  interpret(output, instructions8, 3, ps, input);
+  print_test_res(output == expected, "interpret program 8");
 
-  if (is_le) expected = 0x0123456789abcdef;
-  else expected = 0xefcdab8967452301;
-  print_test_res(interpret(instructions9, 6, ps) == expected, "interpret program 9");
+  if (is_le) expected.reg = 0x0123456789abcdef;
+  else expected.reg = 0xefcdab8967452301;
+  interpret(output, instructions9, 6, ps, input);
+  print_test_res(output == expected, "interpret program 9");
 
-  if (is_le) expected = 0xefcdab8967452301;
-  else expected = 0x0123456789abcdef;
-  print_test_res(interpret(instructions10, 6, ps) == expected, "interpret program 10");
+  if (is_le) expected.reg = 0xefcdab8967452301;
+  else expected.reg = 0x0123456789abcdef;
+  interpret(output, instructions10, 6, ps, input);
+  print_test_res(output == expected, "interpret program 10");
 
-  expected = 0x7fffffff;
-  print_test_res(interpret(instructions11, 7, ps) == expected, "interpret rsh64 & rsh32");
+  expected.reg = 0x7fffffff;
+  interpret(output, instructions11, 7, ps, input);
+  print_test_res(output == expected, "interpret rsh64 & rsh32");
 
-  expected = 0xffffffff;
-  print_test_res(interpret(instructions12, 8, ps) == expected, "interpret arsh64 & arsh32");
+  expected.reg = 0xffffffff;
+  interpret(output, instructions12, 8, ps, input);
+  print_test_res(output == expected, "interpret arsh64 & arsh32");
 
-  expected = 0;
-  print_test_res(interpret(instructions13, 8, ps) == expected, "interpret jgt");
+  expected.reg = 0;
+  interpret(output, instructions13, 8, ps, input);
+  print_test_res(output == expected, "interpret jgt");
 
-  expected = 0;
-  print_test_res(interpret(instructions14, 7, ps) == expected, "interpret jsgt");
+  expected.reg = 0;
+  interpret(output, instructions14, 7, ps, input);
+  print_test_res(output == expected, "interpret jsgt");
 
-  expected = 0;
-  print_test_res(interpret(instructions15, 4, ps) == expected, "interpret jgt");
+  expected.reg = 0;
+  interpret(output, instructions15, 4, ps, input);
+  print_test_res(output == expected, "interpret jgt");
 
-  expected = 1;
-  print_test_res(interpret(instructions16, 3, ps, 1) == expected, "interpret ldxw & stxw 1");
-  expected = 0xffffffff;
-  print_test_res(interpret(instructions16, 3, ps, -1) == expected, "interpret ldxw & stxw 2");
+  input.reg = 1;
+  expected.reg = 1;
+  interpret(output, instructions16, 3, ps, input);
+  print_test_res(output == expected, "interpret ldxw & stxw 1");
+  expected.reg = 0xffffffff;
+  input.reg = -1;
+  interpret(output, instructions16, 3, ps, input);
+  print_test_res(output == expected, "interpret ldxw & stxw 2");
 
-  expected = 1;
-  print_test_res(interpret(instructions17, 3, ps, 1) == expected, "interpret ldxb & stxb 1");
-  expected = 0x78;
-  print_test_res(interpret(instructions17, 3, ps, 0x12345678) == expected, "interpret ldxb & stxb 2");
+  input.reg = 1;
+  expected.reg = 1;
+  interpret(output, instructions17, 3, ps, input);
+  print_test_res(output == expected, "interpret ldxb & stxb 1");
+  expected.reg = 0x78;
+  input.reg = 0x12345678;
+  interpret(output, instructions17, 3, ps, input);
+  print_test_res(output == expected, "interpret ldxb & stxb 2");
 
-  expected = 1;
-  print_test_res(interpret(instructions18, 3, ps, 1) == expected, "interpret ldxh & stxh 1");
-  expected = 0x5678;
-  print_test_res(interpret(instructions18, 3, ps, 0x12345678) == expected, "interpret ldxh & stxh 2");
+  input.reg = 1;
+  expected.reg = 1;
+  interpret(output, instructions18, 3, ps, input);
+  print_test_res(output == expected, "interpret ldxh & stxh 1");
+  expected.reg = 0x5678;
+  input.reg = 0x12345678;
+  interpret(output, instructions18, 3, ps, input);
+  print_test_res(output == expected, "interpret ldxh & stxh 2");
 
-  expected = 0x100000001;
-  print_test_res(interpret(instructions19, 6, ps, 1) == expected, "interpret ldxdw & stxdw 1");
-  expected = 0x1234567812345678;
-  print_test_res(interpret(instructions19, 6, ps, 0x12345678) == expected, "interpret ldxdw & stxdw 2");
+  input.reg = 1;
+  expected.reg = 0x100000001;
+  interpret(output, instructions19, 6, ps, input);
+  print_test_res(output == expected, "interpret ldxdw & stxdw 1");
+  expected.reg = 0x1234567812345678;
+  input.reg = 0x12345678;
+  interpret(output, instructions19, 6, ps, input);
+  print_test_res(output == expected, "interpret ldxdw & stxdw 2");
 
-  expected = 1;
-  print_test_res(interpret(instructions20, 3, ps, 1) == expected, "interpret ldxb & stxh 1");
-  expected = 0x78;
-  print_test_res(interpret(instructions20, 3, ps, 0x12345678) == expected, "interpret ldxb & stxh 2");
+  input.reg = 1;
+  expected.reg = 1;
+  interpret(output, instructions20, 3, ps, input);
+  print_test_res(output == expected, "interpret ldxb & stxh 1");
+  expected.reg = 0x78;
+  input.reg = 0x12345678;
+  interpret(output, instructions20, 3, ps, input);
+  print_test_res(output == expected, "interpret ldxb & stxh 2");
 
-  expected = 0x56;
-  print_test_res(interpret(instructions21, 13, ps, 0x123456) == expected, "interpret map helper function 1.1");
-  expected = 0x0f;
-  print_test_res(interpret(instructions21, 13, ps, expected) == expected, "interpret map helper function 1.2");
+  input.reg = 0x123456;
+  expected.reg = 0x56;
+  expected.update_kv(0, "11", vector<uint8_t> {0x56});
+  interpret(output, instructions21, 13, ps, input);
+  print_test_res(output == expected, "interpret map helper function 1.1");
 
-  expected = 0;
-  print_test_res(interpret(instructions22, 14, ps, 0x56) == expected, "interpret map helper function 2.1");
-  expected = 0;
-  print_test_res(interpret(instructions22, 14, ps, 0x0f) == expected, "interpret map helper function 2.2");
+  expected.reg = 0x0f;
+  input.reg = 0x0f;
+  expected.update_kv(0, "11", vector<uint8_t> {0x0f});
+  interpret(output, instructions21, 13, ps, input);
+  print_test_res(output == expected, "interpret map helper function 1.2");
 
-  mem_t input_mem;
-  input_mem.init_mem_by_layout();
-  int64_t v = 0x1f;
-  expected = v;
+  input.reg = 0x56;
+  expected.reg = 0;
+  interpret(output, instructions22, 14, ps, input);
+  print_test_res(output == expected, "interpret map helper function 2.1");
+  input.reg = 0x0f;
+  expected.reg = 0;
+  interpret(output, instructions22, 14, ps, input);
+  print_test_res(output == expected, "interpret map helper function 2.2");
+
+  // r0 = L8(input), map0[0x11] = L8(input)
+  input.reg = 0x1f;
+  expected.reg = 0x1f;
+  expected.update_kv(0, "11", vector<uint8_t> {0x1f});
   // r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
-  interpret(instructions21, 13, ps, v);
-  input_mem = ps._mem;
+  interpret(output, instructions21, 13, ps, input);
+  input = output;
+  output.clear();
   // r0 = *(lookup &k m), where k = 0x11
-  print_test_res(interpret(instructions23, 9, ps, 0, &input_mem) == expected, "interpret map input 1");
-  input_mem = ps._mem;
-  expected = 0;
+  interpret(output, instructions23, 9, ps, input);
+  print_test_res(output == expected, "interpret map input 1");
+
+  input = output;
+  output.clear();
+  // r0 = 0, no kv in map0
+  expected.reg = 0;
   // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
-  interpret(instructions22, 14, ps, v, &input_mem);
-  input_mem = ps._mem;
-  print_test_res(interpret(instructions23, 9, ps, 0, &input_mem) == expected, "interpret map input 2");
-  input_mem = ps._mem;
-  expected = v;
-  interpret(instructions21, 13, ps, v);
-  input_mem = ps._mem;
-  print_test_res(interpret(instructions23, 9, ps, 0, &input_mem) == expected, "interpret map input 3");
+  interpret(output, instructions22, 14, ps, input);
+  // r0 = *(lookup &k m), where k = 0x11
+  input = output;
+  output.clear();
+  interpret(output, instructions23, 9, ps, input);
+  print_test_res(output == expected, "interpret map input 2");
+
+  input = output;
+  input.reg = 0x1f;
+  output.clear();
+  // r0 = L8(input), map0[0x11] = L8(input)
+  expected.reg = 0x1f;
+  expected.update_kv(0, "11", vector<uint8_t> {0x1f});
+  interpret(output, instructions21, 13, ps, input);
+  input = output;
+  output.clear();
+  interpret(output, instructions23, 9, ps, input);
+  print_test_res(output == expected, "interpret map input 3");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output) {
@@ -683,11 +748,14 @@ void test5() {
   prog_state ps;
   mem_t::_layout.clear();
   ps._mem.init_mem_by_layout();
+  inout_t input, output;
+  input.init();
+  output.init();
   string msg = "";
 #define SMT_CHECK_MEM_SAFE(insns, len, check_expr, test_name) \
   msg = "";\
   try { \
-    interpret(insns, len, ps);\
+    interpret(output, insns, len, ps, input);\
   } catch (const string err_msg) {\
     msg = err_msg;\
   } \

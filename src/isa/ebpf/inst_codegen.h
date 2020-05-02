@@ -131,7 +131,7 @@ z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2);
 // For the conversion from counterexample (z3 model from validator)
 // to input memory (mem_t) for interpreter
 string z3_bv_2_hex_str(z3::expr z3_bv);
-void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl, smt_var& sv);
+void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv);
 
 /* APIS for unit tests end */
 

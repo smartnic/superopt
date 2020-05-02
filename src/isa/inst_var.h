@@ -46,3 +46,19 @@ class smt_var_base {
   void init() {}
   void clear();
 };
+
+class prog_state_base {
+  int _pc = 0; /* Assume only straight line code execution for now */
+ public:
+  vector<reg_t> _regs; /* assume only registers for now */
+  void print() const;
+  void clear();
+};
+
+class inout_t_base {
+ public:
+  void clear() {RAISE_EXCEPTION("inout_t::clear()");}
+  void init() {RAISE_EXCEPTION("inout_t::init()");}
+  bool operator==(const inout_t_base &rhs) const {RAISE_EXCEPTION("inout_t::operator==");}
+  friend ostream& operator<<(ostream& out, const inout_t_base& x) {RAISE_EXCEPTION("inout_t::operator<<");}
+};

@@ -71,3 +71,16 @@ void smt_var_base::clear() {
     reg_var[i] = string_to_expr(name);
   }
 }
+
+void prog_state_base::print() const {
+  for (int i = 0; i < _regs.size(); i++) {
+    cout << "Register "  << i << " " << _regs[i] << endl;
+  }
+};
+
+void prog_state_base::clear() {
+  _pc = 0;
+  for (int i = 0; i < _regs.size(); i++) {
+    _regs[i] = 0;
+  }
+};

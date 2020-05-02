@@ -13,7 +13,6 @@
 
 using namespace std;
 
-static constexpr int NUM_REGS = 11;
 static constexpr int MAX_PROG_LEN = 7;
 // Max number of operands in one instruction
 static constexpr int MAX_OP_LEN = 3;
@@ -409,14 +408,6 @@ static const int optable[NUM_INSTR] = {
 //   uint64_t _stack_addr = (uint64_t)&_mem[MEM_SIZE - 1] + 1;
 // };
 
-class prog_state: public prog_state_base {
- public:
-  mem_t _mem;
-  prog_state() {_regs.resize(NUM_REGS, 0);}
-  void print();
-  void clear();
-};
-
 class inst: public inst_base {
  private:
   void set_imm(int op_value);
@@ -468,4 +459,4 @@ class inst: public inst_base {
   string get_bytecode_str() const;
 };
 
-int64_t interpret(inst* program, int length, prog_state &ps, int64_t input = 0, const mem_t* input_mem = nullptr);
+void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);

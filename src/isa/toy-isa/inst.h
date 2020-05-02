@@ -10,7 +10,6 @@
 
 using namespace std;
 
-static constexpr int NUM_REGS = 4;
 static constexpr int MAX_PROG_LEN = 7;
 // Max number of operands in one instruction
 static constexpr int MAX_OP_LEN = 3;
@@ -122,11 +121,6 @@ static constexpr int optable[NUM_INSTR] = {
 #undef JMP_OPS
 #undef UNUSED_OPS
 
-class prog_state: public prog_state_base {
- public:
-  prog_state() {_regs.resize(NUM_REGS, 0);}
-};
-
 class inst: public inst_base {
  public:
   inst(int opcode = NOP, int arg1 = 0, int arg2 = 0, int arg3 = 0) {
@@ -162,4 +156,4 @@ class inst: public inst_base {
   static z3::expr smt_set_pre(z3::expr input, smt_var& sv);
 };
 
-int interpret(inst* program, int length, prog_state &ps, int input);
+void interpret(inout_t& output, inst* program, int length, prog_state &ps, inout_t& input);

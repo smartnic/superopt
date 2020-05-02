@@ -2,6 +2,9 @@
 
 #include <vector>
 #include <iostream>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -35,9 +38,18 @@ typedef int op_t;
 #define L16(v) (0x000000000000ffff & v)
 #define L32(v) (0x00000000ffffffff & v)
 
+#define RAISE_EXCEPTION(x) {\
+  string err_msg = string(x) + string(" has not been implemented"); \
+  cerr << err_msg << endl;\
+  throw (err_msg); \
+}
+
 void print_test_res(bool res, string test_name);
 void gen_random_input(vector<reg_t>& inputs, reg_t min, reg_t max);
 ostream& operator<<(ostream& out, const vector<double>& vec);
 void split_string(const string& s, vector<string>& v, const string& c);
 unsigned int pop_count_asm(unsigned int x);
 bool is_little_endian();
+// convert uint8_t vector to hex string
+// e.g. addr[2] = {0x1, 0xff}, hex string: "01ff"
+string uint8_t_vec_2_hex_str(const vector<uint8_t>& a);

@@ -5,20 +5,6 @@
 
 using namespace std;
 
-void prog_state::print() {
-  prog_state_base::print();
-  cout << "Memory:" << endl;
-  for (int i = 0; i < _mem._mem_size; i++) {
-    cout << (unsigned int)_mem._mem[i] << " ";
-  }
-  cout << endl;
-}
-
-void prog_state::clear() {
-  prog_state_base::clear();
-  _mem.clear();
-}
-
 inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
   int32_t arg[3] = {arg1, arg2, arg3};
   _opcode = opcode;
@@ -504,7 +490,7 @@ string inst::get_bytecode_str() const {
           + "}");
 }
 
-int64_t interpret(inst* program, int length, prog_state &ps, int64_t input, const mem_t* input_mem) {
+void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input) {
 #undef IMM
 #undef OFF
 #undef MEM
@@ -575,10 +561,8 @@ int64_t interpret(inst* program, int length, prog_state &ps, int64_t input, cons
 
   inst* insn = program;
   ps.clear();
-  ps._regs[1] = input;
-  if (input_mem != nullptr) {
-    ps._mem.cp_input_mem(*input_mem);
-  }
+  update_ps_by_input(ps, input);
+
   // set r10 as frame pointer, the bottom of the stack
   ps._regs[10] = (uint64_t)ps._mem.get_stack_bottom_addr();
 
@@ -684,13 +668,14 @@ INSN_CALL:
   CONT;
 
 INSN_EXIT:
-  return ps._regs[0];
+  update_output_by_ps(output, ps);
+  return;
 
 error_label:
   cout << "Error in processing instruction; unknown opcode" << endl;
-  return -1;
+  return; /* return default output value */
 
 out:
-  //cout << "Error: program terminated without RET; returning R0" << endl;
-  return ps._regs[0]; /* return default R0 value */
+  update_output_by_ps(output, ps);
+  return;
 }

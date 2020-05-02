@@ -1254,7 +1254,7 @@ void test11() {
   print_test_res(z3_bv_2_hex_str(z3_bv64) == expected, "4");
 }
 
-void get_input_mem_after_lookup_ld(mem_t& input_mem, z3::expr v_ulookup,
+void get_input_mem_after_lookup_ld(inout_t& input, z3::expr v_ulookup,
                                    z3::expr addr_map, z3::expr addr_k, unsigned int v_sz,
                                    z3::expr& f, z3::expr& f_pc,
                                    smt_var& sv1, smt_var& sv2) {
@@ -1273,7 +1273,7 @@ void get_input_mem_after_lookup_ld(mem_t& input_mem, z3::expr v_ulookup,
   z3::expr smt = z3::implies(f && f_same_input && f_pc, f_equal);
   z3::model mdl(smt_c);
   get_counterex_model(mdl, smt);
-  counterex_urt_2_input_map(input_mem, mdl, sv1);
+  counterex_urt_2_input_map(input, mdl, sv1);
 }
 
 void test12() {
@@ -1316,36 +1316,37 @@ void test12() {
 
   // update to help create counter-example model
   z3::expr f = predicate_map_update_helper(addr_map1, addr_k4, addr_v4, new_out(), sv1);
-  mem_t input_mem;
-  input_mem.init_mem_by_layout();
-  mem_t input_mem_expected;
-  input_mem_expected.init_mem_by_layout();
+  inout_t input;
+  input.init();
+  inout_t input_expected;
+  input_expected.init();
+  // input_mem_expected.init_mem_by_layout();
   z3::expr f_pc = Z3_true;
   // test 1: uinitialized lookup of map1[k1]
-  uint8_t v_ulookup_k1[1] = {0x12};
+  vector<uint8_t> v_ulookup_k1 = {0x12};
   z3::expr v_ulookup_k1_expr = v(0x12);
-  get_input_mem_after_lookup_ld(input_mem, v_ulookup_k1_expr, addr_map1, addr_k1, 8,
+  get_input_mem_after_lookup_ld(input, v_ulookup_k1_expr, addr_map1, addr_k1, 8,
                                 f, f_pc, sv1, sv2);
-  input_mem_expected.update_kv_in_map(map1, k1_str, v_ulookup_k1);
-  print_test_res(input_mem == input_mem_expected, "uinitialized lookup of map1[k1]");
+  input_expected.update_kv(map1, k1_str, v_ulookup_k1);
+  print_test_res(input == input_expected, "uinitialized lookup of map1[k1]");
   // test 2: uinitialized lookup of map2[k2]
-  uint8_t v_ulookup_k2[4] = {0x78, 0x56, 0x04, 0x03}; // little endian
+  vector<uint8_t> v_ulookup_k2 = {0x78, 0x56, 0x04, 0x03}; // little endian
   z3::expr v_ulookup_k2_expr = v(0x03045678);
-  get_input_mem_after_lookup_ld(input_mem, v_ulookup_k2_expr, addr_map2, addr_k2, 32,
+  get_input_mem_after_lookup_ld(input, v_ulookup_k2_expr, addr_map2, addr_k2, 32,
                                 f, f_pc, sv1, sv2);
-  input_mem_expected.update_kv_in_map(map2, k2_str, v_ulookup_k2);
-  print_test_res(input_mem == input_mem_expected, "uinitialized lookup of map2[k2]");
+  input_expected.update_kv(map2, k2_str, v_ulookup_k2);
+  print_test_res(input == input_expected, "uinitialized lookup of map2[k2]");
   // test 3: another uinitialized lookup of map1[k1]
-  get_input_mem_after_lookup_ld(input_mem, v_ulookup_k1_expr, addr_map1, addr_k1, 8,
+  get_input_mem_after_lookup_ld(input, v_ulookup_k1_expr, addr_map1, addr_k1, 8,
                                 f, f_pc, sv1, sv2);
-  print_test_res(input_mem == input_mem_expected, "uinitialized lookup of map1[k1]");
+  print_test_res(input == input_expected, "uinitialized lookup of map1[k1]");
   // test 4: another uinitialized lookup of map1[k3]
-  uint8_t v_ulookup_k3[1] = {0x09};
+  vector<uint8_t> v_ulookup_k3 = {0x09};
   z3::expr v_ulookup_k3_expr = v(0x09);
-  get_input_mem_after_lookup_ld(input_mem, v_ulookup_k3_expr, addr_map1, addr_k3, 8,
+  get_input_mem_after_lookup_ld(input, v_ulookup_k3_expr, addr_map1, addr_k3, 8,
                                 f, f_pc, sv1, sv2);
-  input_mem_expected.update_kv_in_map(map1, k3_str, v_ulookup_k3);
-  print_test_res(input_mem == input_mem_expected, "uinitialized lookup of map1[k3]");
+  input_expected.update_kv(map1, k3_str, v_ulookup_k3);
+  print_test_res(input == input_expected, "uinitialized lookup of map1[k3]");
 }
 
 int main() {

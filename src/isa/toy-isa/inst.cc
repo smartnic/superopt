@@ -192,12 +192,12 @@ z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
 }
 
 
-int interpret(inst* program, int length, prog_state &ps, int input) {
+void interpret(inout_t& output, inst* program, int length, prog_state &ps, inout_t& input) {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
   inst *insn = program;
   ps.clear();
-  ps._regs[0] = input;
+  ps._regs[0] = input.reg;
 
   static void *jumptable[NUM_INSTR] = {
     [NOP]   = && INSN_NOP,
@@ -247,10 +247,12 @@ INSN_MOVXC:
   CONT;
 
 INSN_RETX:
-  return DST;
+  output.reg = DST;
+  return;
 
 INSN_RETC:
-  return IMM1;
+  output.reg = IMM1;
+  return;
 
 INSN_MAXC:
   DST = compute_max(DST, IMM2, DST);
@@ -279,9 +281,10 @@ INSN_JMP:
 
 error_label:
   cout << "Error in processing instruction; unknown opcode" << endl;
-  return -1;
+  return; /* return the default output */
 
 out:
   //cout << "Error: program terminated without RET; returning R0" << endl;
-  return ps._regs[0]; /* return default R0 value */
+  output.reg = ps._regs[0];
+  return;
 }

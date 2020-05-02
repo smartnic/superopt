@@ -12,6 +12,8 @@
 using namespace std;
 
 #define STACK_SIZE 512 // 512 bytes
+// static constexpr int NUM_REGS = 11;
+static constexpr int NUM_REGS = 11;
 
 struct map_attr { // map attribute
   unsigned int key_sz;
@@ -69,7 +71,8 @@ class mem_t {
   void init_mem_by_layout();
   static void set_map_attr(int map_id, map_attr m_attr);
   static unsigned int get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map);
-  void update_kv_in_map(int map_id, string k, uint8_t* addr_v); // get v_sz from layout
+  void update_kv_in_map(int map_id, string k, const uint8_t* addr_v); // get v_sz from layout
+  void update_kv_in_map(int map_id, string k, const vector<uint8_t>& v);
   uint8_t* get_stack_start_addr() const;
   // designed for r10
   uint8_t* get_stack_bottom_addr() const;
@@ -176,3 +179,31 @@ class smt_var: public smt_var_base {
   void get_from_previous_block(smt_var& sv);
   void clear();
 };
+
+class prog_state: public prog_state_base {
+ public:
+  mem_t _mem;
+  prog_state() {_regs.resize(NUM_REGS, 0);}
+  void print() const;
+  void clear();
+};
+
+// A class representing input/output type for input-output examples. now there is maps for
+// BPF maps, register for input/output register
+class inout_t: public inout_t_base {
+ public:
+  int64_t reg;
+  // kv map: k hex_string, v: vector<uint8_t>
+  vector<unordered_map<string, vector<uint8_t>>> maps;
+  // insert/update kv in map
+  void update_kv(int map_id, string k, vector<uint8_t> v);
+  // return whether k is in the map
+  bool k_in_map(int map_id, string k);
+  void clear();
+  void init();
+  bool operator==(const inout_t &rhs) const;
+  friend ostream& operator<<(ostream& out, const inout_t& x);
+};
+
+void update_ps_by_input(prog_state& ps, const inout_t& input);
+void update_output_by_ps(inout_t& output, const prog_state& ps);

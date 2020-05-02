@@ -4,19 +4,6 @@
 
 using namespace std;
 
-void prog_state_base::print() {
-  for (int i = 0; i < _regs.size(); i++) {
-    cout << "Register "  << i << " " << _regs[i] << endl;
-  }
-};
-
-void prog_state_base::clear() {
-  _pc = 0;
-  for (int i = 0; i < _regs.size(); i++) {
-    _regs[i] = 0;
-  }
-};
-
 void inst_base::to_abs_bv(vector<op_t>& abs_vec) const {
   const int num_args = _args.size();
   abs_vec.push_back(_opcode);

@@ -31,20 +31,6 @@ enum ISA_TYPES {
 #define RET_C 0   // return immediate number
 #define RET_X 1   // return register
 
-class prog_state_base {
-  int _pc = 0; /* Assume only straight line code execution for now */
- public:
-  vector<reg_t> _regs; /* assume only registers for now */
-  void print();
-  void clear();
-};
-
-#define RAISE_EXCEPTION(x) {\
-  string err_msg = string(x) + string(" has not been implemented"); \
-  cerr << err_msg << endl;\
-  throw (err_msg); \
-}
-
 class inst_base {
  public:
   int _opcode;
@@ -94,5 +80,5 @@ struct instHash {
 };
 
 /* inst.cc should support */
-// int interpret(inst* program, int length, prog_state &ps, int input);
+// void interpret(inout_t& output, inst* program, int length, prog_state &ps, inout_t& output);
 

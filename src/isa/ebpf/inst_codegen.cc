@@ -906,7 +906,7 @@ void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
   }
 }
 
-void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl, smt_var& sv) {
+void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv) {
   smt_map_wt& map_urt = sv.mem_var._map_table._urt;
   smt_wt& mem_urt = sv.mem_var._mem_table._urt;
   vector<pair< uint64_t, uint8_t>> mem_addr_val;
@@ -925,30 +925,20 @@ void counterex_urt_2_input_map(mem_t& input_mem, z3::model& mdl, smt_var& sv) {
     int map_id = z3_addr_map.get_numeral_int();
     z3::expr z3_k = mdl.eval(map_urt.key[i]);
     string k = z3_bv_2_hex_str(z3_k);
-    map_t& mp = input_mem._maps[map_id];
-    if (mp._k2idx.find(k) == mp._k2idx.end()) {
-      unsigned int idx = mp._cur_max_entries;
-      mp._cur_max_entries++;
-      mp._k2idx[k] = idx;
+    if (! input.k_in_map(map_id, k)) {
       unsigned int val_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
-
       vector<uint8_t> v(val_sz);
       // get the corresponding "v" according to "addr_v"
       get_v_from_addr_v(v, addr_v, mem_addr_val);
-      // get memory off according to the idx
-      unsigned int mem_off = input_mem.get_mem_off_by_idx_in_map(map_id, idx);
-      // copy "v" to the memory
-      for (int i = 0; i < v.size(); i++) {
-        input_mem._mem[mem_off + i] = v[i];
-      }
+      input.update_kv(map_id, k, v);
     }
   }
 }
 
-void counterex_2_input_mem(mem_t& input_mem, z3::model& mdl,
+void counterex_2_input_mem(inout_t& input, z3::model& mdl,
                            vector<z3::expr>& pc1, vector<smt_var>& sv1,
                            vector<z3::expr>& pc2, vector<smt_var>& sv2) {
-  input_mem.clear();
+  input.clear();
   // Get the memory tables generated the true path condition, i.e.,
   // the path condition that program1 and program2 execute for the
   // input of counter example model. These tables are the final outputs
@@ -978,10 +968,10 @@ void counterex_2_input_mem(mem_t& input_mem, z3::model& mdl,
   // update input memory for executing path condition first
   smt_map_wt& map_urt = sv1[sv1_id].mem_var._map_table._urt;
   smt_wt& mem_urt = sv1[sv1_id].mem_var._mem_table._urt;
-  counterex_urt_2_input_map(input_mem, mdl, sv1[sv1_id]);
+  counterex_urt_2_input_map(input, mdl, sv1[sv1_id]);
   smt_map_wt& map_urt_2 = sv2[sv2_id].mem_var._map_table._urt;
   smt_wt& mem_urt_2 = sv2[sv2_id].mem_var._mem_table._urt;
-  counterex_urt_2_input_map(input_mem, mdl, sv2[sv2_id]);
+  counterex_urt_2_input_map(input, mdl, sv2[sv2_id]);
 
   // update input memory for other path conditions later,
   // kv pairs that has been updated into the input mem won't be modified
@@ -989,12 +979,12 @@ void counterex_2_input_mem(mem_t& input_mem, z3::model& mdl,
     if (i == sv1_id) continue;
     smt_map_wt& map_urt = sv1[i].mem_var._map_table._urt;
     smt_wt& mem_urt = sv1[i].mem_var._mem_table._urt;
-    counterex_urt_2_input_map(input_mem, mdl, sv1[i]);
+    counterex_urt_2_input_map(input, mdl, sv1[i]);
   }
   for (int i = 0; i < pc2.size(); i++) {
     if (i == sv2_id) continue;
     smt_map_wt& map_urt_2 = sv2[i].mem_var._map_table._urt;
     smt_wt& mem_urt_2 = sv2[i].mem_var._mem_table._urt;
-    counterex_urt_2_input_map(input_mem, mdl, sv2[i]);
+    counterex_urt_2_input_map(input, mdl, sv2[i]);
   }
 }
