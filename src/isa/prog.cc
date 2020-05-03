@@ -197,8 +197,8 @@ int prog::num_real_instructions() const {
   return count;
 }
 
-reg_t prog::interpret(prog_state &ps, reg_t input) const {
-  return ::interpret(inst_list, MAX_PROG_LEN, ps, input);
+void prog::interpret(inout_t& output, prog_state &ps, inout_t& input) const {
+  return ::interpret(output, inst_list, MAX_PROG_LEN, ps, input);
 }
 
 size_t progHash::operator()(const prog &x) const {

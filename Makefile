@@ -58,14 +58,14 @@ cost_test.out: $(SEARCH)cost.cc cost_z3.o $(SEARCH)cost.h $(SRC)inout.h $(SRC)in
 cost_z3.o: $(SEARCH)cost_test.cc
 	$(CXX) $(TOY_ISA_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(SEARCH)cost_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(SEARCH)cost_test.cc
 
-prog_test.out: prog_z3.o $(ISA)prog.cc $(TOY_ISA)inst_codegen.h $(TOY_ISA)inst_var.h $(TOY_ISA)inst_var.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(TOY_ISA)inst.h $(TOY_ISA)inst.cc $(ISA)prog.h $(SRC)utils.h $(SRC)utils.cc $(ISA)inst_var.cc $(ISA)inst_var.h
+prog_test.out: prog_z3.o $(ISA)prog.cc $(TOY_ISA)inst_codegen.h $(TOY_ISA)inst_var.h $(TOY_ISA)inst_var.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(TOY_ISA)inst.h $(TOY_ISA)inst.cc $(TOY_ISA)inst_var.h $(TOY_ISA)inst_var.cc $(ISA)prog.h $(SRC)utils.h $(SRC)utils.cc $(ISA)inst_var.cc $(ISA)inst_var.h
 	g++ $(TOY_ISA_FLAG) -std=c++11 $(ISA)prog_z3.o $(ISA)prog.cc $(ISA)inst.cc $(TOY_ISA)inst.cc $(TOY_ISA)inst_var.cc $(SRC)utils.cc $(ISA)inst_var.cc -o $(ISA)prog_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 prog_z3.o: $(ISA)prog_test.cc
 	$(CXX) $(TOY_ISA_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(ISA)prog_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(ISA)prog_test.cc
 
-prog_test_ebpf.out: prog_z3_ebpf.o $(ISA)prog.cc $(EBPF)inst_codegen.h $(EBPF)inst_codegen.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.h $(EBPF)inst.cc $(ISA)prog.h $(SRC)utils.h $(SRC)utils.cc $(ISA)inst_var.cc $(ISA)inst_var.h
-	g++ $(EBPF_FLAG) -std=c++11 $(ISA)prog_z3_ebpf.o $(ISA)prog.cc $(EBPF)inst_codegen.cc $(ISA)inst.cc $(EBPF)inst.cc $(SRC)utils.cc $(ISA)inst_var.cc -o $(ISA)prog_test_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+prog_test_ebpf.out: prog_z3_ebpf.o $(ISA)prog.cc $(EBPF)inst_codegen.h $(EBPF)inst_codegen.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.h $(EBPF)inst.cc $(ISA)inst_var.h $(ISA)inst_var.cc $(EBPF)inst_var.h $(EBPF)inst_var.cc $(ISA)prog.h $(SRC)utils.h $(SRC)utils.cc
+	g++ $(EBPF_FLAG) -std=c++11 $(ISA)prog_z3_ebpf.o $(ISA)prog.cc $(EBPF)inst_codegen.cc $(ISA)inst.cc $(EBPF)inst.cc $(ISA)inst_var.cc $(EBPF)inst_var.cc $(SRC)utils.cc -o $(ISA)prog_test_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 prog_z3_ebpf.o: $(ISA)prog_test_ebpf.cc
 	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(ISA)prog_z3_ebpf.o  -I../z3/src/api -I../z3/src/api/c++ $(ISA)prog_test_ebpf.cc

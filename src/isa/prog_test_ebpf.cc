@@ -1,6 +1,8 @@
 #include "../../src/utils.h"
 #include "prog.h"
 
+mem_layout mem_t::_layout;
+
 void test1() {
   // test r10 (value of frame pointer), r1 won't be modified in canonicalize()
   inst insts1[7] = {inst(STXW, 10, -4, 1),
