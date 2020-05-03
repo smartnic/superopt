@@ -184,6 +184,7 @@ class prog_state: public prog_state_base {
  public:
   mem_t _mem;
   prog_state() {_regs.resize(NUM_REGS, 0);}
+  void init();
   void print() const;
   void clear();
 };

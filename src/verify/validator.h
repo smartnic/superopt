@@ -47,7 +47,7 @@ class validator {
   vector<smt_var> _op_mem_orig;
   // last counterexample
   inout _last_counterex;
-  mem_t _last_counterex_mem;
+  // mem_t _last_counterex_mem;
   /* store variables start */
   // ps_: program logic formula, including basic program logic
   // and the formula of capturing the output of the program in the variable output[prog_id]
@@ -68,12 +68,12 @@ class validator {
   void set_orig(expr fx, expr input, expr output);
   // check whether synth is equal to orig
   // return 0: not equal; return 1: equal; return -1: synth is illegal
-  int is_equal_to(inst* synth, int length);
+  int is_equal_to(inst* orig, int length_orig, inst* synth, int length_syn);
   // given input and register to store the input, return the output of the original
   reg_t get_orig_output(reg_t input, unsigned int num_regs, unsigned int input_reg);
   // move from `private` to `public` for testing time
   int is_smt_valid(expr& smt, model& mdl);
-  void gen_counterex(model& m, vector<expr>& op_pc_synth,
+  void gen_counterex(inst* orig, int length, model& m, vector<expr>& op_pc_synth,
                      vector<smt_var>& op_mem_synth);
   // set register 0 in basic block 0 as input[prog_id]
   void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg);

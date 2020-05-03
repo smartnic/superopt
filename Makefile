@@ -112,8 +112,8 @@ cfg_test_ebpf.out: cfg_z3_ebpf.o $(EBPF)inst_codegen.h $(EBPF)inst_codegen.cc $(
 cfg_z3_ebpf.o: $(VERIFY)cfg_test_ebpf.cc
 	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(VERIFY)cfg_z3_ebpf.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)cfg_test_ebpf.cc
 
-inout_test.out: $(SRC)inout_test.cc $(SRC)inout.cc $(SRC)inout.h $(SRC)utils.cc $(SRC)utils.h
-	g++ $(TOY_ISA_FLAG) -std=c++11 $(SRC)inout_test.cc $(SRC)inout.cc $(SRC)utils.cc -o $(SRC)inout_test.out
+inout_test.out: $(SRC)inout_test.cc $(SRC)inout.cc $(SRC)inout.h $(SRC)utils.cc $(SRC)utils.h $(TOY_ISA)inst_var.h $(TOY_ISA)inst_var.cc
+	g++ $(TOY_ISA_FLAG) -std=c++11 $(SRC)inout_test.cc $(SRC)inout.cc $(SRC)utils.cc $(TOY_ISA)inst_var.cc -o $(SRC)inout_test.out
 
 smt_var_test.out: smt_var_z3.o $(SRC)utils.cc $(SRC)utils.h $(ISA)inst_var.cc $(ISA)inst_var.h
 	g++ -std=c++11 -fvisibility=hidden $(VERIFY)smt_var_z3.o $(SRC)utils.cc $(ISA)inst_var.cc -o $(VERIFY)smt_var_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)

@@ -451,6 +451,10 @@ void smt_var::clear() {
 }
 /* class smt_var end */
 
+void prog_state::init() {
+  _mem.init_mem_by_layout();
+}
+
 void prog_state::print() const {
   prog_state_base::print();
   cout << "Memory:" << endl;

@@ -51,6 +51,7 @@ class prog_state_base {
   int _pc = 0; /* Assume only straight line code execution for now */
  public:
   vector<reg_t> _regs; /* assume only registers for now */
+  void init() {}
   void print() const;
   void clear();
 };

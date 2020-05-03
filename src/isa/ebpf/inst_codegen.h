@@ -116,7 +116,7 @@ z3::expr smt_pgm_set_same_input(vector<z3::expr>& pc1, vector<smt_var>& sv1,
 // return the FOL formula that check whether two programs have the same output memories
 z3::expr smt_pgm_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
                             vector<z3::expr>& pc2, vector<smt_var>& sv2);
-void counterex_2_input_mem(mem_t& input_mem, z3::model& mdl,
+void counterex_2_input_mem(inout_t& input, z3::model& mdl,
                            vector<z3::expr>& pc1, vector<smt_var>& sv1,
                            vector<z3::expr>& pc2, vector<smt_var>& sv2);
 /* APIs exposed to the externals end */

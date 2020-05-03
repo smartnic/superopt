@@ -106,3 +106,17 @@ PREDICATE_BINARY(max, MAX_EXPR)
 
 // Functions for validator en
 /* Macros for validator end  */
+
+inline z3::expr smt_pgm_set_same_input(vector<z3::expr>& pc1, vector<smt_var>& sv1,
+                                       vector<z3::expr>& pc2, vector<smt_var>& sv2) {
+  return Z3_true;
+}
+
+inline z3::expr smt_pgm_mem_eq_chk(vector<z3::expr>& pc1, vector<smt_var>& sv1,
+                                   vector<z3::expr>& pc2, vector<smt_var>& sv2) {
+  return Z3_true;
+}
+
+inline void counterex_2_input_mem(inout_t& input, z3::model& mdl,
+                                  vector<z3::expr>& pc1, vector<smt_var>& sv1,
+                                  vector<z3::expr>& pc2, vector<smt_var>& sv2) {}

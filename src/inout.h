@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include "utils.h"
+#include "../src/isa/inst_header.h"
 
 using namespace std;
 
@@ -10,11 +11,12 @@ using namespace std;
    assumes a single integer input and a single integer output. */
 class inout {
  public:
-  reg_t input;
-  reg_t output;
+  inout_t input;
+  inout_t output;
   inout();
-  inout(reg_t in, reg_t out);
-  void set_in_out(reg_t in, reg_t out);
+  inout(const inout_t& in, const inout_t& out);
+  void set_in_out(const inout_t& in, const inout_t& out);
+  void clear();
   friend ostream& operator<< (ostream& out, const inout &_inout);
   friend ostream& operator<< (ostream& out, const vector<inout> &_inout_vec);
 };

@@ -192,7 +192,7 @@ mem_layout mem_t::_layout;
 void test1() {
   mem_t::add_map(map_attr(8, 8, 512));
   prog_state ps;
-  ps._mem.init_mem_by_layout();
+  ps.init();
   inout_t input, output, expected;
   input.init();
   output.init();
@@ -747,7 +747,7 @@ void test5() {
   cout << endl << "Test 5: memory access safety check" << endl;
   prog_state ps;
   mem_t::_layout.clear();
-  ps._mem.init_mem_by_layout();
+  ps.init();
   inout_t input, output;
   input.init();
   output.init();

@@ -6,29 +6,40 @@
 using namespace z3;
 
 /* class validator start */
-validator::validator() {
-  _last_counterex_mem.init_mem_by_layout();
-}
+validator::validator() {}
 
 validator::validator(inst* orig, int length) {
   set_orig(orig, length);
-  _last_counterex_mem.init_mem_by_layout();
+  _last_counterex.input.init();
+  _last_counterex.output.init();
 }
 
 validator::validator(expr fx, expr input, expr output) {
   set_orig(fx, input, output);
+  _last_counterex.input.init();
+  _last_counterex.output.init();
 }
 
 validator::~validator() {}
 
-void validator::gen_counterex(model& m, vector<expr>& op_pc_synth,
+void validator::gen_counterex(inst* orig, int length, model& m, vector<expr>& op_pc_synth,
                               vector<smt_var>& op_mem_synth) {
   expr input_orig = string_to_expr("input");
   expr output_orig = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
-  _last_counterex.set_in_out((reg_t)m.eval(input_orig).get_numeral_uint64(), \
-                             (reg_t)m.eval(output_orig).get_numeral_uint64());
-  counterex_2_input_mem(_last_counterex_mem, m, _op_pc_orig, _op_mem_orig,
+  _last_counterex.clear();
+  _last_counterex.input.reg = (reg_t)m.eval(input_orig).get_numeral_uint64();
+  // _last_counterex.output.reg = (reg_t)m.eval(output_orig).get_numeral_uint64();
+  counterex_2_input_mem(_last_counterex.input, m, _op_pc_orig, _op_mem_orig,
                         op_pc_synth, op_mem_synth);
+  // get output from interpreter
+  prog_state ps;
+  ps.init();
+  _last_counterex.output.clear();
+  // call interpret to get the output, if get output from mdl, the output needs to be computed
+  // for different path conditions, which seems to cost more time than interpret(.)
+  // TODO: for BPF, if return value is an address (ex, &map[k]), the output will be different
+  // record in https://github.com/smartnic/superopt/issues/83
+  interpret(_last_counterex.output, orig, length, ps, _last_counterex.input);
 }
 
 int validator::is_smt_valid(expr& smt, model& mdl) {
@@ -92,13 +103,13 @@ void validator::set_orig(expr fx, expr input, expr output) {
   // no storing store_ps_orig here
 }
 
-int validator::is_equal_to(inst* synth, int length) {
+int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_syn) {
   expr pre_synth = string_to_expr("true");
   smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg());
   smt_prog ps_synth;
   expr pl_synth = string_to_expr("true");
   try {
-    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length);
+    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length_syn);
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
     // cerr << err_msg << endl;
@@ -107,18 +118,18 @@ int validator::is_equal_to(inst* synth, int length) {
   vector<expr> op_pc_synth;
   vector<smt_var> op_mem_synth;
   ps_synth.get_output_pc_mem(op_pc_synth, op_mem_synth);
-  expr pre_same_mem = smt_pgm_set_same_input(_op_pc_orig, _op_mem_orig,
-                      op_pc_synth, op_mem_synth);
+  expr pre_mem_same_mem = smt_pgm_set_same_input(_op_pc_orig, _op_mem_orig,
+                          op_pc_synth, op_mem_synth);
   expr post = string_to_expr("true");
   smt_post(post, VLD_PROG_ID_ORIG, VLD_PROG_ID_SYNTH, op_pc_synth, op_mem_synth);
-  expr smt = implies(pre_same_mem && _pre_orig && pre_synth && _pl_orig && pl_synth, post);
+  expr smt = implies(pre_mem_same_mem && _pre_orig && pre_synth && _pl_orig && pl_synth, post);
   // store
   _store_post = post;
   _store_f = smt;
   model mdl(smt_c);
   int is_equal = is_smt_valid(smt, mdl);
   if (is_equal == 0) {
-    gen_counterex(mdl, op_pc_synth, op_mem_synth);
+    gen_counterex(orig, length_orig, mdl, op_pc_synth, op_mem_synth);
   }
   return is_equal;
 }
