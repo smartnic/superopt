@@ -869,8 +869,8 @@ void get_map_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
     uint64_t addr = z3_addr_eval.get_numeral_uint64();
     if (addr == NULL_ADDR) continue;
     // Assmue that stack and maps next to each other
-    uint64_t map_start = sv.get_map_start_addr(0).get_numeral_uint64();
-    uint64_t map_end = sv.get_map_end_addr(map_sz - 1).get_numeral_uint64();
+    uint64_t map_start = mdl.eval(sv.get_map_start_addr(0)).get_numeral_uint64();
+    uint64_t map_end = mdl.eval(sv.get_map_end_addr(map_sz - 1)).get_numeral_uint64();
     if ((addr < map_start) || (addr > map_end)) continue;
 
     z3::expr z3_val = mem_urt.val[i]; // z3 bv8
@@ -911,7 +911,7 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv) {
   smt_wt& mem_urt = sv.mem_var._mem_table._urt;
   vector<pair< uint64_t, uint8_t>> mem_addr_val;
   get_map_mem_from_mdl(mem_addr_val, mdl, sv);
-  uint64_t stack_start = sv.get_stack_start_addr().get_numeral_uint64();
+  uint64_t stack_start = mdl.eval(sv.get_stack_start_addr()).get_numeral_uint64();
   for (int i = 0; i < map_urt.size(); i++) {
     z3::expr z3_is_valid = map_urt.is_valid[i];
     int is_valid = mdl.eval(z3_is_valid).bool_value();

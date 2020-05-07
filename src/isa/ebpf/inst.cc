@@ -475,6 +475,7 @@ z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
   z3::expr f = string_to_expr("true");
   f = (sv.get_cur_reg_var(1) == input) &&
       (sv.get_cur_reg_var(10) == sv.get_stack_bottom_addr()) &&
+      sv.stack_start_constrain() &&
       (sv.get_cur_reg_var(0) == 0);
   for (size_t i = 2; i < 10; i++) {
     f = f && (sv.get_cur_reg_var(i) == 0);

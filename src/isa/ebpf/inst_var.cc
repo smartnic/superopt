@@ -2,6 +2,19 @@
 
 using namespace std;
 
+int get_mem_size_by_layout() {
+  int mem_size;
+  int n_maps = mem_t::_layout._maps_attr.size();
+  if (n_maps == 0) {
+    mem_size = STACK_SIZE;
+  } else {
+    map_attr& m_attr = mem_t::_layout._maps_attr[n_maps - 1];
+    mem_size = mem_t::_layout._maps_start[n_maps - 1] +
+               (m_attr.val_sz / NUM_BYTE_BITS) * m_attr.max_entries;
+  }
+  return mem_size;
+}
+
 ostream& operator<<(ostream& out, const map_attr& m_attr) {
   out << m_attr.key_sz << " " << m_attr.val_sz << " " << m_attr.max_entries;
   return out;
@@ -430,6 +443,17 @@ z3::expr smt_var::get_map_end_addr(int map_id) { // return value: z3 bv64
   unsigned int map_end_off = mem_t::get_mem_off_by_idx_in_map(map_id, number_entries) - 1;
   z3::expr map_end_addr = (mem_var._stack_start + to_expr((uint64_t)map_end_off)).simplify();
   return map_end_addr;
+}
+
+// constrain: 1. stack_start != NULL
+// 2. stack_start + mem_size - 1 <= max_uint64
+z3::expr smt_var::stack_start_constrain() const {
+  int mem_size = get_mem_size_by_layout();
+  z3::expr offset = to_expr((uint64_t)(mem_size - 1));
+  z3::expr max_uint64 = to_expr((uint64_t)0xffffffffffffffff);
+  z3::expr f = (mem_var._stack_start != NULL_ADDR_EXPR) &&
+               uge(max_uint64 - offset, mem_var._stack_start);
+  return f;
 }
 
 void smt_var::get_from_previous_block(smt_var& sv) {

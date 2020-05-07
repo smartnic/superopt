@@ -12,6 +12,8 @@
 using namespace std;
 
 #define STACK_SIZE 512 // 512 bytes
+#define NULL_ADDR 0
+#define NULL_ADDR_EXPR to_expr(NULL_ADDR)
 // static constexpr int NUM_REGS = 11;
 static constexpr int NUM_REGS = 11;
 
@@ -135,12 +137,13 @@ class map_wt {
 
 class smt_mem {
  public:
-  z3::expr _stack_start = to_expr((uint64_t)0xff12000000001234);
+  z3::expr _stack_start = string_to_expr("stack_start");
   mem_wt _mem_table;
   map_wt _map_table;
   vector<z3::expr> _addrs_map_v_next;
 
-  smt_mem(uint64_t stack_start = (uint64_t)0xff12000000001234) {_stack_start = to_expr(stack_start);}
+  smt_mem() {}
+  smt_mem(uint64_t stack_start) {_stack_start = to_expr(stack_start);}
   void set_stack_start(uint64_t stack_start) {_stack_start = to_expr(stack_start);}
   void init_addrs_map_v_next_by_layout();
   z3::expr get_and_update_addr_v_next(int map_id);
@@ -175,6 +178,7 @@ class smt_var: public smt_var_base {
   z3::expr get_stack_bottom_addr() {return (mem_var._stack_start + STACK_SIZE);}
   z3::expr get_map_start_addr(int map_id); // return value: z3 bv64
   z3::expr get_map_end_addr(int map_id); // return value: z3 bv64
+  z3::expr stack_start_constrain() const;
   void init() {mem_var.init_addrs_map_v_next_by_layout();}
   void get_from_previous_block(smt_var& sv);
   void clear();
