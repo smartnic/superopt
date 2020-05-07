@@ -541,6 +541,7 @@ bool inout_t::operator==(const inout_t &rhs) const {
 }
 
 ostream& operator<<(ostream& out, const inout_t& x) {
+  out << x.input_simu_r10 << " ";
   out << x.reg;
   // out << "(hexadecimal)" << endl;
   // out << "register: " << hex << x.reg << dec << endl;
