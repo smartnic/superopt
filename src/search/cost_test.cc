@@ -62,22 +62,29 @@ void test2() {
   for (size_t i = 0; i < ex_set.size(); i++) {
     c._examples.insert(ex_set[i]);
   }
-  int err_cost = c.error_cost(&orig, 7);
+  int err_cost = c.error_cost(&orig, 7, &orig, 7);
   print_test_res(err_cost == 0, "1");
   prog synth1(instructions2);
-  err_cost = c.error_cost(&synth1, 7);
+  err_cost = c.error_cost(&orig, 7, &synth1, 7);
   print_test_res(err_cost == 0, "2");
   prog synth2(instructions3);
-  err_cost = c.error_cost(&synth2, 7);
+  err_cost = c.error_cost(&orig, 7, &synth2, 7);
   print_test_res(err_cost == 6, "3");
   prog synth3(instructions4);
-  err_cost = c.error_cost(&synth3, 7);
+  err_cost = c.error_cost(&orig, 7, &synth3, 7);
   print_test_res(err_cost == 2, "4");
 }
 
 int main() {
-  ex_set[0].set_in_out(10, 15);
-  ex_set[1].set_in_out(16, 20);
+  inout_t x, y;
+  x.init();
+  y.init();
+  x.reg = 10;
+  y.reg = 15;
+  ex_set[0].set_in_out(x, y);
+  x.reg = 16;
+  y.reg = 20;
+  ex_set[1].set_in_out(x, y);
   test1();
   test2();
   return 0;

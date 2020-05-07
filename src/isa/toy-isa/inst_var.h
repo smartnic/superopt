@@ -26,7 +26,7 @@ class inout_t: public inout_t_base {
   void init() {}
   bool operator==(const inout_t &rhs) const {return (reg == rhs.reg);}
   friend ostream& operator<<(ostream& out, const inout_t& x) {
-    out << "register: " << x.reg << endl;
+    out << x.reg;
     return out;
   }
 };

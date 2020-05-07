@@ -156,4 +156,4 @@ class inst: public inst_base {
   static z3::expr smt_set_pre(z3::expr input, smt_var& sv);
 };
 
-void interpret(inout_t& output, inst* program, int length, prog_state &ps, inout_t& input);
+void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);

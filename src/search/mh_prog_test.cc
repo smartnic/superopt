@@ -18,7 +18,7 @@ inst instructions[N] = {inst(MOVXC, 2, 4),  /* mov r2, 4  */
                         inst(),  /* control never reaches here */
                        };
 
-vector<reg_t> inputs;
+vector<inout_t> inputs;
 
 void mh_sampler_res_print(int nrolls,
                           unordered_map<int, vector<prog*> > prog_freq)  {
@@ -72,8 +72,13 @@ int main(int argc, char* argv[]) {
       w_p = atof(argv[3]);
     }
   }
+  vector<reg_t> inputs_reg(30);
+  gen_random_input(inputs_reg, 0, 50);
   inputs.resize(30);
-  gen_random_input(inputs, 0, 50);
+  for (int i = 0; i < inputs.size(); i++) {
+    inputs[i].init();
+    inputs[i].reg = inputs_reg[i];
+  }
   test1(nrolls, w_e, w_p);
   return 0;
 }

@@ -94,10 +94,10 @@ class mh_sampler {
   double _base = 2;
   mh_sampler();
   ~mh_sampler();
-  double alpha(prog* curr, prog* next);
-  prog* mh_next(prog* curr);
+  double alpha(prog* curr, prog* next, prog* orig);
+  prog* mh_next(prog* curr, prog* orig);
   void turn_on_measure();
   void turn_off_measure();
-  void mcmc_iter(int niter, const prog &orig,
+  void mcmc_iter(int niter, prog &orig,
                  unordered_map<int, vector<prog*> > &prog_freq);
 };

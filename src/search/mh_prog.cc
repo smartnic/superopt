@@ -161,9 +161,15 @@ double mh_sampler::cost_to_pi(double cost) {
 }
 
 /* compute acceptance function */
-double mh_sampler::alpha(prog* curr, prog* next) {
-  double curr_cost = _cost.total_prog_cost(curr, MAX_PROG_LEN);
-  double next_cost = _cost.total_prog_cost(next, MAX_PROG_LEN);
+double mh_sampler::alpha(prog* curr, prog* next, prog* orig) {
+  // cout << "curr" << endl;
+  // curr->print();
+  // cout << "next" << endl;
+  // next->print();
+  double curr_cost = _cost.total_prog_cost(orig, MAX_PROG_LEN, curr, MAX_PROG_LEN);
+  // cout << "curr_cost: " << curr_cost << endl;
+  double next_cost = _cost.total_prog_cost(orig, MAX_PROG_LEN, next, MAX_PROG_LEN);
+  // cout << "next_cost: " << next_cost << endl;
   // res = min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
   // use equation b^(-x) / b^(-y) = b^(-(x-y)) to simplify the calculation
   double d = next_cost - curr_cost;
@@ -171,11 +177,11 @@ double mh_sampler::alpha(prog* curr, prog* next) {
   else return cost_to_pi(d);
 }
 
-prog* mh_sampler::mh_next(prog* curr) {
+prog* mh_sampler::mh_next(prog* curr, prog* orig) {
   prog* next = _next_proposal.next_proposal(curr);
   next->canonicalize();
   double uni_sample = unidist_mh(gen_mh);
-  double a = alpha(curr, next);
+  double a = alpha(curr, next, orig);
   _meas_data.insert_proposal(*next, uni_sample < a);
   int iter_num = _meas_data._proposals.size() - 1;
   if (iter_num == 0) {
@@ -224,7 +230,7 @@ void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_
   restart.print();
 }
 
-void mh_sampler::mcmc_iter(int niter, const prog &orig,
+void mh_sampler::mcmc_iter(int niter, prog &orig,
                            unordered_map<int, vector<prog*> > &prog_freq) {
   prog *curr, *next;
   curr = new prog(orig);
@@ -244,8 +250,9 @@ void mh_sampler::mcmc_iter(int niter, const prog &orig,
       _cost._w_p = restart_we_wp.second;
       print_restart_info(i, *restart, restart_we_wp.first, restart_we_wp.second);
     }
+    // cout << "mcmc_iter: " << i << endl;
     // sample one program
-    next = mh_next(curr);
+    next = mh_next(curr, &orig);
     // insert the next program into frequency dictionary of programs
     insert_into_prog_freq_dic(*next, prog_freq);
     // update measurement data and update current program with the next program

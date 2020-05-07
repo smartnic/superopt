@@ -197,7 +197,7 @@ int prog::num_real_instructions() const {
   return count;
 }
 
-void prog::interpret(inout_t& output, prog_state &ps, inout_t& input) const {
+void prog::interpret(inout_t& output, prog_state &ps, const inout_t& input) const {
   return ::interpret(output, inst_list, MAX_PROG_LEN, ps, input);
 }
 

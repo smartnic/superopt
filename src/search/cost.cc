@@ -11,16 +11,19 @@ cost::cost() {}
 
 cost::~cost() {}
 
-void cost::init(prog* orig, int len, const vector<reg_t> &input,
+void cost::init(prog* orig, int len, const vector<inout_t> &input,
                 double w_e, double w_p,
                 int strategy_ex, int strategy_eq, int strategy_avg) {
   set_orig(orig, len);
   _examples.clear();
   prog_state ps;
+  ps.init();
   for (size_t i = 0; i < input.size(); i++) {
     ps.clear();
+    inout_t output;
+    output.init();
     // Assume original program can pass the interpreter
-    reg_t output = orig->interpret(ps, input[i]);
+    orig->interpret(output, ps, input[i]);
     inout example;
     example.set_in_out(input[i], output);
     _examples.insert(example);
@@ -45,23 +48,23 @@ void cost::set_orig(prog* orig, int len) {
   _num_real_orig = orig->num_real_instructions();
 }
 
-unsigned int pop_count_outputs(reg_t output1, reg_t output2) {
+unsigned int pop_count_outputs(inout_t& output1, inout_t& output2) {
   int gap = 32;
   unsigned int count = 0;
   int n = 1 + (NUM_REG_BITS - 1) / gap;
   for (int i = 0; i < n; i++) {
-    count += pop_count_asm((uint32_t)output1 ^ (uint32_t)output2);
-    output1 >>= gap;
-    output2 >>= gap;
+    count += pop_count_asm((uint32_t)output1.reg ^ (uint32_t)output2.reg);
+    output1.reg >>= gap;
+    output2.reg >>= gap;
   }
   return count;
 }
 
-double cost::get_ex_error_cost(reg_t output1, reg_t output2) {
+double cost::get_ex_error_cost(inout_t& output1, inout_t& output2) {
   switch (_strategy_ex) {
     // `double`: in case there is overflow which makes a positive value
     // become a negative value
-    case ERROR_COST_STRATEGY_ABS: return abs((double)output1 - (double)output2);
+    case ERROR_COST_STRATEGY_ABS: return abs((double)output1.reg - (double)output2.reg);
     case ERROR_COST_STRATEGY_POP: return pop_count_outputs(output1, output2);
     default:
       cout << "ERROR: no error cost example strategy matches." << endl;
@@ -117,28 +120,36 @@ double cost::get_final_error_cost(double exs_cost, int is_equal,
  *     For invalid synthesis:
  *       error_cost = ERROR_COST_MAX
  */
-double cost::error_cost(prog* synth, int len) {
+double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_error_cost != -1) return synth->_error_cost;
+  // synth->print();
   double total_cost = 0;
-  reg_t output1, output2;
+  inout_t output1, output2;
+  output1.init();
+  output2.init();
   int num_successful_ex = 0;
   prog_state ps;
+  ps.init();
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
     try {
-      output2 = synth->interpret(ps, _examples._exs[i].input);
+      synth->interpret(output2, ps, _examples._exs[i].input);
     } catch (const string err_msg) {
       return ERROR_COST_MAX;
     }
+    // cout << "input, output1, output2: " << _examples._exs[i].input << ", " << output1 << ", " << output2 << endl;
     double ex_cost = get_ex_error_cost(output1, output2);
+    // cout << "ex_cost: " << ex_cost << endl;
     if (ex_cost == 0) num_successful_ex++;
     total_cost += ex_cost;
   }
   int is_equal = 0;
   int ex_set_size = _examples._exs.size();
+  // cout << "num_successful_ex, ex_set_size: " << num_successful_ex << ", " << ex_set_size << endl;
+
   if (num_successful_ex == ex_set_size) {
-    is_equal = _vld.is_equal_to(synth->inst_list, len);
+    is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
   }
 
   int avg_value = get_avg_value(ex_set_size);
@@ -158,6 +169,7 @@ double cost::error_cost(prog* synth, int len) {
   if ((is_equal == 0) && (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
+    // cout << _vld._last_counterex << endl;
   }
   // in case there is overflow which makes a positive value become a negative value
   if (total_cost < 0) {
@@ -175,8 +187,8 @@ double cost::perf_cost(prog* synth, int len) {
   return total_cost;
 }
 
-double cost::total_prog_cost(prog* synth, int len) {
-  double err_cost = error_cost(synth, len);
-  double per_cost = perf_cost(synth, len);
+double cost::total_prog_cost(prog* orig, int len1, prog* synth, int len2) {
+  double err_cost = error_cost(orig, len1, synth, len2);
+  double per_cost = perf_cost(synth, len2);
   return (_w_e * err_cost) + (_w_p * per_cost);
 }

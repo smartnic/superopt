@@ -285,7 +285,6 @@ void mem_t::memory_access_check(uint64_t addr, uint64_t num_bytes) {
                (addr <= (max_uint64 - num_bytes + 1));
   if (!legal) {
     string err_msg = "unsafe memory access";
-    cout << err_msg << endl;
     throw (err_msg);
   }
 }
@@ -518,14 +517,15 @@ bool inout_t::operator==(const inout_t &rhs) const {
 }
 
 ostream& operator<<(ostream& out, const inout_t& x) {
-  out << "(hexadecimal)" << endl;
-  out << "register: " << hex << x.reg << dec << endl;
+  out << x.reg;
+  // out << "(hexadecimal)" << endl;
+  // out << "register: " << hex << x.reg << dec << endl;
   for (int i = 0; i < x.maps.size(); i++) {
     out << "map " << i << ": ";
     for (auto it = x.maps[i].begin(); it != x.maps[i].end(); it++) {
       out << it->first << "," << uint8_t_vec_2_hex_str(it->second) << " ";
     }
-    out << endl;
+    // out << endl;
   }
   return out;
 }

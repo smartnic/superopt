@@ -20,10 +20,14 @@
 
 using namespace std;
 
+#if ISA_EBPF
+mem_layout mem_t::_layout;
+#endif
+
 string FILE_CONFIG = "config";
 
 inst* bm;
-vector<reg_t> inputs;
+vector<inout_t> inputs;
 std::unordered_map<int, vector<prog*> > prog_dic;
 
 ostream& operator<<(ostream& out, const input_paras& ip) {
@@ -76,7 +80,7 @@ string gen_file_name_suffix_from_input(const input_paras &in_para) {
   return suffix;
 }
 
-void run_mh_sampler(const input_paras &in_para, vector<inst*> &bm_optis_orig) {
+void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
   mh_sampler mh;
   mh._restart.set_st_when_to_restart(in_para.st_when_to_restart,
                                      in_para.st_when_to_restart_niter);
@@ -294,8 +298,10 @@ int main(int argc, char* argv[]) {
   vector<inst*> bm_optis_orig;
   auto start = NOW;
   init_benchmarks(&bm, bm_optis_orig, in_para.bm);
+  vector<reg_t> input_regs(30);
+  gen_random_input(input_regs, -50, 50);
   inputs.resize(30);
-  gen_random_input(inputs, -50, 50);
+  for (int i = 0; i < 30; i++) inputs[i].reg = input_regs[i];
   run_mh_sampler(in_para, bm_optis_orig);
   auto end = NOW;
   cout << "compiling time: " << DUR(start, end) << " us" << endl;

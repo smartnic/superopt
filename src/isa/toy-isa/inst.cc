@@ -192,7 +192,7 @@ z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
 }
 
 
-void interpret(inout_t& output, inst* program, int length, prog_state &ps, inout_t& input) {
+void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input) {
   /* Input currently is just one integer which will be written into R0. Will
   need to generalize this later. */
   inst *insn = program;
