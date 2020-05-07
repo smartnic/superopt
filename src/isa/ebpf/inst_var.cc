@@ -556,6 +556,7 @@ ostream& operator<<(ostream& out, const inout_t& x) {
 
 
 void update_ps_by_input(prog_state& ps, const inout_t& input) {
+  ps._regs[10] = input.input_simu_r10;
   // cp input register
   ps._regs[1] = input.reg;
   // cp input map
@@ -587,4 +588,13 @@ void update_output_by_ps(inout_t& output, const prog_state& ps) {
       output.update_kv(i, key, value);
     }
   }
+}
+
+// parameter r10 is the simulated r10, stack_bottom is the real r10
+uint64_t get_simu_addr_by_real(uint64_t real_addr, uint64_t simu_r10, uint64_t real_r10) {
+  return (real_addr + simu_r10 - real_r10);
+}
+
+uint64_t get_real_addr_by_simu(uint64_t simu_addr, uint64_t simu_r10, uint64_t real_r10) {
+  return (simu_addr + real_r10 - simu_r10);
 }

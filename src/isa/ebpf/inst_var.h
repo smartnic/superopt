@@ -197,6 +197,7 @@ class prog_state: public prog_state_base {
 // BPF maps, register for input/output register
 class inout_t: public inout_t_base {
  public:
+  uint64_t input_simu_r10;
   int64_t reg;
   // kv map: k hex_string, v: vector<uint8_t>
   vector<unordered_map<string, vector<uint8_t>>> maps;
@@ -206,9 +207,13 @@ class inout_t: public inout_t_base {
   bool k_in_map(int map_id, string k);
   void clear();
   void init();
+  // not update input_simu_r10 which is only used for input
   bool operator==(const inout_t &rhs) const;
   friend ostream& operator<<(ostream& out, const inout_t& x);
 };
 
 void update_ps_by_input(prog_state& ps, const inout_t& input);
+// not update input_simu_r10 which is only used for input
 void update_output_by_ps(inout_t& output, const prog_state& ps);
+uint64_t get_simu_addr_by_real(uint64_t real_addr, uint64_t simu_r10, uint64_t real_r10);
+uint64_t get_real_addr_by_simu(uint64_t simu_addr, uint64_t simu_r10, uint64_t real_r10);

@@ -11,11 +11,12 @@ z3::expr key_not_found_after_idx(z3::expr key, int idx, z3::expr addr_map, smt_m
 z3::expr key_not_in_map_wt(z3::expr addr_map, z3::expr k, smt_map_wt& m_wt);
 
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
-                                 uint64_t r4, uint64_t r5, mem_t& m) {
+                                 uint64_t r4, uint64_t r5, mem_t& m,
+                                 uint64_t simu_r10, uint64_t real_r10) {
   switch (func_id) {
-    case BPF_FUNC_map_lookup: return compute_map_lookup_helper(r1, r2, m);
-    case BPF_FUNC_map_update: return compute_map_update_helper(r1, r2, r3, m);
-    case BPF_FUNC_map_delete: return compute_map_delete_helper(r1, r2, m);
+    case BPF_FUNC_map_lookup: return compute_map_lookup_helper(r1, r2, m, simu_r10, real_r10);
+    case BPF_FUNC_map_update: return compute_map_update_helper(r1, r2, r3, m, simu_r10, real_r10);
+    case BPF_FUNC_map_delete: return compute_map_delete_helper(r1, r2, m, simu_r10, real_r10);
     default: cout << "Error: unknown function id " << func_id << endl; return -1;
   }
 }
@@ -35,36 +36,44 @@ string ld_n_bytes_from_addr(const uint8_t* a, const size_t n) {
 }
 
 // return addr_v
-uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m) {
+uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m,
+                                   uint64_t simu_r10, uint64_t real_r10) {
   int map_id = addr_map;
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
+  uint64_t real_addr_k = get_real_addr_by_simu(addr_k, simu_r10, real_r10);
   // safety check to avoid segmentation fault
-  m.memory_access_check(addr_k, k_sz);
+  m.memory_access_check(real_addr_k, k_sz);
   // get key from memory
-  string k = ld_n_bytes_from_addr((uint8_t*)addr_k, k_sz);
+  string k = ld_n_bytes_from_addr((uint8_t*)real_addr_k, k_sz);
   map_t& mp = m._maps[map_id];
   auto it = mp._k2idx.find(k);
   if (it == mp._k2idx.end()) return NULL_ADDR;
   int v_idx_in_map = it->second;
   int v_mem_off = m.get_mem_off_by_idx_in_map(map_id, v_idx_in_map);
-  return (uint64_t)&m._mem[v_mem_off];
+  uint64_t real_addr_v = (uint64_t)&m._mem[v_mem_off];
+  return get_simu_addr_by_real(real_addr_v, simu_r10, real_r10);
 }
 
-uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_v, mem_t& m) {
+uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_v, mem_t& m,
+                                   uint64_t simu_r10, uint64_t real_r10) {
   int map_id = addr_map;
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
-  m.memory_access_check(addr_k, k_sz);
+  uint64_t real_addr_k = get_real_addr_by_simu(addr_k, simu_r10, real_r10);
+  m.memory_access_check(real_addr_k, k_sz);
   // get key and value from memory
-  string k = ld_n_bytes_from_addr((uint8_t*)addr_k, k_sz);
-  m.update_kv_in_map(map_id, k, (uint8_t*)addr_v);
+  string k = ld_n_bytes_from_addr((uint8_t*)real_addr_k, k_sz);
+  uint64_t real_addr_v = get_real_addr_by_simu(addr_v, simu_r10, real_r10);
+  m.update_kv_in_map(map_id, k, (uint8_t*)real_addr_v);
   return MAP_UPD_RET;
 }
 
-uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, mem_t& m) {
+uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, mem_t& m,
+                                   uint64_t simu_r10, uint64_t real_r10) {
   int map_id = addr_map;
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
-  m.memory_access_check(addr_k, k_sz);
-  string k = ld_n_bytes_from_addr((uint8_t*)addr_k, k_sz);
+  uint64_t real_addr_k = get_real_addr_by_simu(addr_k, simu_r10, real_r10);
+  m.memory_access_check(real_addr_k, k_sz);
+  string k = ld_n_bytes_from_addr((uint8_t*)real_addr_k, k_sz);
   map_t& mp = m._maps[map_id];
   auto it = mp._k2idx.find(k);
   if (it == mp._k2idx.end()) {
@@ -912,6 +921,7 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv) {
   vector<pair< uint64_t, uint8_t>> mem_addr_val;
   get_map_mem_from_mdl(mem_addr_val, mdl, sv);
   uint64_t stack_start = mdl.eval(sv.get_stack_start_addr()).get_numeral_uint64();
+  input.input_simu_r10 = stack_start + STACK_SIZE; // r10: stack bottom
   for (int i = 0; i < map_urt.size(); i++) {
     z3::expr z3_is_valid = map_urt.is_valid[i];
     int is_valid = mdl.eval(z3_is_valid).bool_value();

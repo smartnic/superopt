@@ -334,17 +334,20 @@ void test1() {
 
   // r0 = L8(input), map0[0x11] = L8(input)
   input.reg = 0x1f;
+  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
   expected.reg = 0x1f;
   expected.update_kv(0, "11", vector<uint8_t> {0x1f});
   // r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
   interpret(output, instructions21, 13, ps, input);
   input = output;
+  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
   output.clear();
   // r0 = *(lookup &k m), where k = 0x11
   interpret(output, instructions23, 9, ps, input);
   print_test_res(output == expected, "interpret map input 1");
 
   input = output;
+  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
   output.clear();
   // r0 = 0, no kv in map0
   expected.reg = 0;
@@ -352,11 +355,13 @@ void test1() {
   interpret(output, instructions22, 14, ps, input);
   // r0 = *(lookup &k m), where k = 0x11
   input = output;
+  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
   output.clear();
   interpret(output, instructions23, 9, ps, input);
   print_test_res(output == expected, "interpret map input 2");
 
   input = output;
+  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
   input.reg = 0x1f;
   output.clear();
   // r0 = L8(input), map0[0x11] = L8(input)
@@ -364,6 +369,7 @@ void test1() {
   expected.update_kv(0, "11", vector<uint8_t> {0x1f});
   interpret(output, instructions21, 13, ps, input);
   input = output;
+  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
   output.clear();
   interpret(output, instructions23, 9, ps, input);
   print_test_res(output == expected, "interpret map input 3");
