@@ -138,15 +138,12 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
     } catch (const string err_msg) {
       return ERROR_COST_MAX;
     }
-    // cout << "input, output1, output2: " << _examples._exs[i].input << ", " << output1 << ", " << output2 << endl;
     double ex_cost = get_ex_error_cost(output1, output2);
-    // cout << "ex_cost: " << ex_cost << endl;
     if (ex_cost == 0) num_successful_ex++;
     total_cost += ex_cost;
   }
   int is_equal = 0;
   int ex_set_size = _examples._exs.size();
-  // cout << "num_successful_ex, ex_set_size: " << num_successful_ex << ", " << ex_set_size << endl;
 
   if (num_successful_ex == ex_set_size) {
     is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);

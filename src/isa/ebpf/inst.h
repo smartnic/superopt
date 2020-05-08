@@ -399,15 +399,6 @@ static const int optable[NUM_INSTR] = {
 #undef CALL_OPS
 #undef UNUSED_OPS
 
-// class mem_t {
-//  public:
-//   static const int MEM_SIZE = 512;
-//   // should ensure memory is contiguous, because of the assumption in memory_access_check
-//   uint8_t _mem[MEM_SIZE];
-//   // stack address is the bottom of the stack
-//   uint64_t _stack_addr = (uint64_t)&_mem[MEM_SIZE - 1] + 1;
-// };
-
 class inst: public inst_base {
  private:
   void set_imm(int op_value);
