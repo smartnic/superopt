@@ -27,10 +27,11 @@ void validator::gen_counterex(inst* orig, int length, model& m, vector<expr>& op
   expr input_orig = string_to_expr("input");
   expr output_orig = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
   _last_counterex.clear();
-  _last_counterex.input.reg = (reg_t)m.eval(input_orig).get_numeral_uint64();
-  // _last_counterex.output.reg = (reg_t)m.eval(output_orig).get_numeral_uint64();
+  // func counterex_2_input_mem will clear input
+  // TODO: update input.reg in counterex_2_input_mem(.)
   counterex_2_input_mem(_last_counterex.input, m, _op_pc_orig, _op_mem_orig,
                         op_pc_synth, op_mem_synth);
+  _last_counterex.input.reg = (reg_t)m.eval(input_orig).get_numeral_uint64();
   // get output from interpreter
   prog_state ps;
   ps.init();

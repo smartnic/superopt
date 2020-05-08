@@ -169,7 +169,6 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if ((is_equal == 0) && (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
-    // cout << _vld._last_counterex << endl;
   }
   // in case there is overflow which makes a positive value become a negative value
   if (total_cost < 0) {

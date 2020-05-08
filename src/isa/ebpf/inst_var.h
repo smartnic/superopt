@@ -201,6 +201,7 @@ class inout_t: public inout_t_base {
   int64_t reg;
   // kv map: k hex_string, v: vector<uint8_t>
   vector<unordered_map<string, vector<uint8_t>>> maps;
+  inout_t();
   // insert/update kv in map
   void update_kv(int map_id, string k, vector<uint8_t> v);
   // return whether k is in the map

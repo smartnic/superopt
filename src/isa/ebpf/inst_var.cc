@@ -1,6 +1,10 @@
+#include <random>
 #include "inst_var.h"
 
 using namespace std;
+
+default_random_engine gen_ebpf_inst_var;
+uniform_real_distribution<double> unidist_ebpf_inst_var(0.0, 1.0);
 
 int get_mem_size_by_layout() {
   int mem_size;
@@ -489,6 +493,12 @@ void prog_state::clear() {
   _mem.clear();
 }
 
+inout_t::inout_t() {
+  uint64_t r10_min = STACK_SIZE;
+  uint64_t r10_max = 0xffffffffffffffff - get_mem_size_by_layout() + 1 - STACK_SIZE;
+  input_simu_r10 = r10_min + (r10_max - r10_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+}
+
 // insert/update kv in map
 void inout_t::update_kv(int map_id, string k, vector<uint8_t> v) {
   assert(map_id < maps.size());
@@ -541,16 +551,13 @@ bool inout_t::operator==(const inout_t &rhs) const {
 }
 
 ostream& operator<<(ostream& out, const inout_t& x) {
-  out << x.input_simu_r10 << " ";
-  out << x.reg;
-  // out << "(hexadecimal)" << endl;
-  // out << "register: " << hex << x.reg << dec << endl;
+  out << hex << "simu_r10:" << x.input_simu_r10 << dec << " ";
+  out << "reg:" << x.reg << " ";
   for (int i = 0; i < x.maps.size(); i++) {
     out << "map " << i << ": ";
     for (auto it = x.maps[i].begin(); it != x.maps[i].end(); it++) {
       out << it->first << "," << uint8_t_vec_2_hex_str(it->second) << " ";
     }
-    // out << endl;
   }
   return out;
 }
