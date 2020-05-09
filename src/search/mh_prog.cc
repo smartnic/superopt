@@ -162,14 +162,8 @@ double mh_sampler::cost_to_pi(double cost) {
 
 /* compute acceptance function */
 double mh_sampler::alpha(prog* curr, prog* next, prog* orig) {
-  // cout << "curr" << endl;
-  // curr->print();
-  // cout << "next" << endl;
-  // next->print();
   double curr_cost = _cost.total_prog_cost(orig, MAX_PROG_LEN, curr, MAX_PROG_LEN);
-  // cout << "curr_cost: " << curr_cost << endl;
   double next_cost = _cost.total_prog_cost(orig, MAX_PROG_LEN, next, MAX_PROG_LEN);
-  // cout << "next_cost: " << next_cost << endl;
   // res = min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
   // use equation b^(-x) / b^(-y) = b^(-(x-y)) to simplify the calculation
   double d = next_cost - curr_cost;
@@ -250,7 +244,6 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
       _cost._w_p = restart_we_wp.second;
       print_restart_info(i, *restart, restart_we_wp.first, restart_we_wp.second);
     }
-    // cout << "mcmc_iter: " << i << endl;
     // sample one program
     next = mh_next(curr, &orig);
     // insert the next program into frequency dictionary of programs

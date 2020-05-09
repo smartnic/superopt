@@ -48,24 +48,45 @@ void cost::set_orig(prog* orig, int len) {
   _num_real_orig = orig->num_real_instructions();
 }
 
-unsigned int pop_count_outputs(inout_t& output1, inout_t& output2) {
+unsigned int pop_count_outputs(reg_t output1, reg_t output2) {
   int gap = 32;
   unsigned int count = 0;
   int n = 1 + (NUM_REG_BITS - 1) / gap;
   for (int i = 0; i < n; i++) {
-    count += pop_count_asm((uint32_t)output1.reg ^ (uint32_t)output2.reg);
-    output1.reg >>= gap;
-    output2.reg >>= gap;
+    count += pop_count_asm((uint32_t)output1 ^ (uint32_t)output2);
+    output1 >>= gap;
+    output2 >>= gap;
   }
   return count;
 }
 
+double cost::get_ex_error_cost_from_val_lists_abs(vector<reg_t>& val_list1, vector<reg_t>& val_list2) {
+  double res = 0;
+  assert(val_list1.size() == val_list2.size());
+  for (int i = 0; i < val_list1.size(); i++) {
+    res += abs((double)val_list1[i] - (double)val_list2[i]);
+  }
+  return res;
+}
+
+double cost::get_ex_error_cost_from_val_lists_pop(vector<reg_t>& val_list1, vector<reg_t>& val_list2) {
+  double res = 0;
+  assert(val_list1.size() == val_list2.size());
+  for (int i = 0; i < val_list1.size(); i++) {
+    res += pop_count_outputs(val_list1[i], val_list2[i]);
+  }
+  return res;
+}
+
 double cost::get_ex_error_cost(inout_t& output1, inout_t& output2) {
+  vector<reg_t> val_list1, val_list2;
+  get_cmp_lists(val_list1, val_list2, output1, output2);
+  double res = 0;
   switch (_strategy_ex) {
     // `double`: in case there is overflow which makes a positive value
     // become a negative value
-    case ERROR_COST_STRATEGY_ABS: return abs((double)output1.reg - (double)output2.reg);
-    case ERROR_COST_STRATEGY_POP: return pop_count_outputs(output1, output2);
+    case ERROR_COST_STRATEGY_ABS: return get_ex_error_cost_from_val_lists_abs(val_list1, val_list2);
+    case ERROR_COST_STRATEGY_POP: return get_ex_error_cost_from_val_lists_pop(val_list1, val_list2);
     default:
       cout << "ERROR: no error cost example strategy matches." << endl;
       return ERROR_COST_MAX;
@@ -122,7 +143,6 @@ double cost::get_final_error_cost(double exs_cost, int is_equal,
  */
 double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_error_cost != -1) return synth->_error_cost;
-  // synth->print();
   double total_cost = 0;
   inout_t output1, output2;
   output1.init();
@@ -136,10 +156,18 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
     try {
       synth->interpret(output2, ps, _examples._exs[i].input);
     } catch (const string err_msg) {
+      // illegal program
+      synth->set_error_cost(ERROR_COST_MAX);
       return ERROR_COST_MAX;
     }
     double ex_cost = get_ex_error_cost(output1, output2);
     if (ex_cost == 0) num_successful_ex++;
+    else if (ex_cost >= ERROR_COST_MAX) {
+      // synthesis whose test case error cost >= ERROR_COST_MAX
+      synth->set_error_cost(ERROR_COST_MAX);
+      return ERROR_COST_MAX;
+    }
+
     total_cost += ex_cost;
   }
   int is_equal = 0;
@@ -153,7 +181,6 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   total_cost = get_final_error_cost(total_cost, is_equal,
                                     ex_set_size, num_successful_ex,
                                     avg_value);
-  synth->set_error_cost(total_cost);
   // process counterexamples
   // If num_successful_ex < (int)_examples._exs.size(),
   // it shows the example that synth fails in the example set is a counterexample.
@@ -167,11 +194,14 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
   }
-  // in case there is overflow which makes a positive value become a negative value
-  if (total_cost < 0) {
-    cout << "Error: total_cost:" << total_cost <<  "< 0" << endl;
+  // in case there is overflow which makes a positive value become a negative value or
+  // total_cost > ERROR_COST_MAX
+  if ((total_cost > ERROR_COST_MAX) || (total_cost < 0)) {
+    synth->set_error_cost(ERROR_COST_MAX);
     return ERROR_COST_MAX;
   }
+
+  synth->set_error_cost(total_cost);
   return total_cost;
 }
 

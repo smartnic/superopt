@@ -218,3 +218,5 @@ void update_ps_by_input(prog_state& ps, const inout_t& input);
 void update_output_by_ps(inout_t& output, const prog_state& ps);
 uint64_t get_simu_addr_by_real(uint64_t real_addr, uint64_t simu_r10, uint64_t real_r10);
 uint64_t get_real_addr_by_simu(uint64_t simu_addr, uint64_t simu_r10, uint64_t real_r10);
+void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
+                   inout_t& output1, inout_t& output2);

@@ -606,3 +606,45 @@ uint64_t get_simu_addr_by_real(uint64_t real_addr, uint64_t simu_r10, uint64_t r
 uint64_t get_real_addr_by_simu(uint64_t simu_addr, uint64_t simu_r10, uint64_t real_r10) {
   return (simu_addr + real_r10 - simu_r10);
 }
+
+int get_cmp_lists_one_map(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
+                          unsigned int val_sz,
+                          const unordered_map<string, vector<uint8_t>>& map1,
+                          const unordered_map<string, vector<uint8_t>>& map2,
+                          bool record_shared_keys) {
+  int diff_count = 0;
+  for (auto it = map1.begin(); it != map1.end(); it++) {
+    string k = it->first;
+    auto it_map2 = map2.find(k);
+    if (it_map2 == map2.end()) {
+      diff_count++;
+    } else {
+      if (! record_shared_keys) continue;
+      for (int j = 0; j < val_sz; j++) {
+        val_list1.push_back((uint64_t)it->second[j]);
+        val_list2.push_back((uint64_t)it_map2->second[j]);
+      }
+    }
+  }
+  return diff_count;
+}
+
+// val_list: [reg, #different keys, map0[k0], map0[k1], ...., map1[k0'], ....]
+void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
+                   inout_t& output1, inout_t& output2) {
+  val_list1.resize(2);
+  val_list2.resize(2);
+  val_list1[0] = output1.reg;
+  val_list2[0] = output2.reg;
+  int diff_count1 = 0;
+  int diff_count2 = 0;
+  for (int i = 0; i < mem_t::maps_number(); i++) {
+    unsigned int val_sz = mem_t::map_val_sz(i) / NUM_BYTE_BITS;
+    diff_count1 += get_cmp_lists_one_map(val_list1, val_list2, val_sz,
+                                         output1.maps[i], output2.maps[i], true);
+    diff_count2 += get_cmp_lists_one_map(val_list2, val_list1, val_sz,
+                                         output2.maps[i], output1.maps[i], false);
+  }
+  val_list1[1] = diff_count1 + diff_count2;
+  val_list2[1] = 0;
+}

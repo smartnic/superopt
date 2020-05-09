@@ -24,6 +24,8 @@ class cost {
   double get_final_error_cost(double exs_cost, int is_equal,
                               int ex_set_size, int num_successful_ex,
                               int avg_value);
+  double get_ex_error_cost_from_val_lists_abs(vector<reg_t>& val_list1, vector<reg_t>& val_list2);
+  double get_ex_error_cost_from_val_lists_pop(vector<reg_t>& val_list1, vector<reg_t>& val_list2);
  public:
   validator _vld;
   examples _examples;

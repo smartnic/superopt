@@ -63,3 +63,7 @@ class inout_t_base {
   bool operator==(const inout_t_base &rhs) const {RAISE_EXCEPTION("inout_t::operator==");}
   friend ostream& operator<<(ostream& out, const inout_t_base& x) {RAISE_EXCEPTION("inout_t::operator<<");}
 };
+
+// exposed APIs
+// void get_cmp_lists(vector<reg_t>& val_list1, vector<reg_t>& val_list2,
+//                    inout_t& output1, inout_t& output2);

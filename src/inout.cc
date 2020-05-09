@@ -20,7 +20,7 @@ void inout::clear() {
 }
 
 ostream& operator<< (ostream& out, const inout &_inout) {
-  out << "input:" << _inout.input << "output:" << _inout.output;
+  out << "input:" << _inout.input << " output:" << _inout.output;
   return out;
 }
 

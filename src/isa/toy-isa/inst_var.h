@@ -30,3 +30,6 @@ class inout_t: public inout_t_base {
     return out;
   }
 };
+
+void get_cmp_lists(vector<int>& val_list1, vector<int>& val_list2,
+                   inout_t& output1, inout_t& output2);
