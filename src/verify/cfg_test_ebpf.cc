@@ -35,8 +35,6 @@ inst instructions3[6] = {inst(STXB, 10, -1, 1),
                          inst(EXIT),
                         };
 
-mem_layout mem_t::_layout;
-
 void test1() {
   string expected;
   graph g1(instructions1, 8);

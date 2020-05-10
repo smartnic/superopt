@@ -5,9 +5,9 @@
 using namespace z3;
 
 #define v(x) string_to_expr(x)
-mem_layout mem_t::_layout;
 
 void test1() {
+  mem_t::_layout.clear();
   // branch test for st/ld
   inst p1[6] = {inst(STXB, 10, -1, 1),
                 inst(JEQXC, 1, 0x12, 2),

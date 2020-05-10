@@ -5,8 +5,6 @@
 
 using namespace std;
 
-mem_layout mem_t::_layout;
-
 #define v(x) to_expr(x, 64)
 #define v8(x) to_expr(x, 8)
 #define v16(x) to_expr(x, 16)

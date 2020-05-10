@@ -20,10 +20,6 @@
 
 using namespace std;
 
-#if ISA_EBPF
-mem_layout mem_t::_layout;
-#endif
-
 string FILE_CONFIG = "config";
 
 inst* bm;

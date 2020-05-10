@@ -3,6 +3,8 @@
 
 using namespace std;
 
+mem_layout mem_t::_layout;
+
 default_random_engine gen_ebpf_inst_var;
 uniform_real_distribution<double> unidist_ebpf_inst_var(0.0, 1.0);
 

@@ -90,6 +90,8 @@ class mem_t {
   friend ostream& operator<<(ostream& out, const mem_t& mem);
 };
 
+extern mem_layout _layout;
+
 class smt_wt {
  private:
   bool is_equal(z3::expr e1, z3::expr e2);

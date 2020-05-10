@@ -5,8 +5,6 @@
 
 using namespace z3;
 
-mem_layout mem_t::_layout;
-
 void test1() {
   std::cout << "test 1:" << endl;
   inst instructions1[9] = {inst(MOV32XC, 0, -1),         /* r0 = 0x00000000ffffffff */

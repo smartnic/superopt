@@ -187,9 +187,8 @@ inst instructions23[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                           inst(EXIT),
                          };
 
-mem_layout mem_t::_layout;
-
 void test1() {
+  mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
   prog_state ps;
   ps.init();
