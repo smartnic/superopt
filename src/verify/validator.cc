@@ -6,7 +6,10 @@
 using namespace z3;
 
 /* class validator start */
-validator::validator() {}
+validator::validator() {
+  _last_counterex.input.init();
+  _last_counterex.output.init();
+}
 
 validator::validator(inst* orig, int length) {
   set_orig(orig, length);
