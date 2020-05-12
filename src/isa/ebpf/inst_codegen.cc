@@ -925,9 +925,10 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv) {
   for (int i = 0; i < map_urt.size(); i++) {
     z3::expr z3_is_valid = map_urt.is_valid[i];
     int is_valid = mdl.eval(z3_is_valid).bool_value();
-    if (is_valid == -1) continue; // -1 means z3 false, 1 means z3 true
+    if (is_valid != 1) continue; // -1 means z3 false, 1 means z3 true, 0: z3 const (not know it is true or false)
 
-    z3::expr z3_addr_v = map_urt.addr_v[i];
+    z3::expr z3_addr_v = mdl.eval(map_urt.addr_v[i]);
+    if (! z3_addr_v.is_numeral()) continue;
     uint64_t addr_v = mdl.eval(z3_addr_v).get_numeral_uint64();
     if (addr_v == 0) continue;
 
