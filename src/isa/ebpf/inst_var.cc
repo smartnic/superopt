@@ -90,7 +90,21 @@ unsigned int map_t::get_and_update_next_idx() {
            "cannnot insert more entries" << endl;
       return 0;
     }
-    next_idx = _cur_max_entries;
+    // next_idx = _cur_max_entries;
+    int x = (MAX_PROG_LEN - 1 - _cur_max_entries) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+    int c = 0;
+    int target_i = -1;
+    for (int i = 0; i < _idx_used.size(); i++) {
+      if (_idx_used[i]) continue;
+      if (c == x) {
+        target_i = i;
+      } else {
+        c++;
+      }
+    }
+    assert(target_i != -1);
+    _idx_used[target_i] = true;
+    next_idx = target_i;
     _cur_max_entries++;
   }
   return next_idx;

@@ -37,6 +37,8 @@ class mem_layout {
 };
 
 class map_t {
+ private:
+  vector<bool> _idx_used; // idxes have been used before
  public:
   // map: key to array index i in map range, i starts from 0, the max of i is (_max_entries - 1)
   unordered_map<string, unsigned int> _k2idx;
@@ -46,7 +48,10 @@ class map_t {
   // maximum number of entries in map from the beginning to now
   unsigned int _cur_max_entries = 0;
   unsigned int _max_entries;
-  map_t(unsigned int max_entries) {_max_entries = max_entries;}
+  map_t(unsigned int max_entries) {
+    _max_entries = max_entries;
+    _idx_used.resize(MAX_PROG_LEN, false);
+  }
   unsigned int get_and_update_next_idx();
   void add_available_idx(unsigned int idx);
   void clear();
