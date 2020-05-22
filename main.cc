@@ -297,7 +297,10 @@ int main(int argc, char* argv[]) {
   vector<reg_t> input_regs(30);
   gen_random_input(input_regs, -50, 50);
   inputs.resize(30);
-  for (int i = 0; i < 30; i++) inputs[i].reg = input_regs[i];
+  for (int i = 0; i < inputs.size(); i++) {
+    inputs[i].init();
+    inputs[i].reg = input_regs[i];
+  }
   run_mh_sampler(in_para, bm_optis_orig);
   auto end = NOW;
   cout << "compiling time: " << DUR(start, end) << " us" << endl;

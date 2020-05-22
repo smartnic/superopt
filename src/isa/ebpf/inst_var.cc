@@ -81,6 +81,8 @@ ostream& operator<<(ostream& out, const mem_t& mem) {
 
 unsigned int map_t::get_and_update_next_idx() {
   unsigned int next_idx = 0;
+  // If queue(free_list) is not empty, get the next idx from queue,
+  // else get a random idx from the unused indexes (i.e., idx has not been used before)
   if (!_available_idx_q.empty()) {
     next_idx = _available_idx_q.front();
     _available_idx_q.pop();
@@ -90,8 +92,8 @@ unsigned int map_t::get_and_update_next_idx() {
            "cannnot insert more entries" << endl;
       return 0;
     }
-    // next_idx = _cur_max_entries;
-    int x = (MAX_PROG_LEN - 1 - _cur_max_entries) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+    // get a random idx from the available idx range [0, # available indexes]
+    int x = (_max_entries - 1 - _cur_max_entries) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
     int c = 0;
     int target_i = -1;
     for (int i = 0; i < _idx_used.size(); i++) {
@@ -110,11 +112,12 @@ unsigned int map_t::get_and_update_next_idx() {
   return next_idx;
 }
 
-void map_t::add_available_idx(unsigned int off) {
-  _available_idx_q.push(off);
+void map_t::add_available_idx(unsigned int idx) {
+  _available_idx_q.push(idx);
 }
 
 void map_t::clear() {
+  for (int i = 0; i < _idx_used.size(); i++) _idx_used[i] = false;
   _k2idx.clear();
   queue<unsigned int> empty;
   _available_idx_q.swap(empty);

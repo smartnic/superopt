@@ -39,10 +39,19 @@ void test1() {
   read_data_from_file(file_name, "Programs:");
 
   examples exs;
-  exs.insert(inout(5, 10));
+  inout_t input, output;
+  input.init();
+  output.init();
+  input.reg = 5;
+  output.reg = 10;
+  exs.insert(inout(input, output));
   d.insert_examples(0, exs);
-  d.insert_examples(1, inout(3, 6));
-  d.insert_examples(2, inout(4, 8));
+  input.reg = 3;
+  output.reg = 6;
+  d.insert_examples(1, inout(input, output));
+  input.reg = 4;
+  output.reg = 8;
+  d.insert_examples(2, inout(input, output));
   store_examples_to_file(file_name, d);
   read_data_from_file(file_name, "Examples:");
 

@@ -28,5 +28,6 @@ class examples {
   examples();
   ~examples();
   void insert(const inout& ex);
+  unsigned int size() {return _exs.size();}
   void clear();
 };

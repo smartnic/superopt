@@ -14,7 +14,6 @@ using namespace std;
 #define STACK_SIZE 512 // 512 bytes
 #define NULL_ADDR 0
 #define NULL_ADDR_EXPR to_expr(NULL_ADDR)
-// static constexpr int NUM_REGS = 11;
 static constexpr int NUM_REGS = 11;
 
 struct map_attr { // map attribute
@@ -50,7 +49,7 @@ class map_t {
   unsigned int _max_entries;
   map_t(unsigned int max_entries) {
     _max_entries = max_entries;
-    _idx_used.resize(MAX_PROG_LEN, false);
+    _idx_used.resize(_max_entries, false);
   }
   unsigned int get_and_update_next_idx();
   void add_available_idx(unsigned int idx);
