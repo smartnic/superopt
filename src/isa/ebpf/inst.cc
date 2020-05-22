@@ -64,6 +64,8 @@ int32_t inst::get_max_imm() const {
     case ADD64XC:
     case MOV64XC:
     case ADD32XC:
+    case OR32XC:
+    case AND32XC:
     case MOV32XC:
     case JEQXC:
     case JGTXC:
@@ -101,6 +103,8 @@ int32_t inst::get_min_imm() const {
     case ADD64XC:
     case MOV64XC:
     case ADD32XC:
+    case OR32XC:
+    case AND32XC:
     case MOV32XC:
     case JEQXC:
     case JGTXC:
@@ -162,6 +166,10 @@ string inst::opcode_to_str(int opcode) const {
     case ARSH64XY: return "arshxy";
     case ADD32XC: return "add32xc";
     case ADD32XY: return "add32xy";
+    case OR32XC: return "or32xc";
+    case OR32XY: return "or32xy";
+    case AND32XC: return "and32xc";
+    case AND32XY: return "and32xy";
     case LSH32XC: return "lsh32xc";
     case LSH32XY: return "lsh32xy";
     case RSH32XC: return "rsh32xc";
@@ -208,8 +216,9 @@ vector<int> inst::get_canonical_reg_list() const {
     // r10 cannot be modified, since r10 is the read-only frame pointer to access stack
     // reference: https://www.kernel.org/doc/Documentation/networking/filter.txt
     if (is_reg(i)) {
-      if (get_operand(i) != 10) {
-        reg_list.push_back(get_operand(i));
+      int reg = get_operand(i);
+      if ((reg != 10) && (reg != 1) && (reg != 0)) {
+        reg_list.push_back(reg);
       }
     }
   }
@@ -369,6 +378,10 @@ z3::expr inst::smt_inst(smt_var& sv) const {
     case ARSH64XY: return predicate_arsh(CURDST, CURSRC_L6, NEWDST);
     case ADD32XC: return predicate_add32(CURDST, IMM, NEWDST);
     case ADD32XY: return predicate_add32(CURDST, CURSRC, NEWDST);
+    case OR32XC: return predicate_or32(CURDST, IMM, NEWDST);
+    case OR32XY: return predicate_or32(CURDST, CURSRC, NEWDST);
+    case AND32XC: return predicate_and32(CURDST, IMM, NEWDST);
+    case AND32XY: return predicate_and32(CURDST, CURSRC, NEWDST);
     case LSH32XC: return predicate_lsh32(CURDST, IMM, NEWDST);
     case LSH32XY: return predicate_lsh32(CURDST, CURSRC_L5, NEWDST);
     case RSH32XC: return predicate_rsh32(CURDST, IMM, NEWDST);
@@ -439,6 +452,10 @@ int opcode_2_idx(int opcode) {
     case ARSH64XY: return IDX_ARSH64XY;
     case ADD32XC: return IDX_ADD32XC;
     case ADD32XY: return IDX_ADD32XY;
+    case OR32XC: return IDX_OR32XC;
+    case OR32XY: return IDX_OR32XY;
+    case AND32XC: return IDX_AND32XC;
+    case AND32XY: return IDX_AND32XY;
     case LSH32XC: return IDX_LSH32XC;
     case LSH32XY: return IDX_LSH32XY;
     case RSH32XC: return IDX_RSH32XC;
@@ -587,6 +604,10 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     [IDX_ARSH64XY] = && INSN_ARSH64XY,
     [IDX_ADD32XC]  = && INSN_ADD32XC,
     [IDX_ADD32XY]  = && INSN_ADD32XY,
+    [IDX_OR32XC]   = && INSN_OR32XC,
+    [IDX_OR32XY]   = && INSN_OR32XY,
+    [IDX_AND32XC]  = && INSN_AND32XC,
+    [IDX_AND32XY]  = && INSN_AND32XY,
     [IDX_LSH32XC]  = && INSN_LSH32XC,
     [IDX_LSH32XY]  = && INSN_LSH32XY,
     [IDX_RSH32XC]  = && INSN_RSH32XC,
@@ -644,6 +665,10 @@ INSN_NOP:
   ALU_UNARY(MOV32XY, mov32, SRC)
   ALU_BINARY(ADD32XC, add32, DST, IMM)
   ALU_BINARY(ADD32XY, add32, DST, SRC)
+  ALU_BINARY(OR32XC, or32, DST, IMM)
+  ALU_BINARY(OR32XY, or32, DST, SRC)
+  ALU_BINARY(AND32XC, and32, DST, IMM)
+  ALU_BINARY(AND32XY, and32, DST, SRC)
   ALU_BINARY(LSH32XC, lsh32, DST, IMM)
   ALU_BINARY(LSH32XY, lsh32, DST, SRC_L5)
   ALU_BINARY(RSH32XC, rsh32, DST, IMM)

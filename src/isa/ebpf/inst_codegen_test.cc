@@ -95,6 +95,16 @@ void test1() {
   print_test_res(z == L32(x + y), "compute_add32");
   print_test_res(is_valid(predicate_add32(v(x), v(y), v(z))), "predicate_add32 match compute_add32");
 
+  // check or32
+  z = compute_or32(x, y);
+  print_test_res(z == L32(x | y), "compute_or32");
+  print_test_res(is_valid(predicate_or32(v(x), v(y), v(z))), "predicate_or32 match compute_or32");
+
+  // check and32
+  z = compute_and32(x, y);
+  print_test_res(z == L32(x & y), "compute_and32");
+  print_test_res(is_valid(predicate_and32(v(x), v(y), v(z))), "predicate_and32 match compute_and32");
+
   // check mov
   c = compute_mov(a);
   print_test_res(c == a, "compute_mov");

@@ -187,6 +187,32 @@ inst instructions23[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                           inst(EXIT),
                          };
 
+// check or32xc, and32xc
+// r0 = (r1 & 0xffff) | 0xff0000
+inst instructions24[4] = {inst(AND32XC, 1, 0xffff),  // w1 &= 0xffff
+                          inst(OR32XC, 1, 0xff0000), // w1 |= 0xff0000
+                          inst(MOV64XY, 0, 1), // r0 = r1
+                          inst(EXIT),
+                         };
+// check or32xy, and32xy
+// r0 = (r1 & 0xffff) | 0xff0000
+inst instructions25[6] = {inst(MOV64XC, 2, 0xffff),
+                          inst(AND32XY, 1, 2),  // w1 &= 0xffff
+                          inst(MOV64XC, 2, 0xff0000),
+                          inst(OR32XY, 1, 2),  // w1 |= 0xff0000
+                          inst(MOV64XY, 0, 1),  // r0 = r1
+                          inst(EXIT),
+                         };
+// w0 = (w1 >> 16) | ((w1 << 16) & 0xff0000)
+inst instructions26[7] = {inst(MOV32XY, 2, 1), // w2 = w1
+                          inst(RSH32XC, 2, 16), // w2 >>= 16
+                          inst(LSH32XC, 1, 16), // w1 <<= 16
+                          inst(AND32XC, 1, 0xff0000), // w1 &= 0xff0000
+                          inst(OR32XY, 1, 2), // w1 |= w2
+                          inst(MOV32XY, 0, 1), // w0 = w1
+                          inst(EXIT),
+                         };
+
 void test1() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
@@ -372,6 +398,23 @@ void test1() {
   output.clear();
   interpret(output, instructions23, 9, ps, input);
   print_test_res(output == expected, "interpret map input 3");
+
+  // w0 = (w1 & 0xffff) | 0xff0000
+  input.reg = 0xffff0f0f;
+  expected.reg = 0xff0f0f;
+  interpret(output, instructions24, 4, ps, input);
+  print_test_res(output == expected, "interpret or32xc & and32xc");
+  // w0 = (w1 & 0xffff) | 0xff0000
+  input.reg = 0xff010f0f;
+  expected.reg = 0xff0f0f;
+  interpret(output, instructions25, 6, ps, input);
+  print_test_res(output == expected, "interpret or32xy & and32xy");
+
+  // w0 = (w1 >> 16) | ((w1 << 16) & 0xff0000)
+  input.reg = 0x09abcdef12345678;
+  expected.reg = 0x781234;
+  interpret(output, instructions26, 7, ps, input);
+  print_test_res(output == expected, "interpret or32xy & and32xy");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output) {
@@ -439,6 +482,18 @@ void test2() {
 
   insn = inst(ADD32XY, 0, 1);
   SMT_CHECK_XY(0xffffffff, 0xffffffff, 0xfffffffe, "smt ADD32XY");
+
+  insn = inst(OR32XC, 0, 0xf0f0f0f0);
+  SMT_CHECK_XC(0xfff0f00f0f, 0xf0f0ffff, "smt OR32XC");
+
+  insn = inst(OR32XY, 0, 1);
+  SMT_CHECK_XY(0xffff00000000, 0x12345678, 0x12345678, "smt OR32XY");
+
+  insn = inst(AND32XC, 0, 0xffffffff);
+  SMT_CHECK_XC(0x1, 0x1, "smt AND32XC");
+
+  insn = inst(AND32XY, 0, 1);
+  SMT_CHECK_XY(0x1, 0x11, 0x1, "smt AND32XY");
 
   insn = inst(MOV64XC, 0, 0xfffffffe);
   SMT_CHECK_XC(0x0, 0xfffffffffffffffe, "smt MOV64XC");
@@ -660,6 +715,10 @@ void test3() {
                   inst(ARSH64XY, 3, 1),
                   inst(ADD32XC, 3, 1),
                   inst(ADD32XY, 3, 1),
+                  inst(OR32XC, 3, 1),
+                  inst(OR32XY, 3, 1),
+                  inst(AND32XC, 3, 1),
+                  inst(AND32XY, 3, 1),
                   inst(LSH32XC, 3, 1),
                   inst(LSH32XY, 3, 1),
                   inst(RSH32XC, 3, 1),
@@ -700,6 +759,10 @@ void test3() {
              "{207, 3, 1, 0, 0},"\
              "{4, 3, 0, 0, 1},"\
              "{12, 3, 1, 0, 0},"\
+             "{68, 3, 0, 0, 1},"\
+             "{76, 3, 1, 0, 0},"\
+             "{84, 3, 0, 0, 1},"\
+             "{92, 3, 1, 0, 0},"\
              "{100, 3, 0, 0, 1},"\
              "{108, 3, 1, 0, 0},"\
              "{116, 3, 0, 0, 1},"\

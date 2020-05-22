@@ -38,6 +38,10 @@ enum OPCODE_IDX {
   // ALU32
   IDX_ADD32XC,
   IDX_ADD32XY,
+  IDX_OR32XC,
+  IDX_OR32XY,
+  IDX_AND32XC,
+  IDX_AND32XY,
   IDX_LSH32XC,
   IDX_LSH32XY,
   IDX_RSH32XC,
@@ -104,6 +108,10 @@ enum OPCODES {
   ARSH64XY = OPCODE_BPF_ALU64_REG(BPF_ARSH),
   ADD32XC  = OPCODE_BPF_ALU32_IMM(BPF_ADD),
   ADD32XY  = OPCODE_BPF_ALU32_REG(BPF_ADD),
+  OR32XC   = OPCODE_BPF_ALU32_IMM(BPF_OR),
+  OR32XY   = OPCODE_BPF_ALU32_REG(BPF_OR),
+  AND32XC  = OPCODE_BPF_ALU32_IMM(BPF_AND),
+  AND32XY  = OPCODE_BPF_ALU32_REG(BPF_AND),
   LSH32XC  = OPCODE_BPF_ALU32_IMM(BPF_LSH),
   LSH32XY  = OPCODE_BPF_ALU32_REG(BPF_LSH),
   RSH32XC  = OPCODE_BPF_ALU32_IMM(BPF_RSH),
@@ -148,6 +156,10 @@ static const int idx_2_opcode[NUM_INSTR] = {
   [IDX_ARSH64XY] = ARSH64XY,
   [IDX_ADD32XC] = ADD32XC,
   [IDX_ADD32XY] = ADD32XY,
+  [IDX_OR32XC]  = OR32XC,
+  [IDX_OR32XY]  = OR32XY,
+  [IDX_AND32XC] = AND32XC,
+  [IDX_AND32XY] = AND32XY,
   [IDX_LSH32XC] = LSH32XC,
   [IDX_LSH32XY] = LSH32XY,
   [IDX_RSH32XC] = RSH32XC,
@@ -191,6 +203,10 @@ static const int num_operands[NUM_INSTR] = {
   [IDX_ARSH64XY] = 2,
   [IDX_ADD32XC]  = 2,
   [IDX_ADD32XY]  = 2,
+  [IDX_OR32XC]   = 2,
+  [IDX_OR32XY]   = 2,
+  [IDX_AND32XC]  = 2,
+  [IDX_AND32XY]  = 2,
   [IDX_LSH32XC]  = 2,
   [IDX_LSH32XY]  = 2,
   [IDX_RSH32XC]  = 2,
@@ -236,6 +252,10 @@ static const int insn_num_regs[NUM_INSTR] = {
   [IDX_ARSH64XY] = 2,
   [IDX_ADD32XC]  = 1,
   [IDX_ADD32XY]  = 2,
+  [IDX_OR32XC]   = 1,
+  [IDX_OR32XY]   = 2,
+  [IDX_AND32XC]  = 1,
+  [IDX_AND32XY]  = 2,
   [IDX_LSH32XC]  = 1,
   [IDX_LSH32XY]  = 2,
   [IDX_RSH32XC]  = 1,
@@ -279,6 +299,10 @@ static const int opcode_type[NUM_INSTR] = {
   [IDX_ARSH64XY] = OP_OTHERS,
   [IDX_ADD32XC]  = OP_OTHERS,
   [IDX_ADD32XY]  = OP_OTHERS,
+  [IDX_OR32XC]   = OP_OTHERS,
+  [IDX_OR32XY]   = OP_OTHERS,
+  [IDX_AND32XC]  = OP_OTHERS,
+  [IDX_AND32XY]  = OP_OTHERS,
   [IDX_LSH32XC]  = OP_OTHERS,
   [IDX_LSH32XY]  = OP_OTHERS,
   [IDX_RSH32XC]  = OP_OTHERS,
@@ -312,6 +336,8 @@ static const int opcode_type[NUM_INSTR] = {
 // MAX value for immediate number of shift 32 and shift 64
 static constexpr int32_t MAX_IMM = 0x7fffffff;
 static constexpr int32_t MIN_IMM = 0x80000000;
+// static constexpr int32_t MAX_IMM = 0xff0000 - 10;
+// static constexpr int32_t MIN_IMM = 0xff0000 + 10;
 static constexpr int32_t MAX_OFF = 0x7fff;
 static constexpr int32_t MIN_OFF = 0xffff8000;
 static constexpr int32_t MAX_IMM_SH32 = 31;
@@ -358,6 +384,10 @@ static const int optable[NUM_INSTR] = {
   [IDX_ARSH64XY] = ALU_OPS_REG,
   [IDX_ADD32XC]  = ALU_OPS_IMM,
   [IDX_ADD32XY]  = ALU_OPS_REG,
+  [IDX_OR32XC]   = ALU_OPS_IMM,
+  [IDX_OR32XY]   = ALU_OPS_REG,
+  [IDX_AND32XC]  = ALU_OPS_IMM,
+  [IDX_AND32XY]  = ALU_OPS_REG,
   [IDX_LSH32XC]  = ALU_OPS_IMM,
   [IDX_LSH32XY]  = ALU_OPS_REG,
   [IDX_RSH32XC]  = ALU_OPS_IMM,

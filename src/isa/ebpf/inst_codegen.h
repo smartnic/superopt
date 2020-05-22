@@ -45,6 +45,8 @@ inline int64_t compute_be64(int64_t in, int64_t out = 0);
 // return (out = in1 op in2)
 inline int64_t compute_add(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_add32(int64_t in1, int64_t in2, int64_t out = 0);
+inline int64_t compute_or32(int64_t in1, int64_t in2, int64_t out = 0);
+inline int64_t compute_and32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_lsh(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_lsh32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_rsh(int64_t in1, int64_t in2, int64_t out = 0);
@@ -84,6 +86,8 @@ inline z3::expr predicate_be64(z3::expr in, z3::expr out);
 // return (out == in1 op in2)
 inline z3::expr predicate_add(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_add32(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_or32(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_and32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_lsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_lsh32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_rsh(z3::expr in1, z3::expr in2, z3::expr out);
@@ -150,6 +154,8 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv);
 #define RSH_EXPR(in1, in2, out) (out EQ RSH(in1, in2))
 #define ARSH_EXPR(in1, in2, out) (out EQ ARSH(in1, in2))
 #undef ADD32_EXPR
+#undef OR32_EXPR
+#undef AND32_EXPR
 #undef MOV32_EXPR
 #undef LSH32_EXPR
 #undef RSH32_EXPR
@@ -164,6 +170,8 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv);
 // 4. Why RSH(a, b) and RSH32(a, b): for numerical number,
 // need to convert a to unsigned according to its type: int32_t -> uint32_t, int64_t -> uint64_t
 #define ADD32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) + INT32(in2)))
+#define OR32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) | INT32(in2)))
+#define AND32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) & INT32(in2)))
 #define MOV32_EXPR(in, out) (out EQ SET_HIGHER32_ZERO(INT32(in)))
 #define LSH32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(LSH(INT32(in1), INT32(in2))))
 #define RSH32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(RSH32(INT32(in1), INT32(in2))))
@@ -262,6 +270,8 @@ COMPUTE_UNARY(be64, BE64_EXPR)
 
 COMPUTE_BINARY(add, ADD_EXPR)
 COMPUTE_BINARY(add32, ADD32_EXPR)
+COMPUTE_BINARY(or32, OR32_EXPR)
+COMPUTE_BINARY(and32, AND32_EXPR)
 COMPUTE_BINARY(lsh, LSH_EXPR)
 COMPUTE_BINARY(lsh32, LSH32_EXPR)
 COMPUTE_BINARY(rsh, RSH_EXPR)
@@ -322,6 +332,8 @@ PREDICATE_UNARY(be32, BE32_EXPR)
 PREDICATE_UNARY(be64, BE64_EXPR)
 PREDICATE_BINARY(add, ADD_EXPR)
 PREDICATE_BINARY(add32, ADD32_EXPR)
+PREDICATE_BINARY(or32, OR32_EXPR)
+PREDICATE_BINARY(and32, AND32_EXPR)
 PREDICATE_BINARY(lsh, LSH_EXPR)
 PREDICATE_BINARY(rsh, RSH_EXPR)
 PREDICATE_BINARY(arsh, ARSH_EXPR)
