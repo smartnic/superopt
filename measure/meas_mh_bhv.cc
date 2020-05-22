@@ -138,12 +138,15 @@ void meas_store_raw_data(meas_mh_data &d, string meas_path_out, string suffix,
 }
 
 // return C_n^m
-unsigned int combination(unsigned int n, unsigned m) {
-  unsigned int a = 1;
+// max n: 56
+double combination(unsigned int n, unsigned m) {
+  // utilize C_n^m = C_n^(n-m) to simplify the computation and try to avoid overflow
+  if (m > (n - m)) m = n - m;
+  double a = 1;
   for (unsigned int i = n; i > (n - m); i--) {
     a *= i;
   }
-  unsigned int b = 1;
+  double b = 1;
   for (unsigned int i = 1; i <= m; i++) {
     b *= i;
   }
@@ -160,8 +163,8 @@ void gen_n_combinations(int n, int s, int e,
                         int row_s, vector<vector<int> >& res) {
   if (n == 0) return;
   for (int i = s; i <= e - n + 1; i++) {
-    int num_comb = combination(e - i, n - 1);
-    for (int j = row_s; j < row_s + num_comb; j++)
+    double num_comb = combination(e - i, n - 1);
+    for (double j = row_s; j < row_s + num_comb; j++)
       res[j].push_back(i);
     gen_n_combinations(n - 1, i + 1, e, row_s, res);
     row_s += num_comb;
@@ -175,7 +178,7 @@ void gen_n_combinations(int n, int s, int e,
 // 3. replace NOP instructions with real instructions according to combinations.
 // e.g. if optimal program has 2 real instuctions, one combination is [2,3],
 // then the second and third instructions are replaced with real instructions
-void gen_optis_for_prog(const prog& p, const int& len,
+void gen_optis_for_prog(const prog& p, int len,
                         vector<prog>& opti_set) {
   int n = p.num_real_instructions();
   // C_len^n

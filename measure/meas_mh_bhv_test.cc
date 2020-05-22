@@ -2,6 +2,7 @@
 #include <cstdio>
 #include "meas_mh_bhv.h"
 #include "benchmark_toy_isa.h"
+#include "../src/utils.h"
 
 using namespace std;
 
@@ -58,7 +59,18 @@ void test1() {
   remove("measure/test.txt");
 }
 
+void test2() {
+  cout << "test combination" << endl;
+  print_test_res(combination(10, 2) == 45, "1");
+  print_test_res(combination(10, 5) == 252, "2");
+  print_test_res(combination(20, 19) == 20, "3");
+  print_test_res(combination(50, 20) == 47129212243960, "4");
+  print_test_res(combination(50, 25) == 126410606437752, "5");
+  print_test_res(combination(56, 28) == 7648690600760440, "6");
+}
+
 int main() {
   test1();
+  test2();
   return 0;
 }

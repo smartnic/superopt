@@ -50,3 +50,5 @@ void meas_store_raw_data(meas_mh_data &d, string meas_path_out, string suffix,
                          int meas_bm, vector<prog> &bm_optimals);
 
 void gen_optis_for_progs(const vector<inst*> &bm_optis_orig, vector<prog> &bm_optimals);
+// for the unit tests
+double combination(unsigned int n, unsigned m);
