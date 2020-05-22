@@ -49,6 +49,7 @@ class inst_base {
   void print() const {RAISE_EXCEPTION("inst::print");}
   // get_canonical_reg_list returns the list of regs which can be modified by prog canonicalize
   vector<int> get_canonical_reg_list() const {RAISE_EXCEPTION("inst::get_canonical_reg_list");}
+  static vector<int> get_isa_canonical_reg_list() {RAISE_EXCEPTION("inst::get_isa_canonical_reg_list");}
   string opcode_to_str(int) const {RAISE_EXCEPTION("inst::opcode_to_str");}
   op_t get_max_operand_val(int op_index, int inst_index = 0) const {RAISE_EXCEPTION("inst::get_max_operand_val");}
   op_t get_min_operand_val(int op_index, int inst_index = 0) const {RAISE_EXCEPTION("inst::get_min_operand_val");}

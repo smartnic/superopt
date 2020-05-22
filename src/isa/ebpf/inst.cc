@@ -225,6 +225,10 @@ vector<int> inst::get_canonical_reg_list() const {
   return reg_list;
 }
 
+vector<int> inst::get_isa_canonical_reg_list() {
+  return vector<int> {2, 3, 4, 5, 6, 7, 8, 9};
+}
+
 inst& inst::operator=(const inst &rhs) {
   _opcode = rhs._opcode;
   _dst_reg = rhs._dst_reg;

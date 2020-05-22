@@ -138,6 +138,7 @@ class inst: public inst_base {
   int get_min_operand_val(int op_index, int inst_index = 0) const;
   int get_jmp_dis() const;
   vector<int> get_canonical_reg_list() const;
+  static vector<int> get_isa_canonical_reg_list();
   void insert_jmp_opcodes(unordered_set<int>& jmp_set) const;
   int inst_output_opcode_type() const;
   int inst_output() const;

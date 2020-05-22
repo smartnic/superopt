@@ -458,6 +458,7 @@ class inst: public inst_base {
   string opcode_to_str(int) const;
   void print() const;
   vector<int> get_canonical_reg_list() const;
+  static vector<int> get_isa_canonical_reg_list();
   int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
   int32_t get_min_operand_val(int op_index, int inst_index = 0) const;
   int get_jmp_dis() const;
