@@ -207,7 +207,7 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
 
 double cost::perf_cost(prog* synth, int len) {
   if (synth->_perf_cost != -1) return synth->_perf_cost;
-  int total_cost =  MAX_PROG_LEN - _num_real_orig +
+  int total_cost =  inst::max_prog_len - _num_real_orig +
                     synth->num_real_instructions();
   synth->set_perf_cost(total_cost);
   return total_cost;

@@ -4,6 +4,8 @@
 
 using namespace std;
 
+int inst_base::max_prog_len = 7; // the default value is set as 7
+
 void inst_base::to_abs_bv(vector<op_t>& abs_vec) const {
   const int num_args = _args.size();
   abs_vec.push_back(_opcode);

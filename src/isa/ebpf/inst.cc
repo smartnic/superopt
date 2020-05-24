@@ -91,7 +91,7 @@ int16_t inst::get_max_off(int inst_index) const {
     case OP_LD:
     case OP_ST: return -1; // assume only stack
     case OP_UNCOND_JMP:
-    case OP_COND_JMP: return min(MAX_OFF, MAX_PROG_LEN - inst_index - 2);
+    case OP_COND_JMP: return min(MAX_OFF, inst::max_prog_len - inst_index - 2);
     default: cout << "Error: no off in instruction: ";
       print();
       return 0;

@@ -10,8 +10,9 @@ ostream& operator<<(ostream& out, vector<int>& v);
 ostream& operator<<(ostream& out, vector<vector<int> >& v);
 
 // instruction_list set
+// N can not greater than 56 because of the limit of combination function
 #undef N
-#define N MAX_PROG_LEN
+#define N 7
 
 #undef NUM_ORIG
 #define NUM_ORIG 3

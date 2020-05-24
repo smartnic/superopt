@@ -191,6 +191,7 @@ inst bm_opti27[N] = {inst(ADDXY, 0, 0),
                     };
 
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
+  inst::max_prog_len = N;
   switch (bm_id) {
     case 0:
       *bm = bm0;

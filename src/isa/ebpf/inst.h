@@ -13,7 +13,6 @@
 
 using namespace std;
 
-static constexpr int MAX_PROG_LEN = 7;
 // Max number of operands in one instruction
 static constexpr int MAX_OP_LEN = 3;
 

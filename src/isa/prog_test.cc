@@ -89,7 +89,7 @@ void test4() {
   prog p2(instructions2);
   prog p3(instructions3);
   prog p4(instructions4);
-  const int N = MAX_PROG_LEN;
+  const int N = 7; // program len
   print_test_res(bitset<N>(p1.to_rel_bv(p2)).to_string() == "1111111",
                  "program to_rel_bv(prog) 1");
   print_test_res(bitset<N>(p1.to_rel_bv(p3)).to_string() == "1111101",

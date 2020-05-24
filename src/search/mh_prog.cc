@@ -97,7 +97,7 @@ prog* mh_sampler_restart::next_start_prog(prog* curr) {
     case MH_SAMPLER_ST_NEXT_START_PROG_ORIG:
       return curr;
     case MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS:
-      return mod_random_k_cont_insts(*curr, MAX_PROG_LEN);
+      return mod_random_k_cont_insts(*curr, inst::max_prog_len);
     case MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS:
       return mod_random_cont_insts(*curr);
     default:
@@ -162,8 +162,8 @@ double mh_sampler::cost_to_pi(double cost) {
 
 /* compute acceptance function */
 double mh_sampler::alpha(prog* curr, prog* next, prog* orig) {
-  double curr_cost = _cost.total_prog_cost(orig, MAX_PROG_LEN, curr, MAX_PROG_LEN);
-  double next_cost = _cost.total_prog_cost(orig, MAX_PROG_LEN, next, MAX_PROG_LEN);
+  double curr_cost = _cost.total_prog_cost(orig, inst::max_prog_len, curr, inst::max_prog_len);
+  double next_cost = _cost.total_prog_cost(orig, inst::max_prog_len, next, inst::max_prog_len);
   // res = min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
   // use equation b^(-x) / b^(-y) = b^(-(x-y)) to simplify the calculation
   double d = next_cost - curr_cost;

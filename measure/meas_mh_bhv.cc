@@ -43,7 +43,13 @@ void meas_mh_data::insert_examples(unsigned int iter_num, const inout &exs) {
 /* class meas_mh_data end */
 
 string prog_rel_bv_to_str(int v) {
-  return bitset<MAX_PROG_LEN>(v).to_string();
+  string res = "";
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    int a = v % 2;
+    res = to_string(a) + res;
+    v = v >> 1;
+  }
+  return res;
 }
 
 string prog_abs_bv_to_str(vector<int>& v) {
@@ -140,6 +146,7 @@ void meas_store_raw_data(meas_mh_data &d, string meas_path_out, string suffix,
 // return C_n^m
 // max n: 56
 double combination(unsigned int n, unsigned m) {
+  assert(n <= 56);
   // utilize C_n^m = C_n^(n-m) to simplify the computation and try to avoid overflow
   if (m > (n - m)) m = n - m;
   double a = 1;
@@ -204,7 +211,7 @@ void gen_optis_for_progs(const vector<inst*> &bm_optis_orig, vector<prog> &bm_op
     prog bm_opti(bm_optis_orig[i]);
     // op_set: temporarily store optimals for one bm optimal program
     vector<prog> op_set;
-    gen_optis_for_prog(bm_opti, MAX_PROG_LEN, op_set);
+    gen_optis_for_prog(bm_opti, inst::max_prog_len, op_set);
     for (size_t j = 0; j < op_set.size(); j++)
       bm_optimals.push_back(op_set[j]);
   }

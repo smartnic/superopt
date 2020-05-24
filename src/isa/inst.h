@@ -33,6 +33,7 @@ enum ISA_TYPES {
 
 class inst_base {
  public:
+  static int max_prog_len;
   int _opcode;
   vector<op_t> _args;
   inst_base() {}

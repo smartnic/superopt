@@ -28,26 +28,26 @@ measure_print(print, times, start, end);
 
 void time_smt_prog() {
   smt_prog ps;
-  time_measure(ps.gen_smt(i, bm0, MAX_PROG_LEN), 1000,
+  time_measure(ps.gen_smt(i, bm0, inst::max_prog_len), 1000,
                "smt prog::gen_smt: ");
 }
 
 void time_validator_set_orig() {
   validator vld;
-  time_measure(vld.set_orig(bm0, MAX_PROG_LEN), 1000,
+  time_measure(vld.set_orig(bm0, inst::max_prog_len), 1000,
                "validator::set_orig: ");
 }
 
 void time_validator_is_equal_to() {
   validator vld;
-  vld.set_orig(bm0, MAX_PROG_LEN);
-  time_measure(vld.is_equal_to(bm0, MAX_PROG_LEN, bm0, MAX_PROG_LEN), 100,
+  vld.set_orig(bm0, inst::max_prog_len);
+  time_measure(vld.is_equal_to(bm0, inst::max_prog_len, bm0, inst::max_prog_len), 100,
                "validator::is_equal_to: ");
 }
 
 void time_validator_is_smt_valid() {
   validator vld;
-  vld.is_equal_to(bm0, MAX_PROG_LEN, bm0, MAX_PROG_LEN);
+  vld.is_equal_to(bm0, inst::max_prog_len, bm0, inst::max_prog_len);
   z3::expr smt = vld._store_f;
   z3::model mdl(smt_c);
   time_measure(vld.is_smt_valid(smt, mdl), 100,
@@ -56,7 +56,7 @@ void time_validator_is_smt_valid() {
 
 void time_validator_get_orig_output() {
   validator vld;
-  vld.set_orig(bm0, MAX_PROG_LEN);
+  vld.set_orig(bm0, inst::max_prog_len);
   time_measure(vld.get_orig_output(i, NUM_REGS, bm0->get_input_reg()), 100,
                "validator::get_orig_output: ");
 }
@@ -98,7 +98,7 @@ void time_cost_error_cost() {
   cost c;
   prog orig(bm0);
   c.init(&orig, N, inputs, w_e, w_p);
-  time_measure(c.error_cost(&orig, MAX_PROG_LEN, &orig, MAX_PROG_LEN);
+  time_measure(c.error_cost(&orig, inst::max_prog_len, &orig, inst::max_prog_len);
                orig._error_cost = -1;
                orig._perf_cost = -1,
                200,
@@ -118,7 +118,7 @@ void time_cost_perf_cost() {
   cost c;
   prog orig(bm0);
   c.init(&orig, N, inputs, w_e, w_p);
-  time_measure(c.perf_cost(&orig, MAX_PROG_LEN), 1000,
+  time_measure(c.perf_cost(&orig, inst::max_prog_len), 1000,
                "cost::perf_cost: ");
 }
 

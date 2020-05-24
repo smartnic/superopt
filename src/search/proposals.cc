@@ -73,7 +73,7 @@ int get_new_operand(int sel_inst_index, const inst& sel_inst, int op_to_change) 
 
 void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_change) {
   assert (op_to_change < MAX_OP_LEN);
-  assert(sel_inst_index < MAX_PROG_LEN);
+  assert(sel_inst_index < inst::max_prog_len);
   // First make a fresh copy of the program.
   inst* sel_inst = &synth->inst_list[sel_inst_index];
   int old_opvalue = sel_inst->get_operand(op_to_change);
@@ -90,7 +90,7 @@ void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
 
 prog* mod_random_inst_operand(const prog &orig) {
   // TODO: remove instructions whithout valid operands, such as NOP, EXIT
-  int inst_index = sample_int(MAX_PROG_LEN - 1);
+  int inst_index = sample_int(inst::max_prog_len - 1);
   prog* synth = new prog(orig);
   synth->reset_vals();
   mod_random_operand(orig, synth, inst_index);
@@ -98,13 +98,13 @@ prog* mod_random_inst_operand(const prog &orig) {
 }
 
 void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
-  assert(sel_inst_index < MAX_PROG_LEN);
+  assert(sel_inst_index < inst::max_prog_len);
   // TODO: is it wise to sample with exception?
   inst* sel_inst = &orig->inst_list[sel_inst_index];
   int old_opcode = sel_inst->get_opcode();
   // exceptions set is used to avoid jumps in the last line of the program
   unordered_set<int> exceptions;
-  if (sel_inst_index == MAX_PROG_LEN - 1) {
+  if (sel_inst_index == inst::max_prog_len - 1) {
     exceptions = {old_opcode};
     sel_inst->insert_jmp_opcodes(exceptions);
   } else {
@@ -124,19 +124,19 @@ prog* mod_random_inst(const prog &orig) {
   // First make a copy of the old program
   prog* synth = new prog(orig);
   synth->reset_vals();
-  int inst_index = sample_int(MAX_PROG_LEN - 1);
+  int inst_index = sample_int(inst::max_prog_len - 1);
   mod_select_inst(synth, inst_index);
   return synth;
 }
 
 prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
   // If k is too big, modify all instructions of the original program
-  if (k > MAX_PROG_LEN) k = MAX_PROG_LEN;
+  if (k > inst::max_prog_len) k = inst::max_prog_len;
   // First make a copy of the old program
   prog* synth = new prog(orig);
   synth->reset_vals();
   // Select a random start instruction
-  int start_inst_index = sample_int(MAX_PROG_LEN - k);
+  int start_inst_index = sample_int(inst::max_prog_len - k);
   for (int i = start_inst_index; i < start_inst_index + k; i++) {
     mod_select_inst(synth, i);
   }
@@ -145,6 +145,6 @@ prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
 
 prog* mod_random_cont_insts(const prog &orig) {
   int start_k_value = 2; // at least change two instructions
-  int k = sample_int(start_k_value, MAX_PROG_LEN);
+  int k = sample_int(start_k_value, inst::max_prog_len);
   return mod_random_k_cont_insts(orig, k);
 }

@@ -87,7 +87,7 @@ void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
   if (in_para.meas_mode) mh.turn_on_measure();
   prog orig(bm);
   orig.print();
-  mh._cost.init(&orig, MAX_PROG_LEN, inputs,
+  mh._cost.init(&orig, inst::max_prog_len, inputs,
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
                 in_para.st_avg);
@@ -195,7 +195,7 @@ void usage() {
        << setw(W) << "-n arg" << ": number of iterations" << endl
        << setw(W) << "-m" << ": turn on measurement" << endl
        << setw(W) << "--path_out arg" << ": output file path" << endl
-       << setw(W) << "--bm arg" << ": benchmark ID. toy_isa: 0 - 2; ebpf: 0" << endl
+       << setw(W) << "--bm arg" << ": benchmark ID. toy_isa: 0 - 2; ebpf: 0 - 2" << endl
        << setw(W) << "--w_e arg" << ": weight of error cost in cost function" << endl
        << setw(W) << "--w_p arg" << ": weight of performance cost in cost function" << endl
        << setw(W) << "--st_ex arg" << ": " +  para_st_ex_desc() << endl
