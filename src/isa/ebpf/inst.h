@@ -333,10 +333,10 @@ static const int opcode_type[NUM_INSTR] = {
 
 // Max and Min value for immediate number(32bits), offset(16bits)
 // MAX value for immediate number of shift 32 and shift 64
-static constexpr int32_t MAX_IMM = 0x7fffffff;
-static constexpr int32_t MIN_IMM = 0x80000000;
-// static constexpr int32_t MAX_IMM = 0xff0000 - 10;
-// static constexpr int32_t MIN_IMM = 0xff0000 + 10;
+// static constexpr int32_t MAX_IMM = 0x7fffffff;
+// static constexpr int32_t MIN_IMM = 0x80000000;
+static constexpr int32_t MAX_IMM = 10;
+static constexpr int32_t MIN_IMM = -10;
 static constexpr int32_t MAX_OFF = 0x7fff;
 static constexpr int32_t MIN_OFF = 0xffff8000;
 static constexpr int32_t MAX_IMM_SH32 = 31;
@@ -435,7 +435,13 @@ class inst: public inst_base {
   int32_t get_min_imm() const;
   int16_t get_max_off(int inst_index) const;
   int16_t get_min_off() const;
+  static void sorted_vec_insert(int32_t num, vector<int32_t>& sorted_vec);
  public:
+  // original program's additional immediate numbers which are not in [MIN_IMM, MAX_IMM]
+  // overall sample space for immeditae number is
+  // union([MIN_IMM, MAX_IMM], _sample_neg_imms, _sample_pos_imms)
+  static vector<int32_t> _sample_neg_imms; // store negative numbers
+  static vector<int32_t> _sample_pos_imms; // store positive numbers
   int32_t _dst_reg;
   int32_t _src_reg;
   int32_t _imm;
@@ -458,6 +464,7 @@ class inst: public inst_base {
   void print() const;
   vector<int> get_canonical_reg_list() const;
   static vector<int> get_isa_canonical_reg_list();
+  static void add_sample_imm(const vector<int32_t>& nums);
   int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
   int32_t get_min_operand_val(int op_index, int inst_index = 0) const;
   int get_jmp_dis() const;

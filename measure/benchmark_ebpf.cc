@@ -116,6 +116,7 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       return;
     case 1:
       inst::max_prog_len = N1;
+      inst::add_sample_imm(vector<int32_t> {0xff0000});
       mem_t::add_map(map_attr(8, 8, N1));
       *bm = bm1;
       bm_optis_orig.push_back(bm_opti10);

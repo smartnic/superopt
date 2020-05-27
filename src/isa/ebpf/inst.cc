@@ -5,6 +5,9 @@
 
 using namespace std;
 
+vector<int32_t> inst::_sample_neg_imms;
+vector<int32_t> inst::_sample_pos_imms;
+
 inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
   int32_t arg[3] = {arg1, arg2, arg3};
   _opcode = opcode;
@@ -55,7 +58,25 @@ void inst::set_imm(int op_value) {
     int value_map[3] = {16, 32, 64};
     _imm = value_map[op_value];
   } else {
-    _imm = op_value;
+    unordered_set<int32_t> opcodes_set = {ADD64XC, MOV64XC, ADD32XC, OR32XC,
+                                          AND32XC, MOV32XC, JEQXC, JGTXC, JSGTXC,
+                                         };
+    auto found = opcodes_set.find(_opcode);
+    if (found == opcodes_set.end()) {
+      _imm = op_value;
+      return;
+    }
+    if (op_value < MIN_IMM) {
+      int idx = op_value - MIN_IMM + _sample_neg_imms.size();
+      assert(idx < _sample_neg_imms.size());
+      _imm = _sample_neg_imms[idx];
+    } else if (op_value > MAX_IMM) {
+      int idx = op_value - MAX_IMM - 1;
+      assert(idx < _sample_pos_imms.size());
+      _imm = _sample_pos_imms[idx];
+    } else {
+      _imm = op_value;
+    }
   }
 }
 
@@ -69,7 +90,7 @@ int32_t inst::get_max_imm() const {
     case MOV32XC:
     case JEQXC:
     case JGTXC:
-    case JSGTXC: return MAX_IMM;
+    case JSGTXC: return MAX_IMM + _sample_pos_imms.size();
     case LSH64XC:
     case RSH64XC:
     case ARSH64XC: return MAX_IMM_SH64;
@@ -108,7 +129,7 @@ int32_t inst::get_min_imm() const {
     case MOV32XC:
     case JEQXC:
     case JGTXC:
-    case JSGTXC: return MIN_IMM;
+    case JSGTXC: return MIN_IMM - _sample_neg_imms.size();
     case LSH64XC:
     case RSH64XC:
     case ARSH64XC:
@@ -227,6 +248,45 @@ vector<int> inst::get_canonical_reg_list() const {
 
 vector<int> inst::get_isa_canonical_reg_list() {
   return vector<int> {2, 3, 4, 5, 6, 7, 8, 9};
+}
+
+// vector does not have the same number
+void inst::sorted_vec_insert(int32_t num, vector<int32_t>& sorted_vec) {
+  int size = sorted_vec.size();
+  if (size <= 0) {
+    sorted_vec.push_back(num);
+    return;
+  }
+
+  if (sorted_vec[size - 1] < num) {
+    sorted_vec.push_back(num);
+    return;
+  }
+
+  for (int i = 0; i < sorted_vec.size(); i++) {
+    if (sorted_vec[i] == num) return;
+    if (sorted_vec[i] > num) {
+      sorted_vec.push_back(0);
+      for (int j = size - 1; j >= i; j--) sorted_vec[j + 1] = sorted_vec[j];
+      sorted_vec[i] = num;
+      return;
+    }
+  }
+}
+
+void inst::add_sample_imm(const vector<int32_t>& nums) {
+  for (int i = 0; i < nums.size(); i++) {
+    int32_t num = nums[i];
+    if (num < MIN_IMM) {
+      sorted_vec_insert(num, _sample_neg_imms);
+    } else if (num > MAX_IMM) {
+      sorted_vec_insert(num, _sample_pos_imms);
+    }
+  }
+  for (int i = 0; i < _sample_neg_imms.size(); i++) cout << _sample_neg_imms[i] << " ";
+  cout << endl;
+  for (int i = 0; i < _sample_pos_imms.size(); i++) cout << _sample_pos_imms[i] << " ";
+  cout << endl;
 }
 
 inst& inst::operator=(const inst &rhs) {
