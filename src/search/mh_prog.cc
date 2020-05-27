@@ -83,7 +83,7 @@ bool mh_sampler_restart::whether_to_restart(unsigned int iter_num) {
     case MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART: return false;
     case MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER:
       // iter_num starts from 0 but not 1
-      if (((iter_num + 1) % _max_num_iter) == 0) return true;
+      if ((iter_num % _max_num_iter) == 0) return true;
       else return false;
     default:
       cout << "ERROR: no when_to_restart strategy matches. "
