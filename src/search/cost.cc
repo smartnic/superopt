@@ -162,11 +162,11 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
     }
     double ex_cost = get_ex_error_cost(output1, output2);
     if (ex_cost == 0) num_successful_ex++;
-    else if (ex_cost >= ERROR_COST_MAX) {
-      // synthesis whose test case error cost >= ERROR_COST_MAX
-      synth->set_error_cost(ERROR_COST_MAX);
-      return ERROR_COST_MAX;
-    }
+    // else if (ex_cost >= ERROR_COST_MAX) {
+    //   // synthesis whose test case error cost >= ERROR_COST_MAX
+    //   synth->set_error_cost(ERROR_COST_MAX);
+    //   return ERROR_COST_MAX;
+    // }
 
     total_cost += ex_cost;
   }
@@ -196,10 +196,10 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   }
   // in case there is overflow which makes a positive value become a negative value or
   // total_cost > ERROR_COST_MAX
-  if ((total_cost > ERROR_COST_MAX) || (total_cost < 0)) {
-    synth->set_error_cost(ERROR_COST_MAX);
-    return ERROR_COST_MAX;
-  }
+  // if ((total_cost > ERROR_COST_MAX) || (total_cost < 0)) {
+  //   synth->set_error_cost(ERROR_COST_MAX);
+  //   return ERROR_COST_MAX;
+  // }
 
   synth->set_error_cost(total_cost);
   return total_cost;
