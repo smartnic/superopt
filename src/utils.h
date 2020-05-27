@@ -31,12 +31,12 @@ typedef int op_t;
 #define NOW chrono::steady_clock::now()
 #define DUR(t1, t2) chrono::duration <double, micro> (t2 - t1).count()
 
-#define H32(v) (0xffffffff00000000 & v)
-#define H48(v) (0xffffffffffff0000 & v)
-#define L5(v)  (0x000000000000001f & v)
-#define L6(v)  (0x000000000000003f & v)
-#define L16(v) (0x000000000000ffff & v)
-#define L32(v) (0x00000000ffffffff & v)
+#define H32(v) (0xffffffff00000000 & (v))
+#define H48(v) (0xffffffffffff0000 & (v))
+#define L5(v)  (0x000000000000001f & (v))
+#define L6(v)  (0x000000000000003f & (v))
+#define L16(v) (0x000000000000ffff & (v))
+#define L32(v) (0x00000000ffffffff & (v))
 
 #define RAISE_EXCEPTION(x) {\
   string err_msg = string(x) + string(" has not been implemented"); \
