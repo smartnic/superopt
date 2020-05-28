@@ -602,8 +602,7 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
 #define R3 ps._regs[3]
 #define R4 ps._regs[4]
 #define R5 ps._regs[5]
-#define SIMU_R10 simu_r10
-#define REAL_R10 real_r10
+#define SR sr
 
 #define ALU_UNARY(OPCODE, OP, OPERAND)                             \
   INSN_##OPCODE:                                                   \
@@ -617,14 +616,14 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
 
 #define LDST(SIZEOP, SIZE)                                         \
   INSN_LDX##SIZEOP:                                                \
-    real_addr = get_real_addr_by_simu(SRC, SIMU_R10, REAL_R10);    \
-    ps._mem.memory_access_check(real_addr + OFF, SIZE/8);          \
-    DST = compute_ld##SIZE(real_addr, OFF);                        \
+    real_addr = get_real_addr_by_simu(SRC + OFF, MEM, SR);         \
+    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    DST = compute_ld##SIZE(real_addr, 0);                          \
     CONT;                                                          \
   INSN_STX##SIZEOP:                                                \
-    real_addr = get_real_addr_by_simu(DST, SIMU_R10, REAL_R10);    \
-    ps._mem.memory_access_check(real_addr + OFF, SIZE/8);          \
-    compute_st##SIZE(SRC, real_addr, OFF);                         \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
+    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    compute_st##SIZE(SRC, real_addr, 0);                           \
     CONT;
 
 #define BYTESWAP(OPCODE, OP)                                       \
@@ -649,9 +648,13 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
   ps.clear();
   // set real_r10 as frame pointer, the bottom of the stack
   uint64_t real_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
+  uint64_t real_r1 = (uint64_t)ps._mem.get_pkt_start_addr();
   // register r10 is set by update_ps_by_input
   update_ps_by_input(ps, input);
   uint64_t simu_r10 = (uint64_t)ps._regs[10];
+  uint64_t simu_r1 = (uint64_t)ps._regs[1];
+  if (real_r1 == 0) real_r1 = simu_r1;
+  simu_real sr(simu_r10, real_r10, simu_r1, real_r1);
   uint64_t real_addr = 0; // used as temporary variable in instruction execution
 
   static void *jumptable[NUM_INSTR] = {
@@ -760,7 +763,7 @@ INSN_JA:
   COND_JMP(JSGTXY, >, DST, SRC)
 
 INSN_CALL:
-  R0 = compute_helper_function(IMM, R1, R2, R3, R4, R5, MEM, SIMU_R10, REAL_R10);
+  R0 = compute_helper_function(IMM, R1, R2, R3, R4, R5, MEM, SR);
   CONT;
 
 INSN_EXIT:

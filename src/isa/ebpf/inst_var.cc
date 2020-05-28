@@ -32,6 +32,7 @@ ostream& operator<<(ostream& out, const mem_layout& layout) {
   for (int i = 0; i < layout._maps_attr.size(); i++) {
     out << layout._maps_start[i] << " " << layout._maps_attr[i] << endl;
   }
+  out << "packet<len>: " << layout._pkt_sz << endl;
   return out;
 }
 
@@ -75,6 +76,14 @@ ostream& operator<<(ostream& out, const mem_t& mem) {
     }
     out << endl;
   }
+
+  out << "3. packet related memory:" << endl;
+  unsigned int off = mem._mem_size - mem_t::_layout._pkt_sz;
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    if ((i % MEM_PRINT_GAP) == 0) out << endl;
+    out << hex << setfill('0') << setw(2) << static_cast<int>(mem._mem[off + i]) << dec;
+  }
+  out << endl;
   return out;
 #undef MEM_PRINT_GAP
 }
@@ -100,6 +109,7 @@ unsigned int map_t::get_and_update_next_idx() {
       if (_idx_used[i]) continue;
       if (c == x) {
         target_i = i;
+        break;
       } else {
         c++;
       }
@@ -158,6 +168,11 @@ mem_t::~mem_t() {
     delete []_mem;
     _mem = nullptr;
   }
+
+  if (_pkt != nullptr) {
+    delete []_pkt;
+    _pkt = nullptr;
+  }
 }
 
 void mem_t::add_map(map_attr m_attr) {
@@ -198,20 +213,27 @@ unsigned int mem_t::map_max_entries(int map_id) {
   return _layout._maps_attr[map_id].max_entries;
 }
 
-void mem_t::init_mem_by_layout() {
-  int n_maps = _layout._maps_attr.size();
-  if (n_maps == 0) {
-    _mem_size = STACK_SIZE;
-  } else {
-    map_attr& m_attr = _layout._maps_attr[n_maps - 1];
-    _mem_size = _layout._maps_start[n_maps - 1] +
-                (m_attr.val_sz / NUM_BYTE_BITS) * m_attr.max_entries;
+void mem_t::init_by_layout() {
+  if (_mem != nullptr) {
+    delete []_mem;
+    _mem = nullptr;
   }
+
+  if (_pkt != nullptr) {
+    delete []_pkt;
+    _pkt = nullptr;
+  }
+  _maps.clear();
+  int n_maps = maps_number();
+  _mem_size = get_mem_size_by_layout();
   _mem = new uint8_t[_mem_size];
   memset(_mem, 0, sizeof(uint8_t)*_mem_size);
   for (int i = 0; i < n_maps; i++) {
     _maps.push_back(map_t{_layout._maps_attr[i].max_entries});
   }
+
+  _pkt = new uint8_t[_layout._pkt_sz];
+  memset(_pkt, 0, sizeof(uint8_t)*_layout._pkt_sz);
 }
 
 void mem_t::set_map_attr(int map_id, map_attr m_attr) {
@@ -274,9 +296,20 @@ uint8_t* mem_t::get_mem_end_addr() const {
   return &_mem[_mem_size - 1];
 }
 
+uint8_t* mem_t::get_pkt_start_addr() const {
+  if (mem_t::_layout._pkt_sz == 0) return nullptr;
+  return &_pkt[0];
+}
+
+uint8_t* mem_t::get_pkt_end_addr() const {
+  if (mem_t::_layout._pkt_sz == 0) return nullptr;
+  return &_pkt[mem_t::_layout._pkt_sz - 1];
+}
+
 mem_t& mem_t::operator=(const mem_t &rhs) {
   memcpy(_mem, rhs._mem, sizeof(uint8_t)*_mem_size);
   for (int i = 0; i < rhs._maps.size(); i++) _maps[i] = rhs._maps[i];
+  memcpy(_pkt, rhs._pkt, sizeof(uint8_t)*_layout._pkt_sz);
   return *this;
 }
 
@@ -289,6 +322,9 @@ bool mem_t::operator==(const mem_t &rhs) {
   }
   for (int i = 0; i < _maps.size(); i++) {
     if (! (_maps[i] == rhs._maps[i])) return false;
+  }
+  for (int i = 0; i < _layout._pkt_sz; i++) {
+    if (_pkt[i] != rhs._pkt[i]) return false;
   }
   return true;
 }
@@ -319,6 +355,16 @@ void mem_t::memory_access_check(uint64_t addr, uint64_t num_bytes) {
   uint64_t max_uint64 = 0xffffffffffffffff;
   bool legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
                (addr <= (max_uint64 - num_bytes + 1));
+  if (legal) return;
+
+  if (mem_t::_layout._pkt_sz == 0) {
+    legal = false;
+  } else {
+    start = (uint64_t)get_pkt_start_addr();
+    end = (uint64_t)get_pkt_end_addr();
+    legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
+            (addr <= (max_uint64 - num_bytes + 1));
+  }
   if (!legal) {
     string err_msg = "unsafe memory access";
     throw (err_msg);
@@ -328,6 +374,7 @@ void mem_t::memory_access_check(uint64_t addr, uint64_t num_bytes) {
 void mem_t::clear() {
   memset(_mem, 0, sizeof(uint8_t)*_mem_size);
   for (int i = 0; i < _maps.size(); i++) _maps[i].clear();
+  memset(_pkt, 0, sizeof(uint8_t)*_layout._pkt_sz);
 }
 
 /* class smt_wt start */
@@ -498,7 +545,7 @@ void smt_var::clear() {
 /* class smt_var end */
 
 void prog_state::init() {
-  _mem.init_mem_by_layout();
+  _mem.init_by_layout();
 }
 
 void prog_state::print() const {
@@ -516,6 +563,15 @@ inout_t::inout_t() {
   uint64_t r10_min = STACK_SIZE;
   uint64_t r10_max = 0xffffffffffffffff - get_mem_size_by_layout() + 1 - STACK_SIZE;
   input_simu_r10 = r10_min + (r10_max - r10_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+  pkt = new uint8_t[mem_t::_layout._pkt_sz];
+  memset(pkt, 0, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
+}
+
+inout_t::~inout_t() {
+  if (pkt != nullptr) {
+    delete []pkt;
+    pkt = nullptr;
+  }
 }
 
 // insert/update kv in map
@@ -541,6 +597,13 @@ void inout_t::init() {
   reg = 0;
   int n_maps = mem_t::maps_number();
   maps.resize(n_maps);
+}
+
+void inout_t::operator=(const inout_t &rhs) {
+  input_simu_r10 = rhs.input_simu_r10;
+  reg = rhs.reg;
+  maps = rhs.maps;
+  memcpy(pkt, rhs.pkt, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
 }
 
 bool inout_t::operator==(const inout_t &rhs) const {
@@ -593,6 +656,8 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
       ps._mem.update_kv_in_map(i, it->first, it->second);
     }
   }
+  unsigned int pkt_sz = mem_t::_layout._pkt_sz;
+  memcpy(ps._mem._pkt, input.pkt, sizeof(uint8_t)*pkt_sz);
 }
 
 void update_output_by_ps(inout_t& output, const prog_state& ps) {
@@ -615,15 +680,48 @@ void update_output_by_ps(inout_t& output, const prog_state& ps) {
       output.update_kv(i, key, value);
     }
   }
+  // cp pkt
+  unsigned int pkt_sz = mem_t::_layout._pkt_sz;
+  memcpy(output.pkt, ps._mem._pkt, sizeof(uint8_t)*pkt_sz);
 }
 
 // parameter r10 is the simulated r10, stack_bottom is the real r10
-uint64_t get_simu_addr_by_real(uint64_t real_addr, uint64_t simu_r10, uint64_t real_r10) {
-  return (real_addr + simu_r10 - real_r10);
+uint64_t get_simu_addr_by_real(uint64_t real_addr, mem_t& mem, simu_real sr) {
+  // real_addr may in mem or pkt
+  // assume real_addr in mem first
+  if ((real_addr >= (uint64_t)mem.get_mem_start_addr()) &&
+      (real_addr <= (uint64_t)mem.get_mem_end_addr())) {
+    return (real_addr + sr.simu_r10 - sr.real_r10);
+  }
+  // if real_addr not in mem, assume it is in pkt
+  if ((real_addr >= (uint64_t)mem.get_pkt_start_addr()) &&
+      (real_addr <= (uint64_t)mem.get_pkt_end_addr())) {
+    return (real_addr + sr.simu_r1 - sr.real_r1);
+  }
+
+  // else cannot convert real_addr to simu_addr, raise error
+  string err_msg = "convert real_addr to simu_addr fail";
+  throw (err_msg);
 }
 
-uint64_t get_real_addr_by_simu(uint64_t simu_addr, uint64_t simu_r10, uint64_t real_r10) {
-  return (simu_addr + real_r10 - simu_r10);
+uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr) {
+  // real_addr may in mem or pkt
+  // assume real_addr in mem first
+  uint64_t real_addr = simu_addr + sr.real_r10 - sr.simu_r10;
+  if ((real_addr >= (uint64_t)mem.get_mem_start_addr()) &&
+      (real_addr <= (uint64_t)mem.get_mem_end_addr())) {
+    return real_addr;
+  }
+  // if real_addr not in mem, assume it is in pkt
+  real_addr = simu_addr + sr.real_r1 - sr.simu_r1;
+  if ((real_addr >= (uint64_t)mem.get_pkt_start_addr()) &&
+      (real_addr <= (uint64_t)mem.get_pkt_end_addr())) {
+    return real_addr;
+  }
+
+  // else cannot convert simu_addr to real_addr, raise error
+  string err_msg = "convert simu_addr to real_addr fail";
+  throw (err_msg);
 }
 
 int get_cmp_lists_one_map(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
@@ -648,7 +746,7 @@ int get_cmp_lists_one_map(vector<int64_t>& val_list1, vector<int64_t>& val_list2
   return diff_count;
 }
 
-// val_list: [reg, #different keys, map0[k0], map0[k1], ...., map1[k0'], ....]
+// val_list: [reg, #different keys, map0[k0], map0[k1], ...., map1[k0'], ...., pkt]
 void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
                    inout_t& output1, inout_t& output2) {
   val_list1.resize(2);
@@ -666,4 +764,7 @@ void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
   }
   val_list1[1] = diff_count1 + diff_count2;
   val_list2[1] = 0;
+  // add pkt into lists
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list1.push_back(output1.pkt[i]);
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list2.push_back(output2.pkt[i]);
 }

@@ -65,14 +65,12 @@ inline void compute_st32(int64_t in, uint64_t addr, int64_t off);
 inline void compute_st64(int64_t in, uint64_t addr, int64_t off);
 // map helper functions
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
-                                 uint64_t r4, uint64_t r5, mem_t& m,
-                                 uint64_t simu_r10, uint64_t real_r10);
-uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m,
-                                   uint64_t simu_r10 = 0, uint64_t real_r10 = 0);
+                                 uint64_t r4, uint64_t r5, mem_t& m, simu_real& sr);
+uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m, simu_real& sr);
 uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_v, mem_t& m,
-                                   uint64_t simu_r10 = 0, uint64_t real_r10 = 0);
+                                   simu_real& sr);
 uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, mem_t& m,
-                                   uint64_t simu_r10 = 0, uint64_t real_r10 = 0);
+                                   simu_real& sr);
 /* type of parameters (in, in1, in2, out) is z3 64-bit bitvector */
 // return (out == op in)
 inline z3::expr predicate_mov(z3::expr in, z3::expr out);

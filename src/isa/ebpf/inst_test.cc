@@ -213,15 +213,30 @@ inst instructions26[7] = {inst(MOV32XY, 2, 1), // w2 = w1
                           inst(EXIT),
                          };
 
+// r0 = 0x11, *(uint8*)(r1 + 0) = 0x11
+inst instructions27[4] = {inst(MOV64XY, 6, 1),
+                          inst(MOV64XC, 0, 0x11),
+                          inst(STXB, 6, 0, 0),
+                          inst(EXIT),
+                         };
+
+// test pkt, r0 = *(uint8*)(r1 + 0)
+inst instructions28[3] = {inst(MOV64XY, 6, 1),
+                          inst(LDXB, 0, 6, 0),
+                          inst(EXIT),
+                         };
+
 void test1() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
+  mem_t::set_pkt_sz(512); // pkt sz: 512 bytes
   prog_state ps;
   ps.init();
   inout_t input, output, expected;
   input.init();
   output.init();
   expected.init();
+  input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
   cout << "Test 1: full interpretation check" << endl;
 
   expected.reg = 0xfffffffffffffffe;
@@ -415,6 +430,22 @@ void test1() {
   expected.reg = 0x781234;
   interpret(output, instructions26, 7, ps, input);
   print_test_res(output == expected, "interpret or32xy & and32xy");
+
+  // r0 = 0x11, *(uint8*)(r1 + 0) = 0x11
+  input.reg = (uint64_t)ps._mem.get_pkt_start_addr();
+  memset(input.pkt, 0, sizeof(uint8_t) * mem_t::_layout._pkt_sz);
+  memset(expected.pkt, 0, sizeof(uint8_t) * mem_t::_layout._pkt_sz);
+  expected.reg = 0x11;
+  expected.pkt[0] = 0x11;
+  interpret(output, instructions27, 4, ps, input);
+  print_test_res(output == expected, "interpret packet");
+  // r0 = *(uint8*)(r1 + 0)
+  input = output;
+  input.reg = (uint64_t)ps._mem.get_pkt_start_addr();
+  expected.reg = 0x11;
+  expected.pkt[0] = 0x11;
+  interpret(output, instructions28, 3, ps, input);
+  print_test_res(output == expected, "interpret packet input");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output) {
@@ -851,6 +882,7 @@ void test5() {
 
 int main(int argc, char *argv[]) {
   test1();
+  return 0;
   test2();
   test3();
   test4();

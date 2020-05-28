@@ -31,7 +31,8 @@ class mem_layout {
   unsigned int _stack_start = 0;
   vector<map_attr> _maps_attr;
   vector<unsigned int> _maps_start;
-  void clear() {_maps_attr.clear(); _maps_start.clear();}
+  unsigned int _pkt_sz = 0; // means no pkt, unit: byte
+  void clear() {_maps_attr.clear(); _maps_start.clear(); _pkt_sz = 0;}
   friend ostream& operator<<(ostream& out, const mem_layout& layout);
 };
 
@@ -63,18 +64,21 @@ class mem_t {
   int _mem_size; // size unit: byte
   // should ensure memory is contiguous, because of the assumption in memory_access_check
   uint8_t *_mem = nullptr;
+  uint8_t *_pkt = nullptr;
   vector<map_t> _maps;
   static mem_layout _layout;
   mem_t();
   ~mem_t();
   static void add_map(map_attr m_attr);
+  static void set_pkt_sz(unsigned int sz) {_layout._pkt_sz = sz;}
   static unsigned int maps_number() {return _layout._maps_attr.size();}
   static unsigned int map_key_sz(int map_id);
   static unsigned int map_val_sz(int map_id);
   static unsigned int map_max_entries(int map_id);
   // 1. compute "_mem_size" and according to "_layout";
-  // 2. allocate memory for "_mem"
-  void init_mem_by_layout();
+  // 2. allocate memory for "_mem", "_pkt"
+  // 3. init _maps
+  void init_by_layout();
   static void set_map_attr(int map_id, map_attr m_attr);
   static unsigned int get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map);
   void update_kv_in_map(int map_id, string k, const uint8_t* addr_v); // get v_sz from layout
@@ -84,6 +88,8 @@ class mem_t {
   uint8_t* get_stack_bottom_addr() const;
   uint8_t* get_mem_start_addr() const;
   uint8_t* get_mem_end_addr() const;
+  uint8_t* get_pkt_start_addr() const;
+  uint8_t* get_pkt_end_addr() const;
   mem_t& operator=(const mem_t &rhs);
   bool operator==(const mem_t &rhs);
   void cp_input_mem(const mem_t &rhs);
@@ -207,22 +213,36 @@ class inout_t: public inout_t_base {
   int64_t reg;
   // kv map: k hex_string, v: vector<uint8_t>
   vector<unordered_map<string, vector<uint8_t>>> maps;
+  uint8_t* pkt = nullptr;
   inout_t();
+  ~inout_t();
   // insert/update kv in map
   void update_kv(int map_id, string k, vector<uint8_t> v);
   // return whether k is in the map
   bool k_in_map(int map_id, string k);
   void clear();
   void init();
+  void operator=(const inout_t &rhs);
   // not update input_simu_r10 which is only used for input
   bool operator==(const inout_t &rhs) const;
   friend ostream& operator<<(ostream& out, const inout_t& x);
 };
 
+struct simu_real {
+  uint64_t simu_r10, real_r10;
+  uint64_t simu_r1, real_r1; // if pkt_len != 0, input reg r1 contains the pkt start address
+  simu_real(uint64_t si_r10 = 0, uint64_t re_r10 = 0, uint64_t si_r1 = 0, uint64_t re_r1 = 0) {
+    simu_r10 = si_r10;
+    real_r10 = re_r10;
+    simu_r1 = si_r1;
+    real_r1 = re_r1;
+  }
+};
+
 void update_ps_by_input(prog_state& ps, const inout_t& input);
 // not update input_simu_r10 which is only used for input
 void update_output_by_ps(inout_t& output, const prog_state& ps);
-uint64_t get_simu_addr_by_real(uint64_t real_addr, uint64_t simu_r10, uint64_t real_r10);
-uint64_t get_real_addr_by_simu(uint64_t simu_addr, uint64_t simu_r10, uint64_t real_r10);
+uint64_t get_simu_addr_by_real(uint64_t real_addr, mem_t& mem, simu_real sr);
+uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr);
 void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
                    inout_t& output1, inout_t& output2);
