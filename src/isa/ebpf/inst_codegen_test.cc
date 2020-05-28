@@ -247,7 +247,7 @@ void test5() {
   unsigned int node_id = 0;
   unsigned int num_regs = 11;
   smt_var sv(prog_id, node_id, num_regs);
-  z3::expr f_stack_start_constrain = sv.stack_start_constrain();
+  z3::expr f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr addr = sv.get_stack_start_addr();
   smt_mem& m = sv.mem_var;
   smt_wt *s = &m._mem_table._wt;
@@ -255,17 +255,17 @@ void test5() {
   // out == (read addr+off, 8, s)
   predicate_st8(v(vals[0]), addr, offs[0], m);
   z3::expr smt = (s->addr[0] == (addr + offs[0])) && (s->val[0] == to_expr(vals[0], 8));
-  print_test_res(is_valid(z3::implies(f_stack_start_constrain, smt)), "predicate_st8 1");
+  print_test_res(is_valid(z3::implies(f_mem_layout_constrain, smt)), "predicate_st8 1");
   z3::expr out = new_out();
-  smt = f_stack_start_constrain && predicate_ld8(addr, offs[0], sv, out);
+  smt = f_mem_layout_constrain && predicate_ld8(addr, offs[0], sv, out);
   smt = z3::implies(smt, out == v(vals[0]));
   print_test_res(is_valid(smt), "predicate_ld8 1");
 
   predicate_st8(v(vals[1]), addr, offs[1], m);
   smt = (s->addr[1] == (addr + offs[1])) && (s->val[1] == to_expr(vals[1], 8));
-  print_test_res(is_valid(z3::implies(f_stack_start_constrain, smt)), "predicate_st8 2");
+  print_test_res(is_valid(z3::implies(f_mem_layout_constrain, smt)), "predicate_st8 2");
   out = new_out();
-  smt = f_stack_start_constrain &&
+  smt = f_mem_layout_constrain &&
         predicate_ld8(addr, offs[1], sv, out);
   smt = z3::implies(smt, out == v(vals[1]));
   print_test_res(is_valid(smt), "predicate_ld8 2");
@@ -273,9 +273,9 @@ void test5() {
   // test rewrite
   predicate_st8(v(vals[1]), addr, offs[0], m);
   smt = (s->addr[2] == (addr + offs[0])) && (s->val[2] == to_expr(vals[1], 8));
-  print_test_res(is_valid(z3::implies(f_stack_start_constrain, smt)), "predicate_st8 3");
+  print_test_res(is_valid(z3::implies(f_mem_layout_constrain, smt)), "predicate_st8 3");
   out = new_out();
-  smt = f_stack_start_constrain && predicate_ld8(addr, offs[0], sv, out);
+  smt = f_mem_layout_constrain && predicate_ld8(addr, offs[0], sv, out);
   smt = z3::implies(smt, out == v(vals[1]));
   print_test_res(is_valid(smt), "predicate_ld8 3");
   s->clear();
@@ -284,14 +284,14 @@ void test5() {
   uint64_t x = 0x0123456789abcdef;
   predicate_st16(v(x), addr, offs[0], m);
   z3::expr out1 = new_out(), out2 = new_out();
-  smt = f_stack_start_constrain &&
+  smt = f_mem_layout_constrain &&
         predicate_ld8(addr, offs[0], sv, out1) &&
         predicate_ld8(addr, offs[1], sv, out2);
   smt = z3::implies(smt, (out1 == v(x & 0xff)) && (out2 == v((x >> 8) & 0xff)));
   print_test_res(is_valid(smt), "predicate_st16/ld8");
 
   out = new_out();
-  smt = f_stack_start_constrain &&
+  smt = f_mem_layout_constrain &&
         predicate_ld16(addr, offs[0], sv, out);
   smt = z3::implies(smt, out == v(x & 0xffff));
   print_test_res(is_valid(smt), "predicate_st16/ld16");
@@ -299,7 +299,7 @@ void test5() {
   predicate_st8(v(x), addr, offs[0], m);
   predicate_st8(v(x >> 8), addr, offs[1], m);
   out = new_out();
-  smt = f_stack_start_constrain &&
+  smt = f_mem_layout_constrain &&
         predicate_ld16(addr, offs[0], sv, out);
   smt = z3::implies(smt, out == v(x & 0xffff));
   print_test_res(is_valid(smt), "predicate_st8/ld16");
@@ -308,13 +308,13 @@ void test5() {
   // test st32 && ld32
   predicate_st32(v(x), addr, offs[0], m);
   out1 = new_out(), out2 = new_out();
-  smt = f_stack_start_constrain &&
+  smt = f_mem_layout_constrain &&
         predicate_ld16(addr, offs[0], sv, out1) &&
         predicate_ld16(addr, offs[2], sv, out2);
   smt = z3::implies(smt, (out1 == v(x & 0xffff)) && (out2 == v((x >> 16) & 0xffff)));
   print_test_res(is_valid(smt), "predicate_st32/ld16");
   out = new_out();
-  smt = f_stack_start_constrain &&
+  smt = f_mem_layout_constrain &&
         predicate_ld32(addr, offs[0], sv, out);
   smt = z3::implies(smt, out == v(x & 0xffffffff));
   print_test_res(is_valid(smt), "predicate_st32/ld32");
@@ -322,7 +322,7 @@ void test5() {
   predicate_st16(v(x), addr, offs[0], m);
   predicate_st16(v(x >> 16), addr, offs[2], m);
   out = new_out();
-  smt = f_stack_start_constrain && predicate_ld32(addr, offs[0], sv, out);
+  smt = f_mem_layout_constrain && predicate_ld32(addr, offs[0], sv, out);
   smt = z3::implies(smt, out == v(x & 0xffffffff));
   print_test_res(is_valid(smt), "predicate_st16/ld32");
   s->clear();
@@ -330,21 +330,21 @@ void test5() {
   // test st64 && ld64
   predicate_st64(v(x), addr, offs[0], m);
   out1 = new_out(), out2 = new_out();
-  smt = f_stack_start_constrain &&
+  smt = f_mem_layout_constrain &&
         predicate_ld32(addr, offs[0], sv, out1) &&
         predicate_ld32(addr, offs[4], sv, out2);
   smt = z3::implies(smt, (out1 == v(x & 0xffffffff)) &&
                     (out2 == v((x >> 32) & 0xffffffff)));
   print_test_res(is_valid(smt), "predicate_st64/ld32");
   out = new_out();
-  smt = f_stack_start_constrain && predicate_ld64(addr, offs[0], sv, out);
+  smt = f_mem_layout_constrain && predicate_ld64(addr, offs[0], sv, out);
   smt = z3::implies(smt, out == v(x));
   print_test_res(is_valid(smt), "predicate_st64/ld64");
   s->clear();
   predicate_st32(v(x), addr, offs[0], m);
   predicate_st32(v(x >> 32), addr, offs[4], m);
   out = new_out();
-  smt = f_stack_start_constrain && predicate_ld64(addr, offs[0], sv, out);
+  smt = f_mem_layout_constrain && predicate_ld64(addr, offs[0], sv, out);
   smt = z3::implies(smt, out == v(x));
   print_test_res(is_valid(smt), "predicate_st32/ld64");
   s->clear();
@@ -405,9 +405,9 @@ void test7() {
   // the value in element is equal to the value(s) of the addr(s) in URT
   z3::expr map_s = sv.get_map_start_addr(0);
   sv.clear();
-  z3::expr f_stack_start_constrain = sv.stack_start_constrain();
+  z3::expr f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr out = new_out();
-  z3::expr smt = f_stack_start_constrain && (out == v1) && predicate_ld8(map_s, v(0), sv, out);
+  z3::expr smt = f_mem_layout_constrain && (out == v1) && predicate_ld8(map_s, v(0), sv, out);
   out = new_out();
   smt = smt && predicate_ld8(map_s, v(0), sv, out);
   z3::expr smt_chk = z3::implies(smt, out == v1);
@@ -430,7 +430,7 @@ void test8() {
   unsigned int num_regs = 11;
   smt_var sv(prog_id, node_id, num_regs);
   sv.mem_var.init_addrs_map_v_next_by_layout();
-  z3::expr f_stack_start_constrain = sv.stack_start_constrain();
+  z3::expr f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr stack_s = sv.get_stack_start_addr();
 
   cout << "  1. test properties of lookup after update/delete in map" << endl;
@@ -443,7 +443,7 @@ void test8() {
   z3::expr addr_v_lookup_1 = v("addr_v_lookup_1");
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
   predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
-  z3::expr f = f_stack_start_constrain &&
+  z3::expr f = f_mem_layout_constrain &&
                predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv);
   f = f && predicate_map_lookup_helper(map1, addr_k1, addr_v_lookup_1, sv);
   f = f && predicate_ld8(addr_v_lookup_1, v(0), sv, v_lookup_1);
@@ -495,7 +495,7 @@ void test8() {
   cout << "  2. test properties of uninitialized lookup in map" << endl;
   sv.clear();
   sv.mem_var.init_addrs_map_v_next_by_layout();
-  f_stack_start_constrain = sv.stack_start_constrain();
+  f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr map_s = sv.get_map_start_addr(map1_id);
   z3::expr map_e = sv.get_map_end_addr(map1_id);
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
@@ -510,39 +510,39 @@ void test8() {
   z3::expr f4 = predicate_ld8(addr_v_lookup_7, v(0), sv, v_lookup_7);
 
   cout << "a. address range" << endl;
-  f_expected = z3::implies(f_stack_start_constrain && f1 && (addr_v_lookup_6 != NULL_ADDR_EXPR),
+  f_expected = z3::implies(f_mem_layout_constrain && f1 && (addr_v_lookup_6 != NULL_ADDR_EXPR),
                            (uge(addr_v_lookup_6, map_s) && uge(map_e, addr_v_lookup_6)));
   print_test_res(is_valid(f_expected), "a = lookup &k1 m, a != NULL => a in map range");
 
-  f_expected = z3::implies(f_stack_start_constrain && f1 &&
+  f_expected = z3::implies(f_mem_layout_constrain && f1 &&
                            (!(uge(addr_v_lookup_6, map_s) && uge(map_e, addr_v_lookup_6))),
                            addr_v_lookup_6 == NULL_ADDR_EXPR);
   print_test_res(is_valid(f_expected), "a = lookup &k1 m, a not in map range => a == NULL");
 
-  f_expected = z3::implies(f_stack_start_constrain && f1 && f2 && (addr_v_lookup_7 != NULL_ADDR_EXPR),
+  f_expected = z3::implies(f_mem_layout_constrain && f1 && f2 && (addr_v_lookup_7 != NULL_ADDR_EXPR),
                            (uge(addr_v_lookup_7, map_s) && uge(map_e, addr_v_lookup_7)));
   print_test_res(is_valid(f_expected), "a1 = lookup &k1 m, a2 = lookup &k2 m, "\
                  "a2 != NULL => a2 in map range");
 
-  f_expected = z3::implies(f_stack_start_constrain && f1 && f2 &&
+  f_expected = z3::implies(f_mem_layout_constrain && f1 && f2 &&
                            (uge(addr_v_lookup_7, map_s) && uge(map_e, addr_v_lookup_7)),
                            (addr_v_lookup_7 != NULL_ADDR_EXPR));
   print_test_res(is_valid(f_expected), "a1 = lookup &k1 m, a2 = lookup &k2 m, "\
                  "a2 not in map range => a2 == NULL");
 
   cout << "b. address equivalence" << endl;
-  f_expected = z3::implies(f_stack_start_constrain && f1 && f2 && (k1 == k2), addr_v_lookup_6 == addr_v_lookup_7);
+  f_expected = z3::implies(f_mem_layout_constrain && f1 && f2 && (k1 == k2), addr_v_lookup_6 == addr_v_lookup_7);
   print_test_res(is_valid(f_expected), "lookup &k1 m == lookup &k2 m, if k1 == k2");
 
   cout << "c. address uniqueness" << endl;
-  f_expected = z3::implies(f_stack_start_constrain && f1 && f2 && (k1 != k2) &&
+  f_expected = z3::implies(f_mem_layout_constrain && f1 && f2 && (k1 != k2) &&
                            (addr_v_lookup_6 != NULL_ADDR_EXPR) &&
                            (addr_v_lookup_7 != NULL_ADDR_EXPR),
                            addr_v_lookup_6 != addr_v_lookup_7);
   print_test_res(is_valid(f_expected), "lookup &k1 m != lookup &k2 m, if k1 != k2, k1 and k2 are in the map");
 
   cout << "d. value equivalence" << endl;
-  f_expected = z3::implies(f_stack_start_constrain && f1 && f2 && f3 && f4 &&
+  f_expected = z3::implies(f_mem_layout_constrain && f1 && f2 && f3 && f4 &&
                            (k1 == k2) && (addr_v_lookup_6 != NULL_ADDR_EXPR),
                            v_lookup_6 == v_lookup_7);
 
@@ -552,14 +552,14 @@ void test8() {
   cout << "  3. test operations with map helper functions and memory ld/st" << endl;
   sv.clear();
   sv.mem_var.init_addrs_map_v_next_by_layout();
-  f_stack_start_constrain = sv.stack_start_constrain();
+  f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr p1 = v("p1");
   z3::expr p2 = v("p2");
   z3::expr v_p1 = v("v_p1");
   z3::expr v_p2 = v("v_p2");
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
   predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
-  f = f_stack_start_constrain &&
+  f = f_mem_layout_constrain &&
       predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv); // m[k1] = v1
   f = f && predicate_map_lookup_helper(map1, addr_k1, p1, sv); // p1 = &m[k1]
   f = f && predicate_map_lookup_helper(map1, addr_k1, p2, sv); // p2 = &m[k1]
@@ -574,14 +574,14 @@ void test8() {
   int map2_id = 1;
   mem_t::add_map(map_attr(8, 8, 512));
   sv.mem_var.init_addrs_map_v_next_by_layout();
-  f_stack_start_constrain = sv.stack_start_constrain();
+  f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr map_s_2 = sv.get_map_start_addr(map2_id);
   z3::expr map_e_2 = sv.get_map_end_addr(map2_id);
   predicate_st8(k1, addr_k1, v(0), sv.mem_var); // *addr_k1 = k1 (addr_k1 in the stack)
   predicate_st8(k2, addr_k2, v(0), sv.mem_var); // *addr_k2 = k2 (addr_k2 in the stack)
   predicate_st8(v1, addr_v1, v(0), sv.mem_var); // *addr_v1 = v1 (addr_v1 in the stack)
   predicate_st8(v2, addr_v2, v(0), sv.mem_var); // *addr_v2 = v2 (addr_v2 in the stack)
-  f = f_stack_start_constrain &&
+  f = f_mem_layout_constrain &&
       predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv); // m1[k1] = v1
   f = f && predicate_map_update_helper(map2, addr_k1, addr_v2, new_out(), sv); // m2[k1] = v2
   f = f && predicate_map_lookup_helper(map1, addr_k1, p1, sv); // p1 = &m1[k1]
@@ -636,11 +636,11 @@ void test8() {
   cout << "  5. test return value of delete" << endl;;
   sv.clear();
   sv.mem_var.init_addrs_map_v_next_by_layout();
-  f_stack_start_constrain = sv.stack_start_constrain();
+  f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr out = new_out();
   predicate_st8(k1, addr_k1, v(0), sv.mem_var);
   predicate_st8(v1, addr_v1, v(0), sv.mem_var);
-  f = f_stack_start_constrain && predicate_map_delete_helper(map1, addr_k1, out, sv);
+  f = f_mem_layout_constrain && predicate_map_delete_helper(map1, addr_k1, out, sv);
   f_expected = z3::implies(f && (out != MAP_DEL_RET_IF_KEY_INEXIST_EXPR), out == MAP_DEL_RET_IF_KEY_EXIST_EXPR) &&
                z3::implies(f && (out != MAP_DEL_RET_IF_KEY_EXIST_EXPR), out == MAP_DEL_RET_IF_KEY_INEXIST_EXPR);
   print_test_res(is_valid(f_expected), "ret_val(delete &k m) == EXIST or INEXIST");
@@ -662,7 +662,7 @@ void test8() {
   mem_t::add_map(map_attr(16, 32, 128)); // set map2 key size: 16 bits, value size: 32 bits
   sv.clear();
   sv.mem_var.init_addrs_map_v_next_by_layout();
-  f_stack_start_constrain = sv.stack_start_constrain();
+  f_mem_layout_constrain = sv.mem_layout_constrain();
   k1 = to_expr("k1", 8); // used by map1
   v1 = to_expr("v1", 8);
   k2 = to_expr("k2", 16); //used by map2
@@ -698,7 +698,7 @@ void test8() {
   f = f && predicate_map_lookup_helper(map, addr_k, addr_v_lookup, sv); \
   f_expected = z3::implies(f, addr_v_lookup == addr_v_expected);
 
-  f = f_stack_start_constrain &&
+  f = f_mem_layout_constrain &&
       predicate_map_update_helper(map1, addr_k1, addr_v1, new_out(), sv);
   f = f && predicate_map_update_helper(map2, addr_k2, addr_v2, new_out(), sv);
   MAP1_LOOKUP_AND_LD(v1)
@@ -998,7 +998,7 @@ void test10() {
   z3::expr k1 = to_expr("k1", 8), v1 = to_expr("v1", 8);
   z3::expr k2 = to_expr("k2", 8), v2 = to_expr("v2", 8);
   // without setting the stack start address, the default addresses of sv1 and sv2 are the same
-  z3::expr f_stack_start_constrain = sv1.stack_start_constrain();
+  z3::expr f_mem_layout_constrain = sv1.mem_layout_constrain();
   z3::expr stack_s = sv1.get_stack_start_addr();
   z3::expr addr_k1 = stack_s + 0, addr_v1 = stack_s + 1;
   z3::expr addr_k2 = stack_s + 2, addr_v2 = stack_s + 3;
@@ -1018,7 +1018,7 @@ void test10() {
   predicate_st8(v1, addr_v1, v(0), sv2.mem_var);
   predicate_st8(k2, addr_k2, v(0), sv2.mem_var);
   predicate_st8(v2, addr_v2, v(0), sv2.mem_var);
-  f = f_stack_start_constrain && (k1 != k2) && (v1 != v2);
+  f = f_mem_layout_constrain && (k1 != k2) && (v1 != v2);
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1);
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2);
 
@@ -1062,14 +1062,14 @@ void test10() {
   sv1.clear(); sv2.clear();
   sv1.mem_var.init_addrs_map_v_next_by_layout();
   sv2.mem_var.init_addrs_map_v_next_by_layout();
-  f_stack_start_constrain = sv1.stack_start_constrain();
+  f_mem_layout_constrain = sv1.mem_layout_constrain();
   predicate_st8(k1, addr_k1, v(0), sv1.mem_var);
   predicate_st8(v1, addr_v1, v(0), sv1.mem_var);
   predicate_st8(k1, addr_k1, v(0), sv2.mem_var);
   predicate_st8(v1, addr_v1, v(0), sv2.mem_var);
   // test for lookup, if key can be found in WT, the entry added into URT should be invalid
   z3::expr addr_v_lookup = new_addr_v_lookup();
-  f = f_stack_start_constrain &&
+  f = f_mem_layout_constrain &&
       predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1); // m_p1[k1] = v1
   f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup, sv1);
   f = f && predicate_ld8(addr_v_lookup, v(0), sv1, new_v_lookup());
@@ -1082,7 +1082,7 @@ void test10() {
   sv1.clear(); sv2.clear();
   sv1.mem_var.init_addrs_map_v_next_by_layout();
   sv2.mem_var.init_addrs_map_v_next_by_layout();
-  f_stack_start_constrain = sv1.stack_start_constrain();
+  f_mem_layout_constrain = sv1.mem_layout_constrain();
   predicate_st8(k1, addr_k1, v(0), sv1.mem_var);
   predicate_st8(v1, addr_v1, v(0), sv1.mem_var);
   predicate_st8(k2, addr_k2, v(0), sv1.mem_var);
@@ -1091,7 +1091,7 @@ void test10() {
   predicate_st8(v1, addr_v1, v(0), sv2.mem_var);
   predicate_st8(k2, addr_k2, v(0), sv2.mem_var);
   predicate_st8(v2, addr_v2, v(0), sv2.mem_var);
-  f = f_stack_start_constrain && (k1 != k2) && (v1 != v2);
+  f = f_mem_layout_constrain && (k1 != k2) && (v1 != v2);
   // store v_lookup_k1_p1 (= m_p1[k1]) in the stack (addr: stack_addr_v_lookup_p1)
   z3::expr addr_v_lookup_p1 = new_addr_v_lookup();
   z3::expr v_lookup_p1 = new_v_lookup();
@@ -1175,7 +1175,7 @@ void test10() {
   mem_t::add_map(map_attr(32, 16, 512));
   sv1.mem_var.init_addrs_map_v_next_by_layout();
   sv2.mem_var.init_addrs_map_v_next_by_layout();
-  f_stack_start_constrain = sv1.stack_start_constrain();
+  f_mem_layout_constrain = sv1.mem_layout_constrain();
   k1 = to_expr("k1", 32), v1 = to_expr("v1", 16);
   addr_k1 = stack_s + 0, addr_v1 = stack_s + 4;
   predicate_st32(k1, addr_k1, v(0), sv1.mem_var);
@@ -1186,7 +1186,7 @@ void test10() {
   addr_v_lookup_p2 = new_addr_v_lookup();
   v_lookup_p1 = new_v_lookup();
   v_lookup_p2 = new_v_lookup();
-  f = f_stack_start_constrain && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p1, sv1);
+  f = f_mem_layout_constrain && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p1, sv1);
   f = f && predicate_ld16(addr_v_lookup_p1, v(0), sv1, v_lookup_p1);
   f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p2, sv2);
   f = f && predicate_ld16(addr_v_lookup_p2, v(0), sv2, v_lookup_p2);
@@ -1227,7 +1227,7 @@ void test10() {
   mem_t::add_map(map_attr(8, 8, 512));
   sv1.mem_var.init_addrs_map_v_next_by_layout();
   sv2.mem_var.init_addrs_map_v_next_by_layout();
-  f_stack_start_constrain = sv1.stack_start_constrain();
+  f_mem_layout_constrain = sv1.mem_layout_constrain();
   k1 = to_expr("k1", 8), v1 = to_expr("v1", 8);
   stack_s = sv1.get_stack_start_addr();
   addr_k1 = stack_s + 0, addr_v1 = stack_s + 1;
@@ -1235,7 +1235,7 @@ void test10() {
   predicate_st8(v1, addr_v1, v(0), sv1.mem_var);
   predicate_st8(k1, addr_k1, v(0), sv2.mem_var);
   predicate_st8(v1, addr_v1, v(0), sv2.mem_var);
-  f = f_stack_start_constrain && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1);
+  f = f_mem_layout_constrain && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1);
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2);
   f_same_input = smt_one_map_set_same_input(map1, sv1, sv2);
   f_equal = smt_map_eq_chk(sv1, sv2);
@@ -1250,13 +1250,13 @@ void test10() {
   sv1.clear(); sv2.clear();
   sv1.mem_var.init_addrs_map_v_next_by_layout();
   sv2.mem_var.init_addrs_map_v_next_by_layout();
-  f_stack_start_constrain = sv1.stack_start_constrain();
+  f_mem_layout_constrain = sv1.mem_layout_constrain();
   predicate_st8(k1, addr_k1, v(0), sv1.mem_var);
   predicate_st8(v1, addr_v1, v(0), sv1.mem_var);
   predicate_st8(k1, addr_k1, v(0), sv2.mem_var);
   predicate_st8(v1, addr_v1, v(0), sv2.mem_var);
   addr_v_lookup_p1 = new_addr_v_lookup();
-  f = f_stack_start_constrain && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p1, sv1);
+  f = f_mem_layout_constrain && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p1, sv1);
   predicate_st8(v1, addr_v_lookup_p1, v(0), sv1.mem_var);
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2);
   z3::expr f_pc = (addr_v_lookup_p1 != NULL_ADDR_EXPR);
@@ -1331,7 +1331,7 @@ void test12() {
   smt_var sv2(prog_id, node_id, num_regs);
   sv1.mem_var.init_addrs_map_v_next_by_layout();
   sv2.mem_var.init_addrs_map_v_next_by_layout();
-  z3::expr f_stack_start_constrain = sv1.stack_start_constrain();
+  z3::expr f_mem_layout_constrain = sv1.mem_layout_constrain();
   z3::expr stack_s = sv1.get_stack_start_addr();
 
   z3::expr k1 = to_expr(0x01, 8), v1 = to_expr("v1", 8);
@@ -1356,7 +1356,7 @@ void test12() {
 #undef PRED_ST
 
   // update to help create counter-example model
-  z3::expr f = f_stack_start_constrain &&
+  z3::expr f = f_mem_layout_constrain &&
                predicate_map_update_helper(addr_map1, addr_k4, addr_v4, new_out(), sv1);
   inout_t input;
   input.init();
@@ -1391,6 +1391,104 @@ void test12() {
   print_test_res(input == input_expected, "uinitialized lookup of map1[k3]");
 }
 
+void pkt_same_input_chk(z3::expr addr, bool is_equal, string test_name,
+                        z3::expr& f_operations, const z3::expr& f_mem_layout_constrain,
+                        smt_var& sv1, smt_var& sv2) {
+  z3::expr out_1 = new_out();
+  z3::expr out_2 = new_out();
+  f_operations = f_operations && predicate_ld8(addr, v(0), sv1, out_1) &&
+                 predicate_ld8(addr, v(0), sv2, out_2);
+  z3::expr f_same_input = smt_pkt_set_same_input(sv1, sv2);
+  bool equal = is_valid(z3::implies(f_mem_layout_constrain && f_same_input && f_operations,
+                                    out_1 == out_2));
+  print_test_res(equal == is_equal, test_name);
+}
+
+void pkt_eq_chk(bool is_equal, string test_name,
+                const z3::expr& f_operations, const z3::expr& f_mem_layout_constrain,
+                smt_var& sv1, smt_var& sv2) {
+  z3::expr f_same_input = smt_pkt_set_same_input(sv1, sv2);
+  z3::expr f_equal = smt_pkt_eq_chk(sv1, sv2);
+  bool equal = is_valid(z3::implies(f_mem_layout_constrain && f_same_input && f_operations,
+                                    f_equal));
+  print_test_res(equal == is_equal, test_name);
+}
+
+void test13() {
+  cout << "Test 13: test packet" << endl;
+  cout << "1. test packet set the same input" << endl;
+  /* The two programs are supposed to have the same pkt input. i.e.,
+     uninitialized pkt reads are supposed to be the same. Since the same
+     input is set according to the program logic (i.e., ld/st operations),
+     the following tests construct ld/st operations to check the same pkt
+     input property.
+  */
+  // configure a layout: stack + map + pkt
+  mem_t::_layout.clear();
+  unsigned int pkt_sz = 128;
+  mem_t::add_map(map_attr(8, 8, 512));
+  mem_t::set_pkt_sz(pkt_sz); // pkt size: 128 bytes
+  unsigned int prog_id = 0, node_id = 0, num_regs = 11;
+  smt_var sv1(prog_id, node_id, num_regs);
+  prog_id = 1;
+  smt_var sv2(prog_id, node_id, num_regs);
+  sv1.init();
+  sv2.init();
+  z3::expr f_mem_layout_constrain = sv1.mem_layout_constrain();
+  z3::expr f_operations = Z3_true;
+  z3::expr pkt_s = sv1.get_pkt_start_addr(); // sv1, sv2 have the same pkt start address
+  z3::expr pkt_e = sv1.get_pkt_end_addr();
+#define PKT_SAME_INPUT_CHK(addr, is_equal, test_name) \
+  pkt_same_input_chk(addr, is_equal, test_name, f_operations, f_mem_layout_constrain, sv1, sv2);
+
+  PKT_SAME_INPUT_CHK(pkt_s, true, "1")
+  PKT_SAME_INPUT_CHK(pkt_e, true, "2")
+  PKT_SAME_INPUT_CHK(pkt_s + v(56), true, "3")
+  PKT_SAME_INPUT_CHK(pkt_e + v(1), false, "4")
+  PKT_SAME_INPUT_CHK(pkt_s + v((int64_t) - 1), false, "5")
+  PKT_SAME_INPUT_CHK(sv1.get_stack_start_addr(), false, "6")
+  PKT_SAME_INPUT_CHK(sv1.get_stack_end_addr(), false, "7")
+
+#undef PKT_SAME_INPUT_CHK
+  cout << "2. test packet equivalence check" << endl;
+  // configure a layout: stack + map + pkt
+  mem_t::_layout.clear();
+  pkt_sz = 128;
+  mem_t::add_map(map_attr(8, 8, 512));
+  mem_t::set_pkt_sz(pkt_sz); // pkt size: 128 bytes
+  sv1.clear();
+  sv2.clear();
+  sv1.init();
+  sv2.init();
+#define PKT_EQ_CHK(is_equal, test_name) \
+  pkt_eq_chk(is_equal, test_name, f_operations, f_mem_layout_constrain, sv1, sv2);
+
+  f_mem_layout_constrain = sv1.mem_layout_constrain();
+  f_operations = Z3_true;
+  pkt_s = sv1.get_pkt_start_addr(); // sv1, sv2 have the same pkt start address
+  pkt_e = sv1.get_pkt_end_addr();
+  z3::expr out_1 = new_out();
+  f_operations = predicate_ld8(pkt_s, v(0), sv1, out_1);
+  predicate_st8(out_1, pkt_s, v(0), sv1.mem_var);
+  PKT_EQ_CHK(true, "1")
+
+  z3::expr v1 = v("v1");
+  predicate_st8(v1, pkt_s, v(0), sv1.mem_var);
+  PKT_EQ_CHK(false, "2")
+
+  predicate_st8(v1, pkt_s, v(0), sv2.mem_var);
+  PKT_EQ_CHK(true, "3")
+
+  z3::expr v2 = v("v2");
+  predicate_st8(v2, pkt_e, v(0), sv2.mem_var);
+  PKT_EQ_CHK(false, "4")
+
+  predicate_st8(v2, pkt_e, v(0), sv1.mem_var);
+  PKT_EQ_CHK(true, "5")
+
+#undef PKT_EQ_CHK
+}
+
 int main() {
   test1();
   test2();
@@ -1404,6 +1502,7 @@ int main() {
   test10();
   test11();
   test12();
+  test13();
 
   return 0;
 }

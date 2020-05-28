@@ -234,6 +234,62 @@ z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y,
   return f;
 }
 
+// pkt address only in mem_p1 wt => pkt address in mem_p1 urt && same value in wt and urt
+z3::expr pkt_addr_in_one_wt(smt_var& sv1, smt_var& sv2) {
+  z3::expr f = Z3_true;
+  smt_wt& wt1 = sv1.mem_var._mem_table._wt;
+  smt_wt& wt2 = sv2.mem_var._mem_table._wt;
+  smt_wt& urt1 = sv1.mem_var._mem_table._urt;
+  z3::expr pkt_s = sv1.get_pkt_start_addr();
+  z3::expr pkt_e = sv1.get_pkt_end_addr();
+  for (int i = wt1.size() - 1; i >= 0; i--) {
+    z3::expr a_out = wt1.addr[i];
+    z3::expr v_out = wt1.val[i];
+    z3::expr f_a_out = addr_in_range(a_out, pkt_s, pkt_e) &&
+                       latest_write_element(i, wt1.addr);
+    z3::expr f_a_not_in_wt2 = !addr_in_addrs(a_out, wt2.addr);
+    z3::expr f_a_in_urt1 = addr_in_addrs(a_out, urt1.addr);
+    f = f && z3::implies(f_a_out && f_a_not_in_wt2, f_a_in_urt1);
+
+    for (int j = 0; j < urt1.size(); j++) {
+      z3::expr a_in = urt1.addr[j];
+      z3::expr v_in = urt1.val[j];
+      f = f && z3::implies(f_a_out && f_a_not_in_wt2 && (a_out == a_in),
+                           v_out == v_in);
+    }
+  }
+  return f;
+}
+
+// 1. pkt address in both mem_p1 wt and mem_p2 wt => same value (latest write)
+// 2. pkt address in one of wts => value (latest write) == input
+z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
+  if (mem_t::_layout._pkt_sz == 0) return Z3_true;
+
+  z3::expr f = Z3_true;
+  smt_wt& wt1 = sv1.mem_var._mem_table._wt;
+  smt_wt& wt2 = sv2.mem_var._mem_table._wt;
+  z3::expr pkt_s = sv1.get_pkt_start_addr();
+  z3::expr pkt_e = sv1.get_pkt_end_addr();
+  // case 1: pkt address in both wts, latest write should be the same
+  for (int i = wt1.size() - 1; i >= 0; i--) {
+    z3::expr a1 = wt1.addr[i];
+    z3::expr v1 = wt1.val[i];
+    z3::expr f_a1 = addr_in_range(a1, pkt_s, pkt_e) &&
+                    latest_write_element(i, wt1.addr);
+
+    for (int j = wt2.size() - 1; j >= 0; j--) {
+      z3::expr a2 = wt2.addr[j];
+      z3::expr v2 = wt2.val[j];
+      z3::expr f_a2 = latest_write_element(j, wt2.addr);
+      f = f && z3::implies(f_a1 && f_a2 && (a1 == a2), v1 == v2);
+    }
+  }
+  // case 2: pkt address in one of wts
+  f = f && pkt_addr_in_one_wt(sv1, sv2) && pkt_addr_in_one_wt(sv2, sv1);
+  return f;
+}
+
 z3::expr key_not_found_after_idx(z3::expr key, int idx, z3::expr addr_map, smt_map_wt& m_wt) {
   z3::expr f_found = string_to_expr("false");
   int k_sz = key.get_sort().bv_size();
@@ -618,7 +674,33 @@ z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2) {
 }
 
 z3::expr smt_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
-  return smt_map_eq_chk(sv1, sv2);
+  return smt_map_eq_chk(sv1, sv2) && smt_pkt_eq_chk(sv1, sv2);
+}
+
+// add the constrains on the input equivalence setting
+// the same content in the same pkt address in mem_p1 URT == mem_p2 URT
+z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
+  if (mem_t::_layout._pkt_sz == 0) return Z3_true;
+  z3::expr f = Z3_true;
+  smt_wt& mem1_urt = sv1.mem_var._mem_table._urt;
+  smt_wt& mem2_urt = sv2.mem_var._mem_table._urt;
+  z3::expr pkt_s = sv1.get_pkt_start_addr();
+  z3::expr pkt_e = sv1.get_pkt_end_addr();
+  for (int i = 0; i < mem1_urt.size(); i++) {
+    z3::expr a1 = mem1_urt.addr[i];
+    z3::expr v1 = mem1_urt.val[i];
+    // "f_a1" does not need the constrain (a1 != NULL),
+    // since if a1 in pkt range, a1 won't be NULL
+    z3::expr f_a1 = addr_in_range(a1, pkt_s, pkt_e);
+
+    for (int j = 0; j < mem2_urt.size(); j++) {
+      z3::expr a2 = mem2_urt.addr[j];
+      z3::expr v2 = mem2_urt.val[j];
+
+      f = f && z3::implies(f_a1 && (a1 == a2), v1 == v2);
+    }
+  }
+  return f;
 }
 
 z3::expr smt_pgm_set_same_input(vector<z3::expr>& pc1, vector<smt_var>& sv1,
@@ -627,7 +709,8 @@ z3::expr smt_pgm_set_same_input(vector<z3::expr>& pc1, vector<smt_var>& sv1,
   for (int i = 0; i < pc1.size(); i++) {
     for (int j = 0; j < pc2.size(); j++) {
       f = f && z3::implies(pc1[i] && pc2[j],
-                           smt_map_set_same_input(sv1[i], sv2[j]));
+                           smt_map_set_same_input(sv1[i], sv2[j]) &&
+                           smt_pkt_set_same_input(sv1[i], sv2[j]));
     }
   }
   return f;

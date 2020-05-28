@@ -150,7 +150,8 @@ class map_wt {
 class smt_mem {
  public:
   z3::expr _stack_start = string_to_expr("stack_start");
-  mem_wt _mem_table;
+  z3::expr _pkt_start = string_to_expr("pkt_start");
+  mem_wt _mem_table; // stack, pkt, map related memory
   map_wt _map_table;
   vector<z3::expr> _addrs_map_v_next;
 
@@ -190,7 +191,9 @@ class smt_var: public smt_var_base {
   z3::expr get_stack_bottom_addr() {return (mem_var._stack_start + STACK_SIZE);}
   z3::expr get_map_start_addr(int map_id); // return value: z3 bv64
   z3::expr get_map_end_addr(int map_id); // return value: z3 bv64
-  z3::expr stack_start_constrain() const;
+  z3::expr get_pkt_start_addr() {return mem_var._pkt_start;}
+  z3::expr get_pkt_end_addr() {return (mem_var._pkt_start + to_expr((uint64_t)mem_t::_layout._pkt_sz - 1));}
+  z3::expr mem_layout_constrain() const;
   void init() {mem_var.init_addrs_map_v_next_by_layout();}
   void get_from_previous_block(smt_var& sv);
   void clear();

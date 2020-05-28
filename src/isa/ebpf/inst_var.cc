@@ -515,14 +515,27 @@ z3::expr smt_var::get_map_end_addr(int map_id) { // return value: z3 bv64
   return map_end_addr;
 }
 
-// constrain: 1. stack_start != NULL
-// 2. stack_start + mem_size - 1 <= max_uint64
-z3::expr smt_var::stack_start_constrain() const {
-  int mem_size = get_mem_size_by_layout();
-  z3::expr offset = to_expr((uint64_t)(mem_size - 1));
+// constrain:
+// 1. pkt_sz = 0: 0 < [memory start, memory end] <= max_uint64
+// 2. pkt_sz > 0: 0 < [memory start, memory end] < [pkt start, pkt end] <= max_uint64
+z3::expr smt_var::mem_layout_constrain() const {
+  z3::expr mem_start = mem_var._stack_start;
+  int mem_sz = get_mem_size_by_layout();
+  z3::expr mem_off = to_expr((uint64_t)(mem_sz - 1));
+  z3::expr pkt_start = mem_var._pkt_start;
+  int pkt_sz = mem_t::_layout._pkt_sz;
+  z3::expr pkt_off = to_expr((uint64_t)(pkt_sz - 1));
   z3::expr max_uint64 = to_expr((uint64_t)0xffffffffffffffff);
-  z3::expr f = (mem_var._stack_start != NULL_ADDR_EXPR) &&
-               uge(max_uint64 - offset, mem_var._stack_start);
+
+  if (pkt_sz == 0) {
+    z3::expr f = (mem_start != NULL_ADDR_EXPR) &&
+                 uge(max_uint64 - mem_off, mem_start);
+    return f;
+  }
+
+  z3::expr f = (mem_start != NULL_ADDR_EXPR) &&
+               ugt(pkt_start, mem_off) && ugt(pkt_start - mem_off, mem_start) &&
+               uge(max_uint64 - pkt_off, pkt_start);
   return f;
 }
 
