@@ -333,10 +333,12 @@ void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
 void test4() {
   std::cout << "test 4: conversion from counter example to input memory "\
             "for interpreter" << endl;
+  std::cout << "1. test map" << std::endl;
   // set memory layout: stack | map1 | map2
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
   mem_t::add_map(map_attr(16, 32, 32)); // k_sz: 16 bits; v_sz: 32 bits; max_entirs: 32
+  mem_t::set_pkt_sz(128);
   int map0 = 0, map1 = 1;
   int k1 = 0x11, v1 = 0xff;
   string k1_str = "11";
@@ -481,6 +483,22 @@ void test4() {
                  inst(EXIT),
                 };
   chk_counterex_by_vld_to_interpreter(p4, 9, p41, 2, "4", vld, ps);
+
+  std::cout << "2. test packet" << std::endl;
+  // r0 = pkt[0]
+  inst p5[3] = {inst(MOV64XY, 6, 1),
+                inst(LDXB, 0, 6, 0),
+                inst(EXIT),
+               };
+  // r0 = 0x11
+  inst p51[6] = {inst(MOV64XY, 6, 1),
+                 inst(LDXB, 0, 6, 0),     // r0 = pkt[0]
+                 inst(JEQXC, 0, 0x11, 1), // if r0 == 0x11, r0 = 0xff
+                 inst(EXIT),
+                 inst(MOV64XC, 0, 0xff),
+                 inst(EXIT),
+                };
+  chk_counterex_by_vld_to_interpreter(p5, 3, p51, 7, "1", vld, ps);
 }
 
 void test5() { // test pkt

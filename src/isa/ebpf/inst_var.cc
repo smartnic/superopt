@@ -78,10 +78,9 @@ ostream& operator<<(ostream& out, const mem_t& mem) {
   }
 
   out << "3. packet related memory:" << endl;
-  unsigned int off = mem._mem_size - mem_t::_layout._pkt_sz;
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
     if ((i % MEM_PRINT_GAP) == 0) out << endl;
-    out << hex << setfill('0') << setw(2) << static_cast<int>(mem._mem[off + i]) << dec;
+    out << hex << setfill('0') << setw(2) << static_cast<int>(mem._pkt[i]) << dec;
   }
   out << endl;
   return out;
@@ -653,6 +652,10 @@ ostream& operator<<(ostream& out, const inout_t& x) {
     for (auto it = x.maps[i].begin(); it != x.maps[i].end(); it++) {
       out << it->first << "," << uint8_t_vec_2_hex_str(it->second) << " ";
     }
+  }
+  out << " " << "pkt: ";
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    out << hex << setfill('0') << setw(2) << static_cast<int>(x.pkt[i]) << dec;
   }
   return out;
 }

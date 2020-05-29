@@ -1313,7 +1313,7 @@ void get_input_mem_after_lookup_ld(inout_t& input, z3::expr v_ulookup,
   z3::expr smt = z3::implies(f && f_same_input && f_pc, f_equal);
   z3::model mdl(smt_c);
   get_counterex_model(mdl, smt);
-  counterex_urt_2_input_map(input, mdl, sv1);
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
 }
 
 void test12() {
@@ -1487,6 +1487,42 @@ void test13() {
   PKT_EQ_CHK(true, "5")
 
 #undef PKT_EQ_CHK
+
+  cout << "3. test packet update input (packet)" << endl;
+  /* 1. construct pkt operations such that the outputs are different.
+     2. get the counter example (i.e., z3 model)
+     3. convert counter example into interperter input
+   */
+  // configure a layout: stack + map + pkt
+  mem_t::_layout.clear();
+  pkt_sz = 128;
+  mem_t::add_map(map_attr(8, 8, 512));
+  mem_t::set_pkt_sz(pkt_sz); // pkt size: 128 bytes
+  sv1.clear();
+  sv2.clear();
+  sv1.init();
+  sv2.init();
+  f_mem_layout_constrain = sv1.mem_layout_constrain();
+  f_operations = Z3_true;
+  pkt_s = sv1.get_pkt_start_addr(); // sv1, sv2 have the same pkt start address
+  pkt_e = sv1.get_pkt_end_addr(); // sv1, sv2 have the same pkt start address
+  v1 = v("v1");
+  v2 = v("v2");
+  inout_t input;
+  input.init();
+  // v1, v2 are the outputs, v1 = pkt[0], v2 = pkt[sz-1], get counter example and update input
+  // check the input pkt[0] != input pkt[sz-1]
+  f_operations = predicate_ld8(pkt_s, v(0), sv1, v1) &&
+                 predicate_ld8(pkt_e, v(0), sv2, v2);
+  z3::expr f_same_input = smt_pkt_set_same_input(sv1, sv2);
+  z3::expr smt = z3::implies(f_mem_layout_constrain && f_same_input && f_operations, v1 == v2);
+  z3::model mdl(smt_c);
+  bool is_expected = ! get_counterex_model(mdl, smt);
+  if (is_expected) {
+    counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
+    is_expected = (input.pkt[0] != input.pkt[pkt_sz - 1]);
+  }
+  print_test_res(is_expected, "1");
 }
 
 int main() {

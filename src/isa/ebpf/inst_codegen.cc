@@ -948,8 +948,9 @@ string z3_bv_2_hex_str(z3::expr z3_bv) {
   return hex_str;
 }
 
-void get_map_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
-                          z3::model& mdl, smt_var& sv) {
+// get an addr-val list. The list only contains useful memory addresses (map, pkt)
+void get_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
+                      z3::model& mdl, smt_var& sv) {
   smt_wt& mem_urt = sv.mem_var._mem_table._urt;
   int map_sz = mem_t::maps_number();
   if (map_sz == 0) return;
@@ -959,10 +960,18 @@ void get_map_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
     if (!z3_addr_eval.is_numeral()) continue;
     uint64_t addr = z3_addr_eval.get_numeral_uint64();
     if (addr == NULL_ADDR) continue;
-    // Assmue that stack and maps next to each other
+    // only record the addr which is in map or pkt memory range
     uint64_t map_start = mdl.eval(sv.get_map_start_addr(0)).get_numeral_uint64();
+    // assume all maps are next to one another
     uint64_t map_end = mdl.eval(sv.get_map_end_addr(map_sz - 1)).get_numeral_uint64();
-    if ((addr < map_start) || (addr > map_end)) continue;
+    bool addr_not_in_map = (addr < map_start) || (addr > map_end);
+    bool addr_not_in_pkt = true;
+    if (mem_t::_layout._pkt_sz != 0) { // check whether pkt is in memory layout
+      uint64_t pkt_start = mdl.eval(sv.get_pkt_start_addr()).get_numeral_uint64();
+      uint64_t pkt_end = mdl.eval(sv.get_pkt_end_addr()).get_numeral_uint64();
+      addr_not_in_pkt = (addr < pkt_start) || (addr > pkt_end);
+    }
+    if (addr_not_in_map && addr_not_in_pkt) continue;
 
     z3::expr z3_val = mem_urt.val[i]; // z3 bv8
     uint8_t val = (uint8_t)mdl.eval(z3_val).get_numeral_int();
@@ -997,11 +1006,10 @@ void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
   }
 }
 
-void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv) {
+void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv,
+                               vector<pair< uint64_t, uint8_t>>& mem_addr_val) {
   smt_map_wt& map_urt = sv.mem_var._map_table._urt;
   smt_wt& mem_urt = sv.mem_var._mem_table._urt;
-  vector<pair< uint64_t, uint8_t>> mem_addr_val;
-  get_map_mem_from_mdl(mem_addr_val, mdl, sv);
   uint64_t stack_start = mdl.eval(sv.get_stack_start_addr()).get_numeral_uint64();
   input.input_simu_r10 = stack_start + STACK_SIZE; // r10: stack bottom
   for (int i = 0; i < map_urt.size(); i++) {
@@ -1018,16 +1026,42 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv) {
     int map_id = z3_addr_map.get_numeral_int();
     z3::expr z3_k = mdl.eval(map_urt.key[i]);
     string k = z3_bv_2_hex_str(z3_k);
-    if (! input.k_in_map(map_id, k)) {
-      unsigned int val_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
-      vector<uint8_t> v(val_sz);
-      // get the corresponding "v" according to "addr_v"
-      get_v_from_addr_v(v, addr_v, mem_addr_val);
-      input.update_kv(map_id, k, v);
-    }
+    unsigned int val_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
+    vector<uint8_t> v(val_sz);
+    // get the corresponding "v" according to "addr_v"
+    get_v_from_addr_v(v, addr_v, mem_addr_val);
+    input.update_kv(map_id, k, v);
   }
 }
 
+// set input memory (pkt) according to counter-example urt table
+// traverse mem_addr_val list, if the addr is in input memory address range, update "input"
+void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv,
+                               vector<pair< uint64_t, uint8_t>>& mem_addr_val) {
+  if (mem_t::_layout._pkt_sz == 0) return;
+
+  uint64_t pkt_start = mdl.eval(sv.get_pkt_start_addr()).get_numeral_uint64();
+  uint64_t pkt_end = mdl.eval(sv.get_pkt_end_addr()).get_numeral_uint64();
+
+  for (int i = 0; i < mem_addr_val.size(); i++) {
+    uint64_t addr = mem_addr_val[i].first;
+    uint8_t val = mem_addr_val[i].second;
+    // only update addr in pkt range
+    if ((addr < pkt_start) || (addr > pkt_end)) continue;
+
+    int idx = addr - pkt_start;
+    input.pkt[idx] = val;
+  }
+}
+
+void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model& mdl, smt_var& sv) {
+  vector<pair< uint64_t, uint8_t>> mem_addr_val;
+  get_mem_from_mdl(mem_addr_val, mdl, sv);
+  counterex_urt_2_input_map(input, mdl, sv, mem_addr_val);
+  counterex_urt_2_input_mem(input, mdl, sv, mem_addr_val);
+}
+
+// make sure sv1 is for the original program
 void counterex_2_input_mem(inout_t& input, z3::model& mdl,
                            vector<z3::expr>& pc1, vector<smt_var>& sv1,
                            vector<z3::expr>& pc2, vector<smt_var>& sv2) {
@@ -1058,26 +1092,26 @@ void counterex_2_input_mem(inout_t& input, z3::model& mdl,
     return;
   }
 
-  // update input memory for executing path condition first
-  smt_map_wt& map_urt = sv1[sv1_id].mem_var._map_table._urt;
-  smt_wt& mem_urt = sv1[sv1_id].mem_var._mem_table._urt;
-  counterex_urt_2_input_map(input, mdl, sv1[sv1_id]);
-  smt_map_wt& map_urt_2 = sv2[sv2_id].mem_var._map_table._urt;
-  smt_wt& mem_urt_2 = sv2[sv2_id].mem_var._mem_table._urt;
-  counterex_urt_2_input_map(input, mdl, sv2[sv2_id]);
-
-  // update input memory for other path conditions later,
-  // kv pairs that has been updated into the input mem won't be modified
+  // update input memory for other path conditions first
   for (int i = 0; i < pc1.size(); i++) {
     if (i == sv1_id) continue;
     smt_map_wt& map_urt = sv1[i].mem_var._map_table._urt;
     smt_wt& mem_urt = sv1[i].mem_var._mem_table._urt;
-    counterex_urt_2_input_map(input, mdl, sv1[i]);
+    counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1[i]);
   }
   for (int i = 0; i < pc2.size(); i++) {
     if (i == sv2_id) continue;
     smt_map_wt& map_urt_2 = sv2[i].mem_var._map_table._urt;
     smt_wt& mem_urt_2 = sv2[i].mem_var._mem_table._urt;
-    counterex_urt_2_input_map(input, mdl, sv2[i]);
+    counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2[i]);
   }
+
+  // update input memory for executing path condition later
+  smt_map_wt& map_urt_2 = sv2[sv2_id].mem_var._map_table._urt;
+  smt_wt& mem_urt_2 = sv2[sv2_id].mem_var._mem_table._urt;
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2[sv2_id]);
+  // update sv1[sv1_id] finally, the same update before will be overwritten
+  smt_map_wt& map_urt = sv1[sv1_id].mem_var._map_table._urt;
+  smt_wt& mem_urt = sv1[sv1_id].mem_var._mem_table._urt;
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1[sv1_id]);
 }
