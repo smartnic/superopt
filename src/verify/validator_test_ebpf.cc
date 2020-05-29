@@ -483,11 +483,59 @@ void test4() {
   chk_counterex_by_vld_to_interpreter(p4, 9, p41, 2, "4", vld, ps);
 }
 
+void test5() { // test pkt
+  std::cout << "test 5: packet related program equivalence check" << endl;
+  // set memory layout: stack | map1 | map2
+  mem_t::_layout.clear();
+  mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
+  unsigned int pkt_sz = 128;
+  mem_t::set_pkt_sz(pkt_sz); // pkt size: 128 bytes
+  // test pkt, r0 = pkt[0]
+  inst p1[3] = {inst(MOV64XY, 6, 1),
+                inst(LDXB, 0, 6, 0),
+                inst(EXIT),
+               };
+  validator vld(p1, 3);
+  print_test_res(vld.is_equal_to(p1, 3, p1, 3) == 1, "1");
+
+  // r0 = 0x11, pkt[0] = 0x11
+  inst p2[4] = {inst(MOV64XY, 6, 1),
+                inst(MOV64XC, 0, 0x11),
+                inst(STXB, 6, 0, 0),
+                inst(EXIT),
+               };
+  // r0 = 0x11, pkt[0] = 0x11, pkt[sz-1] = 0x11
+  inst p3[5] = {inst(MOV64XY, 6, 1),
+                inst(MOV64XC, 0, 0x11),
+                inst(STXB, 6, 0, 0),
+                inst(STXB, 6, pkt_sz - 1, 0),
+                inst(EXIT),
+               };
+  // r0 = 0x11, pkt[0] = 0x11, pkt[sz-1] = pkt[sz-1]_input
+  inst p4[6] = {inst(MOV64XY, 6, 1),
+                inst(MOV64XC, 0, 0x11),
+                inst(STXB, 6, 0, 0),
+                inst(LDXB, 1, 6, pkt_sz - 1), // r1 = *(uint8*)pkt[sz-1]
+                inst(STXB, 6, pkt_sz - 1, 1), // *(uint8*)pkt[sz-1] = r1
+                inst(EXIT),
+               };
+  vld.set_orig(p2, 4);
+  print_test_res(vld.is_equal_to(p2, 4, p1, 3) == 0, "2");
+  print_test_res(vld.is_equal_to(p2, 4, p2, 4) == 1, "3");
+  print_test_res(vld.is_equal_to(p2, 4, p3, 5) == 0, "4");
+  print_test_res(vld.is_equal_to(p2, 4, p4, 6) == 1, "5");
+  vld.set_orig(p3, 5);
+  print_test_res(vld.is_equal_to(p3, 5, p3, 5) == 1, "6");
+  vld.set_orig(p4, 6);
+  print_test_res(vld.is_equal_to(p4, 6, p4, 6) == 1, "7");
+}
+
 int main() {
   test1();
   test2();
   test3();
   test4();
+  test5();
 
   return 0;
 }
