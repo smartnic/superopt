@@ -579,6 +579,15 @@ inout_t::inout_t() {
   memset(pkt, 0, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
 }
 
+// deep copy for vector push back
+inout_t::inout_t(const inout_t& rhs) {
+  pkt = new uint8_t[mem_t::_layout._pkt_sz];
+  input_simu_r10 = rhs.input_simu_r10;
+  reg = rhs.reg;
+  maps = rhs.maps;
+  memcpy(pkt, rhs.pkt, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
+}
+
 inout_t::~inout_t() {
   if (pkt != nullptr) {
     delete []pkt;
