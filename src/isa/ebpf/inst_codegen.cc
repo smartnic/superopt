@@ -932,6 +932,7 @@ z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::ex
 
 // should make sure that the input "z3_bv8" is a z3 bv8 but not a formula
 inline string z3_bv8_2_hex_str(z3::expr z3_bv8) {
+  assert(z3_bv8.is_numeral());
   int i = z3_bv8.get_numeral_int();
   stringstream ss;
   ss << hex << setfill('0') << setw(2) << i;
@@ -948,33 +949,63 @@ string z3_bv_2_hex_str(z3::expr z3_bv) {
   return hex_str;
 }
 
+// return uint64 for the given z3 bv64 constant
+// if z3 bv64 is not a constant: 1. assert flag is true, assert(false)
+// 2. assert flag is false, return 0
+uint64_t get_uint64_from_bv64(z3::expr& z3_val, bool assert) {
+  bool is_num = z3_val.is_numeral();
+  if (is_num) return z3_val.get_numeral_uint64();
+
+  if (assert) {
+    assert(false);
+  } else {
+    return 0;
+  }
+}
+
 // get an addr-val list. The list only contains useful memory addresses (map, pkt)
 void get_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
                       z3::model& mdl, smt_var& sv) {
   smt_wt& mem_urt = sv.mem_var._mem_table._urt;
   int map_sz = mem_t::maps_number();
-  if (map_sz == 0) return;
+  unsigned int pkt_sz = mem_t::_layout._pkt_sz;
+  // only record the addr which is in map or pkt memory range
+  if ((map_sz == 0) && (pkt_sz == 0)) return;
+  // assume all maps are next to one another
+
+  uint64_t map_start = 0, map_end = 0;
+  if (map_sz != 0) {
+    z3::expr z3_map_start = mdl.eval(sv.get_map_start_addr(0));
+    z3::expr z3_map_end = mdl.eval(sv.get_map_end_addr(map_sz - 1));
+    map_start = get_uint64_from_bv64(z3_map_start, false);
+    map_end = get_uint64_from_bv64(z3_map_end, false);
+  }
+
+  uint64_t pkt_start = 0, pkt_end = 0;
+  if (pkt_sz != 0) {
+    z3::expr z3_pkt_start = mdl.eval(sv.get_pkt_start_addr());
+    z3::expr z3_pkt_end = mdl.eval(sv.get_pkt_end_addr());
+    pkt_start = get_uint64_from_bv64(z3_pkt_start, false);
+    pkt_end = get_uint64_from_bv64(z3_pkt_end, false);
+  }
+
   for (int i = 0; i < mem_urt.size(); i++) {
     z3::expr z3_addr = mem_urt.addr[i];
     z3::expr z3_addr_eval = mdl.eval(z3_addr);
     if (!z3_addr_eval.is_numeral()) continue;
     uint64_t addr = z3_addr_eval.get_numeral_uint64();
+    // addr whose value is NULL means the item <addr, val> is invalid
     if (addr == NULL_ADDR) continue;
-    // only record the addr which is in map or pkt memory range
-    uint64_t map_start = mdl.eval(sv.get_map_start_addr(0)).get_numeral_uint64();
-    // assume all maps are next to one another
-    uint64_t map_end = mdl.eval(sv.get_map_end_addr(map_sz - 1)).get_numeral_uint64();
-    bool addr_not_in_map = (addr < map_start) || (addr > map_end);
+    bool addr_not_in_map = true;
     bool addr_not_in_pkt = true;
-    if (mem_t::_layout._pkt_sz != 0) { // check whether pkt is in memory layout
-      uint64_t pkt_start = mdl.eval(sv.get_pkt_start_addr()).get_numeral_uint64();
-      uint64_t pkt_end = mdl.eval(sv.get_pkt_end_addr()).get_numeral_uint64();
-      addr_not_in_pkt = (addr < pkt_start) || (addr > pkt_end);
-    }
+    if (map_sz != 0) addr_not_in_map = (addr < map_start) || (addr > map_end);
+    if (pkt_sz != 0) addr_not_in_pkt = (addr < pkt_start) || (addr > pkt_end);
     if (addr_not_in_map && addr_not_in_pkt) continue;
 
-    z3::expr z3_val = mem_urt.val[i]; // z3 bv8
-    uint8_t val = (uint8_t)mdl.eval(z3_val).get_numeral_int();
+    z3::expr z3_val = mdl.eval(mem_urt.val[i]); // z3 bv8
+    // z3 does not care about "z3_val"'s val if z3_val is not numeral
+    if (! z3_val.is_numeral()) continue;
+    uint8_t val = (uint8_t)z3_val.get_numeral_int();
     mem_addr_val.push_back(make_pair(addr, val));
   }
 }
@@ -1010,8 +1041,6 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv,
                                vector<pair< uint64_t, uint8_t>>& mem_addr_val) {
   smt_map_wt& map_urt = sv.mem_var._map_table._urt;
   smt_wt& mem_urt = sv.mem_var._mem_table._urt;
-  uint64_t stack_start = mdl.eval(sv.get_stack_start_addr()).get_numeral_uint64();
-  input.input_simu_r10 = stack_start + STACK_SIZE; // r10: stack bottom
   for (int i = 0; i < map_urt.size(); i++) {
     z3::expr z3_is_valid = map_urt.is_valid[i];
     int is_valid = mdl.eval(z3_is_valid).bool_value();
@@ -1019,12 +1048,14 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv,
 
     z3::expr z3_addr_v = mdl.eval(map_urt.addr_v[i]);
     if (! z3_addr_v.is_numeral()) continue;
-    uint64_t addr_v = mdl.eval(z3_addr_v).get_numeral_uint64();
+    uint64_t addr_v = z3_addr_v.get_numeral_uint64();
     if (addr_v == 0) continue;
 
     z3::expr z3_addr_map = mdl.eval(map_urt.addr_map[i]);
+    assert(z3_addr_map.is_numeral());
     int map_id = z3_addr_map.get_numeral_int();
     z3::expr z3_k = mdl.eval(map_urt.key[i]);
+    if (! z3_k.is_numeral()) continue;
     string k = z3_bv_2_hex_str(z3_k);
     unsigned int val_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
     vector<uint8_t> v(val_sz);
@@ -1040,8 +1071,10 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv,
                                vector<pair< uint64_t, uint8_t>>& mem_addr_val) {
   if (mem_t::_layout._pkt_sz == 0) return;
 
-  uint64_t pkt_start = mdl.eval(sv.get_pkt_start_addr()).get_numeral_uint64();
-  uint64_t pkt_end = mdl.eval(sv.get_pkt_end_addr()).get_numeral_uint64();
+  z3::expr z3_pkt_start = mdl.eval(sv.get_pkt_start_addr());
+  z3::expr z3_pkt_end = mdl.eval(sv.get_pkt_end_addr());
+  uint64_t pkt_start = get_uint64_from_bv64(z3_pkt_start, true);
+  uint64_t pkt_end = get_uint64_from_bv64(z3_pkt_end, true);
 
   for (int i = 0; i < mem_addr_val.size(); i++) {
     uint64_t addr = mem_addr_val[i].first;
@@ -1054,7 +1087,13 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv,
   }
 }
 
+void counterex_2_input_simu_r10(inout_t& input, z3::model& mdl, smt_var& sv) {
+  z3::expr z3_stack_bottom = mdl.eval(sv.get_stack_bottom_addr());
+  input.input_simu_r10 = get_uint64_from_bv64(z3_stack_bottom, true); // r10: stack bottom
+}
+
 void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model& mdl, smt_var& sv) {
+  counterex_2_input_simu_r10(input, mdl, sv);
   vector<pair< uint64_t, uint8_t>> mem_addr_val;
   get_mem_from_mdl(mem_addr_val, mdl, sv);
   counterex_urt_2_input_map(input, mdl, sv, mem_addr_val);
