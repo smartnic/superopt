@@ -2,9 +2,14 @@
 
 using namespace std;
 
-inout::inout() {}
+inout::inout() {
+  input.init();
+  output.init();
+}
 
 inout::inout(const inout_t& in, const inout_t& out) {
+  input.init();
+  output.init();
   input = in;
   output = out;
 }
