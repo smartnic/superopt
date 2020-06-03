@@ -88,9 +88,10 @@ void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
   mod_operand(orig, synth, inst_index, op_to_change);
 }
 
-prog* mod_random_inst_operand(const prog &orig) {
+prog* mod_random_inst_operand(const prog &orig, int win_start, int win_end) {
+  assert(win_end < inst::max_prog_len);
   // TODO: remove instructions whithout valid operands, such as NOP, EXIT
-  int inst_index = sample_int(inst::max_prog_len - 1);
+  int inst_index = sample_int(win_start, win_end);
   prog* synth = new prog(orig);
   synth->reset_vals();
   mod_random_operand(orig, synth, inst_index);
@@ -120,31 +121,35 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   }
 }
 
-prog* mod_random_inst(const prog &orig) {
+prog* mod_random_inst(const prog &orig, int win_start, int win_end) {
+  assert(win_end < inst::max_prog_len);
   // First make a copy of the old program
   prog* synth = new prog(orig);
   synth->reset_vals();
-  int inst_index = sample_int(inst::max_prog_len - 1);
+  int inst_index = sample_int(win_start, win_end);
   mod_select_inst(synth, inst_index);
   return synth;
 }
 
-prog* mod_random_k_cont_insts(const prog &orig, unsigned int k) {
-  // If k is too big, modify all instructions of the original program
-  if (k > inst::max_prog_len) k = inst::max_prog_len;
+prog* mod_random_k_cont_insts(const prog &orig, unsigned int k, int win_start, int win_end) {
+  assert(win_end < inst::max_prog_len);
+  // If k is too big, modify all instructions of the program window
+  if (win_start + k - 1 > win_end) k = win_end - win_start + 1;
   // First make a copy of the old program
   prog* synth = new prog(orig);
   synth->reset_vals();
   // Select a random start instruction
-  int start_inst_index = sample_int(inst::max_prog_len - k);
+  int start_inst_index = sample_int(win_start, win_end - k + 1);
   for (int i = start_inst_index; i < start_inst_index + k; i++) {
     mod_select_inst(synth, i);
   }
   return synth;
 }
 
-prog* mod_random_cont_insts(const prog &orig) {
+prog* mod_random_cont_insts(const prog &orig, int win_start, int win_end) {
+  assert(win_end < inst::max_prog_len);
   int start_k_value = 2; // at least change two instructions
-  int k = sample_int(start_k_value, inst::max_prog_len);
+  int max_len = win_end - win_start + 1;
+  int k = sample_int(start_k_value, max_len);
   return mod_random_k_cont_insts(orig, k);
 }

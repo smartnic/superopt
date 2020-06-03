@@ -4,7 +4,12 @@
 
 using namespace std;
 
-prog* mod_random_inst_operand(const prog &program);
-prog* mod_random_inst(const prog &program);
-prog* mod_random_k_cont_insts(const prog &program, unsigned int k);
-prog* mod_random_cont_insts(const prog &program);
+// a modification in program window [win_start, win_end]
+prog* mod_random_inst_operand(const prog &program,
+                              int win_start = 0, int win_end = inst::max_prog_len - 1);
+prog* mod_random_inst(const prog &program,
+                      int win_start = 0, int win_end = inst::max_prog_len - 1);
+prog* mod_random_k_cont_insts(const prog &program, unsigned int k,
+                              int win_start = 0, int win_end = inst::max_prog_len - 1);
+prog* mod_random_cont_insts(const prog &program,
+                            int win_start = 0, int win_end = inst::max_prog_len - 1);
