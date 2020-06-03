@@ -16,9 +16,9 @@ using namespace std;
    APIs exposed to the externals,
    Should ensure all parameters do NOT have side effects.
 */
-/* Function ID */
+/* Function ID, BPF function id starts from 1 */
 enum BPF_FUNC_IDS {
-  BPF_FUNC_map_lookup = 0,
+  BPF_FUNC_map_lookup = 1,
   BPF_FUNC_map_update,
   BPF_FUNC_map_delete,
   BPF_MAX_FUNC_ID,
