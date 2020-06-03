@@ -152,8 +152,8 @@ int32_t inst::get_min_imm() const {
     case RSH32XC:
     case ARSH32XC:
     case LE:
-    case BE:
-    case CALL: return 0;
+    case BE: return 0;
+    case CALL: return 1;
     default: cout << "Error: no imm in instruction: ";
       print();
       return 0;
