@@ -715,7 +715,7 @@ void test2() {
 #define CURDST(insn) sv.get_cur_reg_var(insn._dst_reg)
 #define CURSRC(insn) sv.get_cur_reg_var(insn._src_reg)
 // Assume two instructions in the program `insns`,
-// the first one is ST and the second is LD
+// the first one is STX and the second is LD
 #define SMT_CHECK_LDST(st_input, ld_output, test_name, insns)                \
   smt = (CURSRC(insns[0]) == to_expr((int64_t)st_input));                    \
   smt = smt && insns[0].smt_inst(sv);                                        \
@@ -750,6 +750,27 @@ void test2() {
 
   inst insns8[2] = {inst(STXW, 10, -4, 1), inst(LDXB, 0, 10, -1)};
   SMT_CHECK_LDST(0x12345678, 0x12, "smt LDXW & STXB 4", insns8);
+#undef SMT_CHECK_LDST
+
+// Assume two instructions in the program `insns`,
+// the first one is ST and the second is LD
+#define SMT_CHECK_LDST(ld_output, test_name, insns)                          \
+  smt = smt && insns[0].smt_inst(sv);                                        \
+  smt = smt && insns[1].smt_inst(sv);                                        \
+  output = CURDST(insns[1]);                                                 \
+  print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
+
+  inst insns11[2] = {inst(STB, 10, -1, 0x12), inst(LDXB, 0, 10, -1)};
+  SMT_CHECK_LDST(0x12, "smt LDXB & STB", insns11);
+
+  inst insns12[2] = {inst(STH, 10, -2, 0x1234), inst(LDXH, 0, 10, -2)};
+  SMT_CHECK_LDST(0x1234, "smt LDXH & STH", insns12);
+
+  inst insns13[2] = {inst(STW, 10, -4, 0x12345678), inst(LDXW, 0, 10, -4)};
+  SMT_CHECK_LDST(0x12345678, "smt LDXW & STW", insns13);
+
+  inst insns14[2] = {inst(STDW, 10, -8, -1), inst(LDXDW, 0, 10, -8)};
+  SMT_CHECK_LDST(-1, "smt LDXDW & STDW", insns14);
 
 #undef CURDST
 #undef CURSRC
@@ -821,6 +842,10 @@ void test3() {
                   inst(STXW, 10, -4, 1),
                   inst(LDXDW, 1, 10, -8),
                   inst(STXDW, 10, -8, 1),
+                  inst(STB, 10, -4, 1),
+                  inst(STH, 10, -4, 1),
+                  inst(STW, 10, -4, 1),
+                  inst(STDW, 10, -8, 1),
                   inst(JA, 1),
                   inst(JEQXC, 3, 1, 2),
                   inst(JEQXY, 3, 1, 2),
@@ -871,6 +896,10 @@ void test3() {
              "{99, 10, 1, -4, 0},"\
              "{121, 1, 10, -8, 0},"\
              "{123, 10, 1, -8, 0},"\
+             "{114, 10, 0, -4, 1},"\
+             "{106, 10, 0, -4, 1},"\
+             "{98, 10, 0, -4, 1},"\
+             "{122, 10, 0, -8, 1},"\
              "{5, 0, 0, 1, 0},"\
              "{21, 3, 0, 2, 1},"\
              "{29, 3, 1, 2, 0},"\

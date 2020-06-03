@@ -88,6 +88,10 @@ int32_t inst::get_max_imm() const {
     case OR32XC:
     case AND32XC:
     case MOV32XC:
+    case STB:
+    case STH:
+    case STW:
+    case STDW:
     case JEQXC:
     case JGTXC:
     case JNEXC:
@@ -130,6 +134,10 @@ int32_t inst::get_min_imm() const {
     case OR32XC:
     case AND32XC:
     case MOV32XC:
+    case STB:
+    case STH:
+    case STW:
+    case STDW:
     case JEQXC:
     case JGTXC:
     case JNEXC:
@@ -213,6 +221,10 @@ string inst::opcode_to_str(int opcode) const {
     case STXH: return "stxh";
     case LDXW: return "ldxw";
     case STXW: return "stxw";
+    case STB: return "stb";
+    case STH: return "sth";
+    case STW: return "stw";
+    case STDW: return "stdw";
     case LDXDW: return "ldxdw";
     case STXDW: return "stxdw";
     case JA: return "ja";
@@ -495,6 +507,10 @@ z3::expr inst::smt_inst(smt_var& sv) const {
     case STXH: predicate_st16(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
     case STXW: predicate_st32(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
     case STXDW: predicate_st64(CURSRC, CURDST, OFF, MEM); return string_to_expr("true");
+    case STB: predicate_st8(IMM, CURDST, OFF, MEM); return string_to_expr("true");
+    case STH: predicate_st16(IMM, CURDST, OFF, MEM); return string_to_expr("true");
+    case STW: predicate_st32(IMM, CURDST, OFF, MEM); return string_to_expr("true");
+    case STDW: predicate_st64(IMM, CURDST, OFF, MEM); return string_to_expr("true");
     case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv);
     default: return string_to_expr("false");
   }
@@ -561,6 +577,10 @@ int opcode_2_idx(int opcode) {
     case STXW: return IDX_STXW;
     case LDXDW: return IDX_LDXDW;
     case STXDW: return IDX_STXDW;
+    case STB: return IDX_STB;
+    case STH: return IDX_STH;
+    case STW: return IDX_STW;
+    case STDW: return IDX_STDW;
     case JA: return IDX_JA;
     case JEQXC: return IDX_JEQXC;
     case JEQXY: return IDX_JEQXY;
@@ -663,6 +683,11 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
     ps._mem.memory_access_check(real_addr, SIZE/8);                \
     compute_st##SIZE(SRC, real_addr, 0);                           \
+    CONT;                                                          \
+  INSN_ST##SIZEOP:                                                 \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
+    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    compute_st##SIZE(IMM, real_addr, 0);                           \
     CONT;
 
 #define BYTESWAP(OPCODE, OP)                                       \
@@ -732,6 +757,10 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     [IDX_STXW]     = && INSN_STXW,
     [IDX_LDXDW]    = && INSN_LDXDW,
     [IDX_STXDW]    = && INSN_STXDW,
+    [IDX_STB]      = && INSN_STB,
+    [IDX_STH]      = && INSN_STH,
+    [IDX_STW]      = && INSN_STW,
+    [IDX_STDW]     = && INSN_STDW,
     [IDX_JA]       = && INSN_JA,
     [IDX_JEQXC]    = && INSN_JEQXC,
     [IDX_JEQXY]    = && INSN_JEQXY,
