@@ -59,7 +59,8 @@ void inst::set_imm(int op_value) {
     _imm = value_map[op_value];
   } else {
     unordered_set<int32_t> opcodes_set = {ADD64XC, MOV64XC, ADD32XC, OR32XC,
-                                          AND32XC, MOV32XC, JEQXC, JGTXC, JSGTXC,
+                                          AND32XC, MOV32XC, STB, STH, STW, STDW,
+                                          JEQXC, JGTXC, JNEXC, JSGTXC, JEQ32XC, JNE32XC,
                                          };
     auto found = opcodes_set.find(_opcode);
     if (found == opcodes_set.end()) {
