@@ -882,7 +882,6 @@ void test5() {
 
 int main(int argc, char *argv[]) {
   test1();
-  return 0;
   test2();
   test3();
   test4();

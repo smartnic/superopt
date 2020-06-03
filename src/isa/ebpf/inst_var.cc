@@ -628,10 +628,7 @@ void inout_t::operator=(const inout_t &rhs) {
 }
 
 bool inout_t::operator==(const inout_t &rhs) const {
-  // cout << "==" << endl;
-  // cout << hex << reg << " " << rhs.reg << " " << maps.size() << " " << rhs.maps.size() << dec << endl;
   bool res = (reg == rhs.reg) && (maps.size() == rhs.maps.size());
-  // cout << res << endl;
   if (! res) return false;
   for (int i = 0; i < maps.size(); i++) {
     // each map should be the same

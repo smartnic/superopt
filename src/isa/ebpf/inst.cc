@@ -283,10 +283,6 @@ void inst::add_sample_imm(const vector<int32_t>& nums) {
       sorted_vec_insert(num, _sample_pos_imms);
     }
   }
-  for (int i = 0; i < _sample_neg_imms.size(); i++) cout << _sample_neg_imms[i] << " ";
-  cout << endl;
-  for (int i = 0; i < _sample_pos_imms.size(); i++) cout << _sample_pos_imms[i] << " ";
-  cout << endl;
 }
 
 inst& inst::operator=(const inst &rhs) {
