@@ -90,7 +90,10 @@ int32_t inst::get_max_imm() const {
     case MOV32XC:
     case JEQXC:
     case JGTXC:
-    case JSGTXC: return MAX_IMM + _sample_pos_imms.size();
+    case JNEXC:
+    case JSGTXC:
+    case JEQ32XC:
+    case JNE32XC: return MAX_IMM + _sample_pos_imms.size();
     case LSH64XC:
     case RSH64XC:
     case ARSH64XC: return MAX_IMM_SH64;
@@ -129,7 +132,10 @@ int32_t inst::get_min_imm() const {
     case MOV32XC:
     case JEQXC:
     case JGTXC:
-    case JSGTXC: return MIN_IMM - _sample_neg_imms.size();
+    case JNEXC:
+    case JSGTXC:
+    case JEQ32XC:
+    case JNE32XC: return MIN_IMM - _sample_neg_imms.size();
     case LSH64XC:
     case RSH64XC:
     case ARSH64XC:
@@ -214,8 +220,14 @@ string inst::opcode_to_str(int opcode) const {
     case JEQXY: return "jeqxy";
     case JGTXC: return "jgtxc";
     case JGTXY: return "jgtxy";
+    case JNEXC: return "jnexc";
+    case JNEXY: return "jnexy";
     case JSGTXC: return "jsgtxc";
     case JSGTXY: return "jsgtxy";
+    case JEQ32XC: return "jeq32xc";
+    case JEQ32XY: return "jeq32xy";
+    case JNE32XC: return "jne32xc";
+    case JNE32XY: return "jne32xy";
     case CALL: return "call";
     case EXIT: return "exit";
     default: return "unknown opcode";
@@ -347,8 +359,14 @@ void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
   jmp_set.insert(JEQXY);
   jmp_set.insert(JGTXC);
   jmp_set.insert(JGTXY);
+  jmp_set.insert(JNEXC);
+  jmp_set.insert(JNEXY);
   jmp_set.insert(JSGTXC);
   jmp_set.insert(JSGTXY);
+  jmp_set.insert(JEQ32XC);
+  jmp_set.insert(JEQ32XY);
+  jmp_set.insert(JNE32XC);
+  jmp_set.insert(JNE32XY);
 }
 
 int inst::inst_output_opcode_type() const {
@@ -395,6 +413,9 @@ void inst::set_as_nop_inst() {
 #define MEM sv.mem_var
 #define IMM to_expr(imm)
 #define OFF to_expr(off)
+#define CURDST_L32 (CURDST & to_expr((int64_t)0xffffffff))
+#define CURSRC_L32 (CURSRC & to_expr((int64_t)0xffffffff))
+#define IMM_L32 (IMM & to_expr((int64_t)0xffffffff))
 #define CURSRC_L6 (CURSRC & to_expr((int64_t)0x3f))
 #define CURSRC_L5 (CURSRC & to_expr((int64_t)0x1f))
 #define R0 newDst
@@ -491,8 +512,14 @@ z3::expr inst::smt_inst_jmp(smt_var& sv) const {
     case JEQXY: return (CURDST == CURSRC);
     case JGTXC: return (ugt(CURDST, IMM));
     case JGTXY: return (ugt(CURDST, CURSRC));
+    case JNEXC: return (CURDST != IMM);
+    case JNEXY: return (CURDST != CURSRC);
     case JSGTXC: return (CURDST > IMM);
     case JSGTXY: return (CURDST > CURSRC);
+    case JEQ32XC: return (CURDST_L32 == IMM_L32);
+    case JEQ32XY: return (CURDST_L32 == CURSRC_L32);
+    case JNE32XC: return (CURDST_L32 != IMM_L32);
+    case JNE32XY: return (CURDST_L32 != CURSRC_L32);
     default: return string_to_expr("false");
   }
 }
@@ -539,8 +566,14 @@ int opcode_2_idx(int opcode) {
     case JEQXY: return IDX_JEQXY;
     case JGTXC: return IDX_JGTXC;
     case JGTXY: return IDX_JGTXY;
+    case JNEXC: return IDX_JNEXC;
+    case JNEXY: return IDX_JNEXY;
     case JSGTXC: return IDX_JSGTXC;
     case JSGTXY: return IDX_JSGTXY;
+    case JEQ32XC: return IDX_JEQ32XC;
+    case JEQ32XY: return IDX_JEQ32XY;
+    case JNE32XC: return IDX_JNE32XC;
+    case JNE32XY: return IDX_JNE32XY;
     case CALL: return IDX_CALL;
     case EXIT: return IDX_EXIT;
     default: cout << "unknown opcode" << endl; return 0;
@@ -582,10 +615,16 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
 #undef R3
 #undef R4
 #undef R5
+#undef DST_L32
+#undef SRC_L32
+#undef IMM_L32
 // type: int64_t
 #define DST ps._regs[insn->_dst_reg]
 #define SRC ps._regs[insn->_src_reg]
 #define IMM (int64_t)insn->_imm
+#define DST_L32 L32(DST)
+#define SRC_L32 L32(SRC)
+#define IMM_L32 insn->_imm
 #define SRC_L6 L6(SRC)
 #define SRC_L5 L5(SRC)
 #define OFF (int64_t)insn->_off
@@ -698,8 +737,14 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     [IDX_JEQXY]    = && INSN_JEQXY,
     [IDX_JGTXC]    = && INSN_JGTXC,
     [IDX_JGTXY]    = && INSN_JGTXY,
+    [IDX_JNEXC]    = && INSN_JNEXC,
+    [IDX_JNEXY]    = && INSN_JNEXY,
     [IDX_JSGTXC]   = && INSN_JSGTXC,
     [IDX_JSGTXY]   = && INSN_JSGTXY,
+    [IDX_JEQ32XC]  = && INSN_JEQ32XC,
+    [IDX_JEQ32XY]  = && INSN_JEQ32XY,
+    [IDX_JNE32XC]  = && INSN_JNE32XC,
+    [IDX_JNE32XY]  = && INSN_JNE32XY,
     [IDX_CALL]     = && INSN_CALL,
     [IDX_EXIT]     = && INSN_EXIT,
   };
@@ -759,8 +804,14 @@ INSN_JA:
   COND_JMP(JEQXY, ==, DST, SRC)
   COND_JMP(JGTXC, >, UDST, UIMM)
   COND_JMP(JGTXY, >, UDST, USRC)
+  COND_JMP(JNEXC, !=, DST, IMM)
+  COND_JMP(JNEXY, !=, DST, SRC)
   COND_JMP(JSGTXC, >, DST, IMM)
   COND_JMP(JSGTXY, >, DST, SRC)
+  COND_JMP(JEQ32XC, ==, DST_L32, IMM_L32)
+  COND_JMP(JEQ32XY, ==, DST_L32, SRC_L32)
+  COND_JMP(JNE32XC, !=, DST_L32, IMM_L32)
+  COND_JMP(JNE32XY, !=, DST_L32, SRC_L32)
 
 INSN_CALL:
   R0 = compute_helper_function(IMM, R1, R2, R3, R4, R5, MEM, SR);

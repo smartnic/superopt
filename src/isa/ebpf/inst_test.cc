@@ -226,6 +226,18 @@ inst instructions28[3] = {inst(MOV64XY, 6, 1),
                           inst(EXIT),
                          };
 
+// test jmp32
+inst instructions29[9] = {inst(MOV64XC, 0, 0),
+                          inst(JEQ32XC, 1, 0x1, 1),
+                          inst(EXIT),
+                          inst(MOV64XC, 2, 1),
+                          inst(LSH64XC, 2, 33),
+                          inst(MOV64XC, 1, 0x0),
+                          inst(JNE32XY, 1, 2, 1),
+                          inst(MOV64XC, 0, 1),
+                          inst(EXIT),
+                         };
+
 void test1() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
@@ -446,6 +458,11 @@ void test1() {
   expected.pkt[0] = 0x11;
   interpret(output, instructions28, 3, ps, input);
   print_test_res(output == expected, "interpret packet input");
+
+  input.reg = 0x1000000001;
+  expected.reg = 0x1;
+  interpret(output, instructions29, 9, ps, input);
+  print_test_res(output == expected, "interpret jmp32");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output) {
@@ -637,6 +654,18 @@ void test2() {
   insn = inst(JGTXY, 0, 1, 1);
   SMT_JMP_CHECK_XY(0xffffffffffffffff, 0x7fffffffffffffff, true, "smt JGTXY 1");
 
+  insn = inst(JNEXC, 0, -1, 1);
+  SMT_JMP_CHECK_XC(1, true, "smt JNEXC 1");
+
+  insn = inst(JNEXC, 0, -1, 1);
+  SMT_JMP_CHECK_XC(-1, false, "smt JNEXC 2");
+
+  insn = inst(JNEXY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0xffffffffffffffff, 0x00000000ffffffff, true, "smt JNEXY 1");
+
+  insn = inst(JNEXY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0x1, 0x1, false, "smt JNEXY 2");
+
   insn = inst(JGTXY, 0, 1, 1);
   SMT_JMP_CHECK_XY(0x0, 0x2, false, "smt JGTXY 2");
 
@@ -651,6 +680,30 @@ void test2() {
 
   insn = inst(JSGTXY, 0, 1, 1);
   SMT_JMP_CHECK_XY(0x1, 0x2, false, "smt JSGTXY 2");
+
+  insn = inst(JEQ32XC, 0, 0x1, 1);
+  SMT_JMP_CHECK_XC(0xff000000001, true, "smt JEQ32XC 1");
+
+  insn = inst(JEQ32XC, 0, 0x1, 1);
+  SMT_JMP_CHECK_XC(0x2, false, "smt JEQ32XC 2");
+
+  insn = inst(JEQ32XY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0xffffffffffffffff, 0x00000000ffffffff, true, "smt JEQ32XY 1");
+
+  insn = inst(JEQ32XY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0x1, 0x2, false, "smt JEQ32XY 2");
+
+  insn = inst(JNE32XC, 0, 0x1, 1);
+  SMT_JMP_CHECK_XC(0x100000001, false, "smt JNE32XC 1");
+
+  insn = inst(JNE32XC, 0, 0x1, 1);
+  SMT_JMP_CHECK_XC(0x2, true, "smt JNE32XC 2");
+
+  insn = inst(JNE32XY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0xffffffffffffffff, 0x00000000ffffffff, false, "smt JNE32XY 1");
+
+  insn = inst(JNE32XY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0x1, 0x2, true, "smt JNE32XY 2");
 
 #undef CURDST
 #undef CURSRC
@@ -773,8 +826,14 @@ void test3() {
                   inst(JEQXY, 3, 1, 2),
                   inst(JGTXC, 3, 1, 2),
                   inst(JGTXY, 3, 1, 2),
+                  inst(JNEXC, 3, 1, 2),
+                  inst(JNEXY, 3, 1, 2),
                   inst(JSGTXC, 3, 1, 2),
                   inst(JSGTXY, 3, 1, 2),
+                  inst(JEQ32XC, 3, 1, 2),
+                  inst(JEQ32XY, 3, 1, 2),
+                  inst(JNE32XC, 3, 1, 2),
+                  inst(JNE32XY, 3, 1, 2),
                   inst(CALL, 1),
                   inst(EXIT),
                  };
@@ -817,8 +876,14 @@ void test3() {
              "{29, 3, 1, 2, 0},"\
              "{37, 3, 0, 2, 1},"\
              "{45, 3, 1, 2, 0},"\
+             "{85, 3, 0, 2, 1},"\
+             "{93, 3, 1, 2, 0},"\
              "{101, 3, 0, 2, 1},"\
              "{109, 3, 1, 2, 0},"\
+             "{22, 3, 0, 2, 1},"\
+             "{30, 3, 1, 2, 0},"\
+             "{86, 3, 0, 2, 1},"\
+             "{94, 3, 1, 2, 0},"\
              "{133, 0, 0, 0, 1},"\
              "{149, 0, 0, 0, 0},";
   prog_bytecode = "";
