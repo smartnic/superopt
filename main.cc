@@ -41,7 +41,13 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
       << "st_start_prog:" << ip.st_start_prog << endl
       << "restart_w_e_list:" << ip.restart_w_e_list << endl
       << "restart_w_p_list:" << ip.restart_w_p_list << endl
-      << "p_inst_operand:" << ip.p_inst_operand << endl
+      << "reset_win_niter:" << ip.reset_win_niter << endl;
+  out << "win list: ";
+  for (int i = 0; i < ip.win_s_list.size(); i++) {
+    out << "[" << ip.win_s_list[i] << "," << ip.win_e_list[i] << "] ";
+  }
+  out << endl;
+  out << "p_inst_operand:" << ip.p_inst_operand << endl
       << "p_inst:" << ip.p_inst << endl;
   return out;
 }
@@ -84,6 +90,8 @@ void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
   mh._restart.set_we_wp_list(in_para.restart_w_e_list, in_para.restart_w_p_list);
   mh._next_proposal.set_probability(in_para.p_inst_operand,
                                     in_para.p_inst);
+  mh._next_win.set_win_lists(in_para.win_s_list, in_para.win_e_list);
+  mh._next_win.set_max_num_iter(in_para.reset_win_niter);
   if (in_para.meas_mode) mh.turn_on_measure();
   prog orig(bm);
   orig.print();
@@ -165,6 +173,26 @@ string para_restart_w_p_list_desc() {
   return s;
 }
 
+string para_win_desc() {
+  string s = "configurations of window decomposition method. window range: [0, max_pgm_len-1]";
+  return s;
+}
+
+string para_reset_win_niter_desc() {
+  string s = "iterations of setting next window during sampling, should > 0";
+  return s;
+}
+
+string para_win_s_list_desc() {
+  string s = "window start list. `arg` eg: 0,4";
+  return s;
+}
+
+string para_win_e_list_desc() {
+  string s = "window end list. `arg` eg: 3,6";
+  return s;
+}
+
 string para_next_proposal_desc() {
   string s = "The next two parameters are about new proposal generation.\n" \
              "A new proposal has three modification typies: modify a random instrution operand, \n" \
@@ -207,12 +235,24 @@ void usage() {
        << setw(W) << "--st_start_prog arg" << ": " << para_st_start_prog_desc() << endl
        << setw(W) << "--restart_w_e_list arg" << ": " << para_restart_w_e_list_desc() << endl
        << setw(W) << "--restart_w_p_list arg" << ": " << para_restart_w_p_list_desc() << endl
+       << endl << para_win_desc() << endl
+       << setw(W) << "--reset_win_niter arg" << ": " + para_reset_win_niter_desc() << endl
+       << setw(W) << "--win_s_list arg" << ": " + para_win_s_list_desc() << endl
+       << setw(W) << "--win_e_list arg" << ": " + para_win_e_list_desc() << endl
        << endl << para_next_proposal_desc() << endl
        << setw(W) << "--p_inst_operand arg:" << ": " << para_p_inst_operand_desc() << endl
        << setw(W) << "--p_inst arg" << ": " << para_p_inst_desc() << endl;
 }
 
 void set_w_list(vector<double> &list, string s) {
+  vector<string> str_v;
+  split_string(s, str_v, ",");
+  list.clear();
+  for (size_t i = 0; i < str_v.size(); i++)
+    list.push_back(stod(str_v[i]));
+}
+
+void set_win_list(vector<int> &list, string s) {
   vector<string> str_v;
   split_string(s, str_v, ",");
   list.clear();
@@ -235,8 +275,11 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"st_start_prog", required_argument, nullptr, 9},
     {"restart_w_e_list", required_argument, nullptr, 10},
     {"restart_w_p_list", required_argument, nullptr, 11},
-    {"p_inst_operand", required_argument, nullptr, 12},
-    {"p_inst", required_argument, nullptr, 13},
+    {"reset_win_niter", required_argument, nullptr, 12},
+    {"win_s_list", required_argument, nullptr, 13},
+    {"win_e_list", required_argument, nullptr, 14},
+    {"p_inst_operand", required_argument, nullptr, 15},
+    {"p_inst", required_argument, nullptr, 16},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -258,8 +301,11 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 9: in_para.st_start_prog = stoi(optarg); break;
       case 10: set_w_list(in_para.restart_w_e_list, optarg); break;
       case 11: set_w_list(in_para.restart_w_p_list, optarg); break;
-      case 12: in_para.p_inst_operand = stod(optarg); break;
-      case 13: in_para.p_inst = stod(optarg); break;
+      case 12: in_para.reset_win_niter = stoi(optarg); break;
+      case 13: set_win_list(in_para.win_s_list, optarg); break;
+      case 14: set_win_list(in_para.win_e_list, optarg); break;
+      case 15: in_para.p_inst_operand = stod(optarg); break;
+      case 16: in_para.p_inst = stod(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -281,6 +327,9 @@ void set_default_para_vals(input_paras &in_para) {
   in_para.st_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ORIG;
   in_para.restart_w_e_list = {1};
   in_para.restart_w_p_list = {0};
+  in_para.reset_win_niter = in_para.niter;
+  in_para.win_s_list = {0};
+  in_para.win_e_list = {inst::max_prog_len - 1};
   in_para.p_inst_operand = 1.0 / 3.0;
   in_para.p_inst = 1.0 / 3.0;
 }

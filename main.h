@@ -19,6 +19,9 @@ struct input_paras {
   int st_start_prog;
   vector<double> restart_w_e_list;
   vector<double> restart_w_p_list;
+  int reset_win_niter;
+  vector<int> win_s_list;
+  vector<int> win_e_list;
   double p_inst_operand;
   double p_inst;
 };
