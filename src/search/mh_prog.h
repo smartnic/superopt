@@ -19,6 +19,20 @@ using namespace std;
 #define MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS 1
 #define MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS 2
 
+class mh_sampler_next_win {
+ public:
+  unsigned int _st_next_win;
+  unsigned int _max_num_iter;
+  vector<int> _win_s_list;
+  vector<int> _win_e_list;
+  unsigned int _cur_win;
+  mh_sampler_next_win();
+  void set_win_lists(const vector<int>& win_s_list, const vector<int>& win_e_list);
+  void set_max_num_iter(unsigned int max_num_iter);
+  bool whether_to_reset(unsigned int iter_num);
+  pair<int, int> update_and_get_next_win();
+};
+
 class mh_sampler_restart {
  public:
   unsigned int _st_when_to_start;
@@ -58,10 +72,12 @@ class mh_sampler_next_proposal {
   // and mod_random_inst
   double _thr_mod_random_inst_operand;
   double _thr_mod_random_inst;
+  int _win_start, _win_end;
   mh_sampler_next_proposal();
   ~mh_sampler_next_proposal();
   void set_probability(double p_mod_random_inst_operand,
                        double p_mod_random_inst);
+  void set_win(int start, int end);
   prog* next_proposal(prog* curr);
 };
 
@@ -87,6 +103,7 @@ class mh_sampler {
   double cost_to_pi(double cost);
   void print_restart_info(int iter_num, const prog &restart, double w_e, double w_p);
  public:
+  mh_sampler_next_win _next_win;
   mh_sampler_restart _restart;
   mh_sampler_next_proposal _next_proposal;
   meas_mh_data _meas_data;

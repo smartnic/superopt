@@ -11,6 +11,44 @@ using namespace std;
 default_random_engine gen_mh;
 uniform_real_distribution<double> unidist_mh(0.0, 1.0);
 
+mh_sampler_next_win::mh_sampler_next_win() {
+  vector<int> win_s_list = {0}, win_e_list = {inst::max_prog_len};
+  set_win_lists(win_s_list, win_e_list);
+  _cur_win = 0;
+}
+
+void mh_sampler_next_win::set_win_lists(const vector<int>& win_s_list,
+                                        const vector<int>& win_e_list) {
+  assert(win_s_list.size() == win_e_list.size());
+  _win_s_list.resize(win_s_list.size());
+  _win_e_list.resize(win_s_list.size());
+  cout << "set_win_lists: ";
+  for (int i = 0; i < _win_s_list.size(); i++) {
+    _win_s_list[i] = win_s_list[i];
+    _win_e_list[i] = win_e_list[i];
+    cout << "[" << _win_s_list[i] << ", " << _win_e_list[i] << "] ";
+  }
+  cout << endl;
+}
+
+void mh_sampler_next_win::set_max_num_iter(unsigned int max_num_iter) {
+  _max_num_iter = max_num_iter;
+  cout << "set window max_num_iter as " << _max_num_iter << endl;
+
+}
+
+bool mh_sampler_next_win::whether_to_reset(unsigned int iter_num) {
+  // iter_num starts from 0 but not 1
+  if ((iter_num % _max_num_iter) == 0) return true;
+  else return false;
+}
+
+pair<int, int> mh_sampler_next_win::update_and_get_next_win() {
+  pair<int, int> win = pair<int, int>(_win_s_list[_cur_win], _win_e_list[_cur_win]);
+  _cur_win = (_cur_win + 1) % _win_s_list.size();
+  return win;
+}
+
 /* class mh_sampler_restart start */
 mh_sampler_restart::mh_sampler_restart() {
   set_st_when_to_restart(MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART);
@@ -116,6 +154,7 @@ pair<double, double> mh_sampler_restart::next_start_we_wp() {
 
 /* class mh_sampler_next_proposal start */
 mh_sampler_next_proposal::mh_sampler_next_proposal() {
+  set_win(0, inst::max_prog_len - 1);
   _thr_mod_random_inst_operand = 1.0 / 3.0;
   _thr_mod_random_inst = 2.0 / 3.0;
   cout << "probabilities of mod_random_inst_operand, mod_random_inst, "
@@ -137,14 +176,21 @@ void mh_sampler_next_proposal::set_probability(
        << 1.0 - _thr_mod_random_inst << endl;
 }
 
+void mh_sampler_next_proposal::set_win(int start, int end) {
+  _win_start = start;
+  _win_end = end;
+  cout << "window start and end set as ["
+       << _win_start << ", " << _win_end << "]" << endl;
+}
+
 prog* mh_sampler_next_proposal::next_proposal(prog* curr) {
   double uni_sample = unidist_mh(gen_mh);
   if (uni_sample <= _thr_mod_random_inst_operand) {
-    return mod_random_inst_operand(*curr);
+    return mod_random_inst_operand(*curr, _win_start, _win_end);
   } else if (uni_sample <= _thr_mod_random_inst) {
-    return mod_random_inst(*curr);
+    return mod_random_inst(*curr, _win_start, _win_end);
   } else {
-    return mod_random_k_cont_insts(*curr, 2);
+    return mod_random_k_cont_insts(*curr, 2, _win_start, _win_end);
   }
 }
 /* class mh_sampler_next_proposal end */
@@ -231,6 +277,11 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
   curr->reset_vals();
   curr->canonicalize();
   for (int i = 0; i < niter; i++) {
+    if (_next_win.whether_to_reset(i)) {
+      pair<int, int> win = _next_win.update_and_get_next_win();
+      cout << "set window at iteration " << i << endl;
+      _next_proposal.set_win(win.first, win.second);
+    }
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {
       prog *restart = _restart.next_start_prog(curr);
