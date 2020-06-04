@@ -12,9 +12,10 @@ default_random_engine gen_mh;
 uniform_real_distribution<double> unidist_mh(0.0, 1.0);
 
 mh_sampler_next_win::mh_sampler_next_win() {
-  vector<int> win_s_list = {0}, win_e_list = {inst::max_prog_len};
+  vector<int> win_s_list = {0}, win_e_list = {inst::max_prog_len - 1};
   set_win_lists(win_s_list, win_e_list);
   _cur_win = 0;
+  set_max_num_iter(10);
 }
 
 void mh_sampler_next_win::set_win_lists(const vector<int>& win_s_list,
