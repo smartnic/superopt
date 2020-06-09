@@ -20,10 +20,10 @@ class smt_prog {
   // which are initial values for NEXT basic blocks
   vector<vector<expr> > post_reg_val;
   // return the SMT for the given program without branch and loop
-  void smt_block(expr& smt_b, inst* program, int start, int end, smt_var& sv);
+  void smt_block(expr& smt_b, inst* program, int start, int end, smt_var& sv, expr b_pc);
   void init(unsigned int num_regs);
   void topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vector<bool>& finished);
-  void gen_block_prog_logic(expr& e, smt_var& sv, size_t cur_bid, inst* inst_lst);
+  void gen_block_prog_logic(expr& e, expr& f_mem, smt_var& sv, size_t cur_bid, inst* inst_lst);
   void store_post_reg_val(smt_var& sv, size_t cur_bid, unsigned int num_regs);
   void add_path_cond(expr p_con, size_t cur_bid, size_t next_bId);
   void gen_post_path_con(smt_var& sv, size_t cur_bid, inst& inst_end);
@@ -33,17 +33,14 @@ class smt_prog {
   void process_output(expr& f_p_output, inst* inst_lst, unsigned int prog_id);
  public:
   // `public` for unit test check
-  // post_sv[i][0...n] stores the post post_sv for the basic block i.
-  // 0...n are the cases for different paths reaching i, and the order keeps the same as
-  // g.nodes_in[i] and path_con[i]
-  vector<vector<smt_var> > post_sv;
+  smt_var sv;
   // program logic
   expr pl = string_to_expr("true");
   // store path_con, reg_iv, bl, post, g
   // 1. path_con[i] stores pre path condition formulas of basic block i
   // There is a corresponding relationship between path_con and g.nodesIn
   // more specifically, path_con[i][j] stores the all pre path condition formulae from basic block g.nodesIn[i][j] to i
-  vector<vector<vector<expr> > > path_con;
+  vector<vector<expr> > path_con;
   // 2. reg_iv[i][j] stores pre register initial value formula
   // that values from the last node(g.nodes[i][j]) are fed to the node(i)
   vector<vector<expr> > reg_iv;
@@ -59,7 +56,4 @@ class smt_prog {
   // Return the program logic FOL formula 'PL' including basic program logic
   // and the formula of capturing the output of the program in the variable output[prog_id]
   expr gen_smt(unsigned int prog_id, inst* inst_lst, int length);
-  // get all the path conditions and the corresponding memory.
-  // should call this function after calling gen_smt()
-  void get_output_pc_mem(vector<expr>& pc, vector<smt_var>& mv);
 };

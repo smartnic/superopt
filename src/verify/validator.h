@@ -43,8 +43,7 @@ class validator {
   // or the input variable of FOL formula as input[prog_id]
   expr _pre_orig = string_to_expr("true");
   expr _pl_orig = string_to_expr("true");
-  vector<expr> _op_pc_orig;
-  vector<smt_var> _op_mem_orig;
+  smt_var _post_sv_orig;
   // last counterexample
   inout _last_counterex;
   // mem_t _last_counterex_mem;
@@ -73,14 +72,12 @@ class validator {
   reg_t get_orig_output(reg_t input, unsigned int num_regs, unsigned int input_reg);
   // move from `private` to `public` for testing time
   int is_smt_valid(expr& smt, model& mdl);
-  void gen_counterex(inst* orig, int length, model& m, vector<expr>& op_pc_synth,
-                     vector<smt_var>& op_mem_synth);
+  void gen_counterex(inst* orig, int length, model& m, smt_var& post_sv_synth);
   // set register 0 in basic block 0 as input[prog_id]
   void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg);
   // set the input variable of FOL formula as input[prog_id]
   void smt_pre(expr& pre, expr e);
   // setting outputs of two programs are equal
-  void smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2,
-                vector<expr>& op_pc_synth, vector<smt_var>& op_mem_synth);
+  void smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2, smt_var& post_sv_synth);
 
 };

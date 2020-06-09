@@ -465,13 +465,19 @@ void test1() {
   print_test_res(output == expected, "interpret jmp32");
 }
 
-int64_t eval_output(z3::expr smt, z3::expr output) {
+int64_t eval_output(z3::expr smt, z3::expr output, bool flag = false) {
   z3::solver s(smt_c);
   s.add(smt);
   if (s.check() == z3::sat) {
     z3::model m = s.get_model();
     // get_numeral_int64() fails when 64th bit value is 1
-    return m.eval(output).get_numeral_uint64();
+    int64_t res = m.eval(output).get_numeral_uint64();
+    if (flag) {
+      cout << m.eval(output) << endl;
+      cout << "eval_output: " << hex << res << dec << endl;
+      cout << m << endl;
+    }
+    return res;
   }
   cout << "ERROR: no output, return -1" << endl;
   return -1;
@@ -502,22 +508,28 @@ void test2() {
 // may compute B first.
 #define SMT_CHECK_XC(dst_input, dst_expected, test_name)                         \
   smt = (CURDST == to_expr((int64_t)dst_input));                                 \
-  smt = smt && insn.smt_inst(sv);                                                \
+  smt = smt && insn.smt_inst(sv, cond);                                          \
   output = CURDST;                                                               \
   print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
 #define SMT_CHECK_XY(dst_input, src_input, dst_expected, test_name)              \
   smt = (CURDST == to_expr((int64_t)dst_input)) &&                               \
         (CURSRC == to_expr((int64_t)src_input));                                 \
-  smt = smt && insn.smt_inst(sv);                                                \
+  smt = smt && insn.smt_inst(sv, cond);                                          \
   output = CURDST;                                                               \
   print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
+  mem_t::_layout.clear();
+  mem_t::add_map(map_attr(8, 8, 512));
+  mem_t::set_pkt_sz(512); // pkt sz: 512 bytes
   inst insn = (NOP);
   int prog_id = 0, node_id = 0;
   smt_var sv(prog_id, node_id, NUM_REGS);
+  sv.init();
+  z3::expr f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr smt = string_to_expr("false");
   z3::expr output = string_to_expr("false");
+  z3::expr cond = Z3_true;
 
   insn = inst(ADD64XC, 0, 0xffffffff);
   SMT_CHECK_XC(0xffffffffffffffff, 0xfffffffffffffffe, "smt ADD64XC");
@@ -717,11 +729,14 @@ void test2() {
 // Assume two instructions in the program `insns`,
 // the first one is STX and the second is LD
 #define SMT_CHECK_LDST(st_input, ld_output, test_name, insns)                \
-  smt = (CURSRC(insns[0]) == to_expr((int64_t)st_input));                    \
-  smt = smt && insns[0].smt_inst(sv);                                        \
-  smt = smt && insns[1].smt_inst(sv);                                        \
+  smt = f_mem_layout_constrain && f_r10;                                     \
+  smt = smt && (CURSRC(insns[0]) == to_expr((int64_t)st_input));             \
+  smt = smt && insns[0].smt_inst(sv, cond);                                  \
+  smt = smt && insns[1].smt_inst(sv, cond);                                  \
   output = CURDST(insns[1]);                                                 \
   print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
+
+  z3::expr f_r10 = (sv.get_cur_reg_var(10) == sv.get_stack_bottom_addr());
 
   inst insns1[2] = {inst(STXB, 10, -4, 1), inst(LDXB, 0, 10, -4)};
   SMT_CHECK_LDST(10, 10, "smt LDXB & STXB 1", insns1);
@@ -755,8 +770,8 @@ void test2() {
 // Assume two instructions in the program `insns`,
 // the first one is ST and the second is LD
 #define SMT_CHECK_LDST(ld_output, test_name, insns)                          \
-  smt = smt && insns[0].smt_inst(sv);                                        \
-  smt = smt && insns[1].smt_inst(sv);                                        \
+  smt = f_mem_layout_constrain && f_r10 && insns[0].smt_inst(sv, cond);      \
+  smt = smt && insns[1].smt_inst(sv, cond);                                  \
   output = CURDST(insns[1]);                                                 \
   print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
 

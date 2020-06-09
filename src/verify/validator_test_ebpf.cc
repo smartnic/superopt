@@ -7,6 +7,7 @@ using namespace z3;
 
 void test1() {
   std::cout << "test 1:" << endl;
+  mem_t::_layout.clear();
   inst instructions1[9] = {inst(MOV32XC, 0, -1),         /* r0 = 0x00000000ffffffff */
                            inst(ADD64XC, 0, 0x1),        /* r0 = 0x0000000100000000 */
                            inst(MOV64XC, 1, 0x0),        /* r1 = 0 */
@@ -70,6 +71,7 @@ void test1() {
 
 void test2() {
   std::cout << "test 2:" << endl;
+  mem_t::_layout.clear();
   // check branch with ld/st
   inst p1[6] = {inst(STXB, 10, -1, 1),
                 inst(JEQXC, 1, 0x12, 2),
@@ -85,7 +87,7 @@ void test2() {
                };
   validator vld(p1, 6);
   print_test_res(vld.is_equal_to(p1, 6, p2, 4), "p1 == p2");
-
+  return;
   inst p3[5] = {inst(STXB, 10, -1, 1),
                 inst(JEQXY, 0, 1, 0),
                 inst(STXB, 10, -1, 1),

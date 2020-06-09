@@ -25,15 +25,13 @@ validator::validator(expr fx, expr input, expr output) {
 
 validator::~validator() {}
 
-void validator::gen_counterex(inst* orig, int length, model& m, vector<expr>& op_pc_synth,
-                              vector<smt_var>& op_mem_synth) {
+void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv_synth) {
   expr input_orig = string_to_expr("input");
   expr output_orig = string_to_expr("output" + to_string(VLD_PROG_ID_ORIG));
   _last_counterex.clear();
   // func counterex_2_input_mem will clear input
   // TODO: update input.reg in counterex_2_input_mem(.)
-  counterex_2_input_mem(_last_counterex.input, m, _op_pc_orig, _op_mem_orig,
-                        op_pc_synth, op_mem_synth);
+  counterex_2_input_mem(_last_counterex.input, m, _post_sv_orig, post_sv_synth);
   _last_counterex.input.reg = (reg_t)m.eval(input_orig).get_numeral_uint64();
   // get output from interpreter
   prog_state ps;
@@ -80,10 +78,10 @@ void validator::smt_pre(expr& pre, expr e) {
 }
 
 void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2,
-                         vector<expr>& op_pc_synth, vector<smt_var>& op_mem_synth) {
+                         smt_var& post_sv_synth) {
   pst = (string_to_expr("output" + to_string(prog_id1)) == \
          string_to_expr("output" + to_string(prog_id2))) &&
-        smt_pgm_mem_eq_chk(_op_pc_orig, _op_mem_orig, op_pc_synth, op_mem_synth);
+        smt_pgm_mem_eq_chk(_post_sv_orig, post_sv_synth);
 }
 
 // calculate and store pre_orig, ps_orign
@@ -96,7 +94,7 @@ void validator::set_orig(inst* orig, int length) {
     throw (err_msg);
     return;
   }
-  ps_orig.get_output_pc_mem(_op_pc_orig, _op_mem_orig);
+  _post_sv_orig = ps_orig.sv;
   _store_ps_orig = ps_orig; // store
 }
 
@@ -119,13 +117,10 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     // cerr << err_msg << endl;
     return -1;
   }
-  vector<expr> op_pc_synth;
-  vector<smt_var> op_mem_synth;
-  ps_synth.get_output_pc_mem(op_pc_synth, op_mem_synth);
-  expr pre_mem_same_mem = smt_pgm_set_same_input(_op_pc_orig, _op_mem_orig,
-                          op_pc_synth, op_mem_synth);
+  smt_var post_sv_synth = ps_synth.sv;
+  expr pre_mem_same_mem = smt_pgm_set_same_input(_post_sv_orig, post_sv_synth);
   expr post = string_to_expr("true");
-  smt_post(post, VLD_PROG_ID_ORIG, VLD_PROG_ID_SYNTH, op_pc_synth, op_mem_synth);
+  smt_post(post, VLD_PROG_ID_ORIG, VLD_PROG_ID_SYNTH, post_sv_synth);
   expr smt = implies(pre_mem_same_mem && _pre_orig && pre_synth && _pl_orig && pl_synth, post);
   // store
   _store_post = post;
@@ -133,7 +128,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   model mdl(smt_c);
   int is_equal = is_smt_valid(smt, mdl);
   if (is_equal == 0) {
-    gen_counterex(orig, length_orig, mdl, op_pc_synth, op_mem_synth);
+    gen_counterex(orig, length_orig, mdl, post_sv_synth);
   }
   return is_equal;
 }

@@ -175,6 +175,7 @@ class smt_var: public smt_var_base {
            val_cur_id, addr_v_cur_id, map_helper_func_ret_cur_id;
  public:
   smt_mem mem_var;
+  smt_var();
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
   // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs
   smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
@@ -195,7 +196,7 @@ class smt_var: public smt_var_base {
   z3::expr get_pkt_end_addr() {return (mem_var._pkt_start + to_expr((uint64_t)mem_t::_layout._pkt_sz - 1));}
   z3::expr mem_layout_constrain() const;
   void init() {mem_var.init_addrs_map_v_next_by_layout();}
-  void get_from_previous_block(smt_var& sv);
+  void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
   void clear();
 };
 

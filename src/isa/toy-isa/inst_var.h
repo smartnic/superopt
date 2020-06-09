@@ -8,10 +8,10 @@ static constexpr int NUM_REGS = 4;
 
 class smt_var: public smt_var_base {
  public:
+  smt_var(): smt_var_base() {}
   smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs)
     : smt_var_base(prog_id, node_id, num_regs) {};
   ~smt_var() {};
-  void get_from_previous_block(smt_var& sv) {};
 };
 
 class prog_state: public prog_state_base {

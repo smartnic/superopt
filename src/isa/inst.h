@@ -71,7 +71,7 @@ class inst_base {
   int get_opcode_type() const {RAISE_EXCEPTION("inst::get_opcode_type");}
   // smt
   // return SMT for the given OP_OTHERS type instruction, other types return false
-  z3::expr smt_inst(smt_var& sv) const {RAISE_EXCEPTION("inst::smt_inst");}
+  z3::expr smt_inst(smt_var& sv, z3::expr cond = Z3_true) const {RAISE_EXCEPTION("inst::smt_inst");}
   // return SMT for the given OP_COND_JMP type instruction, other types return false
   z3::expr smt_inst_jmp(smt_var& sv) const {RAISE_EXCEPTION("inst::smt_inst_jmp");}
   static z3::expr smt_set_pre(z3::expr input, smt_var& sv) {RAISE_EXCEPTION("inst::smt_set_pre");}

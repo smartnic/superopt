@@ -452,10 +452,22 @@ ostream& operator<<(ostream& out, const smt_mem& s) {
 /* class smt_wt end */
 
 /* class smt_var start */
+smt_var::smt_var()
+  : smt_var_base() {
+  mem_addr_id = 0;
+  is_vaild_id = 0;
+  path_cond_id = 0;
+  key_cur_id = 0;
+  val_cur_id = 0;
+  addr_v_cur_id = 0;
+  map_helper_func_ret_cur_id = 0;
+}
+
 smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs)
   : smt_var_base(prog_id, node_id, num_regs) {
   mem_addr_id = 0;
   is_vaild_id = 0;
+  path_cond_id = 0;
   key_cur_id = 0;
   val_cur_id = 0;
   addr_v_cur_id = 0;
@@ -538,8 +550,9 @@ z3::expr smt_var::mem_layout_constrain() const {
   return f;
 }
 
-void smt_var::get_from_previous_block(smt_var& sv) {
-  mem_var = sv.mem_var;
+void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs) {
+  smt_var_base::init(prog_id, node_id, num_regs);
+  mem_var.init_addrs_map_v_next_by_layout();
 }
 
 void smt_var::clear() {
@@ -547,6 +560,7 @@ void smt_var::clear() {
   for (size_t i = 0; i < reg_var.size(); i++) {
     mem_addr_id = 0;
     is_vaild_id = 0;
+    path_cond_id = 0;
     key_cur_id = 0;
     val_cur_id = 0;
     addr_v_cur_id = 0;
