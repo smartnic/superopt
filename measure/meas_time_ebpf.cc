@@ -51,59 +51,27 @@ void time_smt_prog() {
                "smt prog::gen_smt: ");
 }
 
-void time_get_output_pc_mem() {
-  smt_prog sp;
-  sp.gen_smt(0, bm3, inst::max_prog_len);
-  vector<z3::expr> pc_list;
-  vector<smt_var> sv_list;
-  time_measure(sp.get_output_pc_mem(pc_list, sv_list), 10,
-               "smt prog::get_output_pc_mem: ");
-}
-
-void time_set_the_same_input() {
+void time_vld_mem_input_output() {
+  cout << "SMT of memory input set and memory output equivalence check" << endl;
   smt_prog sp1, sp2;
-  vector<z3::expr> pc_list1, pc_list2;
-  vector<smt_var> sv_list1, sv_list2;
   sp1.gen_smt(0, bm3, inst::max_prog_len);
-  sp1.get_output_pc_mem(pc_list1, sv_list1);
-  sp2.gen_smt(0, bm3, inst::max_prog_len);
-  sp2.get_output_pc_mem(pc_list2, sv_list2);
-  cout << "time for min table size, idx: 49" << endl;
+  sp2.gen_smt(1, bm3, inst::max_prog_len);
   {
-    time_measure(smt_map_set_same_input(sv_list1[49], sv_list2[49]), 10,
-                 "set same input of map of one path condition pair: ");
+    time_measure(smt_map_set_same_input(sp1.sv, sp2.sv), 10,
+                 "set same map input: ");
   }
   {
-    time_measure(smt_pkt_set_same_input(sv_list1[49], sv_list2[49]), 10,
-                 "set same input of pkt of one path condition pair: ");
+    time_measure(smt_pkt_set_same_input(sp1.sv, sp2.sv), 10,
+                 "set same pkt input: ");
   }
   {
-    time_measure(smt_map_eq_chk(sv_list1[49], sv_list2[49]), 10,
-                 "equivalence check of map of one path condition pair: ");
+    time_measure(smt_map_eq_chk(sp1.sv, sp2.sv), 10,
+                 "map equivalence check: ");
   }
   {
-    time_measure(smt_pkt_eq_chk(sv_list1[49], sv_list2[49]), 10,
-                 "equivalence check of pkt of one path condition pair: ");
+    time_measure(smt_pkt_eq_chk(sp1.sv, sp2.sv), 10,
+                 "pkt equivalence check: ");
   }
-
-  cout << "time for max table size, idx: 20" << endl;
-  {
-    time_measure(smt_map_set_same_input(sv_list1[20], sv_list2[20]), 10,
-                 "set same input of map of one path condition pair: ");
-  }
-  {
-    time_measure(smt_pkt_set_same_input(sv_list1[20], sv_list2[20]), 10,
-                 "set same input of pkt of one path condition pair: ");
-  }
-  {
-    time_measure(smt_map_eq_chk(sv_list1[20], sv_list2[20]), 10,
-                 "equivalence check of map of one path condition pair: ");
-  }
-  {
-    time_measure(smt_pkt_eq_chk(sv_list1[20], sv_list2[20]), 10,
-                 "equivalence check of pkt of one path condition pair: ");
-  }
-  cout << "table size info for path conditions" << endl;
 }
 
 int main() {
@@ -116,7 +84,6 @@ int main() {
 
   time_interpret();
   time_smt_prog();
-  time_get_output_pc_mem();
-  time_set_the_same_input();
+  time_vld_mem_input_output();
   return 0;
 }
