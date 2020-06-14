@@ -200,6 +200,15 @@ class smt_var: public smt_var_base {
   void clear();
 };
 
+class smt_var_bl {
+ private:
+  int _mem_wt_sz = 0, _mem_urt_sz = 0;
+  int _map_wt_sz = 0, _map_urt_sz = 0;
+ public:
+  void store_state_before_smt_block(smt_var& sv);
+  z3::expr gen_smt_after_smt_block(smt_var& sv, z3::expr& pc);
+};
+
 class prog_state: public prog_state_base {
  public:
   mem_t _mem;

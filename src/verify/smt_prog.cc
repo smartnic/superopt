@@ -102,33 +102,14 @@ void smt_prog::topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vecto
 
 // may need to modify
 void smt_prog::gen_block_prog_logic(expr& e, expr& f_mem, smt_var& sv, size_t cur_bid, inst* inst_lst) {
-  // z3 boolean variable to indicate whether the path condition of
-  // the current basic block is true or false
-  z3::expr is_pc = sv.update_path_cond();
-  // todo: modify it later, since this method is not TOY-ISA supported
-  int a = sv.mem_var._mem_table._wt.size();
-  int b = sv.mem_var._mem_table._urt.size();
-  int c = sv.mem_var._map_table._wt.size();
-  int d = sv.mem_var._map_table._urt.size();
-  smt_block(e, inst_lst, g.nodes[cur_bid]._start, g.nodes[cur_bid]._end, sv, is_pc);
-  f_mem = Z3_true;
-  for (int i = a; i < sv.mem_var._mem_table._wt.size(); i++) {
-    f_mem = f_mem && z3::implies(!is_pc, sv.mem_var._mem_table._wt.addr[i] == NULL_ADDR_EXPR);
-  }
-  for (int i = b; i < sv.mem_var._mem_table._urt.size(); i++) {
-    f_mem = f_mem && z3::implies(!is_pc, sv.mem_var._mem_table._urt.addr[i] == NULL_ADDR_EXPR);
-  }
-  for (int i = c; i < sv.mem_var._map_table._wt.size(); i++) {
-    f_mem = f_mem && z3::implies(!is_pc, sv.mem_var._map_table._wt.is_valid[i] == Z3_false);
-  }
-  for (int i = d; i < sv.mem_var._map_table._urt.size(); i++) {
-    f_mem = f_mem && z3::implies(!is_pc, sv.mem_var._map_table._urt.is_valid[i] == Z3_false);
-  }
   // b_pc: basic block path condition,
   // don't care about the default value, gen_block_c_in will reset b_pc
   expr b_pc = Z3_false;
   gen_block_c_in(b_pc, cur_bid);
-  f_mem = f_mem && (is_pc == b_pc);
+  smt_var_bl sv_bl;
+  sv_bl.store_state_before_smt_block(sv);
+  smt_block(e, inst_lst, g.nodes[cur_bid]._start, g.nodes[cur_bid]._end, sv, b_pc);
+  f_mem = sv_bl.gen_smt_after_smt_block(sv, b_pc);
   bl[cur_bid] = e; // store
 }
 
@@ -160,7 +141,7 @@ void smt_prog::gen_block_c_in(expr& c_in, size_t cur_bid) {
       c_in = c_in || path_con[cur_bid][i];
     }
   }
-  c_in.simplify();
+  c_in = c_in.simplify();
 }
 
 // steps:

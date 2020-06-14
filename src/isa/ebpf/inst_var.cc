@@ -570,6 +570,30 @@ void smt_var::clear() {
 }
 /* class smt_var end */
 
+void smt_var_bl::store_state_before_smt_block(smt_var& sv) {
+  _mem_wt_sz = sv.mem_var._mem_table._wt.size();
+  _mem_urt_sz = sv.mem_var._mem_table._urt.size();
+  _map_wt_sz = sv.mem_var._map_table._wt.size();
+  _map_urt_sz = sv.mem_var._map_table._urt.size();
+}
+
+z3::expr smt_var_bl::gen_smt_after_smt_block(smt_var& sv, z3::expr& pc) {
+  z3::expr f = Z3_true;
+  for (int i = _mem_wt_sz; i < sv.mem_var._mem_table._wt.size(); i++) {
+    f = f && z3::implies(!pc, sv.mem_var._mem_table._wt.addr[i] == NULL_ADDR_EXPR);
+  }
+  for (int i = _mem_urt_sz; i < sv.mem_var._mem_table._urt.size(); i++) {
+    f = f && z3::implies(!pc, sv.mem_var._mem_table._urt.addr[i] == NULL_ADDR_EXPR);
+  }
+  for (int i = _map_wt_sz; i < sv.mem_var._map_table._wt.size(); i++) {
+    f = f && z3::implies(!pc, sv.mem_var._map_table._wt.is_valid[i] == Z3_false);
+  }
+  for (int i = _map_urt_sz; i < sv.mem_var._map_table._urt.size(); i++) {
+    f = f && z3::implies(!pc, sv.mem_var._map_table._urt.is_valid[i] == Z3_false);
+  }
+  return f;
+}
+
 void prog_state::init() {
   _mem.init_by_layout();
 }

@@ -14,6 +14,12 @@ class smt_var: public smt_var_base {
   ~smt_var() {};
 };
 
+class smt_var_bl {
+ public:
+  void store_state_before_smt_block(smt_var& sv) {}
+  z3::expr gen_smt_after_smt_block(smt_var& sv, z3::expr& pc) {return Z3_true;}
+};
+
 class prog_state: public prog_state_base {
  public:
   prog_state() {_regs.resize(NUM_REGS, 0);}
