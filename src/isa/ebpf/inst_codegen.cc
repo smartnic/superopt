@@ -873,8 +873,8 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
     z3::expr f2 = key_not_in_map_wt(cur_addr_map, k, mem._map_table._urt);
     z3::expr f3 = f1 && f2;
     // if k is neither in the map WT nor the map URT
-    // TODO: (addr_map_v == NULL_ADDR_EXPR) || (addr_map_v == mem.get_and_update_addr_v_next(map_id))
-    f = f && z3::implies(f3, (addr_map_v == NULL_ADDR_EXPR) || (addr_map_v != NULL_ADDR_EXPR));
+    f = f && z3::implies(f3, (addr_map_v == NULL_ADDR_EXPR) ||
+                         (addr_map_v == mem.get_and_update_addr_v_next(map_id)));
 
     z3::expr f_the_same_map = (cur_addr_map == addr_map);
     /* add the constrains on "out" according to "addr_map_v" */
