@@ -9,7 +9,10 @@
 #include "../../src/isa/toy-isa/inst_var.h"
 #elif ISA_EBPF
 #include "../../src/isa/ebpf/inst_var.h"
+#elif ISA_NETRONOME
+#include "../../src/isa/netronome/inst_var.h"
 #endif
+
 
 using namespace std;
 
