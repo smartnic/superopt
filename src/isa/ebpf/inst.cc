@@ -118,7 +118,7 @@ int16_t inst::get_max_off(int inst_index) const {
   int op_type = get_opcode_type();
   switch (op_type) {
     case OP_LD:
-    case OP_ST: return -1; // assume only stack
+    case OP_ST: return 10; // assume only stack
     case OP_UNCOND_JMP:
     case OP_COND_JMP: return min(MAX_OFF, inst::max_prog_len - inst_index - 2);
     default: cout << "Error: no off in instruction: ";
@@ -164,7 +164,7 @@ int16_t inst::get_min_off() const {
   int op_type = get_opcode_type();
   switch (op_type) {
     case OP_LD:
-    case OP_ST: return -STACK_SIZE; // assume only stack
+    case OP_ST: return -10; // assume only stack
     case OP_UNCOND_JMP:
     case OP_COND_JMP: return 0; // assume only jump forward
     default: cout << "Error: no off in instruction: ";

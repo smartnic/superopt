@@ -188,6 +188,44 @@ inst bm3[N3] = {inst(191, 1, 6, 0, 0),
                 inst(180, 0, 0, 0, 1),
                 inst(149, 0, 0, 0, 0),
                };
+
+// r0 = r1 * 16
+inst bm4[N4] = {inst(MOV64XY, 0, 1), // r0 = r1
+                inst(ADD64XY, 0, 0), // r0 = r1 * 2
+                inst(ADD64XY, 0, 0), // r0 = r1 * 4
+                inst(ADD64XY, 0, 0), // r0 = r1 * 8
+                inst(ADD64XY, 0, 0), // r0 = r1 * 16
+                inst(),
+                inst(),
+               };
+
+inst bm_opti40[N4] = {inst(MOV64XY, 0, 1), // r0 = r1
+                      inst(LSH64XC, 0, 4), // r0 << 4
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                     };
+
+// *(u32 *)pkt = 0
+inst bm5[N5] = {inst(STB, 1, 0, 0), // *(u8 *)(pkt + 0) = 0
+                inst(STB, 1, 1, 0), // *(u8 *)(pkt + 1) = 0
+                inst(STB, 1, 2, 0), // *(u8 *)(pkt + 2) = 0
+                inst(STB, 1, 3, 0), // *(u8 *)(pkt + 3) = 0
+                inst(),
+                inst(),
+                inst(),
+               };
+inst bm_opti50[N5] = {inst(STW, 1, 0, 0), // *(u32 *)(pkt + 0) = 0
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                     };
+
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
@@ -218,6 +256,17 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::add_map(map_attr(96, 96, N3));  // 12 items
       mem_t::add_map(map_attr(64, 128, N3)); // 16 items  => 36 items
       *bm = bm3;
+      return;
+    case 4:
+      inst::max_prog_len = N4;
+      *bm = bm4;
+      bm_optis_orig.push_back(bm_opti40);
+      return;
+    case 5:
+      inst::max_prog_len = N5;
+      mem_t::set_pkt_sz(4);
+      *bm = bm5;
+      bm_optis_orig.push_back(bm_opti50);
       return;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
