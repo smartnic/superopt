@@ -239,12 +239,12 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
     case 1:
       inst::max_prog_len = N1;
       inst::add_sample_imm(vector<int32_t> {0xff0000});
-      mem_t::add_map(map_attr(8, 8, N1));
       *bm = bm1;
       bm_optis_orig.push_back(bm_opti10);
       return;
     case 2:
       inst::max_prog_len = N2;
+      mem_t::add_map(map_attr(8, 8, N2));
       *bm = bm2;
       bm_optis_orig.push_back(bm_opti20);
       return;
