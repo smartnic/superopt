@@ -18,15 +18,22 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
   _examples.clear();
   prog_state ps;
   ps.init();
-  for (size_t i = 0; i < input.size(); i++) {
-    ps.clear();
-    inout_t output;
-    output.init();
-    // Assume original program can pass the interpreter
-    orig->interpret(output, ps, input[i]);
-    inout example;
-    example.set_in_out(input[i], output);
-    _examples.insert(example);
+  try {
+    for (size_t i = 0; i < input.size(); i++) {
+      ps.clear();
+      inout_t output;
+      output.init();
+      // Assume original program can pass the interpreter
+      orig->interpret(output, ps, input[i]);
+      inout example;
+      example.set_in_out(input[i], output);
+      _examples.insert(example);
+    }
+  } catch (const string err_msg) {
+    cout << "ERROR: cost::init(): ";
+    cerr << err_msg << endl;
+    throw(err_msg);
+    return;
   }
   _w_e = w_e;
   _w_p = w_p;
