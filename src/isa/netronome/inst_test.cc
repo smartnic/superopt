@@ -5,17 +5,19 @@
 
 inst instructions1[] = {
 	inst(NOP),
+	inst(IMMED, 0, 7);
 };
 
 void test1() {
 	prog_state ps;
-	inout_t input, output;
-	input.init(); output.init();
+	inout_t input, output, expected;
+	input.init(); output.init(); expected.init();
+	expected.reg = 7;
 	
-	cout << "test 1: just a nop :)" << endl;
-	interpret(output, instructions1, 1, ps, input);
+	cout << "test 1: nop + immed" << endl;
+	interpret(output, instructions1, 2, ps, input);
 	print_test_res(true, "interpret program 1 completion");
-	print_test_res(output == input, "interpret program 1 correctness");
+	print_test_res(output == expected, "interpret program 1 correctness");
 
 }
 

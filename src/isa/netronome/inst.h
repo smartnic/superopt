@@ -22,26 +22,26 @@ static constexpr int MAX_OP_LEN = 3;
 // Instruction opcodes
 enum OPCODES {
   NOP = 0,
-  // IMMED,
+  IMMED,
   NUM_INSTR // not an opcode, just the count of the number of defined opcodes
 };
 
 static constexpr int num_operands[NUM_INSTR] = {
   [NOP]   = 0,
-  // [IMMED] = 2,
+  [IMMED] = 2,
 };
 
 static constexpr int insn_num_regs[NUM_INSTR] = {
   [NOP]   = 0,
-  // [IMMED] = 1,
+  [IMMED] = 1,
 };
 
 static constexpr int opcode_type[NUM_INSTR] = {
   [NOP]   = OP_NOP,
-  // [IMMED] = OP_OTHERS,
+  [IMMED] = OP_OTHERS,
 };
 
-// below: something about what types of operands each instruction expects? what is this?
+
 
 // Max value for immediate operand
 static constexpr int MAX_CONST = 32;
@@ -60,6 +60,7 @@ static constexpr int OP_OFF = 3;
 #define UNUSED_OPS (FSTOP(OP_UNUSED) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 static constexpr int optable[NUM_INSTR] = {
   [NOP]   = UNUSED_OPS,
+  [IMMED] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
   // [ADDXY] = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
   // [MOVXC] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
   // [RETX]  = FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),

@@ -3,10 +3,10 @@
 
 using namespace std;
 
-// #define DSTREG(inst_var) (inst_var)._args[0]
-// #define SRCREG(inst_var) (inst_var)._args[1]
-// #define IMM1VAL(inst_var) (inst_var)._args[0]
-// #define IMM2VAL(inst_var) (inst_var)._args[1]
+#define DSTREG(inst_var) (inst_var)._args[0]
+#define SRCREG(inst_var) (inst_var)._args[1]
+#define IMM1VAL(inst_var) (inst_var)._args[0]
+#define IMM2VAL(inst_var) (inst_var)._args[1]
 
 string inst::opcode_to_str(int opcode) const {
   switch (opcode) {
@@ -206,7 +206,7 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
 
   static void *jumptable[NUM_INSTR] = {
     [NOP]   = && INSN_NOP,
-    // [IMMED] = && INSN_IMMED,
+    [IMMED] = && INSN_IMMED,
   };
 
 #undef CONT
@@ -232,9 +232,9 @@ select_insn:
 INSN_NOP:
   CONT;
 
-// INSN_IMMED:
-//   DST = compute_mov(IMM2, DST);
-//   CONT;
+INSN_IMMED:
+  DST = compute_mov(IMM2, DST);
+  CONT;
 
 
 

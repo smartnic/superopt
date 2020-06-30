@@ -4,7 +4,11 @@
 
 using namespace std;
 
-static constexpr int NUM_REGS = 4;
+/*
+General purpose registers: 16 A bank registers followed by 16 B bank registers in order,
+i.e. regs[0] = register a0, regs[1] = register a1, ... regs[15] = register a15, regs[16] = register b0, ... regs[31] = register b15
+*/
+static constexpr int NUM_REGS = 32;
 
 class smt_var: public smt_var_base {
  public:
