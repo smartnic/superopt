@@ -129,13 +129,11 @@ void time_mh_sampler() {
     int nrolls = 1000;
     double w_e = 0.45;
     double w_p = 1.55;
-    vector<reg_t> input_regs(30);
-    gen_random_input(input_regs, 0, 50);
     vector<inout_t> inputs(30);
     for (int i = 0; i < inputs.size(); i++) {
       inputs[i].init();
-      inputs[i].reg = input_regs[i];
     }
+    gen_random_input(inputs, 0, 50);
     mh_sampler mh;
     unordered_map<int, vector<prog*> > prog_freq;
     prog orig(bm0);

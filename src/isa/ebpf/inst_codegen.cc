@@ -1054,6 +1054,8 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv,
                                vector<pair< uint64_t, uint8_t>>& mem_addr_val) {
   if (mem_t::_layout._pkt_sz == 0) return;
 
+  // set pkt with random values
+  input.set_pkt_random_val();
   z3::expr z3_pkt_start = mdl.eval(sv.get_pkt_start_addr());
   z3::expr z3_pkt_end = mdl.eval(sv.get_pkt_end_addr());
   uint64_t pkt_start = get_uint64_from_bv64(z3_pkt_start, true);

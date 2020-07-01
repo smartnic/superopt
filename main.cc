@@ -343,13 +343,12 @@ int main(int argc, char* argv[]) {
   vector<inst*> bm_optis_orig;
   auto start = NOW;
   init_benchmarks(&bm, bm_optis_orig, in_para.bm);
-  vector<reg_t> input_regs(30);
-  gen_random_input(input_regs, -50, 50);
-  inputs.resize(30);
-  for (int i = 0; i < inputs.size(); i++) {
+  int num_examples = 30;
+  inputs.resize(num_examples);
+  for (int i = 0; i < num_examples; i++) {
     inputs[i].init();
-    inputs[i].reg = input_regs[i];
   }
+  gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);
   auto end = NOW;
   cout << "compiling time: " << DUR(start, end) << " us" << endl;

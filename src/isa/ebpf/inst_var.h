@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <queue>
 #include <string.h>
 #include "../../../src/utils.h"
@@ -234,6 +235,8 @@ class inout_t: public inout_t_base {
   void update_kv(int map_id, string k, vector<uint8_t> v);
   // return whether k is in the map
   bool k_in_map(int map_id, string k);
+  // set pkt with random values
+  void set_pkt_random_val();
   void clear();
   void init();
   void operator=(const inout_t &rhs);
@@ -260,3 +263,4 @@ uint64_t get_simu_addr_by_real(uint64_t real_addr, mem_t& mem, simu_real sr);
 uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr);
 void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
                    inout_t& output1, inout_t& output2);
+void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max);

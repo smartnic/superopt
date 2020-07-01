@@ -72,13 +72,11 @@ int main(int argc, char* argv[]) {
       w_p = atof(argv[3]);
     }
   }
-  vector<reg_t> inputs_reg(30);
-  gen_random_input(inputs_reg, 0, 50);
-  inputs.resize(30);
+  vector<inout_t> inputs(30);
   for (int i = 0; i < inputs.size(); i++) {
     inputs[i].init();
-    inputs[i].reg = inputs_reg[i];
   }
+  gen_random_input(inputs, 0, 50);
   test1(nrolls, w_e, w_p);
   return 0;
 }

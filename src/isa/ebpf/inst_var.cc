@@ -647,6 +647,13 @@ bool inout_t::k_in_map(int map_id, string k) {
   return true;
 }
 
+void inout_t::set_pkt_random_val() {
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    uint8_t val = 0xff * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+    pkt[i] = val;
+  }
+}
+
 void inout_t::clear() {
   reg = 0;
   for (int i = 0; i < maps.size(); i++) maps[i].clear();
@@ -827,4 +834,37 @@ void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
   // add pkt into lists
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list1.push_back(output1.pkt[i]);
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list2.push_back(output2.pkt[i]);
+}
+
+void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max) {
+  uint64_t max_uint64 = 0xffffffffffffffff;
+  // 1. Generate stack bottom address r10
+  uint64_t r10_min = 1; // address cannot be 0
+  uint64_t mem_size_without_stack = get_mem_size_by_layout() - STACK_SIZE;
+  uint64_t r10_max = max_uint64 - mem_size_without_stack - mem_t::_layout._pkt_sz;
+  for (int i = 0; i < inputs.size(); i++) {
+    inputs[i].input_simu_r10 = r10_min + (uint64_t)((r10_max - r10_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var));
+  }
+  // 2. Generate pkt, set pkt with random values
+  for (int i = 0; i < inputs.size(); i++) {
+    inputs[i].set_pkt_random_val();
+  }
+  // 3. Generate input register r1
+  if (mem_t::_layout._pkt_sz == 0) { // case 1: r1 is not used as pkt address
+    unordered_set<int64_t> reg_set; // use set to avoid that registers have the same values
+    for (int i = 0; i < inputs.size();) {
+      int64_t reg = reg_min + (reg_max - reg_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+      if (reg_set.find(reg) == reg_set.end()) {
+        reg_set.insert(reg);
+        inputs[i].reg = reg;
+        i++;
+      }
+    }
+  } else { // case 2: r1 is used as pkt address
+    for (int i = 0; i < inputs.size(); i++) {
+      uint64_t pkt_min = inputs[i].input_simu_r10 + mem_size_without_stack;
+      uint64_t pkt_max = max_uint64;
+      inputs[i].reg = pkt_min + (uint64_t)((pkt_max - pkt_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var));
+    }
+  }
 }

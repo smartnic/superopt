@@ -72,3 +72,8 @@ class inout_t_base {
 // exposed APIs
 // void get_cmp_lists(vector<reg_t>& val_list1, vector<reg_t>& val_list2,
 //                    inout_t& output1, inout_t& output2);
+/* Generate the random inputs and store them in the input paramenter `inputs`.
+   Parameters `reg_min` and `reg_max` are the minimum and maximum values of the input register.
+   This limitation needs to be generalized later.
+*/
+// void gen_random_input(vector<inout_t>& inputs, reg_t reg_min, reg_t reg_max);
