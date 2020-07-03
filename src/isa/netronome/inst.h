@@ -114,7 +114,7 @@ class inst: public inst_base {
     _args[0] = arg1;
     _args[1] = arg2;
     _args[2] = arg3;
-    _args[4] = arg4;
+    _args[3] = arg4;
   }
   inst& operator=(const inst &rhs);
   bool operator==(const inst &x) const;

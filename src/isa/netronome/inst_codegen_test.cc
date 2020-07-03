@@ -28,19 +28,20 @@ void test1() {
 	cout << "Test 1" << endl;
 	int32_t a = 4, b = 5, c = 10;
 
-	int32_t result = compute_mov(a, b);
-	cout << result << endl;
-	print_test_res(result == a, "compute_mov");
-	z3::expr pred = predicate_mov(v(a), v(b));
+	c = compute_mov(a);
+	cout << c << endl;
+	print_test_res(c == a, "compute_mov");
+	z3::expr pred = predicate_mov(v(a), v(c));
 	cout << pred << endl;
-	print_test_res(is_valid(pred), "predicate_mov");
+	print_test_res(is_valid(pred), "predicate_mov match compute_mov");
 
-	result = compute_add(a, b);
-	cout << result << endl;
-	print_test_res(result == (a+b), "compute_add");
+	c = compute_add(a, b);
+	cout << c << endl;
+	print_test_res(c == (a+b), "compute_add");
 	pred = predicate_add(v(a), v(b), v(c));
 	cout << pred << endl;
-	print_test_res(is_valid(pred), "predicate_add");
+	print_test_res(is_valid(pred), "predicate_add match compute_add");
+
 }
 
 int main() {
