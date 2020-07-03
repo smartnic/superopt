@@ -5,7 +5,7 @@
 
 inst instructions1[] = {
 	inst(NOP),
-	inst(IMMED, 0, 7);
+	inst(IMMED, 0, 7),
 };
 
 void test1() {

@@ -10,7 +10,7 @@ TOY_ISA_FLAG=-D ISA_TOY_ISA
 EBPF_FLAG=-D ISA_EBPF
 NETRONOME_FLAG=-D ISA_NETRONOME
 
-# all: main.out main_ebpf.out proposals_test.out inst_codegen_test_toy_isa.out inst_codegen_test_ebpf.out inst_test.out cost_test.out prog_test.out prog_test_ebpf.out mh_prog_test.out validator_test.out cfg_test.out inout_test.out smt_prog_test.out ebpf_inst_test.out validator_test_ebpf.out cfg_test_ebpf.out
+all: main.out main_ebpf.out proposals_test.out inst_codegen_test_toy_isa.out inst_codegen_test_ebpf.out inst_test.out cost_test.out prog_test.out prog_test_ebpf.out mh_prog_test.out validator_test.out cfg_test.out inout_test.out smt_prog_test.out ebpf_inst_test.out validator_test_ebpf.out cfg_test_ebpf.out
 
 all_netronome: inst_codegen_test_netronome.out netronome_inst_test.out
 

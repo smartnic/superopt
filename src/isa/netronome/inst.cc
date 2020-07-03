@@ -5,6 +5,7 @@ using namespace std;
 
 #define DSTREG(inst_var) (inst_var)._args[0]
 #define SRCREG(inst_var) (inst_var)._args[1]
+#define SRC2REG(inst_var) (inst_var)._args[3]
 #define IMM1VAL(inst_var) (inst_var)._args[0]
 #define IMM2VAL(inst_var) (inst_var)._args[1]
 
@@ -141,37 +142,23 @@ void inst::set_as_nop_inst() {
 
 z3::expr inst::smt_inst(smt_var& sv) const {
 
-  return string_to_expr("true");
-
-  // z3::expr curDst = string_to_expr("false");
-  // z3::expr curSrc = string_to_expr("false");
-  // z3::expr newDst = string_to_expr("false");
-  // z3::expr imm = string_to_expr("false");
-  // switch (_opcode) {
-  //   case MAXX:
-  //   case ADDXY:
-  //     curDst = CURDST;
-  //     curSrc = CURSRC;
-  //     newDst = NEWDST;
-  //     break;
-  //   case MOVXC:
-  //     imm = IMM2;
-  //     newDst = NEWDST;
-  //     break;
-  //   case MAXC:
-  //     curDst = CURDST;
-  //     imm = IMM2;
-  //     newDst = NEWDST;
-  //     break;
-  // }
-  // switch (_opcode) {
-  //   case ADDXY: return predicate_add(curDst, curSrc, newDst);
-  //   case MOVXC: return predicate_mov(imm, newDst);
-  //   case MAXC: return predicate_max(curDst, imm, newDst);
-  //   case MAXX: return predicate_max(curDst, curSrc, newDst);
-  //   default: return string_to_expr("false");
-  // }
+  z3::expr curDst = string_to_expr("false");
+  z3::expr curSrc = string_to_expr("false");
+  z3::expr newDst = string_to_expr("false");
+  z3::expr imm = string_to_expr("false");
+  switch (_opcode) {
+    case IMMED:
+      imm = IMM2;
+      newDst = NEWDST;
+      break;
+  }
+  switch (_opcode) {
+    case IMMED: return predicate_mov(imm, newDst);
+    default: return string_to_expr("false");
+  }
 }
+
+
 
 z3::expr inst::smt_inst_jmp(smt_var& sv) const {
 
@@ -207,6 +194,24 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
   static void *jumptable[NUM_INSTR] = {
     [NOP]   = && INSN_NOP,
     [IMMED] = && INSN_IMMED,
+    [ALU] = && INSN_ALU,
+  };
+
+  static void *alu_jumptable[NUM_ALU_INSTR] = {
+    [ALU_PLUS] = && INSN_ALU_PLUS,
+    // [ALU_PLUS_16] = && INSN_ALU_PLUS_16,
+    // [ALU_PLUS_8] = && INSN_ALU_PLUS_8,
+    // [ALU_PLUS_CARRY] = && INSN_ALU_PLUS_CARRY,
+    // [ALU_MINUS_CARRY] = && INSN_ALU_MINUS_CARRY,
+    [ALU_MINUS] = && INSN_ALU_MINUS,
+    // [ALU_B_MIUS_A] = && INSN_ALU_B_MIUS_A,
+    // [ALU_B] = && INSN_ALU_B,
+    // [ALU_INV_B] = && INSN_ALU_INV_B,
+    // [ALU_AND] = && INSN_ALU_AND,
+    // [ALU_INV_AND] = && INSN_ALU_INV_AND,
+    // [ALU_AND_INV] = && INSN_ALU_AND_INV,
+    // [ALU_OR] = && INSN_ALU_OR,
+    // [ALU_XOR] = && INSN_ALU_XOR,
   };
 
 #undef CONT
@@ -223,8 +228,10 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
 #undef IMM2
 #define DST ps._regs[DSTREG(*insn)]
 #define SRC ps._regs[SRCREG(*insn)]
+#define SRC2 ps._regs[SRC2REG(*insn)]
 #define IMM1 IMM1VAL(*insn)
 #define IMM2 IMM2VAL(*insn)
+#define OP_SUBTYPE insn->_args[2]
 
 select_insn:
   goto *jumptable[insn->_opcode];
@@ -236,6 +243,16 @@ INSN_IMMED:
   DST = compute_mov(IMM2, DST);
   CONT;
 
+INSN_ALU:
+  goto *alu_jumptable[OP_SUBTYPE];
+
+INSN_ALU_PLUS:
+  DST = compute_add(SRC, SRC2);
+  CONT;
+
+INSN_ALU_MINUS:
+  DST = compute_add(SRC, -(SRC2));
+  CONT;
 
 
 // #undef COND_JMP
