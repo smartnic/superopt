@@ -271,17 +271,19 @@ z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
   z3::expr pkt_s = sv1.get_pkt_start_addr();
   z3::expr pkt_e = sv1.get_pkt_end_addr();
   // case 1: pkt address in both wts, latest write should be the same
-  for (int i = wt1.size() - 1; i >= 0; i--) {
-    z3::expr a1 = wt1.addr[i];
-    z3::expr v1 = wt1.val[i];
-    z3::expr f_a1 = addr_in_range(a1, pkt_s, pkt_e) &&
-                    latest_write_element(i, wt1.addr);
+  if ((wt1.size() > 0) && (wt2.size() > 0)) {
+    for (int i = wt1.size() - 1; i >= 0; i--) {
+      z3::expr a1 = wt1.addr[i];
+      z3::expr v1 = wt1.val[i];
+      z3::expr f_a1 = addr_in_range(a1, pkt_s, pkt_e) &&
+                      latest_write_element(i, wt1.addr);
 
-    for (int j = wt2.size() - 1; j >= 0; j--) {
-      z3::expr a2 = wt2.addr[j];
-      z3::expr v2 = wt2.val[j];
-      z3::expr f_a2 = latest_write_element(j, wt2.addr);
-      f = f && z3::implies(f_a1 && f_a2 && (a1 == a2), v1 == v2);
+      for (int j = wt2.size() - 1; j >= 0; j--) {
+        z3::expr a2 = wt2.addr[j];
+        z3::expr v2 = wt2.val[j];
+        z3::expr f_a2 = latest_write_element(j, wt2.addr);
+        f = f && z3::implies(f_a1 && f_a2 && (a1 == a2), v1 == v2);
+      }
     }
   }
   // case 2: pkt address in one of wts
@@ -683,6 +685,9 @@ z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
   z3::expr f = Z3_true;
   smt_wt& mem1_urt = sv1.mem_var._mem_table._urt;
   smt_wt& mem2_urt = sv2.mem_var._mem_table._urt;
+  bool cond = (mem1_urt.size() > 0) && (mem2_urt.size() > 0);
+  if (!cond) return f;
+
   z3::expr pkt_s = sv1.get_pkt_start_addr();
   z3::expr pkt_e = sv1.get_pkt_end_addr();
   for (int i = 0; i < mem1_urt.size(); i++) {
