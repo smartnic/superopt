@@ -54,6 +54,12 @@ bool prog::operator==(const prog &x) const {
   return true;
 }
 
+void prog::set_vals(const prog &x) {
+  freq_count = x.freq_count;
+  _error_cost = x._error_cost;
+  _perf_cost = x._perf_cost;
+}
+
 void prog::set_error_cost(double cost) {
   _error_cost = cost;
 }

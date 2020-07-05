@@ -21,6 +21,7 @@ class prog {
   ~prog();
   bool operator==(const prog &x) const;
   void reset_vals();
+  void set_vals(const prog &x);
   void set_error_cost(double cost);
   void set_perf_cost(double cost);
   int to_rel_bv(const prog &p) const;

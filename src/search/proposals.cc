@@ -95,6 +95,9 @@ prog* mod_random_inst_operand(const prog &orig, int win_start, int win_end) {
   prog* synth = new prog(orig);
   synth->reset_vals();
   mod_random_operand(orig, synth, inst_index);
+  if (synth->inst_list[inst_index] == orig.inst_list[inst_index]) {
+    synth->set_vals(orig);
+  }
   return synth;
 }
 
@@ -128,6 +131,9 @@ prog* mod_random_inst(const prog &orig, int win_start, int win_end) {
   synth->reset_vals();
   int inst_index = sample_int(win_start, win_end);
   mod_select_inst(synth, inst_index);
+  if (synth->inst_list[inst_index] == orig.inst_list[inst_index]) {
+    synth->set_vals(orig);
+  }
   return synth;
 }
 
@@ -143,6 +149,14 @@ prog* mod_random_k_cont_insts(const prog &orig, unsigned int k, int win_start, i
   for (int i = start_inst_index; i < start_inst_index + k; i++) {
     mod_select_inst(synth, i);
   }
+  bool is_same_pgm = true;
+  for (int i = start_inst_index; i < start_inst_index + k; i++) {
+    if (!(synth->inst_list[i] == orig.inst_list[i])) {
+      is_same_pgm = false;
+      break;
+    }
+  }
+  if (is_same_pgm) synth->set_vals(orig);
   return synth;
 }
 
