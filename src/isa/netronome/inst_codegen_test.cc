@@ -4,7 +4,7 @@
 
 using namespace std;
 
-#define v(x) to_expr(x, 32)
+#define v(x) to_expr(x, 64)
 
 bool is_valid(z3::expr smt, bool counterex_print = 0) {
   // use bv tactic to accelerate
@@ -26,7 +26,7 @@ bool is_valid(z3::expr smt, bool counterex_print = 0) {
 
 void test1() {
 	cout << "Test 1" << endl;
-	int32_t a = 4, b = 5, c = 10;
+	int64_t a = 4, b = 5, c = 10, d = 0x00010101;
 
 	c = compute_mov(a);
 	cout << c << endl;
@@ -42,6 +42,12 @@ void test1() {
 	cout << pred << endl;
 	print_test_res(is_valid(pred), "predicate_add match compute_add");
 
+  c = compute_add16(a, d, c);
+  cout << c << endl;
+  print_test_res(c == (a + L16(d)), "compute_add16");
+  pred = predicate_add16(v(a), v(d), v(c));
+  cout << pred << endl;
+  print_test_res(is_valid(pred), "predicate_add16 match compute_add16");
 }
 
 int main() {

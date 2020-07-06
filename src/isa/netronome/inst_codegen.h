@@ -28,6 +28,8 @@ inline z3::expr compute_max(z3::expr in1, z3::expr in2, z3::expr out);
 /* Inputs in1, in2, out must be side-effect-free expressions. */
 #undef ADD_EXPR
 #define ADD_EXPR(in1, in2, out) (out EQ in1 + in2)
+#undef ADD16_EXPR
+#define ADD16_EXPR(in1, in2, out) (out EQ in1 + L16(in2))
 
 /* Predicate expressions capture instructions like MAX which have different
  * results on a register based on the evaluation of a predicate. */
@@ -73,6 +75,7 @@ inline ret_t compute_##func_name(para1_t in1, para2_t in2, para3_t out) {       
 COMPUTE_UNARY(mov, MOV_EXPR, int, int, int)
 COMPUTE_BINARY(add, ADD_EXPR, int, int, int, int)
 COMPUTE_BINARY(max, MAX_EXPR, int, int, int, int)
+COMPUTE_BINARY(add16, ADD16_EXPR, int, int, int, int)
 // Functions for interpreter end
 /* Macros for interpreter end */
 
@@ -103,6 +106,7 @@ inline z3::expr predicate_##func_name(z3::expr in1, z3::expr in2, z3::expr out) 
 PREDICATE_UNARY(mov, MOV_EXPR)
 PREDICATE_BINARY(add, ADD_EXPR)
 PREDICATE_BINARY(max, MAX_EXPR)
+PREDICATE_BINARY(add16, ADD16_EXPR)
 
 // Functions for validator en
 /* Macros for validator end  */

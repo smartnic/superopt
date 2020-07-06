@@ -30,13 +30,13 @@ enum OPCODES {
 
 enum ALU_OPS {
   ALU_PLUS = 0,
-  // ALU_PLUS_16,
+  ALU_PLUS_16,
   // ALU_PLUS_8,
   // ALU_PLUS_CARRY,
   // ALU_MINUS_CARRY,
   ALU_MINUS,
-  // ALU_B_MIUS_A,
-  // ALU_B,
+  ALU_B_MIUS_A,
+  ALU_B,
   // ALU_INV_B,
   // ALU_AND,
   // ALU_INV_AND,

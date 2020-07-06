@@ -199,7 +199,7 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
 
   static void *alu_jumptable[NUM_ALU_INSTR] = {
     [ALU_PLUS] = && INSN_ALU_PLUS,
-    // [ALU_PLUS_16] = && INSN_ALU_PLUS_16,
+    [ALU_PLUS_16] = && INSN_ALU_PLUS_16,
     // [ALU_PLUS_8] = && INSN_ALU_PLUS_8,
     // [ALU_PLUS_CARRY] = && INSN_ALU_PLUS_CARRY,
     // [ALU_MINUS_CARRY] = && INSN_ALU_MINUS_CARRY,
@@ -250,8 +250,20 @@ INSN_ALU_PLUS:
   DST = compute_add(SRC, SRC2);
   CONT;
 
+INSN_ALU_PLUS_16:
+  DST = compute_add16(SRC, SRC2, DST);
+  CONT;
+
 INSN_ALU_MINUS:
   DST = compute_add(SRC, -(SRC2));
+  CONT;
+
+INSN_ALU_B_MIUS_A:
+  DST = compute_add(SRC2, -(SRC));
+  CONT;
+
+INSN_ALU_B:
+  DST = compute_mov(SRC2);
   CONT;
 
 
