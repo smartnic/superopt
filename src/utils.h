@@ -39,6 +39,7 @@ typedef int op_t;
 #define H48(v) (0xffffffffffff0000 & (v))
 #define L5(v)  (0x000000000000001f & (v))
 #define L6(v)  (0x000000000000003f & (v))
+#define L8(v)  (0x00000000000000ff & (v))
 #define L16(v) (0x000000000000ffff & (v))
 #define L32(v) (0x00000000ffffffff & (v))
 

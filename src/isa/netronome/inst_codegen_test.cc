@@ -25,29 +25,64 @@ bool is_valid(z3::expr smt, bool counterex_print = 0) {
 }
 
 void test1() {
-	cout << "Test 1" << endl;
-	int64_t a = 4, b = 5, c = 10, d = 0x00010101;
+	cout << "Test 1: ALU operations" << endl;
+	int64_t a = 5, b = 11, c = 0x0010203, z = ~0;
 
-	c = compute_mov(a);
-	cout << c << endl;
-	print_test_res(c == a, "compute_mov");
-	z3::expr pred = predicate_mov(v(a), v(c));
+	z = compute_mov(a);
+	cout << z << endl;
+	print_test_res(z == a, "compute_mov");
+	z3::expr pred = predicate_mov(v(a), v(z));
 	cout << pred << endl;
 	print_test_res(is_valid(pred), "predicate_mov match compute_mov");
 
-	c = compute_add(a, b);
-	cout << c << endl;
-	print_test_res(c == (a+b), "compute_add");
-	pred = predicate_add(v(a), v(b), v(c));
-	cout << pred << endl;
-	print_test_res(is_valid(pred), "predicate_add match compute_add");
-
-  c = compute_add16(a, d, c);
-  cout << c << endl;
-  print_test_res(c == (a + L16(d)), "compute_add16");
-  pred = predicate_add16(v(a), v(d), v(c));
+  z = compute_add16(a, c);
+  cout << z << endl;
+  print_test_res(z == a + L16(c), "compute_add16");
+  pred = predicate_add16(v(a), v(c), v(z));
   cout << pred << endl;
-  print_test_res(is_valid(pred), "predicate_add16 match compute_add16");
+  print_test_res(is_valid(pred), "predicate_add16 match compute_mov");
+
+  z = compute_add8(a, c);
+  cout << z << endl;
+  print_test_res(z == a + L8(c), "compute_add8");
+  pred = predicate_add8(v(a), v(c), v(z));
+  cout << pred << endl;
+  print_test_res(is_valid(pred), "predicate_add8 match compute_mov");
+
+  z = compute_inv(c);
+  cout << z << endl;
+  print_test_res(z == ~c, "compute_inv");
+  pred = predicate_inv(v(c), v(z));
+  cout << pred << endl;
+  print_test_res(is_valid(pred), "predicate_inv match compute_inv");
+
+  z = compute_and(a, b);
+  cout << z << endl;
+  print_test_res(z == (a & b), "compute_and");
+  pred = predicate_and(v(a), v(b), v(z));
+  cout << pred << endl;
+  print_test_res(is_valid(pred), "predicate_and match compute_and");
+
+  z = compute_inv_and(a, b);
+  cout << z << endl;
+  print_test_res(z == (~a & b), "compute_inv_and");
+  pred = predicate_inv_and(v(a), v(b), v(z));
+  cout << pred << endl;
+  print_test_res(is_valid(pred), "predicate_inv_and match compute_inv_and");
+
+  z = compute_or(a, b);
+  cout << z << endl;
+  print_test_res(z == (a | b), "compute_or");
+  pred = predicate_or(v(a), v(b), v(z));
+  cout << pred << endl;
+  print_test_res(is_valid(pred), "predicate_or match compute_or");
+
+  z = compute_xor(a, b);
+  cout << z << endl;
+  print_test_res(z == (a ^ b), "compute_xor");
+  pred = predicate_xor(v(a), v(b), v(z));
+  cout << pred << endl;
+  print_test_res(is_valid(pred), "predicate_xor match compute_xor");
 }
 
 int main() {

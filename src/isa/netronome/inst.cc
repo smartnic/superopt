@@ -200,18 +200,18 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
   static void *alu_jumptable[NUM_ALU_INSTR] = {
     [ALU_PLUS] = && INSN_ALU_PLUS,
     [ALU_PLUS_16] = && INSN_ALU_PLUS_16,
-    // [ALU_PLUS_8] = && INSN_ALU_PLUS_8,
+    [ALU_PLUS_8] = && INSN_ALU_PLUS_8,
     // [ALU_PLUS_CARRY] = && INSN_ALU_PLUS_CARRY,
     // [ALU_MINUS_CARRY] = && INSN_ALU_MINUS_CARRY,
     [ALU_MINUS] = && INSN_ALU_MINUS,
-    // [ALU_B_MIUS_A] = && INSN_ALU_B_MIUS_A,
-    // [ALU_B] = && INSN_ALU_B,
-    // [ALU_INV_B] = && INSN_ALU_INV_B,
-    // [ALU_AND] = && INSN_ALU_AND,
-    // [ALU_INV_AND] = && INSN_ALU_INV_AND,
-    // [ALU_AND_INV] = && INSN_ALU_AND_INV,
-    // [ALU_OR] = && INSN_ALU_OR,
-    // [ALU_XOR] = && INSN_ALU_XOR,
+    [ALU_B_MINUS_A] = && INSN_ALU_B_MIUS_A,
+    [ALU_B] = && INSN_ALU_B,
+    [ALU_INV_B] = && INSN_ALU_INV_B,
+    [ALU_AND] = && INSN_ALU_AND,
+    [ALU_INV_AND] = && INSN_ALU_INV_AND,
+    [ALU_AND_INV] = && INSN_ALU_AND_INV,
+    [ALU_OR] = && INSN_ALU_OR,
+    [ALU_XOR] = && INSN_ALU_XOR,
   };
 
 #undef CONT
@@ -254,6 +254,10 @@ INSN_ALU_PLUS_16:
   DST = compute_add16(SRC, SRC2, DST);
   CONT;
 
+INSN_ALU_PLUS_8:
+  DST = compute_add8(SRC, SRC2, DST);
+  CONT;
+
 INSN_ALU_MINUS:
   DST = compute_add(SRC, -(SRC2));
   CONT;
@@ -266,6 +270,29 @@ INSN_ALU_B:
   DST = compute_mov(SRC2);
   CONT;
 
+INSN_ALU_INV_B:
+  DST = compute_inv(SRC2, DST);
+  CONT;
+
+INSN_ALU_AND:
+  DST = compute_and(SRC, SRC2, DST);
+  CONT;
+
+INSN_ALU_INV_AND:
+  DST = compute_inv_and(SRC, SRC2, DST);
+  CONT;
+
+INSN_ALU_AND_INV:
+  DST = compute_inv_and(SRC2, SRC, DST); // note backwards
+  CONT;
+
+INSN_ALU_OR:
+  DST = compute_or(SRC, SRC2, DST);
+  CONT;
+
+INSN_ALU_XOR:
+  DST = compute_xor(SRC, SRC2, DST);
+  CONT;
 
 // #undef COND_JMP
 // #define COND_JMP(SUFFIX, OP)                    \

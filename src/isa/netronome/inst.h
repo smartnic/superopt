@@ -31,18 +31,18 @@ enum OPCODES {
 enum ALU_OPS {
   ALU_PLUS = 0,
   ALU_PLUS_16,
-  // ALU_PLUS_8,
+  ALU_PLUS_8,
   // ALU_PLUS_CARRY,
   // ALU_MINUS_CARRY,
   ALU_MINUS,
-  ALU_B_MIUS_A,
+  ALU_B_MINUS_A,
   ALU_B,
-  // ALU_INV_B,
-  // ALU_AND,
-  // ALU_INV_AND,
-  // ALU_AND_INV,
-  // ALU_OR,
-  // ALU_XOR,
+  ALU_INV_B,
+  ALU_AND,
+  ALU_INV_AND,
+  ALU_AND_INV,
+  ALU_OR,
+  ALU_XOR,
   NUM_ALU_INSTR // number of alu operations
 };
 
@@ -86,18 +86,6 @@ static constexpr int optable[NUM_INSTR] = {
   [NOP]   = UNUSED_OPS,
   [IMMED] = OP1(OP_REG) | OP2(OP_IMM) | OP3(OP_UNUSED),
   [ALU]   = OP1(OP_REG) | OP2(OP_REG) | OP3(OP_OPTYPE) | OP4(OP_REG),
-  // [ADDXY] = FSTOP(OP_REG) | SNDOP(OP_REG) | OP3(OP_UNUSED),
-  // [MOVXC] = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
-  // [RETX]  = FSTOP(OP_REG) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
-  // [RETC]  = FSTOP(OP_IMM) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
-  // [JMP]   = FSTOP(OP_OFF) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED),
-  // [JMPEQ] = JMP_OPS,
-  // [JMPGT] = JMP_OPS,
-  // [JMPGE] = JMP_OPS,
-  // [JMPLT] = JMP_OPS,
-  // [JMPLE] = JMP_OPS,
-  // [MAXC]  = FSTOP(OP_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED),
-  // [MAXX]  = FSTOP(OP_REG) | SNDOP(OP_REG) | TRDOP(OP_UNUSED),
 };
 #undef OP1
 #undef OP2
