@@ -7,6 +7,8 @@
 #include "smt_prog.h"
 
 using namespace z3;
+extern int n_solve;
+extern int n_is_equal_to;
 
 /* Validator algorithm document: https://github.com/ngsrinivas/superopt/tree/master/doc */
 

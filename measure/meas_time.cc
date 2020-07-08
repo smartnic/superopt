@@ -63,6 +63,7 @@ void time_validator_get_orig_output() {
 
 void time_interpret() {
   prog_state ps;
+  ps.init();
   inout_t in, out;
   in.init();
   out.init();

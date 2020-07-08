@@ -8,6 +8,9 @@
 #include "../../src/verify/validator.h"
 
 using namespace std;
+extern int dur_sum;
+extern int dur_sum_long;
+extern int n_sum_long;
 
 #define ERROR_COST_STRATEGY_ABS 0
 #define ERROR_COST_STRATEGY_POP 1

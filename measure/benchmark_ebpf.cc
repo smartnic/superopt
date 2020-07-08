@@ -225,6 +225,40 @@ inst bm_opti50[N5] = {inst(STW, 1, 0, 0), // *(u32 *)(pkt + 0) = 0
                       inst(),
                       inst(),
                      };
+// r0 = L32(r1)
+inst bm6[N6] = {inst(MOV32XY, 0, 1),
+                inst(LSH64XC, 0, 32),
+                inst(RSH64XC, 0, 32),
+                inst(),
+                inst(),
+                inst(),
+                inst(),
+               };
+inst bm_opti60[N6] = {inst(MOV32XY, 0, 1),
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                     };
+// r0 = r1
+inst bm7[N7] = {inst(MOV64XY, 0, 1),
+                inst(STXB, 10, -1, 1),
+                inst(STXB, 10, -2, 1),
+                inst(),
+                inst(),
+                inst(),
+                inst(),
+               };
+inst bm_opti70[N7] = {inst(MOV64XY, 0, 1),
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                     };
 
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
@@ -267,6 +301,16 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::set_pkt_sz(4);
       *bm = bm5;
       bm_optis_orig.push_back(bm_opti50);
+      return;
+    case 6:
+      inst::max_prog_len = N6;
+      *bm = bm6;
+      bm_optis_orig.push_back(bm_opti60);
+      return;
+    case 7:
+      inst::max_prog_len = N7;
+      *bm = bm7;
+      bm_optis_orig.push_back(bm_opti70);
       return;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;

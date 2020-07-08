@@ -99,7 +99,10 @@ void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
                 in_para.st_avg);
+  n_is_equal_to = 0;
+  n_solve = 0;
   mh.mcmc_iter(in_para.niter, orig, prog_dic);
+  cout << "n_is_equal_to: " << n_is_equal_to << ", n_solve: " << n_solve << endl;
   if (in_para.meas_mode) {
     string suffix = gen_file_name_suffix_from_input(in_para);
     vector<prog> bm_optimals;
@@ -335,6 +338,9 @@ void set_default_para_vals(input_paras &in_para) {
 }
 
 int main(int argc, char* argv[]) {
+  dur_sum = 0;
+  dur_sum_long = 0;
+  n_sum_long = 0;
   input_paras in_para;
   set_default_para_vals(in_para);
   if (! parse_input(argc, argv, in_para)) return 0;
@@ -351,6 +357,11 @@ int main(int argc, char* argv[]) {
   gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);
   auto end = NOW;
+  cout << "validator time: " << dur_sum << endl;
+  if (n_sum_long > 0)
+    cout << "validator long time: " << dur_sum_long << " " << n_sum_long << " " << dur_sum_long / n_sum_long << endl;
+  else
+    cout << "validator long time: " << dur_sum_long << endl;
   cout << "compiling time: " << DUR(start, end) << " us" << endl;
   return 0;
 }

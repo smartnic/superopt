@@ -5,6 +5,9 @@
 
 using namespace z3;
 
+int n_solve;
+int n_is_equal_to;
+
 /* class validator start */
 validator::validator() {
   _last_counterex.input.init();
@@ -106,6 +109,7 @@ void validator::set_orig(expr fx, expr input, expr output) {
 }
 
 int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_syn) {
+  n_is_equal_to++;
   expr pre_synth = string_to_expr("true");
   smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg());
   smt_prog ps_synth;
@@ -117,6 +121,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     // cerr << err_msg << endl;
     return -1;
   }
+  n_solve++;
   smt_var post_sv_synth = ps_synth.sv;
   expr pre_mem_same_mem = smt_pgm_set_same_input(_post_sv_orig, post_sv_synth);
   expr post = string_to_expr("true");
@@ -128,6 +133,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   model mdl(smt_c);
   int is_equal = is_smt_valid(smt, mdl);
   if (is_equal == 0) {
+    // cout << is_equal << endl;
     gen_counterex(orig, length_orig, mdl, post_sv_synth);
   }
   return is_equal;

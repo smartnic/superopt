@@ -5,6 +5,9 @@
 #include <climits>
 #include "cost.h"
 
+int dur_sum;
+int dur_sum_long;
+int n_sum_long;
 #define ERROR_COST_MAX 100000
 
 cost::cost() {}
@@ -32,7 +35,7 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
   } catch (const string err_msg) {
     cout << "ERROR: cost::init(): ";
     cerr << err_msg << endl;
-    throw(err_msg);
+    throw (err_msg);
     return;
   }
   _w_e = w_e;
@@ -181,7 +184,17 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   int ex_set_size = _examples._exs.size();
 
   if (num_successful_ex == ex_set_size) {
+    auto t1 = NOW;
     is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+    auto t2 = NOW;
+    auto dur = DUR(t1, t2);
+    // cout << dur << endl;
+    dur_sum += dur;
+    if (dur > 50000) {
+      dur_sum_long += dur;
+      n_sum_long++;
+      // synth->print();
+    }
   }
 
   int avg_value = get_avg_value(ex_set_size);
@@ -200,6 +213,8 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if ((is_equal == 0) && (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
+    cout << _vld._last_counterex.output << endl;
+    synth->print();
   }
   // in case there is overflow which makes a positive value become a negative value or
   // total_cost > ERROR_COST_MAX

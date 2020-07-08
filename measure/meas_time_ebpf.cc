@@ -194,7 +194,154 @@ void time_z3_solver_pgm(int type) {
   }
 }
 
+// stack: st, st, st, st + ld
+inst pgm1[5] = {inst(STB, 10, -1, 0),
+                inst(STB, 10, -2, 0),
+                inst(STB, 10, -3, 0),
+                inst(STB, 10, -4, 0),
+                inst(LDXB, 0, 10, -1),
+               };
+inst pgm2[5] = {inst(STB, 10, -1, 11),
+                inst(STB, 10, -2, 22),
+                inst(STB, 10, -3, 33),
+                inst(STB, 10, -4, 44),
+                inst(LDXB, 0, 10, -1),
+               };
+inst pgm3[5] = {inst(STXB, 10, -1, 0),
+                inst(STXB, 10, -2, 0),
+                inst(STXB, 10, -3, 0),
+                inst(STXB, 10, -4, 0),
+                inst(LDXB, 0, 10, -1),
+               };
+inst pgm4[5] = {inst(STXB, 10, -1, 1),
+                inst(STXB, 10, -2, 1),
+                inst(STXB, 10, -3, 1),
+                inst(STXB, 10, -4, 1),
+                inst(LDXB, 0, 10, -1),
+               };
+// pkt: st, st, st, st
+inst pgm5[5] = {inst(STB, 1, 1, 0),
+                inst(STB, 1, 2, 0),
+                inst(STB, 1, 3, 0),
+                inst(STB, 1, 4, 0),
+                inst(),
+               };
+inst pgm6[5] = {inst(STB, 1, 1, 11),
+                inst(STB, 1, 2, 22),
+                inst(STB, 1, 3, 33),
+                inst(STB, 1, 4, 44),
+                inst(),
+               };
+inst pgm7[5] = {inst(STXB, 1, 1, 0),
+                inst(STXB, 1, 2, 0),
+                inst(STXB, 1, 3, 0),
+                inst(STXB, 1, 4, 0),
+                inst(),
+               };
+inst pgm8[5] = {inst(STXB, 1, 1, 1),
+                inst(STXB, 1, 2, 2),
+                inst(STXB, 1, 3, 3),
+                inst(STXB, 1, 4, 4),
+                inst(),
+               };
+// stack + pkt
+inst pgm9[5] = {inst(STXB, 1, 1, 1),
+                inst(STXB, 1, 2, 1),
+                inst(STXB, 10, -1, 1),
+                inst(STXB, 10, -2, 1),
+                inst(LDXB, 0, 10, -1),
+               };
+inst pgm10[5] = {inst(STB, 1, 1, 0),
+                 inst(STB, 1, 2, 0),
+                 inst(STB, 1, 3, 0),
+                 inst(STB, 1, 4, 0),
+                 inst(STDW, 10, -16, 0),
+                };
+inst pgm11[5] = {inst(STB, 1, 1, 0),
+                 inst(STB, 1, 2, 0),
+                 inst(STB, 1, 3, 0),
+                 inst(STB, 1, 4, 0),
+                 inst(STXDW, 10, -16, 0),
+                };
+// pkt ld
+inst pgm12[5] = {inst(LDXB, 0, 1, 1),
+                 inst(LDXB, 0, 1, 2),
+                 inst(LDXB, 0, 1, 3),
+                 inst(LDXB, 0, 1, 4),
+                 inst(),
+                };
+inst pgm13[5] = {inst(LDXDW, 0, 1, 1),
+                 inst(LDXDW, 0, 1, 2),
+                 inst(LDXDW, 0, 1, 3),
+                 inst(LDXDW, 0, 1, 4),
+                 inst(),
+                };
+inst pgm14[5] = {inst(LDXDW, 0, 1, 0),
+                 inst(LDXDW, 0, 1, 4),
+                 inst(LDXDW, 0, 1, 8),
+                 inst(LDXDW, 0, 1, 12),
+                 inst(),
+                };
+void time_is_equal_to_pgm(inst* pgm, int len) {
+  validator vld;
+  vld.set_orig(pgm, len);
+  time_measure(vld.is_equal_to(pgm, len, pgm, len), 1,
+               "validator::is_equal_to: ");
+}
+
+void time_is_equal_to_pgms(inst* pgm1, int len1, inst* pgm2, int len2) {
+  validator vld;
+  vld.set_orig(pgm1, len1);
+  time_measure(vld.is_equal_to(pgm1, len1, pgm2, len2), 10,
+               "validator::is_equal_to: ");
+}
+
+void time_error_cost_without_solver() {
+  double w_e = 1.0;
+  double w_p = 0.0;
+  vector<inout_t> inputs(5);
+  for (int i = 0; i < inputs.size(); i++) {
+    inputs[i].init();
+  }
+  gen_random_input(inputs, -50, 50);
+  cost c;
+  prog orig(bm0);
+  c.init(&orig, N0, inputs, w_e, w_p);
+  time_measure(c.error_cost(&orig, inst::max_prog_len, &orig, inst::max_prog_len);
+               orig._error_cost = -1;
+               orig._perf_cost = -1,
+               200,
+               "cost::error_cost: "
+              );
+}
+
 int main() {
+  cout << "stack" << endl;
+  time_is_equal_to_pgm(pgm1, 5);
+  time_is_equal_to_pgm(pgm2, 5);
+  time_is_equal_to_pgm(pgm3, 5);
+  time_is_equal_to_pgm(pgm4, 5);
+
+  cout << "packet" << endl;
+  mem_t::set_pkt_sz(20);
+  time_is_equal_to_pgm(pgm5, 5);
+  time_is_equal_to_pgm(pgm6, 5);
+  time_is_equal_to_pgm(pgm7, 5);
+  time_is_equal_to_pgm(pgm8, 5);
+
+  cout << "stack + packet" << endl;
+  time_is_equal_to_pgm(pgm9, 5);
+  time_is_equal_to_pgm(pgm10, 5);
+  time_is_equal_to_pgm(pgm11, 5);
+  time_is_equal_to_pgms(pgm5, 5, pgm11, 5);
+  time_is_equal_to_pgms(pgm11, 5, pgm5, 5);
+
+  cout << "packet ld" << endl;
+  time_is_equal_to_pgm(pgm12, 5);
+  time_is_equal_to_pgm(pgm13, 5);
+  time_is_equal_to_pgm(pgm14, 5);
+
+  return 0;
   inst::max_prog_len = N3;
   inst::add_sample_imm(vector<int32_t> {264});
   mem_t::set_pkt_sz(128);
