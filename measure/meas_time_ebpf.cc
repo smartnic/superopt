@@ -308,15 +308,26 @@ void set_as_pgm_diff_offsets_3(inst* pgm, int len) {
   }
 }
 
+// st + ld for pkt+stack, ld from pkt, st to stack, with diff offsets
+void set_as_pgm_diff_offsets_4(inst* pgm, int len) {
+  for (int i = 0; i < len / 2; i++) {
+    int off = i;
+    pgm[i * 2] = inst(LDXB, 0, 1, off);     // r0 = *(u8 *)(r1 + off)
+    pgm[i * 2 + 1] = inst(STXB, 10, -off, 0); // *(u8 *)(r10 - off) = r0;
+  }
+}
+
 void time_is_equal_to_pgm_diff_len_type(int n_off, int type) {
   int len;
   if (type == 1) len = n_off; // n pkt st
   else if (type == 2) len = n_off + 1; // n pkt st + 1 pkt ld
   else if (type == 3) len = n_off; // n pkt ld
+  else if (type == 4) len = n_off;
   inst* pgm = (inst*)malloc(len * sizeof(inst));
   if (type == 1) set_as_pgm_diff_offsets_1(pgm, len);
   else if (type == 2) set_as_pgm_diff_offsets_2(pgm, len);
   else if (type == 3) set_as_pgm_diff_offsets_3(pgm, len);
+  else if (type == 4) set_as_pgm_diff_offsets_4(pgm, len);
 
   mem_t::_layout.clear();
   mem_t::set_pkt_sz(len + 1);
@@ -330,7 +341,7 @@ void time_is_equal_to_pgm_diff_len_type(int n_off, int type) {
 }
 
 void time_is_equal_to_pgm_diff_len() {
-  vector<int> n_off = {1, 2, 4, 8, 16, 32, 64, 128};
+  vector<int> n_off = {2, 4, 8, 16, 32, 64, 128};
   cout << "pkt: n st" << endl;
   for (int i = 0; i < n_off.size(); i++) {
     cout << "n_offsets: " << n_off[i] << "\t";
@@ -346,6 +357,11 @@ void time_is_equal_to_pgm_diff_len() {
     cout << "n_offsets: " << n_off[i] << "\t";
     time_is_equal_to_pgm_diff_len_type(n_off[i], 3);
   }
+  cout << "n/2 (pkt ld + stack st)" << endl;
+  for (int i = 0; i < n_off.size(); i++) {
+    cout << "n_offsets: " << n_off[i] << "\t";
+    time_is_equal_to_pgm_diff_len_type(n_off[i], 4);
+  }  
 }
 
 void time_is_equal_to_pgm(inst* pgm, int len) {
