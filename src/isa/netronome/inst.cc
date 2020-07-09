@@ -233,6 +233,16 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
 #define IMM2 IMM2VAL(*insn)
 #define OP_SUBTYPE insn->_args[2]
 
+// what's the better way to test for this?
+// ps._unsigned_carry = (SRC > UINT32_MAX - SRC2) : 1 ? 0;
+#define SET_CARRY {                                                   \
+  ps._unsigned_carry = (((uint64_t)SRC + (uint64_t)SRC2) >> 32) & 1;  \
+}
+
+#define CLEAR_CARRY {     \
+  ps._unsigned_carry = 0; \
+}
+
 select_insn:
   goto *jumptable[insn->_opcode];
 
@@ -248,50 +258,62 @@ INSN_ALU:
 
 INSN_ALU_PLUS:
   DST = compute_add(SRC, SRC2);
+  SET_CARRY;
   CONT;
 
 INSN_ALU_PLUS_16:
   DST = compute_add16(SRC, SRC2, DST);
+  SET_CARRY;
   CONT;
 
 INSN_ALU_PLUS_8:
   DST = compute_add8(SRC, SRC2, DST);
+  SET_CARRY;
   CONT;
 
 INSN_ALU_MINUS:
   DST = compute_add(SRC, -(SRC2));
+  SET_CARRY;
   CONT;
 
 INSN_ALU_B_MIUS_A:
   DST = compute_add(SRC2, -(SRC));
+  SET_CARRY;
   CONT;
 
 INSN_ALU_B:
   DST = compute_mov(SRC2);
+  CLEAR_CARRY;
   CONT;
 
 INSN_ALU_INV_B:
   DST = compute_inv(SRC2, DST);
+  CLEAR_CARRY;
   CONT;
 
 INSN_ALU_AND:
   DST = compute_and(SRC, SRC2, DST);
+  CLEAR_CARRY;
   CONT;
 
 INSN_ALU_INV_AND:
   DST = compute_inv_and(SRC, SRC2, DST);
+  CLEAR_CARRY;
   CONT;
 
 INSN_ALU_AND_INV:
   DST = compute_inv_and(SRC2, SRC, DST); // note backwards
+  CLEAR_CARRY;
   CONT;
 
 INSN_ALU_OR:
   DST = compute_or(SRC, SRC2, DST);
+  CLEAR_CARRY;
   CONT;
 
 INSN_ALU_XOR:
   DST = compute_xor(SRC, SRC2, DST);
+  CLEAR_CARRY;
   CONT;
 
 // #undef COND_JMP

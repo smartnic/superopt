@@ -47,6 +47,28 @@ inst instructions5[] = {
 	inst(ALU, 0, 16, ALU_XOR, 17)
 };
 
+static void test6() {
+	inst instructions[] {
+		inst(IMMED, 1, 0xffffffff),
+		inst(IMMED, 2, 2),
+		inst(ALU, 0, 1, ALU_PLUS, 2),
+		inst(ALU, 16, 16, ALU_B, 16)
+	};
+	int len = sizeof(instructions) / sizeof(inst);
+
+	prog_state ps;
+	inout_t input, output, expected;
+	input.init(); output.init(); expected.init();
+	expected.reg = 1;
+	
+	cout << "Test 6: testing carry flag" << endl;
+	interpret(output, instructions, len, ps, input);
+	cout << ps << endl;
+	print_test_res(output == expected, "correct lower 32 bits");
+	print_test_res(ps._unsigned_carry == 1, "correct carry");
+	
+}
+
 int main(int argc, char *argv[]) {
   cout << "=== Interpretation tests for Netronome ISA ===" << endl;
   run_test("Test 1", "nop, immed", instructions1, sizeof(instructions1)/sizeof(inst), 7);
@@ -54,5 +76,6 @@ int main(int argc, char *argv[]) {
   run_test("Test 3", "immed, alu +16", instructions3, sizeof(instructions3)/sizeof(inst), 5);
   run_test("Test 4", "alu ~B", instructions4, sizeof(instructions4)/sizeof(inst), -2);
   run_test("Test 5", "alu", instructions5, sizeof(instructions5)/sizeof(inst), 5 ^ 11);
+  test6();
   return 0;
 }

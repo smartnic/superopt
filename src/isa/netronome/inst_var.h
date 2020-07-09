@@ -20,6 +20,8 @@ class smt_var: public smt_var_base {
 
 class prog_state: public prog_state_base {
  public:
+  int _unsigned_carry = 0;
+
   prog_state() {_regs.resize(NUM_REGS, 0);}
 
   friend ostream& operator<<(ostream& out, const prog_state& ps) {
@@ -28,7 +30,8 @@ class prog_state: public prog_state_base {
       if (i > 0) out << ",";
       out << ps._regs[i];
     }
-    out << "]";
+    out << "]" << endl;
+    out << "Carry bit: " << ps._unsigned_carry << endl;
     return out;
   }
 
