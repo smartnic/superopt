@@ -341,7 +341,7 @@ void time_is_equal_to_pgm_diff_len_type(int n_off, int type) {
 }
 
 void time_is_equal_to_pgm_diff_len() {
-  vector<int> n_off = {2, 4, 8, 16, 32, 64, 128};
+  vector<int> n_off = {1, 2, 4, 8, 16, 32, 64, 128};
   cout << "pkt: n st" << endl;
   for (int i = 0; i < n_off.size(); i++) {
     cout << "n_offsets: " << n_off[i] << "\t";
@@ -358,7 +358,7 @@ void time_is_equal_to_pgm_diff_len() {
     time_is_equal_to_pgm_diff_len_type(n_off[i], 3);
   }
   cout << "n/2 (pkt ld + stack st)" << endl;
-  for (int i = 0; i < n_off.size(); i++) {
+  for (int i = 1; i < n_off.size(); i++) {
     cout << "n_offsets: " << n_off[i] << "\t";
     time_is_equal_to_pgm_diff_len_type(n_off[i], 4);
   }  
