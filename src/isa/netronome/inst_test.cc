@@ -49,10 +49,10 @@ inst instructions5[] = {
 
 int main(int argc, char *argv[]) {
   cout << "=== Interpretation tests for Netronome ISA ===" << endl;
-  // run_test("Test 1", "nop, immed", instructions1, sizeof(instructions1)/sizeof(inst), 7);
-  // run_test("Test 2", "immed, alu add", instructions2, sizeof(instructions2)/sizeof(inst), 8);
-  // run_test("Test 3", "immed, alu +16", instructions3, sizeof(instructions3)/sizeof(inst), 5);
-  // run_test("Test 4", "alu ~B", instructions4, sizeof(instructions4)/sizeof(inst), -2);
+  run_test("Test 1", "nop, immed", instructions1, sizeof(instructions1)/sizeof(inst), 7);
+  run_test("Test 2", "immed, alu add", instructions2, sizeof(instructions2)/sizeof(inst), 8);
+  run_test("Test 3", "immed, alu +16", instructions3, sizeof(instructions3)/sizeof(inst), 5);
+  run_test("Test 4", "alu ~B", instructions4, sizeof(instructions4)/sizeof(inst), -2);
   run_test("Test 5", "alu", instructions5, sizeof(instructions5)/sizeof(inst), 5 ^ 11);
   return 0;
 }

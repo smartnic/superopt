@@ -23,6 +23,7 @@ z3::expr to_bool_expr(string s);
 z3::expr to_expr(int64_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(uint64_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
+z3::expr to_expr(uint32_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(string s, unsigned sz);
 
 // SMT Variable format

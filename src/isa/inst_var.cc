@@ -30,6 +30,10 @@ z3::expr to_expr(int32_t x, unsigned sz) {
   return smt_c.bv_val(x, sz);
 }
 
+z3::expr to_expr(uint32_t x, unsigned sz) {
+  return smt_c.bv_val(x, sz);
+}
+
 z3::expr to_expr(string s, unsigned sz) {
   return smt_c.bv_const(s.c_str(), sz);
 }

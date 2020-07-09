@@ -20,7 +20,7 @@ typedef int64_t reg_t;
 typedef int32_t op_t;
 #define NUM_REG_BITS 64
 #elif ISA_NETRONOME
-typedef int32_t reg_t;
+typedef uint32_t reg_t;
 typedef int op_t; // ?
 #define NUM_REG_BITS 32 // ?
 #else
