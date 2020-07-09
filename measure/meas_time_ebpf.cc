@@ -285,14 +285,14 @@ inst pgm14[5] = {inst(LDXDW, 0, 1, 0),
 void time_is_equal_to_pgm(inst* pgm, int len) {
   validator vld;
   vld.set_orig(pgm, len);
-  time_measure(vld.is_equal_to(pgm, len, pgm, len), 1,
+  time_measure(vld.is_equal_to(pgm, len, pgm, len), 50,
                "validator::is_equal_to: ");
 }
 
 void time_is_equal_to_pgms(inst* pgm1, int len1, inst* pgm2, int len2) {
   validator vld;
   vld.set_orig(pgm1, len1);
-  time_measure(vld.is_equal_to(pgm1, len1, pgm2, len2), 10,
+  time_measure(vld.is_equal_to(pgm1, len1, pgm2, len2), 50,
                "validator::is_equal_to: ");
 }
 
