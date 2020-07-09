@@ -282,7 +282,74 @@ inst pgm14[5] = {inst(LDXDW, 0, 1, 0),
                  inst(LDXDW, 0, 1, 12),
                  inst(),
                 };
+
+void set_as_pgm_diff_offsets_1(inst* pgm, int len) {
+  for (int i = 0; i < len; i++) {
+    int off = i;
+    int src_reg = i % NUM_REGS;
+    pgm[i] = inst(STXB, 1, off, src_reg); // *(u8 *)(r1 + off) = src_reg
+  }
+}
+
+void set_as_pgm_diff_offsets_2(inst* pgm, int len) {
+  for (int i = 0; i < len - 1; i++) {
+    int off = i;
+    int src_reg = i % NUM_REGS;
+    pgm[i] = inst(STXB, 1, off, src_reg); // *(u8 *)(r1 + off) = src_reg
+  }
+  int dst_reg = 0, src_reg = 1, off = 0;
+  pgm[len - 1] = inst(LDXB, dst_reg, src_reg, off);
+}
+
+void set_as_pgm_diff_offsets_3(inst* pgm, int len) {
+  for (int i = 0; i < len; i++) {
+    int off = i;
+    pgm[i] = inst(LDXB, 0, 1, off); // r0 = *(u8 *)(r1 + off)
+  }
+}
+
+void time_is_equal_to_pgm_diff_len_type(int n_off, int type) {
+  int len;
+  if (type == 1) len = n_off; // n pkt st
+  else if (type == 2) len = n_off + 1; // n pkt st + 1 pkt ld
+  else if (type == 3) len = n_off; // n pkt ld
+  inst* pgm = (inst*)malloc(len * sizeof(inst));
+  if (type == 1) set_as_pgm_diff_offsets_1(pgm, len);
+  else if (type == 2) set_as_pgm_diff_offsets_2(pgm, len);
+  else if (type == 3) set_as_pgm_diff_offsets_3(pgm, len);
+
+  mem_t::_layout.clear();
+  mem_t::set_pkt_sz(len + 1);
+  inst::max_prog_len = len;
+  validator vld;
+  vld.set_orig(pgm, len);
+  time_measure(vld.is_equal_to(pgm, len, pgm, len), 10,
+               "validator::is_equal_to: ");
+  free(pgm);
+  pgm = nullptr;
+}
+
+void time_is_equal_to_pgm_diff_len() {
+  vector<int> n_off = {1, 2, 4, 8, 16, 32, 64, 128};
+  cout << "pkt: n st" << endl;
+  for (int i = 0; i < n_off.size(); i++) {
+    cout << "n_offsets: " << n_off[i] << "\t";
+    time_is_equal_to_pgm_diff_len_type(n_off[i], 1);
+  }
+  cout << "pkt: n st + 1 ld" << endl;
+  for (int i = 0; i < n_off.size(); i++) {
+    cout << "n_offsets: " << n_off[i] << "\t";
+    time_is_equal_to_pgm_diff_len_type(n_off[i], 2);
+  }
+  cout << "pkt: n ld" << endl;
+  for (int i = 0; i < n_off.size(); i++) {
+    cout << "n_offsets: " << n_off[i] << "\t";
+    time_is_equal_to_pgm_diff_len_type(n_off[i], 3);
+  }
+}
+
 void time_is_equal_to_pgm(inst* pgm, int len) {
+  inst::max_prog_len = len;
   validator vld;
   vld.set_orig(pgm, len);
   time_measure(vld.is_equal_to(pgm, len, pgm, len), 50,
@@ -315,7 +382,16 @@ void time_error_cost_without_solver() {
               );
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+  int loop_times = 1;
+  if (argc > 1) {
+    loop_times = atoi(argv[1]);
+  }
+  for (int i = 0; i < loop_times; i++) {
+    cout << "loop_time: " << i << endl;
+    time_is_equal_to_pgm_diff_len();
+  }
+  return 0;
   cout << "stack" << endl;
   time_is_equal_to_pgm(pgm1, 5);
   time_is_equal_to_pgm(pgm2, 5);
@@ -323,6 +399,7 @@ int main() {
   time_is_equal_to_pgm(pgm4, 5);
 
   cout << "packet" << endl;
+  mem_t::_layout.clear();
   mem_t::set_pkt_sz(20);
   time_is_equal_to_pgm(pgm5, 5);
   time_is_equal_to_pgm(pgm6, 5);
