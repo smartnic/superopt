@@ -9,23 +9,25 @@ using namespace std;
 
 /* APIs exposed to the externals start */
 // return (out = in)
-inline int64_t compute_mov(int64_t in, int64_t out = 0);
+inline uint32_t compute_mov(uint32_t in, uint32_t out = 0);
 // return (out = max(in1, in2))
-// inline int64_t compute_max(int64_t in1, int64_t in2, int64_t out = 0);
+// inline uint32_t compute_max(uint32_t in1, uint32_t in2, uint32_t out = 0);
 
 inline z3::expr predicate_mov(z3::expr in, z3::expr out);
 // return (out == max(in1, in2))
 // inline z3::expr predicate_max(z3::expr in1, z3::expr in2, z3::expr out);
 
 // ALU ops
-inline int64_t compute_add(int64_t in1, int64_t in2, int64_t out = 0);
-inline int64_t compute_add16(int64_t in1, int64_t in2, int64_t out = 0);
-inline int64_t compute_add8(int64_t in1, int64_t in2, int64_t out = 0);
-inline int64_t compute_inv(int64_t in, int64_t out = 0);
-inline int64_t compute_and(int64_t in1, int64_t in2, int64_t out = 0);
-inline int64_t compute_inv_and(int64_t in1, int64_t in2, int64_t out = 0);
-inline int64_t compute_or(int64_t in1, int64_t in2, int64_t out = 0);
-inline int64_t compute_xor(int64_t in1, int64_t in2, int64_t out = 0);
+inline uint32_t compute_add(uint32_t in1, uint32_t in2, uint32_t out = 0);
+inline uint32_t compute_subtract(uint32_t in1, uint32_t in2, uint32_t out = 0);
+inline uint32_t compute_add16(uint32_t in1, uint32_t in2, uint32_t out = 0);
+inline uint32_t compute_add8(uint32_t in1, uint32_t in2, uint32_t out = 0);
+inline uint32_t compute_inv(uint32_t in, uint32_t out = 0);
+inline uint32_t compute_and(uint32_t in1, uint32_t in2, uint32_t out = 0);
+inline uint32_t compute_inv_and(uint32_t in1, uint32_t in2, uint32_t out = 0);
+inline uint32_t compute_or(uint32_t in1, uint32_t in2, uint32_t out = 0);
+inline uint32_t compute_xor(uint32_t in1, uint32_t in2, uint32_t out = 0);
+inline uint32_t compute_add_ternary(uint32_t in1, uint32_t in2, uint32_t in3, uint32_t out = 0);
 
 inline z3::expr predicate_add(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_add16(z3::expr in1, z3::expr in2, z3::expr out);
@@ -44,8 +46,12 @@ inline z3::expr predicate_xor(z3::expr in1, z3::expr in2, z3::expr out);
 #undef INV_EXPR
 #define INV_EXPR(in, out) (out EQ ~(in))
 /* Inputs in1, in2, out must be side-effect-free expressions. */
+
+// ALU expressions
 #undef ADD_EXPR
 #define ADD_EXPR(in1, in2, out) (out EQ in1 + in2)
+#undef SUBTRACT_EXPR
+#define SUBTRACT_EXPR(in1, in2, out) (out EQ in1 - in2)
 #undef ADD16_EXPR
 #define ADD16_EXPR(in1, in2, out) (out EQ in1 + L16(in2))
 #undef ADD8_EXPR
@@ -58,6 +64,8 @@ inline z3::expr predicate_xor(z3::expr in1, z3::expr in2, z3::expr out);
 #define OR_EXPR(in1, in2, out) (out EQ (in1 | in2))
 #undef XOR_EXPR
 #define XOR_EXPR(in1, in2, out) (out EQ (in1 ^ in2))
+
+#define ADD_TERNARY_EXPR(in1, in2, in3, out) (out EQ in1 + in2 + in3)
 
 /* Predicate expressions capture instructions like MAX which have different
  * results on a register based on the evaluation of a predicate. */
@@ -88,15 +96,22 @@ inline z3::expr predicate_xor(z3::expr in1, z3::expr in2, z3::expr out);
 // Functions for interpreter start
 #undef COMPUTE_UNARY
 #define COMPUTE_UNARY(func_name, operation)                                      \
-inline int64_t compute_##func_name(int64_t in, int64_t out) {                    \
+inline uint32_t compute_##func_name(uint32_t in, uint32_t out) {                    \
   operation(in, out);                                                            \
   return out;                                                                    \
 }
 
 #undef COMPUTE_BINARY
 #define COMPUTE_BINARY(func_name, operation)                                     \
-inline int64_t compute_##func_name(int64_t in1, int64_t in2, int64_t out) {      \
+inline uint32_t compute_##func_name(uint32_t in1, uint32_t in2, uint32_t out) {      \
   operation(in1, in2, out);                                                      \
+  return out;                                                                    \
+}
+
+#undef COMPUTE_TERNARY
+#define COMPUTE_TERNARY(func_name, operation)                                     \
+inline uint32_t compute_##func_name(uint32_t in1, uint32_t in2, uint32_t in3, uint32_t out) {      \
+  operation(in1, in2, in3, out);                                                      \
   return out;                                                                    \
 }
 
@@ -105,6 +120,7 @@ COMPUTE_UNARY(mov, MOV_EXPR)
 
 // ALU operations
 COMPUTE_BINARY(add, ADD_EXPR)
+COMPUTE_BINARY(subtract, SUBTRACT_EXPR)
 COMPUTE_BINARY(add16, ADD16_EXPR)
 COMPUTE_BINARY(add8, ADD8_EXPR)
 COMPUTE_UNARY(inv, INV_EXPR)
@@ -112,6 +128,7 @@ COMPUTE_BINARY(and, AND_EXPR)
 COMPUTE_BINARY(inv_and, INV_AND_EXPR)
 COMPUTE_BINARY(or, OR_EXPR)
 COMPUTE_BINARY(xor, XOR_EXPR)
+COMPUTE_TERNARY(add_carry, ADD_TERNARY_EXPR)
 
 // Functions for interpreter end
 /* Macros for interpreter end */
@@ -145,6 +162,7 @@ PREDICATE_UNARY(mov, MOV_EXPR)
 
 // ALU predicates
 PREDICATE_BINARY(add, ADD_EXPR)
+PREDICATE_BINARY(subtract, SUBTRACT_EXPR)
 PREDICATE_BINARY(add16, ADD16_EXPR)
 PREDICATE_BINARY(add8, ADD8_EXPR)
 PREDICATE_UNARY(inv, INV_EXPR)

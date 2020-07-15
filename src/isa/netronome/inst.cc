@@ -91,27 +91,15 @@ int inst::get_jmp_dis() const {
 //   jmp_set.insert(JMPLE);
 // }
 
-// int inst::inst_output_opcode_type() const {
-//   switch (_opcode) {
-//     case RETX:
-//       return RET_X;
-//     case RETC:
-//       return RET_C;
-//     default: // no RET, return register 0
-//       return RET_X;
-//   }
-// }
+int inst::inst_output_opcode_type() const {
+  // for now, just return a register value
+  return RET_X;
+}
 
-// int inst::inst_output() const {
-//   switch (_opcode) {
-//     case RETX:
-//       return DSTREG(*this);
-//     case RETC:
-//       return IMM1VAL(*this);
-//     default: // no RET, return register 0
-//       return 0;
-//   }
-// }
+int inst::inst_output() const {
+  // for now, return value of register a0 (index 0)
+  return 0;
+}
 
 bool inst::is_real_inst() const {
   if (_opcode == NOP) return false;
@@ -136,42 +124,42 @@ void inst::set_as_nop_inst() {
 
 #undef IMM2
 #define CURSRC sv.get_cur_reg_var(SRCREG(*this))
+#define CURSRC2 sv.get_cur_reg_var(SRC2REG(*this))
 #define CURDST sv.get_cur_reg_var(DSTREG(*this))
 #define NEWDST sv.update_reg_var(DSTREG(*this))
 #define IMM2 to_expr(IMM2VAL(*this))
 
 z3::expr inst::smt_inst(smt_var& sv) const {
-
-  z3::expr curDst = string_to_expr("false");
-  z3::expr curSrc = string_to_expr("false");
-  z3::expr newDst = string_to_expr("false");
-  z3::expr imm = string_to_expr("false");
   switch (_opcode) {
-    case IMMED:
-      imm = IMM2;
-      newDst = NEWDST;
+    case IMMED: return predicate_mov(IMM2, NEWDST);
+    case ALU:
+      switch (_args[2]) {
+        case ALU_PLUS: return predicate_add(CURSRC, CURSRC2, NEWDST);
+        case ALU_PLUS_16: return predicate_add16(CURSRC, CURSRC2, NEWDST);
+        case ALU_PLUS_8: return predicate_add8(CURSRC, CURSRC2, NEWDST);
+        // case ALU_PLUS_CARRY: 
+        // case ALU_MINUS_CARRY:
+        case ALU_MINUS: return predicate_subtract(CURSRC, CURSRC2, NEWDST);
+        case ALU_B_MINUS_A: return predicate_subtract(CURSRC2, CURSRC, NEWDST); // note reversed order
+        case ALU_B: return predicate_mov(CURSRC2, NEWDST);
+        case ALU_INV_B: return predicate_inv(CURSRC2, NEWDST);
+        case ALU_AND: return predicate_and(CURSRC, CURSRC2, NEWDST);
+        case ALU_INV_AND: return predicate_inv_and(CURSRC, CURSRC2, NEWDST);
+        case ALU_AND_INV: return predicate_inv_and(CURSRC2, CURSRC, NEWDST); // note reversed order
+        case ALU_OR: return predicate_or(CURSRC, CURSRC2, NEWDST);
+        case ALU_XOR: return predicate_xor(CURSRC, CURSRC2, NEWDST);
+        default: return Z3_false;
+      }
       break;
-  }
-  switch (_opcode) {
-    case IMMED: return predicate_mov(imm, newDst);
-    default: return string_to_expr("false");
+    default: return Z3_false;
   }
 }
 
 
 
 z3::expr inst::smt_inst_jmp(smt_var& sv) const {
-
+  // not yet implemented
   return string_to_expr("false");
-
-  // switch (_opcode) {
-  //   case JMPEQ: return (CURDST == CURSRC);
-  //   case JMPGT: return (CURDST > CURSRC);
-  //   case JMPGE: return (CURDST >= CURSRC);
-  //   case JMPLT: return (CURDST < CURSRC);
-  //   case JMPLE: return (CURDST <= CURSRC);
-  //   default: return string_to_expr("false");
-  // }
 }
 
 z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
@@ -201,7 +189,7 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     [ALU_PLUS] = && INSN_ALU_PLUS,
     [ALU_PLUS_16] = && INSN_ALU_PLUS_16,
     [ALU_PLUS_8] = && INSN_ALU_PLUS_8,
-    // [ALU_PLUS_CARRY] = && INSN_ALU_PLUS_CARRY,
+    [ALU_PLUS_CARRY] = && INSN_ALU_PLUS_CARRY,
     // [ALU_MINUS_CARRY] = && INSN_ALU_MINUS_CARRY,
     [ALU_MINUS] = && INSN_ALU_MINUS,
     [ALU_B_MINUS_A] = && INSN_ALU_B_MIUS_A,
@@ -271,13 +259,27 @@ INSN_ALU_PLUS_8:
   SET_CARRY;
   CONT;
 
+INSN_ALU_PLUS_CARRY:
+  DST = compute_add_carry(SRC, SRC2, (ps._unsigned_carry), DST);
+  cout << "here INSN_ALU_PLUS_CARRY" << endl;
+  cout << SRC << endl;
+  cout << SRC2 << endl;
+  cout << ps._unsigned_carry << endl;
+  cout << ((uint64_t)SRC + (uint64_t)SRC2 + (uint64_t)ps._unsigned_carry) << endl;
+  ps._unsigned_carry = (((uint64_t)SRC + (uint64_t)SRC2 + (uint64_t)ps._unsigned_carry) >> 32) & 1;
+  CONT;
+
 INSN_ALU_MINUS:
-  DST = compute_add(SRC, -(SRC2));
+  cout << "here INSN_ALU_MINUS" << endl;
+  cout << SRC << endl;
+  cout << SRC2 << endl;
+  DST = compute_subtract(SRC, SRC2);
+  cout << DST << endl;
   SET_CARRY;
   CONT;
 
 INSN_ALU_B_MIUS_A:
-  DST = compute_add(SRC2, -(SRC));
+  DST = compute_subtract(SRC2, SRC);
   SET_CARRY;
   CONT;
 

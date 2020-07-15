@@ -46,3 +46,5 @@ I'm implementing the following instructions, roughly in order from top to bottom
 - Other decisions/questions
 	- some parts are case insensitive (which parts?)
 	- Fixing input/output to be a particular GPR or transfer register
+	- Check whether arithmetic is unsigned?
+	- Check behavior of overflow while subtracting

@@ -36,6 +36,11 @@ void test1() {
   // cout << pred << endl;
   print_test_res(is_valid(pred), "predicate_mov match compute_mov");
 
+  z = compute_subtract(b, a);
+  print_test_res(z == b-a, "compute_subtract");
+  pred = predicate_subtract(v(b), v(a), v(z));
+  print_test_res(is_valid(pred), "predicate_subtract match compute_subtract");
+
   z = compute_add16(a, c);
   // cout << z << endl;
   print_test_res(z == a + L16(c), "compute_add16");
