@@ -174,6 +174,7 @@ class smt_var: public smt_var_base {
  private:
   unsigned int mem_addr_id, is_vaild_id, key_cur_id,
            val_cur_id, addr_v_cur_id, map_helper_func_ret_cur_id;
+  unordered_map<unsigned int, unsigned int> map_id_regs;
  public:
   smt_mem mem_var;
   smt_var();
@@ -199,6 +200,8 @@ class smt_var: public smt_var_base {
   void init() {mem_var.init_addrs_map_v_next_by_layout();}
   void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
   void clear();
+  void add_map_id_reg(z3::expr reg, z3::expr map_id);
+  unsigned int get_map_id(z3::expr reg);
 };
 
 class smt_var_bl {

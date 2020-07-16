@@ -148,7 +148,7 @@ inst instructions20[3] = {inst(STXH, 10, -2, 1),
 inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                            inst(STXB, 10, -1, 1),
-                           inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                           inst(LDMAPID, 1, 0), // r1 = map_id (0)
                            inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -163,7 +163,7 @@ inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
 inst instructions22[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                            inst(STXB, 10, -1, 1),
-                           inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                           inst(LDMAPID, 1, 0), // r1 = map_id (0)
                            inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -178,7 +178,7 @@ inst instructions22[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
 // r0 = *(lookup &k m), where k = 0x11, v = L8(input)
 inst instructions23[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                           inst(STXB, 10, -1, 1),
-                          inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                          inst(LDMAPID, 1, 0), // r1 = map_id (0)
                           inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                           inst(ADD64XC, 2, -1),
                           inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
@@ -849,6 +849,7 @@ void test3() {
                   inst(ARSH32XY, 3, 1),
                   inst(LE, 3, 16),
                   inst(BE, 3, 16),
+                  inst(LDMAPID, 1, 2),
                   inst(LDXB, 1, 10, -4),
                   inst(STXB, 10, -4, 1),
                   inst(LDXH, 1, 10, -4),
@@ -903,6 +904,7 @@ void test3() {
              "{204, 3, 1, 0, 0},"\
              "{212, 3, 0, 0, 16},"\
              "{220, 3, 0, 0, 16},"\
+             "{24, 1, 0, 0, 2},{0, 0, 0, 0, 0},"\
              "{113, 1, 10, -4, 0},"\
              "{115, 10, 1, -4, 0},"\
              "{105, 1, 10, -4, 0},"\

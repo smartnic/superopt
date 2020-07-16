@@ -568,6 +568,17 @@ void smt_var::clear() {
   }
   mem_var.clear();
 }
+
+void smt_var::add_map_id_reg(z3::expr reg, z3::expr map_id) {
+  assert(map_id.is_numeral());
+  map_id_regs[reg.id()] = map_id.get_numeral_uint64();
+}
+
+unsigned int smt_var::get_map_id(z3::expr reg) {
+  auto found = map_id_regs.find(reg.id());
+  if (found == map_id_regs.end()) return -1;
+  else return found->second;
+}
 /* class smt_var end */
 
 void smt_var_bl::store_state_before_smt_block(smt_var& sv) {

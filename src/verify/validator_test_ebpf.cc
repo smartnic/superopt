@@ -139,7 +139,7 @@ void test3() {
   inst p1[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = k1
                  inst(STXB, 10, -1, 1),
-                 inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                 inst(LDMAPID, 1, 0), // r1 = map_id (0)
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -154,7 +154,7 @@ void test3() {
   inst p11[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
-                  inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                  inst(LDMAPID, 1, 0), // r1 = map_id (0)
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -171,7 +171,7 @@ void test3() {
   inst p2[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                 inst(LDMAPID, 1, 0), // r1 = map_id (0)
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -186,7 +186,7 @@ void test3() {
   inst p21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
-                  inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                  inst(LDMAPID, 1, 0), // r1 = map_id (0)
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -203,7 +203,7 @@ void test3() {
   // r0 = *(lookup &k m), where k = 0x11, v = L8(input)
   inst p3[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                 inst(STXB, 10, -1, 1),
-                inst(MOV64XC, 1, 0), // r1 = map_id (0)
+                inst(LDMAPID, 1, 0), // r1 = map_id (0)
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                 inst(ADD64XC, 2, -1),
                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
@@ -217,7 +217,7 @@ void test3() {
   inst p4[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(MOV64XC, 1, 0), // r1 = 0
+                 inst(LDMAPID, 1, 0), // r1 = 0
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -230,7 +230,7 @@ void test3() {
                 };
   inst p41[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(MOV64XC, 1, 0), // r1 = map0
+                 inst(LDMAPID, 1, 0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
@@ -245,7 +245,7 @@ void test3() {
   inst p5[12] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, k1), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(MOV64XC, 1, map0), // r1 = map0
+                 inst(LDMAPID, 1, map0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -259,7 +259,7 @@ void test3() {
   inst p51[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, k1), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
-                  inst(MOV64XC, 1, map0), // r1 = map0
+                  inst(LDMAPID, 1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -275,7 +275,7 @@ void test3() {
   // if k1 in map0, map0[k1]+=1, output=0
   inst p6[12] = {inst(MOV64XC, 1, k1),
                  inst(STXB, 10, -1, 1), // *(r10-1) = k1
-                 inst(MOV64XC, 1, map0), // r1 = map0
+                 inst(LDMAPID, 1, map0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2 = (r10-1)
                  inst(ADD64XC, 2, -1),
                  inst(CALL, BPF_FUNC_map_lookup), // r0 = &v = lookup k1 map0
@@ -289,7 +289,7 @@ void test3() {
   // r0 = *(lookup &k1 m0)
   inst p61[16] = {inst(MOV64XC, 1, k1),
                   inst(STXB, 10, -1, 1), // *(r10-1) = k1
-                  inst(MOV64XC, 1, map0), // r1 = map0
+                  inst(LDMAPID, 1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2 = (r10-1)
                   inst(ADD64XC, 2, -1),
                   inst(CALL, BPF_FUNC_map_lookup), // r0 = &v = lookup k1 map0
@@ -297,7 +297,7 @@ void test3() {
                   inst(LDXB, 1, 0, 0), // r1 = v
                   inst(ADD64XC, 1, 1), // r1 += 1
                   inst(STXB, 10, -2, 1), // *(r10-2) = r1
-                  inst(MOV64XC, 1, map0), // r1 = map0
+                  inst(LDMAPID, 1, map0), // r1 = map0
                   inst(MOV64XY, 3, 10), // r3 = r10-2
                   inst(ADD64XC, 3, -2),
                   inst(CALL, BPF_FUNC_map_update),
@@ -348,7 +348,7 @@ void test4() {
   inst p1[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, k1), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(MOV64XC, 1, map0), // r1 = map0
+                 inst(LDMAPID, 1, map0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -364,7 +364,7 @@ void test4() {
   inst p11[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, k1), // *addr_k = k1
                   inst(STXB, 10, -1, 1),
-                  inst(MOV64XC, 1, map0), // r1 = map0
+                  inst(LDMAPID, 1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -403,7 +403,7 @@ void test4() {
                   inst(STXB, 10, -2, 1),
                   inst(MOV64XC, 1, k1), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
-                  inst(MOV64XC, 1, map0), // r1 = map0
+                  inst(LDMAPID, 1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -426,7 +426,7 @@ void test4() {
   // p2: r0 = map1[k1] if k1 in map1, else r0 = 0
   inst p2[9] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
                 inst(STXH, 10, -2, 1),
-                inst(MOV64XC, 1, map1), // r1 = map1
+                inst(LDMAPID, 1, map1), // r1 = map1
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 2
                 inst(ADD64XC, 2, -2),
                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
@@ -441,7 +441,7 @@ void test4() {
   // p22: r0 = map1[k1] if map1[k1] == v1, else r0 = 0
   inst p22[11] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
                   inst(STXH, 10, -2, 1),
-                  inst(MOV64XC, 1, map1), // r1 = map1
+                  inst(LDMAPID, 1, map1), // r1 = map1
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 2
                   inst(ADD64XC, 2, -2),
                   inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
@@ -457,7 +457,7 @@ void test4() {
   // r0 = 0xfffffffe if k1 not in map0, else r0 = 0; del map0[k1]
   inst p3[7] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
                 inst(STXB, 10, -1, 1),
-                inst(MOV64XC, 1, map0), // r1 = map0
+                inst(LDMAPID, 1, map0), // r1 = map0
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                 inst(ADD64XC, 2, -1),
                 inst(CALL, BPF_FUNC_map_delete),
@@ -472,7 +472,7 @@ void test4() {
   // r0 = 1 if k1 in map0, else r0 = 0
   inst p4[9] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
                 inst(STXB, 10, -1, 1),
-                inst(MOV64XC, 1, map0), // r1 = map0
+                inst(LDMAPID, 1, map0), // r1 = map0
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                 inst(ADD64XC, 2, -1),
                 inst(CALL, BPF_FUNC_map_lookup),

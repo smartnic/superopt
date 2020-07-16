@@ -52,6 +52,8 @@ enum OPCODE_IDX {
   // Byteswap
   IDX_LE,
   IDX_BE,
+  // LD MAP ID
+  IDX_LDMAPID,
   // Memory
   IDX_LDXB,
   IDX_STXB,
@@ -94,6 +96,7 @@ enum OPCODE_IDX {
 #define OPCODE_BPF_MOV64_REG BPF_ALU64 | BPF_MOV | BPF_X
 #define OPCODE_BPF_MOV32_IMM BPF_ALU | BPF_MOV | BPF_K
 #define OPCODE_BPF_MOV32_REG BPF_ALU | BPF_MOV | BPF_X
+#define OPCODE_BPF_LDMAPID (BPF_LD | BPF_DW | BPF_IMM)
 #define OPCODE_BPF_LDX_MEM(SIZE) BPF_LDX | BPF_SIZE(SIZE) | BPF_MEM
 #define OPCODE_BPF_STX_MEM(SIZE) BPF_STX | BPF_SIZE(SIZE) | BPF_MEM
 #define OPCODE_BPF_ST_MEM(SIZE) BPF_ST | BPF_SIZE(SIZE) | BPF_MEM
@@ -134,6 +137,7 @@ enum OPCODES {
   ARSH32XY = OPCODE_BPF_ALU32_REG(BPF_ARSH),
   LE       = OPCODE_BPF_ENDIAN(BPF_TO_LE),
   BE       = OPCODE_BPF_ENDIAN(BPF_TO_BE),
+  LDMAPID  = OPCODE_BPF_LDMAPID,
   LDXB     = OPCODE_BPF_LDX_MEM(BPF_B),
   STXB     = OPCODE_BPF_STX_MEM(BPF_B),
   LDXH     = OPCODE_BPF_LDX_MEM(BPF_H),
@@ -192,6 +196,7 @@ static const int idx_2_opcode[NUM_INSTR] = {
   [IDX_ARSH32XY] = ARSH32XY,
   [IDX_LE] = LE,
   [IDX_BE] = BE,
+  [IDX_LDMAPID] = LDMAPID,
   [IDX_LDXB] = LDXB,
   [IDX_STXB] = STXB,
   [IDX_LDXH] = LDXH,
@@ -249,6 +254,7 @@ static const int num_operands[NUM_INSTR] = {
   [IDX_ARSH32XY] = 2,
   [IDX_LE]       = 2,
   [IDX_BE]       = 2,
+  [IDX_LDMAPID]  = 2,
   [IDX_LDXB]     = 3,
   [IDX_STXB]     = 3,
   [IDX_LDXH]     = 3,
@@ -308,6 +314,7 @@ static const int insn_num_regs[NUM_INSTR] = {
   [IDX_ARSH32XY] = 2,
   [IDX_LE]       = 1,
   [IDX_BE]       = 1,
+  [IDX_LDMAPID]  = 1,
   [IDX_LDXB]     = 2,
   [IDX_STXB]     = 2,
   [IDX_LDXH]     = 2,
@@ -365,6 +372,7 @@ static const int opcode_type[NUM_INSTR] = {
   [IDX_ARSH32XY] = OP_OTHERS,
   [IDX_LE]       = OP_OTHERS,
   [IDX_BE]       = OP_OTHERS,
+  [IDX_LDMAPID]  = OP_OTHERS,
   [IDX_LDXB]     = OP_LD,
   [IDX_STXB]     = OP_ST,
   [IDX_LDXH]     = OP_LD,
@@ -425,6 +433,7 @@ enum OPERANDS {
 #define ALU_OPS_IMM (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED))
 #define ALU_OPS_REG (FSTOP(OP_DST_REG) | SNDOP(OP_SRC_REG) | TRDOP(OP_UNUSED))
 #define BYTESWAP (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED))
+#define LDMAPID_OPS (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_UNUSED))
 #define LDX_OPS (FSTOP(OP_DST_REG) | SNDOP(OP_SRC_REG) | TRDOP(OP_OFF))
 #define STX_OPS (FSTOP(OP_DST_REG) | SNDOP(OP_OFF) | TRDOP(OP_SRC_REG))
 #define ST_OPS  (FSTOP(OP_DST_REG) | SNDOP(OP_OFF) | TRDOP(OP_IMM))
@@ -461,6 +470,7 @@ static const int optable[NUM_INSTR] = {
   [IDX_ARSH32XY] = ALU_OPS_REG,
   [IDX_LE]       = BYTESWAP,
   [IDX_BE]       = BYTESWAP,
+  [IDX_LDMAPID]  = LDMAPID_OPS,
   [IDX_LDXB]     = LDX_OPS,
   [IDX_STXB]     = STX_OPS,
   [IDX_LDXH]     = LDX_OPS,
@@ -495,6 +505,7 @@ static const int optable[NUM_INSTR] = {
 #undef ALU_OPS_IMM
 #undef ALU_OPS_REG
 #undef BYTESWAP
+#undef LDMAPID_OPS
 #undef LDX_OPS
 #undef STX_OPS
 #undef ST_OPS

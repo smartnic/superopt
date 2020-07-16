@@ -59,7 +59,7 @@ void inst::set_imm(int op_value) {
     _imm = value_map[op_value];
   } else {
     unordered_set<int32_t> opcodes_set = {ADD64XC, MOV64XC, ADD32XC, OR32XC,
-                                          AND32XC, MOV32XC, STB, STH, STW, STDW,
+                                          AND32XC, MOV32XC, LDMAPID, STB, STH, STW, STDW,
                                           JEQXC, JGTXC, JNEXC, JSGTXC, JEQ32XC, JNE32XC,
                                          };
     auto found = opcodes_set.find(_opcode);
@@ -107,6 +107,7 @@ int32_t inst::get_max_imm() const {
     case ARSH32XC: return MAX_IMM_SH32;
     case LE:
     case BE: return MAX_TYPES_IMM_ENDIAN;
+    case LDMAPID: return mem_t::maps_number() - 1;
     case CALL: return MAX_CALL_IMM;
     default: cout << "Error: no imm in instruction: ";
       print();
@@ -153,6 +154,7 @@ int32_t inst::get_min_imm() const {
     case ARSH32XC:
     case LE:
     case BE: return 0;
+    case LDMAPID: return 0;
     case CALL: return 1;
     default: cout << "Error: no imm in instruction: ";
       print();
@@ -216,6 +218,7 @@ string inst::opcode_to_str(int opcode) const {
     case ARSH32XY: return "arsh32xy";
     case LE: return "le";
     case BE: return "be";
+    case LDMAPID: return "ldmapid";
     case LDXB: return "ldxb";
     case STXB: return "stxb";
     case LDXH: return "ldxh";
@@ -499,6 +502,7 @@ z3::expr inst::smt_inst(smt_var& sv, z3::expr cond) const {
         default: cout << "Error: imm " << imm << " is not 16, 32, 64" << endl;
           return string_to_expr("false");
       }
+    case LDMAPID: return predicate_ldmapid(IMM, NEWDST, sv);
     case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, cond);
     case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, cond);
     case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, cond);
@@ -569,6 +573,7 @@ int opcode_2_idx(int opcode) {
     case ARSH32XY: return IDX_ARSH32XY;
     case LE: return IDX_LE;
     case BE: return IDX_BE;
+    case LDMAPID: return IDX_LDMAPID;
     case LDXB: return IDX_LDXB;
     case STXB: return IDX_STXB;
     case LDXH: return IDX_LDXH;
@@ -618,11 +623,13 @@ z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
 }
 
 string inst::get_bytecode_str() const {
-  return ("{"
-          + to_string(_opcode) + ", " + to_string(_dst_reg) + ", "
-          + to_string(_src_reg) + ", " + to_string(_off) + ", "
-          + to_string(_imm)
-          + "}");
+  string str = ("{"
+                + to_string(_opcode) + ", " + to_string(_dst_reg) + ", "
+                + to_string(_src_reg) + ", " + to_string(_off) + ", "
+                + to_string(_imm)
+                + "}");
+  if (_opcode == LDMAPID) str += ",{0, 0, 0, 0, 0}";
+  return str;
 }
 
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input) {
@@ -749,6 +756,7 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     [IDX_ARSH32XY] = && INSN_ARSH32XY,
     [IDX_LE]       = && INSN_LE,
     [IDX_BE]       = && INSN_BE,
+    [IDX_LDMAPID]  = && INSN_LDMAPID,
     [IDX_LDXB]     = && INSN_LDXB,
     [IDX_STXB]     = && INSN_STXB,
     [IDX_LDXH]     = && INSN_LDXH,
@@ -824,6 +832,8 @@ INSN_NOP:
 
   BYTESWAP(LE, le)
   BYTESWAP(BE, be)
+
+  ALU_UNARY(LDMAPID, ldmapid, IMM)
 
 INSN_JA:
   insn += OFF;

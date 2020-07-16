@@ -83,6 +83,11 @@ uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, mem_t& m,
   return MAP_DEL_RET_IF_KEY_EXIST;
 }
 
+z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv) {
+  sv.add_map_id_reg(out, map_id);
+  return (map_id == out);
+}
+
 z3::expr predicate_st_byte(z3::expr in, z3::expr addr, smt_var& sv, z3::expr cond) {
   z3::expr a = sv.update_mem_addr();
   z3::expr f = z3::implies(!cond, a == NULL_ADDR) &&

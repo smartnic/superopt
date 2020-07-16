@@ -41,7 +41,7 @@ inline int64_t compute_le64(int64_t in, int64_t out = 0);
 inline int64_t compute_be16(int64_t in, int64_t out = 0);
 inline int64_t compute_be32(int64_t in, int64_t out = 0);
 inline int64_t compute_be64(int64_t in, int64_t out = 0);
-
+inline int64_t compute_ldmapid(int64_t in, int64_t out = 0);
 // return (out = in1 op in2)
 inline int64_t compute_add(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_add32(int64_t in1, int64_t in2, int64_t out = 0);
@@ -94,14 +94,16 @@ inline z3::expr predicate_arsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
 // (write addr+off, sz, in, m); type: in, addr, off: bv64;
 inline z3::expr predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, z3::expr cond = Z3_true);
-inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, z3::expr cond= Z3_true);
-inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, z3::expr cond= Z3_true);
-inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, z3::expr cond= Z3_true);
+inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, z3::expr cond = Z3_true);
+inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, z3::expr cond = Z3_true);
+inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, z3::expr cond = Z3_true);
 // out == (read addr+off, sz, m); type: addr, off, out: bv64;
-inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, z3::expr cond= Z3_true);
-inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, z3::expr cond= Z3_true);
-inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, z3::expr cond= Z3_true);
-inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, z3::expr cond= Z3_true);
+inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, z3::expr cond = Z3_true);
+inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, z3::expr cond = Z3_true);
+inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, z3::expr cond = Z3_true);
+inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, z3::expr cond = Z3_true);
+// out == map_id, and track the out
+z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv);
 // map helper functions
 // return map lookup FOL formula, addr_v = lookup k map, where k is key,
 // addr_v is the address of key's value, map is the map address
@@ -277,6 +279,10 @@ COMPUTE_BINARY(rsh, RSH_EXPR)
 COMPUTE_BINARY(rsh32, RSH32_EXPR)
 COMPUTE_BINARY(arsh, ARSH_EXPR)
 COMPUTE_BINARY(arsh32, ARSH32_EXPR)
+
+inline int64_t compute_ldmapid(int64_t in, int64_t out) {
+  return in;
+}
 
 #undef EQ
 #define EQ ==
