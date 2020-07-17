@@ -88,11 +88,14 @@ z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv) {
   return (map_id == out);
 }
 
-z3::expr predicate_st_byte(z3::expr in, z3::expr addr, smt_var& sv, z3::expr cond) {
+z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, z3::expr cond) {
   z3::expr a = sv.update_mem_addr();
   z3::expr f = z3::implies(!cond, a == NULL_ADDR) &&
-               z3::implies(cond, a == addr);
-  sv.mem_var._mem_table._wt.add(a, in.extract(7, 0));
+               z3::implies(cond, a == addr + off);
+  int id = sv.mem_var.get_mem_table_id(addr);
+  if (id == -1) return Z3_true; // todo: addr is not a pointer
+
+  sv.mem_var.add_in_mem_table_wt(id, a, in.extract(7, 0));
   return f;
 }
 
@@ -101,7 +104,7 @@ z3::expr predicate_st_n_bytes(int n, z3::expr in, z3::expr addr, smt_var& sv,
                               z3::expr cond) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < n; i++) {
-    f = f && predicate_st_byte(in.extract(8 * i + 7, 8 * i), addr + i, sv, cond);
+    f = f && predicate_st_byte(in.extract(8 * i + 7, 8 * i), addr, to_expr(i, 64), sv, cond);
   }
   return f;
 }
@@ -129,9 +132,11 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, smt_wt& urt) {
   return f;
 }
 
-z3::expr predicate_ld_byte(z3::expr addr, smt_var& sv, z3::expr out, z3::expr cond) {
-  smt_wt& wt = sv.mem_var._mem_table._wt;
-  z3::expr a = addr;
+z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, z3::expr cond) {
+  int table_id = sv.mem_var.get_mem_table_id(addr);
+  if (table_id == -1) return Z3_true; // todo: addr is not a pointer
+  smt_wt& wt = sv.mem_var._mem_tables[table_id]._wt;
+  z3::expr a = addr + off;
   z3::expr f_found_in_wt_after_i = string_to_expr("false");
   z3::expr f = string_to_expr("true");
   for (int i = wt.addr.size() - 1; i >= 0; i--) {
@@ -143,7 +148,7 @@ z3::expr predicate_ld_byte(z3::expr addr, smt_var& sv, z3::expr out, z3::expr co
   }
 
   // add constrains on the element(a, out)
-  smt_wt& urt = sv.mem_var._mem_table._urt;
+  smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
   z3::expr not_found_in_wt = sv.update_is_valid();
   f = f && (not_found_in_wt == (!f_found_in_wt_after_i));
   f = f && z3::implies(not_found_in_wt, urt_element_constrain(a, out, urt));
@@ -176,9 +181,9 @@ z3::expr predicate_ld_byte(z3::expr addr, smt_var& sv, z3::expr out, z3::expr co
 }
 
 z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, z3::expr cond) {
-  z3::expr f = predicate_ld_byte(addr, sv, out.extract(7, 0), cond);
+  z3::expr f = predicate_ld_byte(addr, to_expr(0, 64), sv, out.extract(7, 0), cond);
   for (int i = 1; i < n; i++) {
-    f = f && predicate_ld_byte(addr + i, sv, out.extract(8 * i + 7, 8 * i), cond);
+    f = f && predicate_ld_byte(addr, to_expr(i, 64), sv, out.extract(8 * i + 7, 8 * i), cond);
   }
   return f;
 }
@@ -241,16 +246,18 @@ z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y,
 // pkt address only in mem_p1 wt => pkt address in mem_p1 urt && same value in wt and urt
 z3::expr pkt_addr_in_one_wt(smt_var& sv1, smt_var& sv2) {
   z3::expr f = Z3_true;
-  smt_wt& wt1 = sv1.mem_var._mem_table._wt;
-  smt_wt& wt2 = sv2.mem_var._mem_table._wt;
-  smt_wt& urt1 = sv1.mem_var._mem_table._urt;
-  z3::expr pkt_s = sv1.get_pkt_start_addr();
-  z3::expr pkt_e = sv1.get_pkt_end_addr();
+  if (mem_t::_layout._pkt_sz == 0) return f;
+  int id1 = sv1.mem_var.get_pkt_table_id();
+  int id2 = sv2.mem_var.get_pkt_table_id();
+  assert(id1 != -1);
+  assert(id2 != -1);
+  smt_wt& wt1 = sv1.mem_var._mem_tables[id1]._wt;
+  smt_wt& wt2 = sv2.mem_var._mem_tables[id1]._wt;
+  smt_wt& urt1 = sv1.mem_var._mem_tables[id2]._urt;
   for (int i = wt1.size() - 1; i >= 0; i--) {
     z3::expr a_out = wt1.addr[i];
     z3::expr v_out = wt1.val[i];
-    z3::expr f_a_out = addr_in_range(a_out, pkt_s, pkt_e) &&
-                       latest_write_element(i, wt1.addr);
+    z3::expr f_a_out = latest_write_element(i, wt1.addr);
     z3::expr f_a_not_in_wt2 = !addr_in_addrs(a_out, wt2.addr);
     z3::expr f_a_in_urt1 = addr_in_addrs(a_out, urt1.addr);
     f = f && z3::implies(f_a_out && f_a_not_in_wt2, f_a_in_urt1);
@@ -269,19 +276,19 @@ z3::expr pkt_addr_in_one_wt(smt_var& sv1, smt_var& sv2) {
 // 2. pkt address in one of wts => value (latest write) == input
 z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
   if (mem_t::_layout._pkt_sz == 0) return Z3_true;
-
+  int id1 = sv1.mem_var.get_pkt_table_id();
+  int id2 = sv2.mem_var.get_pkt_table_id();
+  assert(id1 != -1);
+  assert(id2 != -1);
   z3::expr f = Z3_true;
-  smt_wt& wt1 = sv1.mem_var._mem_table._wt;
-  smt_wt& wt2 = sv2.mem_var._mem_table._wt;
-  z3::expr pkt_s = sv1.get_pkt_start_addr();
-  z3::expr pkt_e = sv1.get_pkt_end_addr();
+  smt_wt& wt1 = sv1.mem_var._mem_tables[id1]._wt;
+  smt_wt& wt2 = sv2.mem_var._mem_tables[id2]._wt;
   // case 1: pkt address in both wts, latest write should be the same
   if ((wt1.size() > 0) && (wt2.size() > 0)) {
     for (int i = wt1.size() - 1; i >= 0; i--) {
       z3::expr a1 = wt1.addr[i];
       z3::expr v1 = wt1.val[i];
-      z3::expr f_a1 = addr_in_range(a1, pkt_s, pkt_e) &&
-                      latest_write_element(i, wt1.addr);
+      z3::expr f_a1 = latest_write_element(i, wt1.addr);
 
       for (int j = wt2.size() - 1; j >= 0; j--) {
         z3::expr a2 = wt2.addr[j];
@@ -687,20 +694,20 @@ z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
 // the same content in the same pkt address in mem_p1 URT == mem_p2 URT
 z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
   if (mem_t::_layout._pkt_sz == 0) return Z3_true;
+  int id1 = sv1.mem_var.get_pkt_table_id();
+  int id2 = sv2.mem_var.get_pkt_table_id();
+  assert(id1 != -1);
+  assert(id2 != -1);
   z3::expr f = Z3_true;
-  smt_wt& mem1_urt = sv1.mem_var._mem_table._urt;
-  smt_wt& mem2_urt = sv2.mem_var._mem_table._urt;
+  smt_wt& mem1_urt = sv1.mem_var._mem_tables[id1]._urt;
+  smt_wt& mem2_urt = sv2.mem_var._mem_tables[id2]._urt;
   bool cond = (mem1_urt.size() > 0) && (mem2_urt.size() > 0);
   if (!cond) return f;
 
-  z3::expr pkt_s = sv1.get_pkt_start_addr();
-  z3::expr pkt_e = sv1.get_pkt_end_addr();
   for (int i = 0; i < mem1_urt.size(); i++) {
     z3::expr a1 = mem1_urt.addr[i];
     z3::expr v1 = mem1_urt.val[i];
-    // "f_a1" does not need the constrain (a1 != NULL),
-    // since if a1 in pkt range, a1 won't be NULL
-    z3::expr f_a1 = addr_in_range(a1, pkt_s, pkt_e);
+    z3::expr f_a1 = (a1 != NULL_ADDR_EXPR);
 
     for (int j = 0; j < mem2_urt.size(); j++) {
       z3::expr a2 = mem2_urt.addr[j];

@@ -403,7 +403,7 @@ void test7() {
   // if addr cannot be found in the WT but found in URT,
   // the value in element is equal to the value(s) of the addr(s) in URT
   z3::expr map_s = sv.get_map_start_addr(0);
-  sv.clear();
+  sv.init();
   z3::expr f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr out = new_out();
   z3::expr smt = f_mem_layout_constrain && (out == v1) && predicate_ld8(map_s, v(0), sv, out);
@@ -428,7 +428,7 @@ void test8() {
   unsigned int node_id = 0;
   unsigned int num_regs = 11;
   smt_var sv(prog_id, node_id, num_regs);
-  sv.mem_var.init_addrs_map_v_next_by_layout();
+  sv.init();
   z3::expr f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr stack_s = sv.get_stack_start_addr();
 
@@ -493,7 +493,7 @@ void test8() {
   // test ur
   cout << "  2. test properties of uninitialized lookup in map" << endl;
   sv.clear();
-  sv.mem_var.init_addrs_map_v_next_by_layout();
+  sv.init();
   f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr map_s = sv.get_map_start_addr(map1_id);
   z3::expr map_e = sv.get_map_end_addr(map1_id);
@@ -550,7 +550,7 @@ void test8() {
 
   cout << "  3. test operations with map helper functions and memory ld/st" << endl;
   sv.clear();
-  sv.mem_var.init_addrs_map_v_next_by_layout();
+  sv.init();
   f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr p1 = v("p1");
   z3::expr p2 = v("p2");
@@ -572,7 +572,7 @@ void test8() {
   z3::expr map2 = v(1);
   int map2_id = 1;
   mem_t::add_map(map_attr(8, 8, 512));
-  sv.mem_var.init_addrs_map_v_next_by_layout();
+  sv.init();
   f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr map_s_2 = sv.get_map_start_addr(map2_id);
   z3::expr map_e_2 = sv.get_map_end_addr(map2_id);
@@ -634,7 +634,7 @@ void test8() {
 
   cout << "  5. test return value of delete" << endl;;
   sv.clear();
-  sv.mem_var.init_addrs_map_v_next_by_layout();
+  sv.init();
   f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr out = new_out();
   f = predicate_st8(k1, addr_k1, v(0), sv) &&
@@ -660,7 +660,7 @@ void test8() {
   mem_t::add_map(map_attr(8, 8, 512)); // set map2 key size: 16 bits, value size: 32 bits
   mem_t::add_map(map_attr(16, 32, 128)); // set map2 key size: 16 bits, value size: 32 bits
   sv.clear();
-  sv.mem_var.init_addrs_map_v_next_by_layout();
+  sv.init();
   f_mem_layout_constrain = sv.mem_layout_constrain();
   k1 = to_expr("k1", 8); // used by map1
   v1 = to_expr("v1", 8);
@@ -768,7 +768,7 @@ void test9() {
   unsigned int prog_id = 0, node_id = 0, num_regs = 11;
   smt_var sv(prog_id, node_id, num_regs);
   sv.mem_var.set_stack_start(stack_s);
-  sv.mem_var.init_addrs_map_v_next_by_layout();
+  sv.init();
 
   uint64_t addr_v_lookup = 0;
   int64_t v_lookup = 0;
@@ -855,7 +855,7 @@ void test9() {
   cout << "  2 test return value of delete" << endl;
   m.clear();
   sv.clear();
-  sv.mem_var.init_addrs_map_v_next_by_layout();
+  sv.init();
   f = string_to_expr("true");
   compute_st8(k1, addr_k1, 0);
   compute_st8(v1, addr_v1, 0);
@@ -902,7 +902,7 @@ void test9() {
   m.init_by_layout();
   sr.simu_r10 = (uint64_t)m.get_stack_bottom_addr();
   sr.real_r10 = (uint64_t)m.get_stack_bottom_addr();
-  sv.mem_var.init_addrs_map_v_next_by_layout();
+  sv.init();
   k1 = 0x1, v1 = 0x11; // used by map1
   k2 = 0x1111, v2 = (int64_t)0xffffffff; //used by map2
   stack_s = (uint64_t)m.get_stack_start_addr();
@@ -992,8 +992,8 @@ void test10() {
   z3::expr addr_map1 = v(0);
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
-  sv1.mem_var.init_addrs_map_v_next_by_layout();
-  sv2.mem_var.init_addrs_map_v_next_by_layout();
+  sv1.init();
+  sv2.init();
   z3::expr k1 = to_expr("k1", 8), v1 = to_expr("v1", 8);
   z3::expr k2 = to_expr("k2", 8), v2 = to_expr("v2", 8);
   // without setting the stack start address, the default addresses of sv1 and sv2 are the same
@@ -1059,8 +1059,8 @@ void test10() {
 
   cout << "3. case: there is(are) key(s) that can only be found in one map WT" << endl;
   sv1.clear(); sv2.clear();
-  sv1.mem_var.init_addrs_map_v_next_by_layout();
-  sv2.mem_var.init_addrs_map_v_next_by_layout();
+  sv1.init();
+  sv2.init();
   f_mem_layout_constrain = sv1.mem_layout_constrain();
   f = predicate_st8(k1, addr_k1, v(0), sv1) &&
       predicate_st8(v1, addr_v1, v(0), sv1) &&
@@ -1079,8 +1079,8 @@ void test10() {
   MAP_EQ_CHK(map1, test_name, false)
 
   sv1.clear(); sv2.clear();
-  sv1.mem_var.init_addrs_map_v_next_by_layout();
-  sv2.mem_var.init_addrs_map_v_next_by_layout();
+  sv1.init();
+  sv2.init();
   f_mem_layout_constrain = sv1.mem_layout_constrain();
   f = predicate_st8(k1, addr_k1, v(0), sv1) &&
       predicate_st8(v1, addr_v1, v(0), sv1) &&
@@ -1172,8 +1172,8 @@ void test10() {
   cout << "5. test k/v size > 1 byte" << endl;
   sv1.clear(); sv2.clear();
   mem_t::add_map(map_attr(32, 16, 512));
-  sv1.mem_var.init_addrs_map_v_next_by_layout();
-  sv2.mem_var.init_addrs_map_v_next_by_layout();
+  sv1.init();
+  sv2.init();
   f_mem_layout_constrain = sv1.mem_layout_constrain();
   k1 = to_expr("k1", 32), v1 = to_expr("v1", 16);
   addr_k1 = stack_s + 0, addr_v1 = stack_s + 4;
@@ -1224,8 +1224,8 @@ void test10() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
   mem_t::add_map(map_attr(8, 8, 512));
-  sv1.mem_var.init_addrs_map_v_next_by_layout();
-  sv2.mem_var.init_addrs_map_v_next_by_layout();
+  sv1.init();
+  sv2.init();
   f_mem_layout_constrain = sv1.mem_layout_constrain();
   k1 = to_expr("k1", 8), v1 = to_expr("v1", 8);
   stack_s = sv1.get_stack_start_addr();
@@ -1247,8 +1247,8 @@ void test10() {
 
   cout << "7. test map helper functions with store" << endl;
   sv1.clear(); sv2.clear();
-  sv1.mem_var.init_addrs_map_v_next_by_layout();
-  sv2.mem_var.init_addrs_map_v_next_by_layout();
+  sv1.init();
+  sv2.init();
   f_mem_layout_constrain = sv1.mem_layout_constrain();
   f = predicate_st8(k1, addr_k1, v(0), sv1) &&
       predicate_st8(v1, addr_v1, v(0), sv1) &&
@@ -1328,8 +1328,8 @@ void test12() {
   smt_var sv1(prog_id, node_id, num_regs);
   prog_id = 1;
   smt_var sv2(prog_id, node_id, num_regs);
-  sv1.mem_var.init_addrs_map_v_next_by_layout();
-  sv2.mem_var.init_addrs_map_v_next_by_layout();
+  sv1.init();
+  sv2.init();
   z3::expr f_mem_layout_constrain = sv1.mem_layout_constrain();
   z3::expr stack_s = sv1.get_stack_start_addr();
 

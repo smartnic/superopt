@@ -117,12 +117,12 @@ class smt_wt {
   friend ostream& operator<<(ostream& out, const smt_wt& s);
 };
 
-class mem_wt {
- public:
-  smt_wt _wt; // write table, each element is for write instructions
-  smt_wt _urt; // uninitalized read table, each element is for read before write instructions
-  void clear() {_wt.clear(); _urt.clear();}
-};
+// class mem_wt {
+//  public:
+//   smt_wt _wt; // write table, each element is for write instructions
+//   smt_wt _urt; // uninitalized read table, each element is for read before write instructions
+//   void clear() {_wt.clear(); _urt.clear();}
+// };
 
 class smt_map_wt {
  public:
@@ -148,20 +148,43 @@ class map_wt {
   void clear() {_wt.clear(); _urt.clear();}
 };
 
+enum mem_table_type {
+  MEM_TABLE_stack = 0,
+  MEM_TABLE_pkt,
+  MEM_TABLE_map,
+};
+
+class mem_table {
+ public:
+  int _type = -1;
+  int _map_id = -1; // valid when _type == MEM_TABLE_map
+  unordered_set<unsigned int> _ptrs;
+  smt_wt _wt;
+  smt_wt _urt;
+  void clear() {_ptrs.clear(); _wt.clear(); _urt.clear();}
+};
+
 class smt_mem {
  public:
   z3::expr _stack_start = string_to_expr("stack_start");
   z3::expr _pkt_start = string_to_expr("pkt_start");
-  mem_wt _mem_table; // stack, pkt, map related memory
-  map_wt _map_table;
+  vector<mem_table> _mem_tables; // stack, pkt, map related memory
+  vector<map_wt> _map_tables; // vector idx: map id
   vector<z3::expr> _addrs_map_v_next;
 
   smt_mem() {}
   smt_mem(uint64_t stack_start) {_stack_start = to_expr(stack_start);}
   void set_stack_start(uint64_t stack_start) {_stack_start = to_expr(stack_start);}
-  void init_addrs_map_v_next_by_layout();
+  void init_by_layout();
   z3::expr get_and_update_addr_v_next(int map_id);
-  void clear() {_mem_table.clear(); _map_table.clear(); _addrs_map_v_next.clear();}
+  void clear() {_mem_tables.clear(); _map_tables.clear(); _addrs_map_v_next.clear();}
+  int get_mem_table_id(z3::expr ptr_expr); // return value -1 means not found
+  int get_stack_table_id();
+  int get_pkt_table_id(); // return value -1 means not found
+  void add_in_mem_table_wt(int mem_table_id, z3::expr addr, z3::expr val);
+  void add_in_mem_table_urt(int mem_table_id, z3::expr addr, z3::expr val);
+  void add_ptr(z3::expr ptr_expr, int table_id);
+  void add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr);
   friend ostream& operator<<(ostream& out, const smt_mem& s);
 };
 
@@ -197,7 +220,7 @@ class smt_var: public smt_var_base {
   z3::expr get_pkt_start_addr() {return mem_var._pkt_start;}
   z3::expr get_pkt_end_addr() {return (mem_var._pkt_start + to_expr((uint64_t)mem_t::_layout._pkt_sz - 1));}
   z3::expr mem_layout_constrain() const;
-  void init() {mem_var.init_addrs_map_v_next_by_layout();}
+  void init() {mem_var.init_by_layout();}
   void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
   void clear();
   void add_map_id_reg(z3::expr reg, z3::expr map_id);
@@ -206,9 +229,10 @@ class smt_var: public smt_var_base {
 
 class smt_var_bl {
  private:
-  int _mem_wt_sz = 0, _mem_urt_sz = 0;
-  int _map_wt_sz = 0, _map_urt_sz = 0;
+  vector<int> _mem_wt_sz, _mem_urt_sz;
+  vector<int> _map_wt_sz, _map_urt_sz;
  public:
+  smt_var_bl();
   void store_state_before_smt_block(smt_var& sv);
   z3::expr gen_smt_after_smt_block(smt_var& sv, z3::expr& pc);
 };

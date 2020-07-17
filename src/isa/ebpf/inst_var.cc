@@ -426,12 +426,28 @@ ostream& operator<<(ostream& out, const smt_map_wt& s) {
 /* class smt_map_wt start */
 
 /* class smt_wt end */
-void smt_mem::init_addrs_map_v_next_by_layout() {
-  for (int i = 0; i < mem_t::maps_number(); i++) {
+void smt_mem::init_by_layout() {
+  int n_maps = mem_t::maps_number();
+  for (int i = 0; i < n_maps; i++) {
     unsigned int start_mem_off = mem_t::get_mem_off_by_idx_in_map(i, 0);
     z3::expr start = (_stack_start + to_expr((uint64_t)start_mem_off)).simplify();
     _addrs_map_v_next.push_back(start);
   }
+  int n_mem_tables = 1 + n_maps; // stack + maps
+  if (mem_t::mem_t::_layout._pkt_sz > 0) n_mem_tables++;
+  _mem_tables.resize(n_mem_tables);
+  int i = 0;
+  _mem_tables[i]._type = MEM_TABLE_stack;
+  i++;
+  if (mem_t::mem_t::_layout._pkt_sz > 0) {
+    _mem_tables[i]._type = MEM_TABLE_pkt;
+    i++;
+  }
+  for (int map_id = 0; i < _mem_tables.size(); i++, map_id++) {
+    _mem_tables[i]._type = MEM_TABLE_map;
+    _mem_tables[i]._map_id = map_id;
+  }
+  _map_tables.resize(n_maps);
 }
 
 z3::expr smt_mem::get_and_update_addr_v_next(int map_id) {
@@ -441,12 +457,79 @@ z3::expr smt_mem::get_and_update_addr_v_next(int map_id) {
   return res;
 }
 
+int smt_mem::get_mem_table_id(z3::expr ptr_expr) {
+  int not_found_flag = -1;
+  unsigned int ptr_id = ptr_expr.id();
+  for (int i = 0; i < _mem_tables.size(); i++) {
+    auto found = _mem_tables[i]._ptrs.find(ptr_id);
+    if (found != _mem_tables[i]._ptrs.end()) return i;
+  }
+  return not_found_flag;
+}
+
+int smt_mem::get_stack_table_id() {
+  int not_found_flag = -1;
+  for (int i = 0; i < _mem_tables.size(); i++) {
+    if (_mem_tables[i]._type == MEM_TABLE_stack) {
+      return i;
+    }
+  }
+  return not_found_flag;
+}
+
+int smt_mem::get_pkt_table_id() {
+  int not_found_flag = -1;
+  for (int i = 0; i < _mem_tables.size(); i++) {
+    if (_mem_tables[i]._type == MEM_TABLE_pkt) {
+      return i;
+    }
+  }
+  return not_found_flag;
+}
+
+void smt_mem::add_in_mem_table_wt(int mem_table_id, z3::expr addr, z3::expr val) {
+  assert(mem_table_id >= 0);
+  assert(mem_table_id < _mem_tables.size());
+  _mem_tables[mem_table_id]._wt.add(addr, val);
+}
+
+void smt_mem::add_in_mem_table_urt(int mem_table_id, z3::expr addr, z3::expr val) {
+  assert(mem_table_id >= 0);
+  assert(mem_table_id < _mem_tables.size());
+  _mem_tables[mem_table_id]._urt.add(addr, val);
+}
+
+void smt_mem::add_ptr(z3::expr ptr_expr, int table_id) {
+  assert(table_id >= 0);
+  assert(table_id < _mem_tables.size());
+  _mem_tables[table_id]._ptrs.insert(ptr_expr.id());
+}
+
+void smt_mem::add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr) {
+  unsigned int ptr_from_id = ptr_from_expr.id();
+  for (int i = 0; i < _mem_tables.size(); i++) {
+    auto found = _mem_tables[i]._ptrs.find(ptr_from_id);
+    if (found != _mem_tables[i]._ptrs.end()) {
+      _mem_tables[i]._ptrs.insert(ptr_expr.id());
+      return;
+    }
+  }
+}
+
 ostream& operator<<(ostream& out, const smt_mem& s) {
-  out << "memory WT:" << endl << s._mem_table._wt
-      << "memory URT:" << endl << s._mem_table._urt
-      << "map WT:" << endl << s._map_table._wt
-      << "map URT:" << endl << s._map_table._urt
-      << endl;
+  for (int i = 0; i < s._mem_tables.size(); i++) {
+    out << "memory table " << i << endl
+        << "memory WT:" << endl << s._mem_tables[i]._wt
+        << "memory URT:" << endl << s._mem_tables[i]._urt
+        << endl;
+  }
+  for (int i = 0; i < s._map_tables.size(); i++) {
+    out << "map table " << i << endl
+        << "map WT:" << endl << s._map_tables[i]._wt
+        << "map URT:" << endl << s._map_tables[i]._urt
+        << endl;
+  }
+
   return out;
 }
 /* class smt_wt end */
@@ -552,7 +635,12 @@ z3::expr smt_var::mem_layout_constrain() const {
 
 void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs) {
   smt_var_base::init(prog_id, node_id, num_regs);
-  mem_var.init_addrs_map_v_next_by_layout();
+  mem_var.init_by_layout();
+  if (node_id == 0) {
+    mem_var.add_ptr(get_init_reg_var(10), mem_var.get_stack_table_id()); // r10 is the stack pointer
+    if (mem_t::_layout._pkt_sz > 0)
+      mem_var.add_ptr(get_init_reg_var(1), mem_var.get_pkt_table_id()); // r1 is the pkt pointer
+  }
 }
 
 void smt_var::clear() {
@@ -581,26 +669,44 @@ unsigned int smt_var::get_map_id(z3::expr reg) {
 }
 /* class smt_var end */
 
+smt_var_bl::smt_var_bl() {
+  int n_maps =  mem_t::maps_number();
+  int n_mem_tables = 1 + n_maps; // stack + maps
+  if (mem_t::mem_t::_layout._pkt_sz > 0) n_mem_tables++;
+  _mem_wt_sz.resize(n_mem_tables, 0);
+  _mem_urt_sz.resize(n_mem_tables, 0);
+  _map_wt_sz.resize(n_maps, 0);
+  _map_urt_sz.resize(n_maps, 0);
+}
+
 void smt_var_bl::store_state_before_smt_block(smt_var& sv) {
-  _mem_wt_sz = sv.mem_var._mem_table._wt.size();
-  _mem_urt_sz = sv.mem_var._mem_table._urt.size();
-  _map_wt_sz = sv.mem_var._map_table._wt.size();
-  _map_urt_sz = sv.mem_var._map_table._urt.size();
+  for (int i = 0; i < sv.mem_var._mem_tables.size(); i++) {
+    _mem_wt_sz[i] = sv.mem_var._mem_tables[i]._wt.size();
+    _mem_urt_sz[i] = sv.mem_var._mem_tables[i]._urt.size();
+  }
+  for (int i = 0; i < sv.mem_var._map_tables.size(); i++) {
+    _map_wt_sz[i] = sv.mem_var._map_tables[i]._wt.size();
+    _map_urt_sz[i] = sv.mem_var._map_tables[i]._urt.size();
+  }
 }
 
 z3::expr smt_var_bl::gen_smt_after_smt_block(smt_var& sv, z3::expr& pc) {
   z3::expr f = Z3_true;
-  for (int i = _mem_wt_sz; i < sv.mem_var._mem_table._wt.size(); i++) {
-    f = f && z3::implies(!pc, sv.mem_var._mem_table._wt.addr[i] == NULL_ADDR_EXPR);
+  for (int i = 0; i < sv.mem_var._mem_tables.size(); i++) {
+    for (int j = _mem_wt_sz[i]; j < sv.mem_var._mem_tables[i]._wt.size(); j++) {
+      f = f && z3::implies(!pc, sv.mem_var._mem_tables[i]._wt.addr[j] == NULL_ADDR_EXPR);
+    }
+    for (int j = _mem_urt_sz[i]; j < sv.mem_var._mem_tables[i]._urt.size(); j++) {
+      f = f && z3::implies(!pc, sv.mem_var._mem_tables[i]._urt.addr[j] == NULL_ADDR_EXPR);
+    }
   }
-  for (int i = _mem_urt_sz; i < sv.mem_var._mem_table._urt.size(); i++) {
-    f = f && z3::implies(!pc, sv.mem_var._mem_table._urt.addr[i] == NULL_ADDR_EXPR);
-  }
-  for (int i = _map_wt_sz; i < sv.mem_var._map_table._wt.size(); i++) {
-    f = f && z3::implies(!pc, sv.mem_var._map_table._wt.is_valid[i] == Z3_false);
-  }
-  for (int i = _map_urt_sz; i < sv.mem_var._map_table._urt.size(); i++) {
-    f = f && z3::implies(!pc, sv.mem_var._map_table._urt.is_valid[i] == Z3_false);
+  for (int i = 0; i < sv.mem_var._map_tables.size(); i++) {
+    for (int j = _map_wt_sz[i]; j < sv.mem_var._map_tables[i]._wt.size(); j++) {
+      f = f && z3::implies(!pc, sv.mem_var._map_tables[i]._wt.is_valid[j] == Z3_false);
+    }
+    for (int j = _map_urt_sz[i]; j < sv.mem_var._map_tables[i]._urt.size(); j++) {
+      f = f && z3::implies(!pc, sv.mem_var._map_tables[i]._urt.is_valid[j] == Z3_false);
+    }
   }
   return f;
 }
