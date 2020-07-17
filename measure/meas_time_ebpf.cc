@@ -361,22 +361,80 @@ void time_is_equal_to_pgm_diff_len() {
   for (int i = 1; i < n_off.size(); i++) {
     cout << "n_offsets: " << n_off[i] << "\t";
     time_is_equal_to_pgm_diff_len_type(n_off[i], 4);
-  }  
+  }
+}
+
+// func_id: 1 lookup; 2 update; 3 delete
+#define N_map_op 9
+void set_as_map_pgm(inst* pgm, int func_id, bool lookup_ld = false) {
+  int n_map = mem_t::maps_number();
+  inst p[N_map_op] = {inst(STXB, 10, -2, 1),  // *addr_v = r1
+                      inst(MOV64XC, 1, (int)gen_random(0, 20)), // *addr_k = k1
+                      inst(STXB, 10, -1, 1),
+                      inst(LDMAPID, 1, (int)gen_random(0, n_map - 1)), // r1 = map_id
+                      inst(MOV64XY, 2, 10),   // r2(addr_k) = r10 - 1
+                      inst(ADD64XC, 2, -1),
+                      inst(MOV64XY, 3, 10),   // r3(addr_v) = r10 - 2
+                      inst(ADD64XC, 3, -2),
+                      inst(CALL, func_id),
+                     };
+  for (int i = 0; i < N_map_op; i++) pgm[i] = p[i];
 }
 
 void time_is_equal_to_pgm(inst* pgm, int len) {
   inst::max_prog_len = len;
   validator vld;
   vld.set_orig(pgm, len);
-  time_measure(vld.is_equal_to(pgm, len, pgm, len), 50,
+  time_measure(vld.is_equal_to(pgm, len, pgm, len), 10,
                "validator::is_equal_to: ");
 }
 
 void time_is_equal_to_pgms(inst* pgm1, int len1, inst* pgm2, int len2) {
   validator vld;
   vld.set_orig(pgm1, len1);
-  time_measure(vld.is_equal_to(pgm1, len1, pgm2, len2), 50,
+  time_measure(vld.is_equal_to(pgm1, len1, pgm2, len2), 10,
                "validator::is_equal_to: ");
+}
+
+void time_z3_solver_map_pgm_one_case(int n_op, int n_maps, int type) {
+  // # map operations # maps
+  mem_t::_layout.clear();
+  for (int i = 0; i < n_maps; i++) mem_t::add_map(map_attr(8, 8, 32));
+  inst::max_prog_len = n_op * N_map_op + 1;
+  int len = inst::max_prog_len;
+  inst* pgm = (inst*)malloc(len * sizeof(inst));
+  int func_id = 0;
+  if (type < 4) func_id = type;
+  else if (type == 4) func_id = BPF_FUNC_map_lookup;
+  bool lookup_ld = false;
+  if (type == 4) lookup_ld = true;
+  for (int i = 0; i < n_op; i++) {
+    int cur_id = i * N_map_op;
+    set_as_map_pgm(&pgm[cur_id], func_id, lookup_ld);
+  }
+  pgm[len - 1] = inst(EXIT);
+  // cout << "print program" << endl;
+  // for (int i = 0; i < len; i++) {
+  //   pgm[i].print();
+  // }
+  time_is_equal_to_pgm(pgm, len);
+  free(pgm);
+  pgm = nullptr;
+}
+
+void time_z3_solver_map_pgm(int type) {
+  cout << "different # map operation" << endl;
+  time_z3_solver_map_pgm_one_case(1, 1, type);
+  time_z3_solver_map_pgm_one_case(2, 1, type);
+  time_z3_solver_map_pgm_one_case(4, 1, type);
+  time_z3_solver_map_pgm_one_case(8, 1, type);
+  time_z3_solver_map_pgm_one_case(16, 1, type);
+  cout << "different # maps" << endl;
+  time_z3_solver_map_pgm_one_case(4, 1, type);
+  time_z3_solver_map_pgm_one_case(4, 2, type);
+  time_z3_solver_map_pgm_one_case(4, 4, type);
+  time_z3_solver_map_pgm_one_case(4, 8, type);
+  time_z3_solver_map_pgm_one_case(4, 16, type);
 }
 
 void time_error_cost_without_solver() {
@@ -399,7 +457,9 @@ void time_error_cost_without_solver() {
 }
 
 int main(int argc, char* argv[]) {
-  /*
+  time_z3_solver_map_pgm(2);
+  time_z3_solver_map_pgm(3);
+  return 0;
   int loop_times = 1;
   if (argc > 1) {
     loop_times = atoi(argv[1]);
@@ -436,7 +496,7 @@ int main(int argc, char* argv[]) {
   time_is_equal_to_pgm(pgm14, 5);
 
   return 0;
-  */
+
   inst::max_prog_len = N3;
   inst::add_sample_imm(vector<int32_t> {264});
   mem_t::set_pkt_sz(128);
