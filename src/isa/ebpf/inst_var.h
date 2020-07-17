@@ -179,8 +179,7 @@ class smt_mem {
   z3::expr get_and_update_addr_v_next(int map_id);
   void clear() {_mem_tables.clear(); _map_tables.clear(); _addrs_map_v_next.clear();}
   int get_mem_table_id(z3::expr ptr_expr); // return value -1 means not found
-  int get_stack_table_id();
-  int get_pkt_table_id(); // return value -1 means not found
+  int get_mem_table_id(int type, int map_id = -1); // return value -1 means not found
   void add_in_mem_table_wt(int mem_table_id, z3::expr addr, z3::expr val);
   void add_in_mem_table_urt(int mem_table_id, z3::expr addr, z3::expr val);
   void add_ptr(z3::expr ptr_expr, int table_id);

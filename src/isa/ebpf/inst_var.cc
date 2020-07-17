@@ -467,21 +467,14 @@ int smt_mem::get_mem_table_id(z3::expr ptr_expr) {
   return not_found_flag;
 }
 
-int smt_mem::get_stack_table_id() {
+int smt_mem::get_mem_table_id(int type, int map_id = -1) {
   int not_found_flag = -1;
   for (int i = 0; i < _mem_tables.size(); i++) {
-    if (_mem_tables[i]._type == MEM_TABLE_stack) {
-      return i;
-    }
-  }
-  return not_found_flag;
-}
-
-int smt_mem::get_pkt_table_id() {
-  int not_found_flag = -1;
-  for (int i = 0; i < _mem_tables.size(); i++) {
-    if (_mem_tables[i]._type == MEM_TABLE_pkt) {
-      return i;
+    // check type
+    if (_mem_tables[i]._type == type) {
+      if (type != MEM_TABLE_map) return i;
+      // check map_id
+      if (_mem_tables[i]._map_id == map_id) return i;
     }
   }
   return not_found_flag;
@@ -637,9 +630,12 @@ void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_
   smt_var_base::init(prog_id, node_id, num_regs);
   mem_var.init_by_layout();
   if (node_id == 0) {
-    mem_var.add_ptr(get_init_reg_var(10), mem_var.get_stack_table_id()); // r10 is the stack pointer
-    if (mem_t::_layout._pkt_sz > 0)
-      mem_var.add_ptr(get_init_reg_var(1), mem_var.get_pkt_table_id()); // r1 is the pkt pointer
+    int stack_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_stack);
+    mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id); // r10 is the stack pointer
+    if (mem_t::_layout._pkt_sz > 0) {
+      int pkt_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_pkt);
+      mem_var.add_ptr(get_init_reg_var(1), pkt_mem_table_id); // r1 is the pkt pointer
+    }
   }
 }
 
