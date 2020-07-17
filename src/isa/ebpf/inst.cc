@@ -469,7 +469,7 @@ z3::expr inst::smt_inst(smt_var& sv, z3::expr cond) const {
     case RSH64XC: return predicate_rsh(CURDST, IMM, NEWDST);
     case RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
     case MOV64XC: return predicate_mov(IMM, NEWDST);
-    case MOV64XY: sv.mem_var.add_ptr(NEWDST, CURDST); return predicate_mov(CURSRC, NEWDST);
+    case MOV64XY: sv.mem_var.add_ptr(NEWDST, CURSRC); return predicate_mov(CURSRC, NEWDST);
     case ARSH64XC: return predicate_arsh(CURDST, IMM, NEWDST);
     case ARSH64XY: return predicate_arsh(CURDST, CURSRC_L6, NEWDST);
     case ADD32XC: return predicate_add32(CURDST, IMM, NEWDST);
