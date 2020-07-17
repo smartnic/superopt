@@ -171,8 +171,8 @@ void time_z3_solver_st_ld(int len, int type) {
   if (type == 0) set_as_register_pgm(pgm, len, type);
   else set_as_st_ld_pgm(pgm, len, type);
   z3::expr smt = smt_pgm_register_eq_check(pgm, len, pgm, len);
-  if (type == 0) {time_measure(is_smt_valid(smt), 1000, to_string(len) + "\t");}
-  else {time_measure(is_smt_valid(smt), 10, to_string(len) + "\t");}
+  if (type == 0) {time_measure(is_smt_valid(smt), 1, to_string(len) + "\t");}
+  else {time_measure(is_smt_valid(smt), 1, to_string(len) + "\t");}
   free(pgm);
   pgm = nullptr;
 }
@@ -399,6 +399,7 @@ void time_error_cost_without_solver() {
 }
 
 int main(int argc, char* argv[]) {
+  /*
   int loop_times = 1;
   if (argc > 1) {
     loop_times = atoi(argv[1]);
@@ -435,6 +436,7 @@ int main(int argc, char* argv[]) {
   time_is_equal_to_pgm(pgm14, 5);
 
   return 0;
+  */
   inst::max_prog_len = N3;
   inst::add_sample_imm(vector<int32_t> {264});
   mem_t::set_pkt_sz(128);
