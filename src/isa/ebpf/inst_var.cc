@@ -417,7 +417,7 @@ ostream& operator<<(ostream& out, const smt_wt& s) {
 
 ostream& operator<<(ostream& out, const smt_map_wt& s) {
   for (int i = 0; i < s.key.size(); i++) {
-    out << i << ": " << s.is_valid[i] << " " << s.addr_map[i] << " "
+    out << i << ": " << s.is_valid[i] << " "
         << s.key[i].simplify() << " " << s.addr_v[i].simplify() << endl;
   }
   return out;
@@ -467,7 +467,14 @@ int smt_mem::get_mem_table_id(z3::expr ptr_expr) {
   return not_found_flag;
 }
 
-int smt_mem::get_mem_table_id(int type, int map_id = -1) {
+int smt_mem::get_map_id_by_ptr(z3::expr ptr_expr) {
+  int not_found_flag = -1;
+  int table_id = get_mem_table_id(ptr_expr);
+  if (table_id == -1) return not_found_flag;
+  else return _mem_tables[table_id]._map_id;
+}
+
+int smt_mem::get_mem_table_id(int type, int map_id) {
   int not_found_flag = -1;
   for (int i = 0; i < _mem_tables.size(); i++) {
     // check type
@@ -506,6 +513,22 @@ void smt_mem::add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr) {
       _mem_tables[i]._ptrs.insert(ptr_expr.id());
       return;
     }
+  }
+}
+
+void smt_mem::add_ptr_by_map_id(z3::expr ptr_expr, z3::expr map_id_expr) {
+  assert(map_id_expr.is_numeral());
+  int map_id = map_id_expr.get_numeral_uint64();
+  int table_id = get_mem_table_id(MEM_TABLE_map, map_id);
+  if (table_id != -1) {
+    _mem_tables[table_id]._ptrs.insert(ptr_expr.id());
+  }
+}
+
+void smt_mem::add_ptr_by_map_id(z3::expr ptr_expr, int map_id) {
+  int table_id = get_mem_table_id(MEM_TABLE_map, map_id);
+  if (table_id != -1) {
+    _mem_tables[table_id]._ptrs.insert(ptr_expr.id());
   }
 }
 
@@ -651,17 +674,6 @@ void smt_var::clear() {
     map_helper_func_ret_cur_id = 0;
   }
   mem_var.clear();
-}
-
-void smt_var::add_map_id_reg(z3::expr reg, z3::expr map_id) {
-  assert(map_id.is_numeral());
-  map_id_regs[reg.id()] = map_id.get_numeral_uint64();
-}
-
-unsigned int smt_var::get_map_id(z3::expr reg) {
-  auto found = map_id_regs.find(reg.id());
-  if (found == map_id_regs.end()) return -1;
-  else return found->second;
 }
 /* class smt_var end */
 

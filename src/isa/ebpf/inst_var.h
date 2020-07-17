@@ -127,17 +127,15 @@ class smt_wt {
 class smt_map_wt {
  public:
   vector<z3::expr> is_valid; // flag, indicate whether this entry is valid or not
-  vector<z3::expr> addr_map;
   vector<z3::expr> key;
   vector<z3::expr> addr_v;
-  void add(z3::expr iv, z3::expr a, z3::expr k, z3::expr v) {
+  void add(z3::expr iv, z3::expr k, z3::expr v) {
     is_valid.push_back(iv);
-    addr_map.push_back(a);
     key.push_back(k);
     addr_v.push_back(v);
   }
-  void clear() {is_valid.clear(); addr_map.clear(); key.clear(); addr_v.clear();}
-  unsigned int size() {return addr_map.size();}
+  void clear() {is_valid.clear(); key.clear(); addr_v.clear();}
+  unsigned int size() {return key.size();}
   friend ostream& operator<<(ostream& out, const smt_map_wt& s);
 };
 
@@ -180,10 +178,13 @@ class smt_mem {
   void clear() {_mem_tables.clear(); _map_tables.clear(); _addrs_map_v_next.clear();}
   int get_mem_table_id(z3::expr ptr_expr); // return value -1 means not found
   int get_mem_table_id(int type, int map_id = -1); // return value -1 means not found
+  int get_map_id_by_ptr(z3::expr ptr_expr);
   void add_in_mem_table_wt(int mem_table_id, z3::expr addr, z3::expr val);
   void add_in_mem_table_urt(int mem_table_id, z3::expr addr, z3::expr val);
   void add_ptr(z3::expr ptr_expr, int table_id);
   void add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr);
+  void add_ptr_by_map_id(z3::expr ptr_expr, z3::expr map_id_expr);
+  void add_ptr_by_map_id(z3::expr ptr_expr, int map_id);
   friend ostream& operator<<(ostream& out, const smt_mem& s);
 };
 
@@ -196,7 +197,6 @@ class smt_var: public smt_var_base {
  private:
   unsigned int mem_addr_id, is_vaild_id, key_cur_id,
            val_cur_id, addr_v_cur_id, map_helper_func_ret_cur_id;
-  unordered_map<unsigned int, unsigned int> map_id_regs;
  public:
   smt_mem mem_var;
   smt_var();
@@ -222,8 +222,6 @@ class smt_var: public smt_var_base {
   void init() {mem_var.init_by_layout();}
   void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
   void clear();
-  void add_map_id_reg(z3::expr reg, z3::expr map_id);
-  unsigned int get_map_id(z3::expr reg);
 };
 
 class smt_var_bl {
