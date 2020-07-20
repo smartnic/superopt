@@ -30,6 +30,7 @@ inline uint32_t compute_xor(uint32_t in1, uint32_t in2, uint32_t out = 0);
 inline uint32_t compute_add_ternary(uint32_t in1, uint32_t in2, uint32_t in3, uint32_t out = 0);
 
 inline z3::expr predicate_add(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_subtract(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_add16(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_add8(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_inv(z3::expr in, z3::expr out);
@@ -37,6 +38,21 @@ inline z3::expr predicate_and(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_inv_and(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_or(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_xor(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_add_ternary(z3::expr in1, z3::expr in2, z3::expr in3, z3::expr out);
+
+// Operations for carry bit
+inline uint32_t compute_carry(uint32_t in1, uint32_t in2, uint32_t out = 0) {
+  return (UINT32_MAX - in1 < in2) ? 1 : 0;
+}
+
+// out == length 32 bitvector with numeric value 1 if there is a carry out, 0 if not
+inline z3::expr predicate_carry(z3::expr in1, z3::expr in2, z3::expr out) {
+  // 1. zero extend in1 and in2 by 1 bit (so they're both 33 bits long)
+  // 2. add them
+  // 3. extract the highest order bit from the sum
+  // 4. zero extend the one bit by 31 zeros, so it's 32 bits long
+  return out == zext((zext(in1, 1) + zext(in2, 1)).extract(32, 32), 31);
+}
 
 /* APIs exposed to the externals end */
 
@@ -128,7 +144,7 @@ COMPUTE_BINARY(and, AND_EXPR)
 COMPUTE_BINARY(inv_and, INV_AND_EXPR)
 COMPUTE_BINARY(or, OR_EXPR)
 COMPUTE_BINARY(xor, XOR_EXPR)
-COMPUTE_TERNARY(add_carry, ADD_TERNARY_EXPR)
+COMPUTE_TERNARY(add_ternary, ADD_TERNARY_EXPR)
 
 // Functions for interpreter end
 /* Macros for interpreter end */
@@ -156,6 +172,12 @@ inline z3::expr predicate_##func_name(z3::expr in, z3::expr out) {              
 inline z3::expr predicate_##func_name(z3::expr in1, z3::expr in2, z3::expr out) {          \
   return operation(in1, in2, out);                                                         \
 }
+#undef PREDICATE_TERNARY
+#define PREDICATE_TERNARY(func_name, operation)                                             \
+inline z3::expr predicate_##func_name(z3::expr in1, z3::expr in2, z3::expr in3, z3::expr out) {          \
+  return operation(in1, in2, in3, out);                                                         \
+}
+
 
 PREDICATE_UNARY(mov, MOV_EXPR)
 // PREDICATE_BINARY(max, MAX_EXPR)
@@ -170,6 +192,7 @@ PREDICATE_BINARY(and, AND_EXPR)
 PREDICATE_BINARY(inv_and, INV_AND_EXPR)
 PREDICATE_BINARY(or, OR_EXPR)
 PREDICATE_BINARY(xor, XOR_EXPR)
+PREDICATE_TERNARY(add_ternary, ADD_TERNARY_EXPR)
 
 // Functions for validator en
 /* Macros for validator end  */

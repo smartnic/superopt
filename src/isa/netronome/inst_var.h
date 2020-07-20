@@ -25,13 +25,13 @@ class prog_state: public prog_state_base {
   prog_state() {_regs.resize(NUM_REGS, 0);}
 
   friend ostream& operator<<(ostream& out, const prog_state& ps) {
-    out << "Registers: [";
+    out << "Registers:[";
     for (int i = 0; i < NUM_REGS; i++) {
       if (i > 0) out << ",";
       out << ps._regs[i];
     }
-    out << "]" << endl;
-    out << "Carry bit: " << ps._unsigned_carry << endl;
+    out << "] ";
+    out << "Carry bit:" << ps._unsigned_carry;
     return out;
   }
 

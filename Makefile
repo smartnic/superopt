@@ -12,7 +12,7 @@ NETRONOME_FLAG=-D ISA_NETRONOME
 
 all: main.out main_ebpf.out proposals_test.out inst_codegen_test_toy_isa.out inst_codegen_test_ebpf.out inst_test.out cost_test.out prog_test.out prog_test_ebpf.out mh_prog_test.out validator_test.out cfg_test.out inout_test.out smt_prog_test.out ebpf_inst_test.out validator_test_ebpf.out cfg_test_ebpf.out
 
-all_netronome: inst_codegen_test_netronome.out netronome_inst_test.out netronome_inst_parse_test.out smt_prog_test_netronome.out
+all_netronome: inst_codegen_test_netronome.out netronome_inst_test.out netronome_inst_parse_test.out smt_prog_test_netronome.out validator_test_netronome.out
 
 main.out: main.cc main.h main_z3.o measure/benchmark_header.h measure/benchmark_toy_isa.cc measure/benchmark_toy_isa.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h $(SEARCH)proposals.cc $(SEARCH)proposals.h $(ISA)prog.cc $(ISA)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(TOY_ISA)inst_codegen.h $(TOY_ISA)inst_var.h $(TOY_ISA)inst_var.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(TOY_ISA)inst.cc $(TOY_ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(ISA)inst_var.cc $(ISA)inst_var.h $(SRC)utils.cc $(SRC)utils.h
 	g++ $(TOY_ISA_FLAG) -std=c++11 main_z3.o measure/benchmark_toy_isa.cc measure/meas_mh_bhv.cc $(ISA)inst.cc $(TOY_ISA)inst.cc $(TOY_ISA)inst_var.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(ISA)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(VERIFY)smt_prog.cc $(ISA)inst_var.cc $(SRC)utils.cc -o main.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
@@ -151,6 +151,12 @@ smt_prog_test_netronome.out: smt_prog_z3_netronome.o $(VERIFY)smt_prog.cc $(VERI
 smt_prog_z3_netronome.o: $(VERIFY)smt_prog_test_netronome.cc
 	$(CXX) $(NETRONOME_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(VERIFY)smt_prog_z3_netronome.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)smt_prog_test_netronome.cc
 
+# Tests for comparing two Netronome programs using the validator
+validator_test_netronome.out: validator_z3_netronome.o $(VERIFY)validator.cc $(VERIFY)validator.h $(NETRONOME)inst.cc $(NETRONOME)inst.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(SRC)inout.cc $(SRC)inout.h $(SRC)utils.cc $(SRC)utils.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(ISA)inst_var.cc $(ISA)inst_var.h $(NETRONOME)inst_codegen.h $(NETRONOME)inst_var.h $(NETRONOME)inst_var.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h
+	g++ $(NETRONOME_FLAG) -std=c++11 -fvisibility=hidden $(VERIFY)validator_z3_netronome.o $(VERIFY)validator.cc $(NETRONOME)inst.cc $(VERIFY)cfg.cc $(SRC)inout.cc $(SRC)utils.cc $(VERIFY)smt_prog.cc $(ISA)inst_var.cc $(ISA)inst.cc -o $(VERIFY)validator_test_netronome.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+
+validator_z3_netronome.o: $(VERIFY)validator_test.cc
+	$(CXX) $(NETRONOME_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(VERIFY)validator_z3_netronome.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)validator_test_netronome.cc
 
 # Parsing tests for netronome (in progress)
 netronome_inst_parse_test.out: netronome_inst_z3_parse.o $(NETRONOME)inst.cc $(NETRONOME)inst.h $(SRC)utils.cc $(SRC)utils.h $(NETRONOME)inst_codegen.h $(NETRONOME)inst_var.h $(NETRONOME)inst_var.cc $(ISA)inst_header.h $(ISA)inst.cc $(ISA)inst.h $(ISA)inst_var.cc $(ISA)inst_var.h
@@ -191,8 +197,9 @@ netronome_tests:
 	make all_netronome
 	./src/isa/netronome/inst_codegen_test.out
 	./src/isa/netronome/inst_test.out
-	# 	./src/isa/netronome/inst_parse_test.out
+	./src/isa/netronome/inst_parse_test.out
 	./src/verify/smt_prog_test_netronome.out
+	./src/verify/validator_test_netronome.out
 
 netronome_parse_tests:
 	make netronome_inst_parse_test.out

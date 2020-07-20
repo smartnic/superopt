@@ -27,7 +27,7 @@ bool is_valid(z3::expr smt, bool counterex_print = 0) {
 
 void test1() {
   cout << "Test 1: ALU operations" << endl;
-  int32_t a = 5, b = 11, c = 0x0010203, z = ~0;
+  uint32_t a = 5, b = 11, c = 0x0010203, z = ~0;
 
   z = compute_mov(a);
   // cout << z << endl;
@@ -39,6 +39,7 @@ void test1() {
   z = compute_subtract(b, a);
   print_test_res(z == b-a, "compute_subtract");
   pred = predicate_subtract(v(b), v(a), v(z));
+  cout << pred << endl;
   print_test_res(is_valid(pred), "predicate_subtract match compute_subtract");
 
   z = compute_add16(a, c);
@@ -93,12 +94,47 @@ void test1() {
 
 
 void test2() {
-  cout << "Test 2: experimenting with z3 addition overflow" << endl;
-  uint32_t x = UINT32_MAX, y = 1;
-  uint32_t z = x + y;
-  z3::expr pred = predicate_add(v(x), v(y), v(z));
+  cout << "Test 2: ternary addition, carry calculation, overflow behavior" << endl;
+  uint32_t a = 5, b = 8, c = 10, d = 0xfffffffa, z;
+  z3::expr pred = Z3_false;
+
+  z = compute_add_ternary(a, b, c);
+  print_test_res(z == a + b + c, "compute_add_ternary");
+  pred = predicate_add_ternary(v(a), v(b), v(c), v(z));
+  print_test_res(is_valid(pred), "predicate_add_ternary match compute_add_ternary");
+
+  z = compute_carry(c, d);
+  print_test_res(z == 1, "compute_carry");
+  pred = predicate_carry(v(c), v(d), v(z));
   cout << pred << endl;
-  print_test_res(is_valid(pred), "bit vector sum overflows");
+  print_test_res(is_valid(pred), "predicate_carry match compute_carry");
+
+  z = compute_carry(a, d);
+  print_test_res(z == 0, "compute_carry");
+  pred = predicate_carry(v(a), v(d), v(z));
+  print_test_res(is_valid(pred), "predicate_carry match compute_carry");
+  
+  z = compute_add(c, d);
+  // 10 + 0xfffffffa == 10 + (2^32 - 6) == 4 mod 2^32
+  print_test_res(z == 4, "compute_add overflows correctly");
+  pred = predicate_add(v(c), v(d), v(z));
+  cout << pred << endl;
+  print_test_res(is_valid(pred), "predicate_add overflows correctly");
+}
+
+void test3() {
+  cout << "Test 3: z3 bvadd_no_overflow" << endl;
+  uint32_t a = 3, b = 4, c = UINT32_MAX;
+  z3::expr pred = bvadd_no_overflow(v(a), v(b), false); // false = is not signed
+  cout << pred << endl;
+  print_test_res(is_valid(pred), "3+4 doesn't overflow");
+  pred = bvadd_no_overflow(v(a), v(c), false);
+  cout << pred << endl;
+  print_test_res(!is_valid(pred), "3 + UINT32_MAX does overflow");
+
+  z3::expr add_expr = zext(v(a), 1) + zext(v(b), 1);
+  z3::expr overflow_expr = zext(add_expr.extract(32, 32), 31);
+  cout << overflow_expr << endl;
 }
 
 int main() {
@@ -106,5 +142,6 @@ int main() {
  // These test make sure that the metaprogramatically generated code for interpreting and verifying each instruction agree with each other
  test1();
  test2();
+ test3();
  return 0;
 }

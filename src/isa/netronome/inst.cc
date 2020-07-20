@@ -34,6 +34,7 @@ inst& inst::operator=(const inst &rhs) {
   _args[0] = rhs._args[0];
   _args[1] = rhs._args[1];
   _args[2] = rhs._args[2];
+  _args[3] = rhs._args[3];
   return *this;
 }
 
@@ -41,7 +42,8 @@ bool inst::operator==(const inst &x) const {
   return ((_opcode == x._opcode) &&
           (_args[0] == x._args[0]) &&
           (_args[1] == x._args[1]) &&
-          (_args[2] == x._args[2]));
+          (_args[2] == x._args[2]) &&
+          (_args[3] == x._args[3]));
 }
 
 // For jmp opcode, it can only jump forward
@@ -130,6 +132,7 @@ void inst::set_as_nop_inst() {
 #define IMM2 to_expr(IMM2VAL(*this))
 
 z3::expr inst::smt_inst(smt_var& sv) const {
+  // z3::expr pred;
   switch (_opcode) {
     case IMMED: return predicate_mov(IMM2, NEWDST);
     case ALU:
@@ -139,7 +142,12 @@ z3::expr inst::smt_inst(smt_var& sv) const {
         case ALU_PLUS_8: return predicate_add8(CURSRC, CURSRC2, NEWDST);
         // case ALU_PLUS_CARRY: 
         // case ALU_MINUS_CARRY:
-        case ALU_MINUS: return predicate_subtract(CURSRC, CURSRC2, NEWDST);
+        case ALU_MINUS: 
+          // cout << "here inst::smt_inst() ALU_MINUS" << endl;
+          // pred = predicate_subtract(CURSRC, CURSRC2, NEWDST);
+          // cout << pred << endl;
+          // return pred;
+          return predicate_subtract(CURSRC, CURSRC2, NEWDST);
         case ALU_B_MINUS_A: return predicate_subtract(CURSRC2, CURSRC, NEWDST); // note reversed order
         case ALU_B: return predicate_mov(CURSRC2, NEWDST);
         case ALU_INV_B: return predicate_inv(CURSRC2, NEWDST);
@@ -232,6 +240,7 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
 }
 
 select_insn:
+  // cout << ps << endl;
   goto *jumptable[insn->_opcode];
 
 INSN_NOP:
@@ -270,11 +279,7 @@ INSN_ALU_PLUS_CARRY:
   CONT;
 
 INSN_ALU_MINUS:
-  cout << "here INSN_ALU_MINUS" << endl;
-  cout << SRC << endl;
-  cout << SRC2 << endl;
   DST = compute_subtract(SRC, SRC2);
-  cout << DST << endl;
   SET_CARRY;
   CONT;
 

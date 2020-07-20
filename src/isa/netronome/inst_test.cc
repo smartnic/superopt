@@ -13,7 +13,7 @@ static void run_test(string name, string description, inst *instructions, size_t
 	interpret(output, instructions, len, ps, input);
 	print_test_res(true, "interpret " + name + " completion");
 	print_test_res(output == expected, "interpret " + name + " correctness");
-	cout << ps << endl;
+	// cout << ps << endl;
 }
 
 
@@ -52,6 +52,21 @@ inst instructions5[] = {
 	inst(IMMED, 16, 5),
 	inst(IMMED, 17, 11),
 	inst(ALU, 0, 16, ALU_XOR, 17)
+};
+
+inst instructions7[] {
+  inst(IMMED, 16, 0x0000010a),
+  inst(IMMED, 17, 0x00000305),
+  inst(ALU, 1, 16, ALU_OR, 17), // a1 = 0x0000030f
+  inst(IMMED, 18, 0xabcd0008),
+  inst(ALU, 2, 1, ALU_XOR, 18), // a2 = 0xabcd0307
+  // inst(IMMED, 0, 0),
+  inst(ALU, 0, 0, ALU_PLUS_8, 2), // a0 = 7 (assumes prev value of a0 == 0)
+};
+
+inst instructions8[] {
+	inst(IMMED, 16, 1),
+	inst(ALU, 0, 0, ALU_PLUS, 16),
 };
 
 static void test6() {
@@ -99,15 +114,30 @@ static void test6b() {
 	print_test_res(ps._unsigned_carry == 0, "correct carry");
 }
 
+static void test8(int input_val) {
+	prog_state ps;
+	inout_t input, output, expected;
+	input.init(); output.init(); expected.init();
+	input.reg = input_val;
+	expected.reg = input_val + 1;
+	
+	cout << "Test 8: input (" << input_val << ")" << endl;
+	interpret(output, instructions8, sizeof(instructions8)/sizeof(inst), ps, input);
+	print_test_res(output == expected, "interpret test 8 correctness");
+}
+
 int main(int argc, char *argv[]) {
   cout << "=== Interpretation tests for Netronome ISA ===" << endl;
   // run_test("Test 1", "nop, immed", instructions1, sizeof(instructions1)/sizeof(inst), 7);
   // run_test("Test 2", "immed, alu add", instructions2, sizeof(instructions2)/sizeof(inst), 8);
-  run_test("Test 2b", "alu subtract", instructions2b, sizeof(instructions2b)/sizeof(inst), 4);
+  // run_test("Test 2b", "alu subtract", instructions2b, sizeof(instructions2b)/sizeof(inst), 4);
   // run_test("Test 3", "immed, alu +16", instructions3, sizeof(instructions3)/sizeof(inst), 5);
   // run_test("Test 4", "alu ~B", instructions4, sizeof(instructions4)/sizeof(inst), -2);
   // run_test("Test 5", "alu", instructions5, sizeof(instructions5)/sizeof(inst), 5 ^ 11);
-  test6();
-  test6b();
+  // test6();
+  // test6b();
+  run_test("Test 7", "alu OR, XOR, +8", instructions7, sizeof(instructions7)/sizeof(inst), 7);
+  test8(1);
+  test8(54321);
   return 0;
 }
