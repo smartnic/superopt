@@ -522,15 +522,6 @@ void smt_mem::add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr) {
   }
 }
 
-void smt_mem::add_ptr_by_map_id(z3::expr ptr_expr, z3::expr map_id_expr) {
-  assert(map_id_expr.is_numeral());
-  int map_id = map_id_expr.get_numeral_uint64();
-  int table_id = get_mem_table_id(MEM_TABLE_map, map_id);
-  if (table_id != -1) {
-    _mem_tables[table_id]._ptrs.insert(ptr_expr.id());
-  }
-}
-
 void smt_mem::add_ptr_by_map_id(z3::expr ptr_expr, int map_id) {
   int table_id = get_mem_table_id(MEM_TABLE_map, map_id);
   if (table_id != -1) {

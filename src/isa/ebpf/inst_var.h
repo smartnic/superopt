@@ -117,13 +117,6 @@ class smt_wt {
   friend ostream& operator<<(ostream& out, const smt_wt& s);
 };
 
-// class mem_wt {
-//  public:
-//   smt_wt _wt; // write table, each element is for write instructions
-//   smt_wt _urt; // uninitalized read table, each element is for read before write instructions
-//   void clear() {_wt.clear(); _urt.clear();}
-// };
-
 class smt_map_wt {
  public:
   vector<z3::expr> is_valid; // flag, indicate whether this entry is valid or not
@@ -184,7 +177,6 @@ class smt_mem {
   void add_in_mem_table_urt(int mem_table_id, z3::expr addr, z3::expr val);
   void add_ptr(z3::expr ptr_expr, int table_id);
   void add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr);
-  void add_ptr_by_map_id(z3::expr ptr_expr, z3::expr map_id_expr);
   void add_ptr_by_map_id(z3::expr ptr_expr, int map_id);
   friend ostream& operator<<(ostream& out, const smt_mem& s);
 };
