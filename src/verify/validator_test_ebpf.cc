@@ -87,7 +87,7 @@ void test2() {
                };
   validator vld(p1, 6);
   print_test_res(vld.is_equal_to(p1, 6, p2, 4), "p1 == p2");
-  return;
+
   inst p3[5] = {inst(STXB, 10, -1, 1),
                 inst(JEQXY, 0, 1, 0),
                 inst(STXB, 10, -1, 1),
@@ -551,25 +551,6 @@ void test5() { // test pkt
 }
 
 int main() {
-  std::cout << "tactic example 1\n";
-  context c;
-  expr x = c.bv_const("x", 64);
-  expr y = c.bv_const("y", 64);
-  expr z = c.bv_const("z", 64);
-  expr v_x = c.bv_const("v_x", 64);
-  expr v_y = c.bv_const("v_y", 64);
-  goal g(c);
-  g.add(x == z);
-  g.add(y == z);
-  g.add(implies(uge(x, z) && (x == y), v_x == v_y));
-  std::cout << "before\n" << g << "\n";
-  tactic t1(c, "simplify");
-  tactic t2(c, "solve-eqs");
-  tactic t = t1 & t2;
-  apply_result r = t(g);
-  std::cout << "after\n" << r << "\n";
-  cout << x.id() << " " << y.id() << " " << (x + y).id() << " " << (x + y).id() << endl;
-  return 0;
   test1();
   test2();
   test3();

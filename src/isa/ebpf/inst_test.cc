@@ -737,6 +737,7 @@ void test2() {
   print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
 
   z3::expr f_r10 = (sv.get_cur_reg_var(10) == sv.get_stack_bottom_addr());
+  sv.mem_var.add_ptr(sv.get_cur_reg_var(10), sv.mem_var.get_mem_table_id(MEM_TABLE_stack));
 
   inst insns1[2] = {inst(STXB, 10, -4, 1), inst(LDXB, 0, 10, -4)};
   SMT_CHECK_LDST(10, 10, "smt LDXB & STXB 1", insns1);

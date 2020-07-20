@@ -487,6 +487,12 @@ int smt_mem::get_mem_table_id(int type, int map_id) {
   return not_found_flag;
 }
 
+int smt_mem::get_type(int mem_table_id) {
+  assert(mem_table_id >= 0);
+  assert(mem_table_id < _mem_tables.size());
+  return _mem_tables[mem_table_id]._type;
+}
+
 void smt_mem::add_in_mem_table_wt(int mem_table_id, z3::expr addr, z3::expr val) {
   assert(mem_table_id >= 0);
   assert(mem_table_id < _mem_tables.size());
@@ -625,6 +631,18 @@ z3::expr smt_var::get_map_end_addr(int map_id) { // return value: z3 bv64
   return map_end_addr;
 }
 
+void smt_var::add_expr_map_id(z3::expr e, z3::expr map_id) {
+  assert(map_id.is_numeral());
+  map_expr_map_id.insert({e.id(), map_id.get_numeral_uint64()});
+}
+
+int smt_var::get_map_id(z3::expr e) {
+  int not_found_flag = -1;
+  auto found = map_expr_map_id.find(e.id());
+  if (found != map_expr_map_id.end()) return found->second;
+  return not_found_flag;
+}
+
 // constrain:
 // 1. pkt_sz = 0: 0 < [memory start, memory end] <= max_uint64
 // 2. pkt_sz > 0: 0 < [memory start, memory end] < [pkt start, pkt end] <= max_uint64
@@ -674,6 +692,7 @@ void smt_var::clear() {
     map_helper_func_ret_cur_id = 0;
   }
   mem_var.clear();
+  map_expr_map_id.clear();
 }
 /* class smt_var end */
 

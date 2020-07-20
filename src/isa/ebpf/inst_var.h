@@ -179,6 +179,7 @@ class smt_mem {
   int get_mem_table_id(z3::expr ptr_expr); // return value -1 means not found
   int get_mem_table_id(int type, int map_id = -1); // return value -1 means not found
   int get_map_id_by_ptr(z3::expr ptr_expr);
+  int get_type(int mem_table_id);
   void add_in_mem_table_wt(int mem_table_id, z3::expr addr, z3::expr val);
   void add_in_mem_table_urt(int mem_table_id, z3::expr addr, z3::expr val);
   void add_ptr(z3::expr ptr_expr, int table_id);
@@ -197,6 +198,7 @@ class smt_var: public smt_var_base {
  private:
   unsigned int mem_addr_id, is_vaild_id, key_cur_id,
            val_cur_id, addr_v_cur_id, map_helper_func_ret_cur_id;
+  unordered_map<unsigned int, int> map_expr_map_id; // the relationship between expr_id and map_id
  public:
   smt_mem mem_var;
   smt_var();
@@ -219,6 +221,8 @@ class smt_var: public smt_var_base {
   z3::expr get_pkt_start_addr() {return mem_var._pkt_start;}
   z3::expr get_pkt_end_addr() {return (mem_var._pkt_start + to_expr((uint64_t)mem_t::_layout._pkt_sz - 1));}
   z3::expr mem_layout_constrain() const;
+  void add_expr_map_id(z3::expr e, z3::expr map_id);
+  int get_map_id(z3::expr e);
   void init() {mem_var.init_by_layout();}
   void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
   void clear();
