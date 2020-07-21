@@ -20,7 +20,7 @@ const vector<string> alu_op_names {
 	"+",
 	"+16",
 	"+8",
-	"+carry",
+	// "+carry",
 	// "-carry",
 	"-",
 	"b-a",

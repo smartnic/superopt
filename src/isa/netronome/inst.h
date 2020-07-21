@@ -14,8 +14,8 @@ static constexpr int MAX_PROG_LEN = 7;
 // Max number of operands in one instruction
 static constexpr int MAX_OP_LEN = 4;
 
-// // Number of bits of a single opcode or operand
-// static constexpr int OP_NUM_BITS = 5;
+// size of the largest operand type (immed constants), in bits
+static constexpr int OP_NUM_BITS = 32;
 // // Number of bits of a single instruction
 // static constexpr int INST_NUM_BITS = 20;
 
@@ -32,7 +32,7 @@ enum ALU_OPS {
   ALU_PLUS = 0,
   ALU_PLUS_16,
   ALU_PLUS_8,
-  ALU_PLUS_CARRY,
+  // ALU_PLUS_CARRY,
   // ALU_MINUS_CARRY,
   ALU_MINUS,
   ALU_B_MINUS_A,
@@ -55,6 +55,7 @@ static constexpr int num_operands[NUM_INSTR] = {
 static constexpr int insn_num_regs[NUM_INSTR] = {
   [NOP]   = 0,
   [IMMED] = 1,
+  [ALU]   = 3,
 };
 
 static constexpr int opcode_type[NUM_INSTR] = {
@@ -75,7 +76,7 @@ static constexpr int OP_OFF = 3;
 static constexpr int OP_OPTYPE = 4; // operation subtype (eg. + or - within alu[] )
 
 // /* The definitions below assume a minimum 16-bit integer data type */
-#define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex) * 4)) & 31)
+#define OPTYPE(opcode, opindex) ((optable[opcode] >> ((opindex) * 4)) & 0b1111)
 #define OP1(x) (x)
 #define OP2(x) (x << 4)
 #define OP3(x) (x << 8)

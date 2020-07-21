@@ -1,5 +1,6 @@
 #include <iostream>
 #include "inst.h"
+#include "inst_parse.h"
 
 using namespace std;
 
@@ -10,11 +11,10 @@ using namespace std;
 #define IMM2VAL(inst_var) (inst_var)._args[1]
 
 string inst::opcode_to_str(int opcode) const {
-  switch (opcode) {
-    case NOP: return "nop";
-    // case IMMED: return "immed";
-    default: return "unknown opcode";
+  if ( opcode < opcode_names.size() ) {
+    return opcode_names[opcode];
   }
+  return "unknown opcode";
 }
 
 void inst::print() const {
@@ -22,7 +22,26 @@ void inst::print() const {
   if (get_num_operands() > 0) {
     cout << "[";
     for (int i = 0; i < get_num_operands(); i++) {
-      cout << ", " << _args[i];
+      if (i >= 1) {
+        cout << ",";
+      }
+      switch (OPTYPE(_opcode, i)) {
+        case OP_REG:
+          cout << register_names[_args[i]];
+          break;
+        case OP_OPTYPE:
+          if (_opcode == ALU && 0 <= _args[i] && _args[i] < NUM_ALU_INSTR) {
+            cout << alu_op_names[_args[i]];
+          }
+          else {
+            cout << _args[i];
+          }
+          break;
+        case OP_IMM:
+        default:
+          cout << _args[i];
+          break;
+      }
     }
     cout << "]";
   }
@@ -49,11 +68,12 @@ bool inst::operator==(const inst &x) const {
 // For jmp opcode, it can only jump forward
 int inst::get_max_operand_val(int op_index, int inst_index) const {
   // max value for each operand type
-  int max_val[4] = {
+  int max_val[] = {
     [OP_UNUSED] = 0,
     [OP_REG] = NUM_REGS - 1,
     [OP_IMM] = MAX_CONST,
     [OP_OFF] = MAX_PROG_LEN - inst_index - 2,
+    [OP_OPTYPE] = NUM_ALU_INSTR - 1,
   };
   return max_val[OPTYPE(_opcode, op_index)];
 }
@@ -73,25 +93,26 @@ vector<int> inst::get_canonical_reg_list() const {
 }
 
 vector<int> inst::get_isa_canonical_reg_list() {
-  return vector<int> {1, 2, 3};
+  vector<int> reg_list;
+  for (int i = 1; i < NUM_REGS; i++) {
+    reg_list.push_back(i);
+  }
+  return reg_list;
 }
 
 int inst::get_jmp_dis() const {
+  // there are no jump opcodes yet
   switch (get_opcode_type()) {
-    case (OP_UNCOND_JMP): return _args[0];
-    case (OP_COND_JMP): return _args[2];
+    // case (OP_UNCOND_JMP): return _args[0];
+    // case (OP_COND_JMP): return _args[2];
     default: cout << "Error: opcode is not jmp" << endl; return 0;
   }
 }
 
-// void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
-//   jmp_set.insert(JMP);
-//   jmp_set.insert(JMPEQ);
-//   jmp_set.insert(JMPGT);
-//   jmp_set.insert(JMPGE);
-//   jmp_set.insert(JMPLT);
-//   jmp_set.insert(JMPLE);
-// }
+void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
+  // no jump opcodes yet
+  return;
+}
 
 int inst::inst_output_opcode_type() const {
   // for now, just return a register value
@@ -119,9 +140,9 @@ int inst::implicit_ret_reg() const {
 
 void inst::set_as_nop_inst() {
   _opcode = NOP;
-  _args[0] = 0;
-  _args[1] = 0;
-  _args[2] = 0;
+  for (int i = 0; i < MAX_OP_LEN; i++) {
+    _args[i] = 0;
+  }
 }
 
 #undef IMM2
@@ -197,7 +218,7 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     [ALU_PLUS] = && INSN_ALU_PLUS,
     [ALU_PLUS_16] = && INSN_ALU_PLUS_16,
     [ALU_PLUS_8] = && INSN_ALU_PLUS_8,
-    [ALU_PLUS_CARRY] = && INSN_ALU_PLUS_CARRY,
+    // [ALU_PLUS_CARRY] = && INSN_ALU_PLUS_CARRY,
     // [ALU_MINUS_CARRY] = && INSN_ALU_MINUS_CARRY,
     [ALU_MINUS] = && INSN_ALU_MINUS,
     [ALU_B_MINUS_A] = && INSN_ALU_B_MIUS_A,
@@ -269,12 +290,7 @@ INSN_ALU_PLUS_8:
   CONT;
 
 INSN_ALU_PLUS_CARRY:
-  DST = compute_add_carry(SRC, SRC2, (ps._unsigned_carry), DST);
-  cout << "here INSN_ALU_PLUS_CARRY" << endl;
-  cout << SRC << endl;
-  cout << SRC2 << endl;
-  cout << ps._unsigned_carry << endl;
-  cout << ((uint64_t)SRC + (uint64_t)SRC2 + (uint64_t)ps._unsigned_carry) << endl;
+  DST = compute_add_ternary(SRC, SRC2, (ps._unsigned_carry), DST);
   ps._unsigned_carry = (((uint64_t)SRC + (uint64_t)SRC2 + (uint64_t)ps._unsigned_carry) >> 32) & 1;
   CONT;
 

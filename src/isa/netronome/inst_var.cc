@@ -10,7 +10,7 @@ void update_output_by_ps(inout_t& output, const prog_state& ps) {
   output.reg =  ps._regs[0];
 }
 
-void get_cmp_lists(vector<int>& val_list1, vector<int>& val_list2,
+void get_cmp_lists(vector<reg_t>& val_list1, vector<reg_t>& val_list2,
                    inout_t& output1, inout_t& output2) {
   val_list1.resize(1);
   val_list2.resize(1);
