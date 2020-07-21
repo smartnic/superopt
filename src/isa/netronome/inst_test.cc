@@ -90,29 +90,29 @@ static void test6() {
 	print_test_res(ps._unsigned_carry == 1, "correct carry");
 }
 
-static void test6b() {
-	inst instructions[] {
-		inst(IMMED, 1, 0xffffffff), // a1 = 0xffffffff
-		inst(IMMED, 2, 0xffffffff), // a2 = 0xffffffff
-		inst(IMMED, 3, 0x3), // a3 = 3
-		inst(ALU, 0, 1, ALU_PLUS, 2), // a0 = 0xffffffff + 0xffffffff = 0xfffffffe, carry = 1
-		inst(ALU, 0, 0, ALU_PLUS_CARRY, 3), // a0 = 0xfffffffe + 3 + 1 = 2, carry = 1
-		// inst(ALU, 0, 0, ALU_PLUS_CARRY, 4), // a0 = 2 + 0 + 1
-	};
-	int len = sizeof(instructions) / sizeof(inst);
+// static void test6b() {
+// 	inst instructions[] {
+// 		inst(IMMED, 1, 0xffffffff), // a1 = 0xffffffff
+// 		inst(IMMED, 2, 0xffffffff), // a2 = 0xffffffff
+// 		inst(IMMED, 3, 0x3), // a3 = 3
+// 		inst(ALU, 0, 1, ALU_PLUS, 2), // a0 = 0xffffffff + 0xffffffff = 0xfffffffe, carry = 1
+// 		inst(ALU, 0, 0, ALU_PLUS_CARRY, 3), // a0 = 0xfffffffe + 3 + 1 = 2, carry = 1
+// 		// inst(ALU, 0, 0, ALU_PLUS_CARRY, 4), // a0 = 2 + 0 + 1
+// 	};
+// 	int len = sizeof(instructions) / sizeof(inst);
 
-	prog_state ps;
-	inout_t input, output, expected;
-	input.init(); output.init(); expected.init();
-	expected.reg = 3;
-	// expected.reg = 0x0661f99e;
+// 	prog_state ps;
+// 	inout_t input, output, expected;
+// 	input.init(); output.init(); expected.init();
+// 	expected.reg = 3;
+// 	// expected.reg = 0x0661f99e;
 	
-	cout << "Test 6b: ALU_PLUS_CARRY" << endl;
-	interpret(output, instructions, len, ps, input);
-	cout << ps << endl;
-	print_test_res(output == expected, "correct lower 32 bits");
-	print_test_res(ps._unsigned_carry == 0, "correct carry");
-}
+// 	cout << "Test 6b: ALU_PLUS_CARRY" << endl;
+// 	interpret(output, instructions, len, ps, input);
+// 	cout << ps << endl;
+// 	print_test_res(output == expected, "correct lower 32 bits");
+// 	print_test_res(ps._unsigned_carry == 0, "correct carry");
+// }
 
 static void test8(int input_val) {
 	prog_state ps;
@@ -125,6 +125,7 @@ static void test8(int input_val) {
 	interpret(output, instructions8, sizeof(instructions8)/sizeof(inst), ps, input);
 	print_test_res(output == expected, "interpret test 8 correctness");
 }
+
 
 int main(int argc, char *argv[]) {
   cout << "=== Interpretation tests for Netronome ISA ===" << endl;

@@ -84,9 +84,41 @@ void test2() {
   cout << "counterexample: input=" << counterex.input.reg << " output=" << counterex.output.reg << endl;
 }
 
+void test3() {
+  cout << "test 3" << endl;
+
+  inst p1[] {
+    inst(IMMED, 0, 101),
+    inst(IMMED, 16, 10),
+    inst(ALU, 0, 0, ALU_MINUS, 16),
+    inst(NOP),
+    inst(NOP),
+    inst(NOP),
+  };
+
+  inst p2[] {
+    inst(IMMED, 0, 101),
+    inst(IMMED, 16, 10),
+    inst(IMMED, 17, 1),
+    inst(ALU, 16, 0, ALU_INV_B, 16),
+    inst(ALU, 0, 0, ALU_PLUS, 16),
+    inst(ALU, 0, 0, ALU_PLUS, 17),
+  };
+
+  int length = sizeof(p1) / sizeof(inst);
+  validator vld(p1, length);
+  bool result = vld.is_equal_to(p1, length, p2, length)
+  print_test_res(result, "p1 == p2");
+  if (!result) {
+    inout counterex = vld._last_counterex;
+    cout << "counterexample: input=" << counterex.input.reg << " output=" << counterex.output.reg << endl;
+  }
+}
+
 int main(int argc, char *argv[]) {
   cout << "=== Program equivalence tests using validator class ===" << endl;
   test1(); 
   test2();
+  test3();
   return 0;
 }
