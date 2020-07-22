@@ -14,6 +14,9 @@ extern z3::context smt_c;
 
 #define Z3_true string_to_expr("true")
 #define Z3_false string_to_expr("false")
+#define INT_true  1
+#define INT_false 0
+#define INT_uncertain -1
 
 // convert string s into expr e
 // if e = "true"/"false" the type of e is bool_val
@@ -67,6 +70,23 @@ class inout_t_base {
   void init() {RAISE_EXCEPTION("inout_t::init()");}
   bool operator==(const inout_t_base &rhs) const {RAISE_EXCEPTION("inout_t::operator==");}
   friend ostream& operator<<(ostream& out, const inout_t_base& x) {RAISE_EXCEPTION("inout_t::operator<<");}
+};
+
+class dag { // directed acyclic graph
+ private:
+  bool is_path_a2b(unsigned int a, unsigned int b);
+  bool is_path_a2b_without_c(unsigned int a, unsigned int b, unsigned int c);
+ public:
+  unsigned int root;
+  vector<vector<unsigned int>> out_edges_list; // outgoing edges, list index: node id
+  dag(unsigned int n_nodes, unsigned int root_node) {
+    out_edges_list.resize(n_nodes);
+    root = root_node;
+  }
+  void add_edge_a2b(unsigned int a, unsigned int b) {
+    out_edges_list[a].push_back(b);
+  }
+  int is_b_on_root2a_path(unsigned int a, unsigned int b);
 };
 
 // exposed APIs

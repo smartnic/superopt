@@ -116,3 +116,36 @@ void prog_state_base::clear() {
     _regs[i] = 0;
   }
 };
+
+// use dfs
+bool dag::is_path_a2b(unsigned int a, unsigned int b) {
+  if (a == b) return true;
+  for (int i = 0; i < out_edges_list[a].size(); i++) {
+    if (is_path_a2b(out_edges_list[a][i], b)) return true;
+  }
+  return false;
+}
+
+// check whether there is a way from a to b that does not go through c
+// use dfs
+bool dag::is_path_a2b_without_c(unsigned int a, unsigned int b, unsigned int c) {
+  if (a == c) return false; // does not go through c
+  if (a == b) return true;
+  for (int i = 0; i < out_edges_list[a].size(); i++) {
+    unsigned int node = out_edges_list[a][i];
+    if (is_path_a2b_without_c(node, b, c)) return true;
+  }
+  return false;
+}
+
+// 1. check whether there is a way from root to a that goes through b
+//    since there is a way from root to b, just need to check whether
+//    there is a way from b to a
+// 2. check whether there is a way from root to a that does not go through b
+int dag::is_b_on_root2a_path(unsigned int a, unsigned int b) {
+  assert(a < out_edges_list.size());
+  assert(b < out_edges_list.size());
+  if (! is_path_a2b(b, a)) return INT_false;
+  if (is_path_a2b_without_c(root, a, b)) return INT_uncertain;
+  return INT_true;
+}
