@@ -508,14 +508,14 @@ void test2() {
 // may compute B first.
 #define SMT_CHECK_XC(dst_input, dst_expected, test_name)                         \
   smt = (CURDST == to_expr((int64_t)dst_input));                                 \
-  smt = smt && insn.smt_inst(sv, cond);                                          \
+  smt = smt && insn.smt_inst(sv);                                                \
   output = CURDST;                                                               \
   print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
 #define SMT_CHECK_XY(dst_input, src_input, dst_expected, test_name)              \
   smt = (CURDST == to_expr((int64_t)dst_input)) &&                               \
         (CURSRC == to_expr((int64_t)src_input));                                 \
-  smt = smt && insn.smt_inst(sv, cond);                                          \
+  smt = smt && insn.smt_inst(sv);                                                \
   output = CURDST;                                                               \
   print_test_res(eval_output(smt, output) == (int64_t)dst_expected, test_name);  \
 
@@ -731,8 +731,8 @@ void test2() {
 #define SMT_CHECK_LDST(st_input, ld_output, test_name, insns)                \
   smt = f_mem_layout_constrain && f_r10;                                     \
   smt = smt && (CURSRC(insns[0]) == to_expr((int64_t)st_input));             \
-  smt = smt && insns[0].smt_inst(sv, cond);                                  \
-  smt = smt && insns[1].smt_inst(sv, cond);                                  \
+  smt = smt && insns[0].smt_inst(sv);                                        \
+  smt = smt && insns[1].smt_inst(sv);                                        \
   output = CURDST(insns[1]);                                                 \
   print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
 
@@ -771,8 +771,8 @@ void test2() {
 // Assume two instructions in the program `insns`,
 // the first one is ST and the second is LD
 #define SMT_CHECK_LDST(ld_output, test_name, insns)                          \
-  smt = f_mem_layout_constrain && f_r10 && insns[0].smt_inst(sv, cond);      \
-  smt = smt && insns[1].smt_inst(sv, cond);                                  \
+  smt = f_mem_layout_constrain && f_r10 && insns[0].smt_inst(sv);            \
+  smt = smt && insns[1].smt_inst(sv);                                        \
   output = CURDST(insns[1]);                                                 \
   print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
 
