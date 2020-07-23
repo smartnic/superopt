@@ -324,6 +324,35 @@ void test3() {
   vld.set_orig(p61, 16);
   print_test_res(vld.is_equal_to(p61, 16, p61, 16) == 1, "map helper function 6.3");
   print_test_res(vld.is_equal_to(p61, 16, p6, 12) == 1, "map helper function 6.4");
+
+  inst p7[19] = {inst(STB, 10, -1, 1), // *(r10-1) = 1
+                 inst(STB, 10, -2, 1), // *(r10-2) = 2
+                 inst(MOV64XY, 2, 10), // r2 = r10-1
+                 inst(ADD64XC, 2, -1),
+                 inst(MOV64XY, 3, 10), // r3 = r10-1
+                 inst(ADD64XC, 3, -1),
+                 inst(LDMAPID, 1, map0), // r1 = map0
+                 inst(CALL, BPF_FUNC_map_update), // map0[1] = 1
+                 inst(MOV64XY, 3, 10), // r3 = r10-2
+                 inst(ADD64XC, 3, -2),
+                 inst(LDMAPID, 1, map1), // r1 = map1
+                 inst(CALL, BPF_FUNC_map_update), // map1[1] = 2
+                 inst(LDMAPID, 1, map0), // r1 = map0
+                 inst(JGTXY, 10, 9, 1),
+                 inst(LDMAPID, 1, map1), // r1 = map1
+                 inst(CALL, BPF_FUNC_map_lookup),
+                 inst(JEQXC, 0, 0, 1),
+                 inst(LDXB, 0, 0, 0),
+                 inst(EXIT),
+                };
+  inst p71[4] = {inst(MOV64XC, 0, 1),
+                 inst(JGTXY, 10, 9, 1),
+                 inst(MOV64XC, 1, 2),
+                 inst(EXIT),
+                };
+  vld.set_orig(p7, 19);
+  print_test_res(vld.is_equal_to(p7, 19, p7, 19) == 1, "map helper function 7.1");
+  print_test_res(vld.is_equal_to(p7, 19, p71, 4) == 1, "map helper function 7.2");
 }
 
 void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,

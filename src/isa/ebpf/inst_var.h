@@ -203,10 +203,10 @@ class smt_mem {
   friend ostream& operator<<(ostream& out, const smt_mem& s);
 };
 
-struct map_id_info {
+struct map_id_pc {
   int map_id;
-  unsigned int block;
-  map_id_info(int m_id, unsigned int b_id) {map_id = m_id; block = b_id;}
+  z3::expr path_cond = Z3_false;
+  map_id_pc(int id, z3::expr pc) {map_id = id; path_cond = pc;}
 };
 
 // SMT Variable format
@@ -218,7 +218,9 @@ class smt_var: public smt_var_base {
  private:
   unsigned int mem_addr_id, is_vaild_id, key_cur_id,
            val_cur_id, addr_v_cur_id, map_helper_func_ret_cur_id;
-  unordered_map<unsigned int, int> map_expr_map_id; // the relationship between expr_id and map_id
+  // key: expr id; value: a list of <map_id, path_cond of map_id>
+  // program global variable
+  unordered_map<unsigned int, vector<map_id_pc>> expr_map_id;
  public:
   smt_mem mem_var;
   smt_var();
@@ -241,8 +243,9 @@ class smt_var: public smt_var_base {
   z3::expr get_pkt_start_addr() {return mem_var._pkt_start;}
   z3::expr get_pkt_end_addr() {return (mem_var._pkt_start + to_expr((uint64_t)mem_t::_layout._pkt_sz - 1));}
   z3::expr mem_layout_constrain() const;
-  void add_expr_map_id(z3::expr e, z3::expr map_id);
-  int get_map_id(z3::expr e);
+  void add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_cond = Z3_true);
+  void add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond = Z3_true);
+  void get_map_id(vector<int>& map_ids, vector<z3::expr>& path_conds, z3::expr e);
   void set_new_node_id(unsigned int node_id, z3::expr path_cond,
                        vector<unsigned int>& nodes_in,
                        vector<vector<z3::expr>>& nodes_in_regs);

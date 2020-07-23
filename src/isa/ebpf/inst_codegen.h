@@ -362,7 +362,7 @@ COMPUTE_LDST(32, uint32_t)
 COMPUTE_LDST(64, uint64_t)
 
 // implemented in inst_codegen.cc, where addr is a reg experssion
-z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv, unsigned int block = 0);
+z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv, unsigned int block = 0, z3::expr cond = Z3_true);
 
 inline z3::expr predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv, unsigned int block) {
   return predicate_st_byte(in.extract(7, 0), addr, off, sv, block);
@@ -384,7 +384,7 @@ inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var
 }
 
 // implemented in inst_codegen.cc
-z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
+z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, z3::expr cond = Z3_true);
 
 inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
   return ((out.extract(63, 8) == to_expr(0, 56)) &&

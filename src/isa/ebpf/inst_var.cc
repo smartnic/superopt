@@ -637,16 +637,31 @@ z3::expr smt_var::get_map_end_addr(int map_id) { // return value: z3 bv64
   return map_end_addr;
 }
 
-void smt_var::add_expr_map_id(z3::expr e, z3::expr map_id) {
-  assert(map_id.is_numeral());
-  map_expr_map_id.insert({e.id(), map_id.get_numeral_uint64()});
+void smt_var::add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_cond) {
+  assert(map_id_expr.is_numeral());
+  int map_id = map_id_expr.get_numeral_uint64();
+  add_expr_map_id(e, map_id, path_cond);
 }
 
-int smt_var::get_map_id(z3::expr e) {
-  int not_found_flag = -1;
-  auto found = map_expr_map_id.find(e.id());
-  if (found != map_expr_map_id.end()) return found->second;
-  return not_found_flag;
+void smt_var::add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond) {
+  unsigned int e_id = e.id();
+  auto found = expr_map_id.find(e_id);
+  if (found == expr_map_id.end()) {
+    expr_map_id.insert({e_id, {map_id_pc(map_id, path_cond)}});
+    return;
+  }
+  found->second.push_back({map_id_pc(map_id, path_cond)});
+}
+
+void smt_var::get_map_id(vector<int>& map_ids, vector<z3::expr>& path_conds, z3::expr e) {
+  map_ids.clear();
+  path_conds.clear();
+  auto found = expr_map_id.find(e.id());
+  if (found == expr_map_id.end()) return;
+  for (int i = 0; i < found->second.size(); i++) {
+    map_ids.push_back(found->second[i].map_id);
+    path_conds.push_back(found->second[i].path_cond);
+  }
 }
 
 // constrain:
@@ -683,6 +698,30 @@ void smt_var::set_new_node_id(unsigned int node_id, z3::expr path_cond,
   int num_regs = 0;
   if (nodes_in.size() > 0) num_regs = nodes_in_regs[0].size();
   for (int i = 0; i < num_regs; i++) {
+
+    z3::expr cur_reg = get_init_reg_var(i);
+    // 1. update map ids
+    if (expr_map_id.size() > 0) {
+      vector<bool> map_ids(mem_t::maps_number(), false);
+      vector<z3::expr> map_id_pcs(mem_t::maps_number(), Z3_false);
+      for (int j = 0; j < nodes_in.size(); j++) {
+        z3::expr reg_expr = nodes_in_regs[j][i];
+        vector<int> ids;
+        vector<z3::expr> pcs;
+        get_map_id(ids, pcs, reg_expr);
+        for (int k = 0; k < ids.size(); k++) {
+          int id = ids[k];
+          // merge path condition for the same map id
+          map_id_pcs[id] = map_id_pcs[id] || pcs[k];
+          if (! map_ids[id]) map_ids[id] = true;
+        }
+      }
+      for (int j = 0; j < map_ids.size(); j++) {
+        if (! map_ids[j]) continue;
+        add_expr_map_id(cur_reg, j, map_id_pcs[j]);
+      }
+    }
+    // 2. update pointers
     // for each register, get the table_id list and the corresponding path condition list
     vector<bool> table_ids(mem_var._mem_tables.size(), false);
     vector<z3::expr> path_conds(mem_var._mem_tables.size(), Z3_false);
@@ -701,10 +740,9 @@ void smt_var::set_new_node_id(unsigned int node_id, z3::expr path_cond,
       }
     }
     // update mem_table's pointers
-    z3::expr reg = get_init_reg_var(i);
     for (int j = 0; j < table_ids.size(); j++) {
       if (! table_ids[j]) continue;
-      mem_var.add_ptr(reg, j, path_conds[j]);
+      mem_var.add_ptr(cur_reg, j, path_conds[j]);
     }
   }
 }
@@ -734,7 +772,7 @@ void smt_var::clear() {
     map_helper_func_ret_cur_id = 0;
   }
   mem_var.clear();
-  map_expr_map_id.clear();
+  expr_map_id.clear();
 }
 /* class smt_var end */
 
