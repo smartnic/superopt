@@ -43,12 +43,12 @@ smt_prog::smt_prog() {}
 smt_prog::~smt_prog() {}
 
 // assume Block has no branch and is an ordered sequence of instructions
-void smt_prog::smt_block(expr& smt_b, inst* program, int start, int end, smt_var& sv, expr b_pc) {
+void smt_prog::smt_block(expr& smt_b, inst* program, int start, int end, smt_var& sv, size_t cur_bid) {
   expr p = string_to_expr("true");
   for (size_t i = start; i <= end; i++) {
     int op_type = program[i].get_opcode_type();
     if ((op_type == OP_OTHERS) || (op_type == OP_LD) || (op_type == OP_ST)) {
-      p = p && program[i].smt_inst(sv, b_pc);
+      p = p && program[i].smt_inst(sv, cur_bid);
     }
   }
   smt_b = p.simplify();
@@ -108,7 +108,7 @@ void smt_prog::gen_block_prog_logic(expr& e, expr& f_mem, smt_var& sv, size_t cu
   gen_block_c_in(b_pc, cur_bid);
   smt_var_bl sv_bl;
   sv_bl.store_state_before_smt_block(sv);
-  smt_block(e, inst_lst, g.nodes[cur_bid]._start, g.nodes[cur_bid]._end, sv, b_pc);
+  smt_block(e, inst_lst, g.nodes[cur_bid]._start, g.nodes[cur_bid]._end, sv, cur_bid);
   f_mem = sv_bl.gen_smt_after_smt_block(sv, b_pc);
   bl[cur_bid] = e; // store
 }
@@ -234,7 +234,6 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   // init class variables
   const unsigned int num_regs = NUM_REGS;
   init(num_regs);
-
   // blocks stores the block IDs in order after topological sorting
   vector<unsigned int> blocks;
   vector<bool> finished(g.nodes.size(), false);
@@ -247,13 +246,17 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   // f_block[b](in_path) = implies(path_con[b](in_path), f_iv[b](in_b) && f_bl[b](in_path))
   vector<expr> f_block;
   f_block.resize(g.nodes.size(), string_to_expr("true"));
-  sv.init(prog_id, blocks[0], num_regs);
+  sv.init(prog_id, blocks[0], num_regs, g.nodes.size());
   // process each basic block in order
   for (size_t i = 0; i < blocks.size(); i++) {
     unsigned int b = blocks[i];
+    expr b_pc = Z3_false;
+    // b_pc: basic block path condition,
+    // don't care about the default value, gen_block_c_in will reset b_pc
+    gen_block_c_in(b_pc, b);
     // reset register version for different basic blocks, while memory tables
     // don't need to be reset for being shared among basic blocks.
-    sv.set_new_node_id(b);
+    sv.set_new_node_id(b, b_pc, g.nodes_in[b], post_reg_val);
     // generate f_bl: the block program logic
     expr f_bl = string_to_expr("true");
     // f_mem: the constrains on whether variables in memory tables are valid or not

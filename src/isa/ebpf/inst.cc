@@ -440,7 +440,7 @@ void inst::set_as_nop_inst() {
 #define R4 sv.get_cur_reg_var(4)
 #define R5 sv.get_cur_reg_var(5)
 
-z3::expr inst::smt_inst(smt_var& sv, z3::expr cond) const {
+z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
   // If opcode is valid, then define curDst, curSrc, imm and newDst
   int op_type = get_opcode_type();
@@ -460,16 +460,17 @@ z3::expr inst::smt_inst(smt_var& sv, z3::expr cond) const {
   }
   int64_t imm = (int64_t)_imm;
   int64_t off = (int64_t)_off;
+  z3::expr path_cond = sv.mem_var.get_block_path_cond(block);
   // todo: need to deal with ADD64XY, and move the track of pointers in predicate functions
   switch (_opcode) {
-    case ADD64XC: sv.mem_var.add_ptr(NEWDST, CURDST); return predicate_add(CURDST, IMM, NEWDST);
+    case ADD64XC: sv.mem_var.add_ptr(NEWDST, CURDST, path_cond); return predicate_add(CURDST, IMM, NEWDST);
     case ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
     case LSH64XC: return predicate_lsh(CURDST, IMM, NEWDST);
     case LSH64XY: return predicate_lsh(CURDST, CURSRC_L6, NEWDST);
     case RSH64XC: return predicate_rsh(CURDST, IMM, NEWDST);
     case RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
     case MOV64XC: return predicate_mov(IMM, NEWDST);
-    case MOV64XY: sv.mem_var.add_ptr(NEWDST, CURSRC); return predicate_mov(CURSRC, NEWDST);
+    case MOV64XY: sv.mem_var.add_ptr(NEWDST, CURSRC, path_cond); return predicate_mov(CURSRC, NEWDST);
     case ARSH64XC: return predicate_arsh(CURDST, IMM, NEWDST);
     case ARSH64XY: return predicate_arsh(CURDST, CURSRC_L6, NEWDST);
     case ADD32XC: return predicate_add32(CURDST, IMM, NEWDST);
@@ -503,19 +504,19 @@ z3::expr inst::smt_inst(smt_var& sv, z3::expr cond) const {
           return string_to_expr("false");
       }
     case LDMAPID: return predicate_ldmapid(IMM, NEWDST, sv);
-    case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, cond);
-    case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, cond);
-    case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, cond);
-    case LDXDW: return predicate_ld64(CURSRC, OFF, sv, NEWDST, cond);
-    case STXB: return predicate_st8(CURSRC, CURDST, OFF, sv, cond);
-    case STXH: return predicate_st16(CURSRC, CURDST, OFF, sv, cond);
-    case STXW: return predicate_st32(CURSRC, CURDST, OFF, sv, cond);
-    case STXDW: return predicate_st64(CURSRC, CURDST, OFF, sv, cond);
-    case STB: return predicate_st8(IMM, CURDST, OFF, sv, cond);
-    case STH: return predicate_st16(IMM, CURDST, OFF, sv, cond);
-    case STW: return predicate_st32(IMM, CURDST, OFF, sv, cond);
-    case STDW: return predicate_st64(IMM, CURDST, OFF, sv, cond);
-    case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv, cond);
+    case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, block);
+    case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, block);
+    case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, block);
+    case LDXDW: return predicate_ld64(CURSRC, OFF, sv, NEWDST, block);
+    case STXB: return predicate_st8(CURSRC, CURDST, OFF, sv, block);
+    case STXH: return predicate_st16(CURSRC, CURDST, OFF, sv, block);
+    case STXW: return predicate_st32(CURSRC, CURDST, OFF, sv, block);
+    case STXDW: return predicate_st64(CURSRC, CURDST, OFF, sv, block);
+    case STB: return predicate_st8(IMM, CURDST, OFF, sv, block);
+    case STH: return predicate_st16(IMM, CURDST, OFF, sv, block);
+    case STW: return predicate_st32(IMM, CURDST, OFF, sv, block);
+    case STDW: return predicate_st64(IMM, CURDST, OFF, sv, block);
+    case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv, block);
     default: return string_to_expr("false");
   }
 }

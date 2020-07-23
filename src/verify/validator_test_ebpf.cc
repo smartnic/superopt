@@ -122,6 +122,20 @@ void test2() {
                };
   vld.set_orig(p5, 8);
   print_test_res(vld.is_equal_to(p5, 8, p6, 7), "p5 == p6");
+
+  // test concrete execution of multiple memory tables
+  // different addrs from different path conditions
+  inst p7[8] = {inst(STXB, 10, -1, 1),
+                inst(STXB, 10, -2, 2),
+                inst(MOV64XY, 3, 10),
+                inst(ADD64XC, 3, -1),
+                inst(JGTXY, 1, 2, 1), // if r1 > r2, jmp 1
+                inst(ADD64XC, 3, -1),
+                inst(LDXB, 0, 3, 0),
+                inst(EXIT),
+               };
+  vld.set_orig(p7, 8);
+  print_test_res(vld.is_equal_to(p7, 8, p7, 8), "p7 == p7");
 }
 
 void test3() {
@@ -548,6 +562,26 @@ void test5() { // test pkt
   print_test_res(vld.is_equal_to(p3, 5, p3, 5) == 1, "6");
   vld.set_orig(p4, 6);
   print_test_res(vld.is_equal_to(p4, 6, p4, 6) == 1, "7");
+
+  inst p5[9] = {inst(STB, 10, -1, 1),
+                inst(STB, 1, 1, 2),
+                inst(MOV64XY, 2, 10),
+                inst(ADD64XC, 2, -1),
+                inst(JGTXY, 10, 0, 2),
+                inst(MOV64XY, 2, 1),
+                inst(ADD64XC, 2, 1),
+                inst(LDXB, 0, 2, 0),
+                inst(EXIT),
+               };
+  inst p6[5] = {inst(STB, 1, 1, 2),
+                inst(MOV64XC, 0, 1),
+                inst(JGTXY, 10, 0, 1),
+                inst(MOV64XC, 1, 2),
+                inst(EXIT),
+               };
+  vld.set_orig(p5, 9);
+  print_test_res(vld.is_equal_to(p5, 9, p5, 9) == 1, "8");
+  print_test_res(vld.is_equal_to(p5, 9, p6, 5) == 1, "9");
 }
 
 int main() {

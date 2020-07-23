@@ -149,10 +149,29 @@ class mem_table {
  public:
   int _type = -1;
   int _map_id = -1; // valid when _type == MEM_TABLE_map
-  unordered_set<unsigned int> _ptrs;
+  // ptr and its path condition;
+  // only use vector<z3::expr>[0]; z3::expr does not have a constructor without input value
+  // that is unordered_map<unsigned int, z3::expr> is not allowed
+  unordered_map<unsigned int, vector<z3::expr>> _ptrs;
   smt_wt _wt;
   smt_wt _urt;
   void clear() {_ptrs.clear(); _wt.clear(); _urt.clear();}
+  void add_ptr(z3::expr ptr_expr, z3::expr path_cond) {
+    auto found = _ptrs.find(ptr_expr.id());
+    if (found == _ptrs.end()) _ptrs.insert({ptr_expr.id(), {path_cond}});
+    else found->second[0] = path_cond;
+  }
+  bool is_ptr_in_ptrs(z3::expr ptr_expr) {
+    auto found = _ptrs.find(ptr_expr.id());
+    if (found == _ptrs.end()) return false;
+    else return true;
+  }
+  z3::expr get_ptr_path_cond(z3::expr ptr_expr) {
+    auto found = _ptrs.find(ptr_expr.id());
+    if (found == _ptrs.end()) return Z3_false;
+    else return found->second[0];
+  }
+  friend ostream& operator<<(ostream& out, const mem_table& mt);
 };
 
 class smt_mem {
@@ -162,23 +181,32 @@ class smt_mem {
   vector<mem_table> _mem_tables; // stack, pkt, map related memory
   vector<map_wt> _map_tables; // vector idx: map id
   vector<z3::expr> _addrs_map_v_next;
+  vector<z3::expr> _path_cond_list;
 
   smt_mem() {}
   smt_mem(uint64_t stack_start) {_stack_start = to_expr(stack_start);}
   void set_stack_start(uint64_t stack_start) {_stack_start = to_expr(stack_start);}
-  void init_by_layout();
+  void init_by_layout(unsigned int n_blocks = 1);
   z3::expr get_and_update_addr_v_next(int map_id);
-  void clear() {_mem_tables.clear(); _map_tables.clear(); _addrs_map_v_next.clear();}
-  int get_mem_table_id(z3::expr ptr_expr); // return value -1 means not found
-  int get_mem_table_id(int type, int map_id = -1); // return value -1 means not found
-  int get_map_id_by_ptr(z3::expr ptr_expr);
+  void clear() {_mem_tables.clear(); _map_tables.clear(); _addrs_map_v_next.clear(); _path_cond_list.clear();}
+  // return <table_id, block id>, table_id == -1 means not found
+  void get_mem_table_id(vector<int>& table_ids, vector<z3::expr>& path_conds, z3::expr ptr_expr);
+  int get_mem_table_id(int type, int map_id = -1);
   int get_type(int mem_table_id);
   void add_in_mem_table_wt(int mem_table_id, z3::expr addr, z3::expr val);
   void add_in_mem_table_urt(int mem_table_id, z3::expr addr, z3::expr val);
-  void add_ptr(z3::expr ptr_expr, int table_id);
-  void add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr);
-  void add_ptr_by_map_id(z3::expr ptr_expr, int map_id);
+  void add_ptr(z3::expr ptr_expr, int table_id, z3::expr path_cond = Z3_true);
+  void add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr, z3::expr path_cond = Z3_true);
+  void add_ptr_by_map_id(z3::expr ptr_expr, int map_id, z3::expr path_cond = Z3_true);
+  z3::expr get_block_path_cond(unsigned int block_id);
+  void add_path_cond(z3::expr pc, unsigned int block_id);
   friend ostream& operator<<(ostream& out, const smt_mem& s);
+};
+
+struct map_id_info {
+  int map_id;
+  unsigned int block;
+  map_id_info(int m_id, unsigned int b_id) {map_id = m_id; block = b_id;}
 };
 
 // SMT Variable format
@@ -215,8 +243,11 @@ class smt_var: public smt_var_base {
   z3::expr mem_layout_constrain() const;
   void add_expr_map_id(z3::expr e, z3::expr map_id);
   int get_map_id(z3::expr e);
-  void init() {mem_var.init_by_layout();}
-  void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
+  void set_new_node_id(unsigned int node_id, z3::expr path_cond,
+                       vector<unsigned int>& nodes_in,
+                       vector<vector<z3::expr>>& nodes_in_regs);
+  void init(unsigned int n_blocks = 1) {mem_var.init_by_layout(n_blocks);}
+  void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks = 1);
   void clear();
 };
 

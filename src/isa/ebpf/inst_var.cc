@@ -424,9 +424,23 @@ ostream& operator<<(ostream& out, const smt_map_wt& s) {
 }
 
 /* class smt_map_wt start */
+ostream& operator<<(ostream& out, const mem_table& m) {
+  out << "pointers: " << endl;
+  for (auto it = m._ptrs.begin(); it != m._ptrs.end(); it++) {
+    out << "pointer id: " << it->first << ", pc: " << it->second[0] << endl;
+  }
+  out << "type: " << m._type << ", map: " << m._map_id << endl
+      << "memory WT:" << endl << m._wt
+      << "memory URT:" << endl << m._urt
+      << endl;
+  return out;
+}
 
 /* class smt_wt end */
-void smt_mem::init_by_layout() {
+void smt_mem::init_by_layout(unsigned int n_blocks) {
+  _path_cond_list.resize(n_blocks, Z3_false);
+  // the first block is the root block, without this default value, codegen_test will fail
+  if (n_blocks > 0) _path_cond_list[0] = Z3_true;
   int n_maps = mem_t::maps_number();
   for (int i = 0; i < n_maps; i++) {
     unsigned int start_mem_off = mem_t::get_mem_off_by_idx_in_map(i, 0);
@@ -457,21 +471,15 @@ z3::expr smt_mem::get_and_update_addr_v_next(int map_id) {
   return res;
 }
 
-int smt_mem::get_mem_table_id(z3::expr ptr_expr) {
-  int not_found_flag = -1;
-  unsigned int ptr_id = ptr_expr.id();
+void smt_mem::get_mem_table_id(vector<int>& table_ids, vector<z3::expr>& path_conds, z3::expr ptr_expr) {
+  table_ids.clear();
+  path_conds.clear();
   for (int i = 0; i < _mem_tables.size(); i++) {
-    auto found = _mem_tables[i]._ptrs.find(ptr_id);
-    if (found != _mem_tables[i]._ptrs.end()) return i;
+    if (! _mem_tables[i].is_ptr_in_ptrs(ptr_expr)) continue;
+    z3::expr pc = _mem_tables[i].get_ptr_path_cond(ptr_expr);
+    table_ids.push_back(i);
+    path_conds.push_back(pc);
   }
-  return not_found_flag;
-}
-
-int smt_mem::get_map_id_by_ptr(z3::expr ptr_expr) {
-  int not_found_flag = -1;
-  int table_id = get_mem_table_id(ptr_expr);
-  if (table_id == -1) return not_found_flag;
-  else return _mem_tables[table_id]._map_id;
 }
 
 int smt_mem::get_mem_table_id(int type, int map_id) {
@@ -505,36 +513,43 @@ void smt_mem::add_in_mem_table_urt(int mem_table_id, z3::expr addr, z3::expr val
   _mem_tables[mem_table_id]._urt.add(addr, val);
 }
 
-void smt_mem::add_ptr(z3::expr ptr_expr, int table_id) {
+void smt_mem::add_ptr(z3::expr ptr_expr, int table_id, z3::expr path_cond) {
   assert(table_id >= 0);
   assert(table_id < _mem_tables.size());
-  _mem_tables[table_id]._ptrs.insert(ptr_expr.id());
+  _mem_tables[table_id].add_ptr(ptr_expr, path_cond);
 }
 
-void smt_mem::add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr) {
+void smt_mem::add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr, z3::expr path_cond) {
   unsigned int ptr_from_id = ptr_from_expr.id();
   for (int i = 0; i < _mem_tables.size(); i++) {
     auto found = _mem_tables[i]._ptrs.find(ptr_from_id);
     if (found != _mem_tables[i]._ptrs.end()) {
-      _mem_tables[i]._ptrs.insert(ptr_expr.id());
-      return;
+      _mem_tables[i].add_ptr(ptr_expr, path_cond);
     }
   }
 }
 
-void smt_mem::add_ptr_by_map_id(z3::expr ptr_expr, int map_id) {
+void smt_mem::add_ptr_by_map_id(z3::expr ptr_expr, int map_id, z3::expr path_cond) {
   int table_id = get_mem_table_id(MEM_TABLE_map, map_id);
   if (table_id != -1) {
-    _mem_tables[table_id]._ptrs.insert(ptr_expr.id());
+    _mem_tables[table_id].add_ptr(ptr_expr, path_cond);
   }
+}
+
+z3::expr smt_mem::get_block_path_cond(unsigned int block_id) {
+  assert(block_id < _path_cond_list.size());
+  return _path_cond_list[block_id];
+}
+
+void smt_mem::add_path_cond(z3::expr pc, unsigned int block_id) {
+  assert(block_id < _path_cond_list.size());
+  _path_cond_list[block_id] = pc;
 }
 
 ostream& operator<<(ostream& out, const smt_mem& s) {
   for (int i = 0; i < s._mem_tables.size(); i++) {
     out << "memory table " << i << endl
-        << "memory WT:" << endl << s._mem_tables[i]._wt
-        << "memory URT:" << endl << s._mem_tables[i]._urt
-        << endl;
+        << s._mem_tables[i];
   }
   for (int i = 0; i < s._map_tables.size(); i++) {
     out << "map table " << i << endl
@@ -658,15 +673,51 @@ z3::expr smt_var::mem_layout_constrain() const {
   return f;
 }
 
-void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs) {
+void smt_var::set_new_node_id(unsigned int node_id, z3::expr path_cond,
+                              vector<unsigned int>& nodes_in,
+                              vector<vector<z3::expr>>& nodes_in_regs) {
+  // set the register names first, use names later
+  smt_var_base::set_new_node_id(node_id);
+  // update path condition of this block
+  mem_var.add_path_cond(path_cond, node_id);
+  int num_regs = 0;
+  if (nodes_in.size() > 0) num_regs = nodes_in_regs[0].size();
+  for (int i = 0; i < num_regs; i++) {
+    // for each register, get the table_id list and the corresponding path condition list
+    vector<bool> table_ids(mem_var._mem_tables.size(), false);
+    vector<z3::expr> path_conds(mem_var._mem_tables.size(), Z3_false);
+    for (int j = 0; j < nodes_in.size(); j++) {
+      z3::expr reg_ptr = nodes_in_regs[j][i];
+      vector<int> ids;
+      vector<z3::expr> pcs;
+      mem_var.get_mem_table_id(ids, pcs, reg_ptr);
+      for (int k = 0; k < ids.size(); k++) {
+        int id = ids[k];
+        // merge path condition for the same table id
+        path_conds[id] = path_conds[id] || pcs[k];
+        if (! table_ids[id]) {
+          table_ids[id] = true;
+        }
+      }
+    }
+    // update mem_table's pointers
+    z3::expr reg = get_init_reg_var(i);
+    for (int j = 0; j < table_ids.size(); j++) {
+      if (! table_ids[j]) continue;
+      mem_var.add_ptr(reg, j, path_conds[j]);
+    }
+  }
+}
+
+void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks) {
   smt_var_base::init(prog_id, node_id, num_regs);
-  mem_var.init_by_layout();
+  mem_var.init_by_layout(n_blocks);
   if (node_id == 0) {
     int stack_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_stack);
-    mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id); // r10 is the stack pointer
+    mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id, Z3_true); // r10 is the stack pointer
     if (mem_t::_layout._pkt_sz > 0) {
       int pkt_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_pkt);
-      mem_var.add_ptr(get_init_reg_var(1), pkt_mem_table_id); // r1 is the pkt pointer
+      mem_var.add_ptr(get_init_reg_var(1), pkt_mem_table_id, Z3_true); // r1 is the pkt pointer
     }
   }
 }

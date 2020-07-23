@@ -88,23 +88,29 @@ z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv) {
   return (map_id == out);
 }
 
-z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, z3::expr cond) {
-  z3::expr a = sv.update_mem_addr();
-  z3::expr f = z3::implies(!cond, a == NULL_ADDR) &&
-               z3::implies(cond, a == addr + off);
-  int id = sv.mem_var.get_mem_table_id(addr);
-  if (id == -1) return Z3_true; // todo: addr is not a pointer
-
-  sv.mem_var.add_in_mem_table_wt(id, a, in.extract(7, 0));
+z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block) {
+  z3::expr path_cond = sv.mem_var.get_block_path_cond(block);
+  z3::expr f = Z3_true;
+  vector<int> ids;
+  vector<z3::expr> id_pcs;
+  sv.mem_var.get_mem_table_id(ids, id_pcs, addr);
+  if (ids.size() == 0) return Z3_true; // todo: addr is not a pointer
+  for (int i = 0; i < ids.size(); i++) {
+    z3::expr a = sv.update_mem_addr();
+    z3::expr cond = path_cond && id_pcs[i];
+    f = f && z3::implies(!cond, a == NULL_ADDR) &&
+        z3::implies(cond, a == addr + off);
+    sv.mem_var.add_in_mem_table_wt(ids[i], a, in.extract(7, 0));
+  }
   return f;
 }
 
 // this func is only called by map helper functions
 z3::expr predicate_st_n_bytes(int n, z3::expr in, z3::expr addr, smt_var& sv,
-                              z3::expr cond) {
+                              unsigned int block) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < n; i++) {
-    f = f && predicate_st_byte(in.extract(8 * i + 7, 8 * i), addr, to_expr(i, 64), sv, cond);
+    f = f && predicate_st_byte(in.extract(8 * i + 7, 8 * i), addr, to_expr(i, 64), sv, block);
   }
   return f;
 }
@@ -132,11 +138,11 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, smt_wt& urt) {
   return f;
 }
 
-z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, z3::expr cond) {
-  int table_id = sv.mem_var.get_mem_table_id(addr);
-  if (table_id == -1) return Z3_true; // todo: addr is not a pointer
+z3::expr predicate_ld_byte_for_one_mem_table(int table_id, z3::expr& table_id_path_cond,
+    z3::expr addr, smt_var& sv, z3::expr out, unsigned int block) {
+  z3::expr cond = table_id_path_cond && sv.mem_var.get_block_path_cond(block);
   smt_wt& wt = sv.mem_var._mem_tables[table_id]._wt;
-  z3::expr a = addr + off;
+  z3::expr a = addr;
   z3::expr f_found_in_wt_after_i = string_to_expr("false");
   z3::expr f = string_to_expr("true");
   for (int i = wt.addr.size() - 1; i >= 0; i--) {
@@ -180,10 +186,22 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr ou
   return f;
 }
 
-z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, z3::expr cond) {
-  z3::expr f = predicate_ld_byte(addr, to_expr(0, 64), sv, out.extract(7, 0), cond);
+z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
+  z3::expr f = Z3_true;
+  vector<int> ids;
+  vector<z3::expr> id_pcs;
+  sv.mem_var.get_mem_table_id(ids, id_pcs, addr);
+  if (ids.size() == 0) return Z3_true; // todo: addr is not a pointer
+  for (int i = 0; i < ids.size(); i++) {
+    f = f && predicate_ld_byte_for_one_mem_table(ids[i], id_pcs[i], addr + off, sv, out, block);
+  }
+  return f;
+}
+
+z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, unsigned int block) {
+  z3::expr f = predicate_ld_byte(addr, to_expr(0, 64), sv, out.extract(7, 0), block);
   for (int i = 1; i < n; i++) {
-    f = f && predicate_ld_byte(addr, to_expr(i, 64), sv, out.extract(8 * i + 7, 8 * i), cond);
+    f = f && predicate_ld_byte(addr, to_expr(i, 64), sv, out.extract(8 * i + 7, 8 * i), block);
   }
   return f;
 }
@@ -733,7 +751,7 @@ z3::expr predicate_map_lookup_k_in_map_urt(z3::expr k, z3::expr addr_map_v, map_
 
 // "addr_map_v" is the return value
 z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
-                                     smt_var& sv, z3::expr cond) {
+                                     smt_var& sv, unsigned int block) {
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
   // get map id according to addr_map
@@ -744,7 +762,7 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   z3::expr k = sv.update_key(k_sz);
 
   /* add constrains on k */
-  z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, cond);
+  z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block);
 
   /* add constrains on addr_map_v for the following cases
      if key is in the target map, addr_map_v is the same as the corresponding
@@ -766,18 +784,19 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   /* add the constrains on "is_valid" */
   // if k is in map WT, set is_valid is false to
   // indicate this entry to be added in the map URT is invalid.
+  z3::expr cond = sv.mem_var.get_block_path_cond(block);
   f_ret = f_ret && z3::implies((!cond) || (!f1), is_valid == Z3_false);
   f_ret = f_ret && z3::implies(cond && f1, is_valid == Z3_true);
   f_ret = f_ret && f;
 
-  mem.add_ptr_by_map_id(addr_map_v, map_id); // todo: what if addr_map_v == NULL
+  mem.add_ptr_by_map_id(addr_map_v, map_id, cond); // todo: what if addr_map_v == NULL
   mem._map_tables[map_id]._urt.add(is_valid, k, addr_map_v);
   return f_ret;
 }
 
 // "out" is the return value
 z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_v,
-                                     z3::expr out, smt_var& sv, z3::expr cond) {
+                                     z3::expr out, smt_var& sv, unsigned int block) {
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
   // get map id according to addr_map
@@ -792,8 +811,8 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   z3::expr addr_map_v = sv.update_addr_v();
   /* add constrains on "out", "k", "v" */
   z3::expr f = (out == MAP_UPD_RET_EXPR) &&
-               predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, cond) &&
-               predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, sv, v, cond);
+               predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block) &&
+               predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, sv, v, block);
   z3::expr next_addr_map_v = mem.get_and_update_addr_v_next(map_id);
   /* add constrains on "addr_map_v".
      if the key is in the target map WT. if the corresponding value address is NULL,
@@ -829,14 +848,15 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   f = f && z3::implies(f_not_found_in_wt && (!f_found_in_urt), addr_map_v == next_addr_map_v);
   /* add the constrains on "is_valid" */
   z3::expr is_valid = sv.update_is_valid();
+  z3::expr cond = sv.mem_var.get_block_path_cond(block);
   f_ret = f_ret && z3::implies(!cond, is_valid == Z3_false);
   f_ret = f_ret && z3::implies(cond, is_valid == Z3_true);
   f_ret = f_ret && f;
   // add the update entry in map WT
   mem._map_tables[map_id]._wt.add(is_valid, k, addr_map_v);
   // add the update entry in memory WT
-  mem.add_ptr_by_map_id(addr_map_v, map_id); // todo: what if addr_map_v == NULL
-  f_ret = f_ret && predicate_st_n_bytes(v_sz / NUM_BYTE_BITS, v, addr_map_v, sv, is_valid);
+  mem.add_ptr_by_map_id(addr_map_v, map_id, cond); // todo: what if addr_map_v == NULL
+  f_ret = f_ret && predicate_st_n_bytes(v_sz / NUM_BYTE_BITS, v, addr_map_v, sv, block);
 
   return f_ret;
 }
@@ -844,7 +864,7 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 // "out" is the return value
 // if key not in the map, out = 0xfffffffe, else out = 0
 z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::expr out,
-                                     smt_var& sv, z3::expr cond) {
+                                     smt_var& sv, unsigned int block) {
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
   // get map id according to addr_map
@@ -855,7 +875,7 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   int k_sz = mem_t::map_key_sz(map_id);
   z3::expr k = sv.update_key(k_sz);
   /* add the constrains on "k" */
-  z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, cond);
+  z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block);
 
   /* add the constrains on "addr_map_v" according to "k" */
   z3::expr addr_map_v = sv.update_addr_v();
@@ -879,6 +899,7 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   f_ret = f_ret && f;
 
   z3::expr is_valid = sv.update_is_valid();
+  z3::expr cond = sv.mem_var.get_block_path_cond(block);
   // add an entry in map WT to delete this key
   f_ret = f_ret && z3::implies(!cond, is_valid == Z3_false);
   f_ret = f_ret && z3::implies(cond, is_valid == Z3_true);
@@ -889,7 +910,7 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   f_ret = f_ret && z3::implies(!(cond && f1), is_valid == Z3_false);
   f_ret = f_ret && z3::implies(cond && f1, is_valid == Z3_true);
 
-  mem.add_ptr_by_map_id(addr_map_v, map_id); // todo: what if addr_map_v == NULL
+  mem.add_ptr_by_map_id(addr_map_v, map_id, cond); // todo: what if addr_map_v == NULL
   mem._map_tables[map_id]._urt.add(is_valid, k, addr_map_v);
 
   return f_ret;
@@ -897,13 +918,13 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 
 z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::expr r3,
                                    z3::expr r4, z3::expr r5, z3::expr r0,
-                                   smt_var &sv, z3::expr cond) {
+                                   smt_var &sv, unsigned int block) {
   if (func_id == BPF_FUNC_map_lookup) {
-    return predicate_map_lookup_helper(r1, r2, r0, sv, cond);
+    return predicate_map_lookup_helper(r1, r2, r0, sv, block);
   } else if (func_id == BPF_FUNC_map_update) {
-    return predicate_map_update_helper(r1, r2, r3, r0, sv, cond);
+    return predicate_map_update_helper(r1, r2, r3, r0, sv, block);
   } else if (func_id == BPF_FUNC_map_delete) {
-    return predicate_map_delete_helper(r1, r2, r0, sv, cond);
+    return predicate_map_delete_helper(r1, r2, r0, sv, block);
   } else {
     cout << "Error: unknown function id " << func_id << endl; return string_to_expr("true");
   }
