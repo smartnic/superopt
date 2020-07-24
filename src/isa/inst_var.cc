@@ -149,3 +149,18 @@ int dag::is_b_on_root2a_path(unsigned int a, unsigned int b) {
   if (is_path_a2b_without_c(root, a, b)) return INT_uncertain;
   return INT_true;
 }
+
+ostream& operator<<(ostream& out, const dag& d) {
+  out << "dag: " << endl
+      << "root: " << d.root << endl;
+  out << "edge: " << endl;
+  for (int i = 0; i < d.out_edges_list.size(); i++) {
+    out << " " << i << ", out: ";
+    for (int j = 0; j < d.out_edges_list[i].size(); j++) {
+      out << d.out_edges_list[i][j] << " ";
+    }
+    out << endl;
+  }
+  return out;
+}
+

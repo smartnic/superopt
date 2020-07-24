@@ -19,6 +19,7 @@ class smt_prog {
   // post_reg_val[i] is post register values of basic block i,
   // which are initial values for NEXT basic blocks
   vector<vector<expr> > post_reg_val;
+  void init_pgm_dag(unsigned int root_node);
   // return the SMT for the given program without branch and loop
   void smt_block(expr& smt_b, inst* program, int start, int end, smt_var& sv, size_t cur_bid);
   void init(unsigned int num_regs);

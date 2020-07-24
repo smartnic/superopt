@@ -144,7 +144,8 @@ void test3() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
   mem_t::add_map(map_attr(16, 32, 32));
-  int map0 = 0, map1 = 1;
+  mem_t::add_map(map_attr(8, 8, 32));
+  int map0 = 0, map1 = 1, map2 = 2;
   int k1 = 0x11, v1 = 0xff;
   string k1_str = "11";
   // TODO: when safety check is added, these map related programs need to be modified
@@ -326,7 +327,7 @@ void test3() {
   print_test_res(vld.is_equal_to(p61, 16, p6, 12) == 1, "map helper function 6.4");
 
   inst p7[19] = {inst(STB, 10, -1, 1), // *(r10-1) = 1
-                 inst(STB, 10, -2, 1), // *(r10-2) = 2
+                 inst(STB, 10, -2, 2), // *(r10-2) = 2
                  inst(MOV64XY, 2, 10), // r2 = r10-1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3 = r10-1
@@ -335,24 +336,73 @@ void test3() {
                  inst(CALL, BPF_FUNC_map_update), // map0[1] = 1
                  inst(MOV64XY, 3, 10), // r3 = r10-2
                  inst(ADD64XC, 3, -2),
-                 inst(LDMAPID, 1, map1), // r1 = map1
-                 inst(CALL, BPF_FUNC_map_update), // map1[1] = 2
-                 inst(LDMAPID, 1, map0), // r1 = map0
+                 inst(LDMAPID, 1, map2), // r1 = map2
+                 inst(CALL, BPF_FUNC_map_update), // map2[1] = 2
+                 inst(LDMAPID, 1, map0), // r1 = map0, // 13
                  inst(JGTXY, 10, 9, 1),
-                 inst(LDMAPID, 1, map1), // r1 = map1
+                 inst(LDMAPID, 1, map2), // r1 = map2
                  inst(CALL, BPF_FUNC_map_lookup),
                  inst(JEQXC, 0, 0, 1),
                  inst(LDXB, 0, 0, 0),
                  inst(EXIT),
                 };
-  inst p71[4] = {inst(MOV64XC, 0, 1),
-                 inst(JGTXY, 10, 9, 1),
-                 inst(MOV64XC, 1, 2),
-                 inst(EXIT),
-                };
+  inst p71[16] = {inst(STB, 10, -1, 1), // *(r10-1) = 1
+                  inst(STB, 10, -2, 2), // *(r10-2) = 2
+                  inst(MOV64XY, 2, 10), // r2 = r10-1
+                  inst(ADD64XC, 2, -1),
+                  inst(MOV64XY, 3, 10), // r3 = r10-1
+                  inst(ADD64XC, 3, -1),
+                  inst(LDMAPID, 1, map0), // r1 = map0
+                  inst(CALL, BPF_FUNC_map_update), // map0[1] = 1
+                  inst(MOV64XY, 3, 10), // r3 = r10-2
+                  inst(ADD64XC, 3, -2),
+                  inst(LDMAPID, 1, map2), // r1 = map2
+                  inst(CALL, BPF_FUNC_map_update), // map2[1] = 2
+                  inst(MOV64XC, 0, 1),
+                  inst(JGTXY, 10, 9, 1),
+                  inst(MOV64XC, 0, 2),
+                  inst(EXIT),
+                 };
   vld.set_orig(p7, 19);
   print_test_res(vld.is_equal_to(p7, 19, p7, 19) == 1, "map helper function 7.1");
-  print_test_res(vld.is_equal_to(p7, 19, p71, 4) == 1, "map helper function 7.2");
+  print_test_res(vld.is_equal_to(p7, 19, p71, 16) == 1, "map helper function 7.2");
+
+  inst p8[16] = {inst(STB, 10, -2, 0),
+                 inst(MOV64XC, 1, k1), // *addr_k = 0x11
+                 inst(STXB, 10, -1, 1),
+                 inst(LDMAPID, 1, map0), // r1 = map0
+                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                 inst(ADD64XC, 2, -1),
+                 inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                 inst(ADD64XC, 3, -2),
+                 inst(CALL, BPF_FUNC_map_update),
+                 inst(JEQXC, 10, 0xfff, 2),
+                 inst(STB, 10, -2, 1),
+                 inst(CALL, BPF_FUNC_map_update),
+                 inst(CALL, BPF_FUNC_map_lookup),
+                 inst(JEQXC, 0, 0, 1),
+                 inst(LDXB, 0, 0, 0),
+                 inst(EXIT),
+                };
+  inst p81[16] = {inst(STB, 10, -2, 1),
+                  inst(MOV64XC, 1, k1), // *addr_k = 0x11
+                  inst(STXB, 10, -1, 1),
+                  inst(LDMAPID, 1, map0), // r1 = map0
+                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                  inst(ADD64XC, 2, -1),
+                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
+                  inst(ADD64XC, 3, -2),
+                  inst(CALL, BPF_FUNC_map_update),
+                  inst(JNEXC, 10, 0xfff, 2),
+                  inst(STB, 10, -2, 0),
+                  inst(CALL, BPF_FUNC_map_update),
+                  inst(MOV64XC, 0, 0),
+                  inst(JEQXC, 10, 0xfff, 1),
+                  inst(MOV64XC, 0, 1),
+                  inst(EXIT),
+                 };
+  vld.set_orig(p8, 16);
+  print_test_res(vld.is_equal_to(p8, 16, p81, 16) == 1, "map helper function 8.1");
 }
 
 void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,

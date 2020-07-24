@@ -79,7 +79,8 @@ class dag { // directed acyclic graph
  public:
   unsigned int root;
   vector<vector<unsigned int>> out_edges_list; // outgoing edges, list index: node id
-  dag(unsigned int n_nodes, unsigned int root_node) {
+  dag(unsigned int n_nodes = 1, unsigned int root_node = 0) {init(n_nodes, root_node);}
+  void init(unsigned int n_nodes, unsigned int root_node) {
     out_edges_list.resize(n_nodes);
     root = root_node;
   }
@@ -87,6 +88,7 @@ class dag { // directed acyclic graph
     out_edges_list[a].push_back(b);
   }
   int is_b_on_root2a_path(unsigned int a, unsigned int b);
+  friend ostream& operator<<(ostream& out, const dag& d);
 };
 
 // exposed APIs

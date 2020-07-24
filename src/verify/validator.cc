@@ -48,6 +48,7 @@ void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv
 }
 
 int validator::is_smt_valid(expr& smt, model& mdl) {
+  // cout << "is_smt_valid" << endl;
   // Compared to the default tactic, 'bv' tactic is faster
   // for z3 check when processing bit vector
   tactic t = tactic(smt_c, "bv");

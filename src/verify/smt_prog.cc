@@ -222,12 +222,23 @@ void smt_prog::process_output(expr& f_p_output, inst* inst_lst, unsigned int pro
   f_p_output = e;
 }
 
+void smt_prog::init_pgm_dag(unsigned int root_node) {
+  sv.pgm_dag.init(g.nodes.size(), root_node);
+  for (int i = 0; i < g.nodes.size(); i++) {
+    for (int j = 0; j < g.nodes_out[i].size(); j++) {
+      sv.pgm_dag.add_edge_a2b(i, g.nodes_out[i][j]);
+    }
+  }
+  // cout << sv.pgm_dag << endl;
+}
+
 expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   try {
     // generate a cfg
     // illegal input would be detected: 1. program with loop
     // 2. program that goes to the invalid instruction
     g.gen_graph(inst_lst, length);
+    // cout << "graph: " << g << endl;
   } catch (const string err_msg) {
     throw (err_msg);
   }
@@ -240,7 +251,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   // cfg here is without loop, loop detect: function dfs in class graph
   topo_sort_dfs(0, blocks, finished);
   std::reverse(blocks.begin(), blocks.end());
-
+  init_pgm_dag(blocks[0]);
   // basic block FOL formula;
   // f_block[b] = f_block[b](in_path_1) ^ f_block[b](in_path_2) ^ ...
   // f_block[b](in_path) = implies(path_con[b](in_path), f_iv[b](in_b) && f_bl[b](in_path))
