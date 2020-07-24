@@ -189,26 +189,17 @@ void mem_t::add_map(map_attr m_attr) {
 }
 
 unsigned int mem_t::map_key_sz(int map_id) {
-  if (map_id >= maps_number()) {
-    string err_msg = "map_id > #maps";
-    throw (err_msg);
-  }
+  assert(map_id < maps_number());
   return _layout._maps_attr[map_id].key_sz;
 }
 
 unsigned int mem_t::map_val_sz(int map_id) {
-  if (map_id >= maps_number()) {
-    string err_msg = "map_id > #maps";
-    throw (err_msg);
-  }
+  assert(map_id < maps_number());
   return _layout._maps_attr[map_id].val_sz;
 }
 
 unsigned int mem_t::map_max_entries(int map_id) {
-  if (map_id >= maps_number()) {
-    string err_msg = "map_id > #maps";
-    throw (err_msg);
-  }
+  assert(map_id < maps_number());
   return _layout._maps_attr[map_id].max_entries;
 }
 
@@ -695,17 +686,17 @@ void smt_var::set_new_node_id(unsigned int node_id, z3::expr path_cond,
   smt_var_base::set_new_node_id(node_id);
   // update path condition of this block
   mem_var.add_path_cond(path_cond, node_id);
+  if (node_id == 0) return;
   int num_regs = 0;
   if (nodes_in.size() > 0) num_regs = nodes_in_regs[0].size();
   for (int i = 0; i < num_regs; i++) {
-
     z3::expr cur_reg = get_init_reg_var(i);
     // 1. update map ids
     if (expr_map_id.size() > 0) {
       vector<bool> map_ids(mem_t::maps_number(), false);
       vector<z3::expr> map_id_pcs(mem_t::maps_number(), Z3_false);
       for (int j = 0; j < nodes_in.size(); j++) {
-        z3::expr reg_expr = nodes_in_regs[j][i];
+        z3::expr reg_expr = nodes_in_regs[nodes_in[j]][i];
         vector<int> ids;
         vector<z3::expr> pcs;
         get_map_id(ids, pcs, reg_expr);
@@ -726,7 +717,7 @@ void smt_var::set_new_node_id(unsigned int node_id, z3::expr path_cond,
     vector<bool> table_ids(mem_var._mem_tables.size(), false);
     vector<z3::expr> path_conds(mem_var._mem_tables.size(), Z3_false);
     for (int j = 0; j < nodes_in.size(); j++) {
-      z3::expr reg_ptr = nodes_in_regs[j][i];
+      z3::expr reg_ptr = nodes_in_regs[nodes_in[j]][i];
       vector<int> ids;
       vector<z3::expr> pcs;
       mem_var.get_mem_table_id(ids, pcs, reg_ptr);
