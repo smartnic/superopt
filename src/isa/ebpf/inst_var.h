@@ -246,8 +246,8 @@ class smt_var: public smt_var_base {
   void add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_cond = Z3_true);
   void add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond = Z3_true);
   void get_map_id(vector<int>& map_ids, vector<z3::expr>& path_conds, z3::expr e);
-  void set_new_node_id(unsigned int node_id, z3::expr path_cond,
-                       vector<unsigned int>& nodes_in,
+  void set_new_node_id(unsigned int node_id, vector<unsigned int>& nodes_in,
+                       vector<z3::expr>& node_in_pc_list,
                        vector<vector<z3::expr>>& nodes_in_regs);
   void init(unsigned int n_blocks = 1) {mem_var.init_by_layout(n_blocks);}
   void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks = 1);

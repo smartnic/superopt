@@ -250,13 +250,9 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   // process each basic block in order
   for (size_t i = 0; i < blocks.size(); i++) {
     unsigned int b = blocks[i];
-    expr b_pc = Z3_false;
-    // b_pc: basic block path condition,
-    // don't care about the default value, gen_block_c_in will reset b_pc
-    gen_block_c_in(b_pc, b);
     // reset register version for different basic blocks, while memory tables
     // don't need to be reset for being shared among basic blocks.
-    sv.set_new_node_id(b, b_pc, g.nodes_in[b], post_reg_val);
+    sv.set_new_node_id(b, g.nodes_in[b], path_con[b], post_reg_val);
     // generate f_bl: the block program logic
     expr f_bl = string_to_expr("true");
     // f_mem: the constrains on whether variables in memory tables are valid or not

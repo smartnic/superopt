@@ -679,12 +679,16 @@ z3::expr smt_var::mem_layout_constrain() const {
   return f;
 }
 
-void smt_var::set_new_node_id(unsigned int node_id, z3::expr path_cond,
-                              vector<unsigned int>& nodes_in,
+void smt_var::set_new_node_id(unsigned int node_id, vector<unsigned int>& nodes_in,
+                              vector<z3::expr>& node_in_pc_list,
                               vector<vector<z3::expr>>& nodes_in_regs) {
   // set the register names first, use names later
   smt_var_base::set_new_node_id(node_id);
   // update path condition of this block
+  z3::expr path_cond = Z3_false;
+  for (int i = 0; i < node_in_pc_list.size(); i++) {
+    path_cond = path_cond || node_in_pc_list[i];
+  }
   mem_var.add_path_cond(path_cond, node_id);
   if (node_id == 0) return;
   int num_regs = 0;
@@ -703,13 +707,13 @@ void smt_var::set_new_node_id(unsigned int node_id, z3::expr path_cond,
         for (int k = 0; k < ids.size(); k++) {
           int id = ids[k];
           // merge path condition for the same map id
-          map_id_pcs[id] = map_id_pcs[id] || pcs[k];
+          map_id_pcs[id] = map_id_pcs[id] || (pcs[k] && node_in_pc_list[j]);
           if (! map_ids[id]) map_ids[id] = true;
         }
       }
       for (int j = 0; j < map_ids.size(); j++) {
         if (! map_ids[j]) continue;
-        add_expr_map_id(cur_reg, j, map_id_pcs[j]);
+        add_expr_map_id(cur_reg, j, map_id_pcs[j].simplify());
       }
     }
     // 2. update pointers
@@ -724,7 +728,7 @@ void smt_var::set_new_node_id(unsigned int node_id, z3::expr path_cond,
       for (int k = 0; k < ids.size(); k++) {
         int id = ids[k];
         // merge path condition for the same table id
-        path_conds[id] = path_conds[id] || pcs[k];
+        path_conds[id] = path_conds[id] || (pcs[k] && node_in_pc_list[j]);
         if (! table_ids[id]) {
           table_ids[id] = true;
         }
@@ -733,7 +737,7 @@ void smt_var::set_new_node_id(unsigned int node_id, z3::expr path_cond,
     // update mem_table's pointers
     for (int j = 0; j < table_ids.size(); j++) {
       if (! table_ids[j]) continue;
-      mem_var.add_ptr(cur_reg, j, path_conds[j]);
+      mem_var.add_ptr(cur_reg, j, path_conds[j].simplify());
     }
   }
 }
