@@ -96,18 +96,16 @@ z3::expr smt_pgm_register_eq_check(inst* orig, int len1, inst* synth, int len2) 
 }
 
 void time_z3_solver_register() {
-  z3::expr pre_orig = Z3_true, pre_synth = Z3_true;
-  validator vld;
-  vld.smt_pre(pre_orig, 0, NUM_REGS, bm3->get_input_reg());
-  vld.smt_pre(pre_synth, 1, NUM_REGS, bm3->get_input_reg());
-
-  smt_prog sp1, sp2;
-  z3::expr pl_orig = sp1.gen_smt(0, bm3, inst::max_prog_len);
-  z3::expr pl_synth = sp2.gen_smt(1, bm3, inst::max_prog_len);
-  z3::expr post = (string_to_expr("output0") == string_to_expr("output1"));
-  z3::expr f1 = (pre_orig && pl_orig).simplify() && (pre_synth && pl_synth).simplify();
-  z3::expr smt = z3::implies(f1, post);
-  time_measure(is_smt_valid(smt), 1, "z3 solver program register equivalence check: ");
+  mem_t::set_pkt_sz(128);
+  mem_t::add_map(map_attr(128, 64, N3));
+  mem_t::add_map(map_attr(96, 96, N3));
+  mem_t::add_map(map_attr(64, 128, N3));
+  validator vld(bm3, NOP);
+  auto t1 = NOW;
+  cout << vld.is_equal_to(bm3, N3, bm3, N3) << endl;
+  auto t2 = NOW;
+  cout << DUR(t1, t2) << " us" << endl;
+  // time_measure(vld.is_equal_to(bm3, N3, bm3, N3), 1, "bm3 ");
 }
 
 void set_as_register_pgm(inst* pgm, int len, int type) {
@@ -457,6 +455,8 @@ void time_error_cost_without_solver() {
 }
 
 int main(int argc, char* argv[]) {
+  time_z3_solver_register();
+  return 0;
   time_z3_solver_map_pgm(2);
   time_z3_solver_map_pgm(3);
   return 0;
@@ -516,7 +516,6 @@ int main(int argc, char* argv[]) {
   time_interpret();
   time_smt_prog();
   time_vld_mem_input_output();
-  // time_z3_solver_register();
 
   return 0;
 }
