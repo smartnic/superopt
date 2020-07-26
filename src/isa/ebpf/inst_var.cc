@@ -189,17 +189,26 @@ void mem_t::add_map(map_attr m_attr) {
 }
 
 unsigned int mem_t::map_key_sz(int map_id) {
-  assert(map_id < maps_number());
+  if (map_id >= maps_number()) {
+    string err_msg = "map_id > #maps";
+    throw (err_msg);
+  }
   return _layout._maps_attr[map_id].key_sz;
 }
 
 unsigned int mem_t::map_val_sz(int map_id) {
-  assert(map_id < maps_number());
+  if (map_id >= maps_number()) {
+    string err_msg = "map_id > #maps";
+    throw (err_msg);
+  }
   return _layout._maps_attr[map_id].val_sz;
 }
 
 unsigned int mem_t::map_max_entries(int map_id) {
-  assert(map_id < maps_number());
+  if (map_id >= maps_number()) {
+    string err_msg = "map_id > #maps";
+    throw (err_msg);
+  }
   return _layout._maps_attr[map_id].max_entries;
 }
 
@@ -629,6 +638,7 @@ z3::expr smt_var::get_map_end_addr(int map_id) { // return value: z3 bv64
 }
 
 void smt_var::add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_cond) {
+  if (mem_t::maps_number() == 0) return;
   assert(map_id_expr.is_numeral());
   int map_id = map_id_expr.get_numeral_uint64();
   add_expr_map_id(e, map_id, path_cond);
@@ -636,6 +646,7 @@ void smt_var::add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_co
 
 void smt_var::add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond) {
   cout << "add map_id: reg:" << e << ", map_id:" << map_id << ", pc:" << path_cond << endl;
+  if (mem_t::maps_number() == 0) return;
   unsigned int e_id = e.id();
   auto found = expr_map_id.find(e_id);
   if (found == expr_map_id.end()) {
