@@ -135,6 +135,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   int is_equal = is_smt_valid(smt, mdl);
   if (is_equal == 0) {
     // cout << is_equal << endl;
+    cout << mdl << endl;
     gen_counterex(orig, length_orig, mdl, post_sv_synth);
   }
   return is_equal;

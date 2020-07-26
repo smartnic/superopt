@@ -635,6 +635,7 @@ void smt_var::add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_co
 }
 
 void smt_var::add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond) {
+  cout << "add map_id: reg:" << e << ", map_id:" << map_id << ", pc:" << path_cond << endl;
   unsigned int e_id = e.id();
   auto found = expr_map_id.find(e_id);
   if (found == expr_map_id.end()) {

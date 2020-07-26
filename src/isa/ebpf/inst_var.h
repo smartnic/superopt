@@ -162,6 +162,7 @@ class mem_table {
   smt_wt _urt;
   void clear() {_ptrs.clear(); _wt.clear(); _urt.clear();}
   void add_ptr(z3::expr ptr_expr, z3::expr path_cond) {
+    cout << "add add_ptr: reg:" << ptr_expr << ", pc:" << path_cond << endl;
     auto found = _ptrs.find(ptr_expr.id());
     if (found == _ptrs.end()) _ptrs.insert({ptr_expr.id(), {path_cond}});
     else found->second[0] = path_cond;
