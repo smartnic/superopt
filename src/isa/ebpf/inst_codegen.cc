@@ -336,8 +336,14 @@ z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
     }
   }
   // case 2: pkt address in one of wts
-  f = f && pkt_addr_in_one_wt(sv1, sv2) && pkt_addr_in_one_wt(sv2, sv1);
-  return f;
+  // f = f && pkt_addr_in_one_wt(sv1, sv2) && pkt_addr_in_one_wt(sv2, sv1);
+  z3::expr f1 = pkt_addr_in_one_wt(sv1, sv2);
+  z3::expr f2 = pkt_addr_in_one_wt(sv2, sv1);
+  z3::expr pkt_eq = sv1.update_is_valid();
+  z3::expr pkt_eq1 = sv1.update_is_valid();
+  z3::expr pkt_eq2 = sv1.update_is_valid();
+  cout << "smt_pkt_eq_chk, pkt_eq:" << pkt_eq << " " << pkt_eq1 << " " << pkt_eq2 << endl;
+  return z3::implies((pkt_eq == f) && (pkt_eq1 == f1) && (pkt_eq2 == f2), pkt_eq && pkt_eq1 && pkt_eq2);
 }
 
 z3::expr key_not_found_after_idx(z3::expr key, int idx, smt_map_wt& m_wt) {
@@ -568,6 +574,9 @@ z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1, smt_var& sv2) {
   int v_sz = mem_t::map_val_sz(map_id);
   int mem_table_id1 = sv1.mem_var.get_mem_table_id(MEM_TABLE_map, map_id);
   int mem_table_id2 = sv2.mem_var.get_mem_table_id(MEM_TABLE_map, map_id);
+  cout << "smt_one_map_eq_chk: map_id:" << map_id << " "
+       << "mem_table_id1:" << mem_table_id1 << " "
+       << "mem_table_id2:" << mem_table_id2 << endl;
   // case 1: keys that are in pgm1's map WT and pgm2's map WT
   // if the key is found && load v1 from mem1 WT && load v2 from mem2 WT => 1 or 2
   // 1. addr_v1 == addr_v2 == NULL
@@ -640,8 +649,16 @@ z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1, smt_var& sv2) {
   // load v_in from mem1 URT => 1 or 2
   // 1. addr_v_out == addr_v_in == NULL
   // 2. addr_v_out != NULL && addr_v_in != NULL && v_in == v_out
-  f = f && keys_found_in_one_map(map_id, sv1, sv2) &&
-      keys_found_in_one_map(map_id, sv2, sv1);
+  // f = f && keys_found_in_one_map(map_id, sv1, sv2) &&
+  //     keys_found_in_one_map(map_id, sv2, sv1);
+  z3::expr f1 = keys_found_in_one_map(map_id, sv1, sv2);
+  z3::expr f2 = keys_found_in_one_map(map_id, sv2, sv1);
+  z3::expr map_eq = sv1.update_is_valid();
+  z3::expr map_eq1 = sv1.update_is_valid();
+  z3::expr map_eq2 = sv1.update_is_valid();
+  cout << "smt_one_map_eq_chk, map_id:" << map_id << " "
+       << "map_eq:" << map_eq << " " << map_eq1 << " " << map_eq2 << endl;
+  return z3::implies((map_eq == f) && (map_eq1 == f1) && (map_eq2 == f2), map_eq && map_eq1 && map_eq2);
   return f;
 }
 
