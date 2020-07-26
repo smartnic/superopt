@@ -100,7 +100,7 @@ void time_z3_solver_register() {
   mem_t::add_map(map_attr(128, 64, N3));
   mem_t::add_map(map_attr(96, 96, N3));
   mem_t::add_map(map_attr(64, 128, N3));
-  validator vld(bm3, NOP);
+  validator vld(bm3, N3);
   auto t1 = NOW;
   cout << vld.is_equal_to(bm3, N3, bm3, N3) << endl;
   auto t2 = NOW;

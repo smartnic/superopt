@@ -504,7 +504,7 @@ z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
         default: cout << "Error: imm " << imm << " is not 16, 32, 64" << endl;
           return string_to_expr("false");
       }
-    case LDMAPID: return predicate_ldmapid(IMM, NEWDST, sv);
+    case LDMAPID: return predicate_ldmapid(IMM, NEWDST, sv, block);
     case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, block);
     case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, block);
     case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, block);

@@ -83,8 +83,9 @@ uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, mem_t& m,
   return MAP_DEL_RET_IF_KEY_EXIST;
 }
 
-z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv) {
-  sv.add_expr_map_id(out, map_id);
+z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned int block) {
+  z3::expr path_cond = sv.mem_var.get_block_path_cond(block);
+  sv.add_expr_map_id(out, map_id, path_cond);
   return (map_id == out);
 }
 
@@ -785,10 +786,10 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   vector<z3::expr> map_id_path_conds;
   // sv.get_map_id(map_ids, map_id_path_conds);
   sv.get_map_id(map_ids, map_id_path_conds, addr_map);
-  cout << "predicate_map_lookup_helper: " << map_ids.size() << endl;
+  // cout << "predicate_map_lookup_helper: " << map_ids.size() << endl;
   if (map_ids.size() == 0) return f_ret; // todo: addr_map is not a pointer
   for (int i = 0; i < map_ids.size(); i++) {
-    cout << map_ids[i] << " " << map_id_path_conds[i] << endl;
+    // cout << map_ids[i] << " " << map_id_path_conds[i] << endl;
     int map_id = map_ids[i];
     int k_sz = mem_t::map_key_sz(map_id);
     z3::expr k = sv.update_key(k_sz);
@@ -830,7 +831,7 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 // "out" is the return value
 z3::expr predicate_map_update_helper_for_one_map(int map_id, z3::expr map_id_path_cond,
     z3::expr addr_k, z3::expr addr_v, z3::expr out, smt_var& sv, unsigned int block) {
-  cout << "predicate_map_update_helper_for_one_map: " << map_id << " " << map_id_path_cond << endl;
+  // cout << "predicate_map_update_helper_for_one_map: " << map_id << " " << map_id_path_cond << endl;
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
   int k_sz = mem_t::map_key_sz(map_id);

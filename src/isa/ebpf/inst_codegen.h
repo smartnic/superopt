@@ -103,7 +103,7 @@ inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::exp
 inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 // out == map_id, and track the out
-z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv);
+z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned int block = 0);
 // map helper functions
 // return map lookup FOL formula, addr_v = lookup k map, where k is key,
 // addr_v is the address of key's value, map is the map address
