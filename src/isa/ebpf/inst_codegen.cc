@@ -292,12 +292,13 @@ z3::expr pkt_addr_in_one_wt(smt_var& sv1, smt_var& sv2) {
     z3::expr f_a_out = latest_write_element(i, wt1.addr);
     z3::expr f_a_not_in_wt2 = !addr_in_addrs(a_out, wt2.addr);
     z3::expr f_a_in_urt1 = addr_in_addrs(a_out, urt1.addr);
-    f = f && z3::implies(f_a_out && f_a_not_in_wt2, f_a_in_urt1);
+    f = f && z3::implies((a_out != NULL_ADDR_EXPR) && f_a_out && f_a_not_in_wt2, f_a_in_urt1);
 
     for (int j = 0; j < urt1.size(); j++) {
       z3::expr a_in = urt1.addr[j];
       z3::expr v_in = urt1.val[j];
-      f = f && z3::implies(f_a_out && f_a_not_in_wt2 && (a_out == a_in),
+      f = f && z3::implies((a_out != NULL_ADDR_EXPR) && f_a_out &&
+                           f_a_not_in_wt2 && (a_out == a_in),
                            v_out == v_in);
     }
   }
@@ -310,6 +311,7 @@ z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
   if (mem_t::_layout._pkt_sz == 0) return Z3_true;
   int id1 = sv1.mem_var.get_mem_table_id(MEM_TABLE_pkt);
   int id2 = sv2.mem_var.get_mem_table_id(MEM_TABLE_pkt);
+  cout << "smt_pkt_eq_chk: " << "id1:" << id1 << "id2:" << id2 << endl;
   assert(id1 != -1);
   assert(id2 != -1);
   z3::expr f = Z3_true;
@@ -326,7 +328,7 @@ z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
         z3::expr a2 = wt2.addr[j];
         z3::expr v2 = wt2.val[j];
         z3::expr f_a2 = latest_write_element(j, wt2.addr);
-        f = f && z3::implies(f_a1 && f_a2 && (a1 == a2), v1 == v2);
+        f = f && z3::implies((a1 != NULL_ADDR_EXPR) && f_a1 && f_a2 && (a1 == a2), v1 == v2);
       }
     }
   }
