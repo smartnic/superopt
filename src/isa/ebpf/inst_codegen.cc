@@ -160,7 +160,10 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, z3::expr& table_id_pa
     f_found_in_wt_after_i = f_found_in_wt_after_i ||
                             ((a == wt.addr[i]) && (a != NULL_ADDR_EXPR));
   }
-
+  // stack does not have urt
+  if (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
+    return f;
+  }
   // add constrains on the element(a, out)
   smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
   z3::expr not_found_in_wt = sv.update_is_valid();
