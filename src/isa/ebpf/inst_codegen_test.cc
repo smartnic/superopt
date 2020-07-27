@@ -917,14 +917,16 @@ void test9() {
   m.clear();
   sv.clear();
   sv.init();
+  sv.mem_var.set_stack_start(stack_s);
+  stack_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
   sv.mem_var.add_ptr(addr_k1_expr, stack_mem_id);
   sv.mem_var.add_ptr(addr_v1_expr, stack_mem_id);
   sv.add_expr_map_id(map1_expr, v(map1));
   f = f_map_id && f_stack_s;
   compute_st8(k1, addr_k1, 0);
   compute_st8(v1, addr_v1, 0);
-  f = f && predicate_st8(v8(k1), v(addr_k1), v(0), sv) && // *addr_k1 = k1 (addr_k1 in the stack)
-      predicate_st8(v8(v1), v(addr_v1), v(0), sv); // *addr_v1 = v1 (addr_v1 in the stack)
+  f = f && predicate_st8(v8(k1), addr_k1_expr, v(0), sv) && // *addr_k1 = k1 (addr_k1 in the stack)
+      predicate_st8(v8(v1), addr_v1_expr, v(0), sv); // *addr_v1 = v1 (addr_v1 in the stack)
   z3::expr del_ret_expr = string_to_expr("true");
   uint64_t del_ret;
 #define MAP_DELETE_RET(map, addr_k) \
