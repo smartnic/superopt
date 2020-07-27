@@ -425,10 +425,10 @@ ostream& operator<<(ostream& out, const smt_map_wt& s) {
 
 /* class smt_map_wt start */
 ostream& operator<<(ostream& out, const mem_table& m) {
-  out << "pointers: " << endl;
-  for (auto it = m._ptrs.begin(); it != m._ptrs.end(); it++) {
-    out << "pointer id: " << it->first << ", pc: " << it->second[0] << endl;
-  }
+  // out << "pointers: " << endl;
+  // for (auto it = m._ptrs.begin(); it != m._ptrs.end(); it++) {
+  //   out << "pointer id: " << it->first << ", pc: " << it->second[0] << endl;
+  // }
   out << "type: " << m._type << ", map: " << m._map_id << endl
       << "memory WT:" << endl << m._wt
       << "memory URT:" << endl << m._urt
