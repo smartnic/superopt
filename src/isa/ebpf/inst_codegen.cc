@@ -359,18 +359,13 @@ z3::expr key_not_found_after_idx(z3::expr key, int idx, smt_map_wt& m_wt) {
 z3::expr key_not_in_map_wt(z3::expr k, smt_map_wt& m_wt, smt_var& sv, bool same_pgms, unsigned int block) {
   z3::expr f = string_to_expr("false");
   for (int i = 0; i < m_wt.key.size(); i++) {
-    z3::expr pc = Z3_true;
     if (same_pgms) {
       int is_pc_match = sv.pgm_dag.is_b_on_root2a_path(block, m_wt.block[i]);
       // cout << "is_pc_match: " << is_pc_match << endl;
       if (is_pc_match == INT_false) continue;
-      else if (is_pc_match == INT_uncertain) {
-        pc = sv.mem_var.get_block_path_cond(m_wt.block[i]);
-      }
     }
 
-    f = f || (pc && (m_wt.is_valid[i] == Z3_true) &&
-              (k == m_wt.key[i]));
+    f = f || ((m_wt.is_valid[i] == Z3_true) && (k == m_wt.key[i]));
   }
   return (!f);
 }
@@ -536,13 +531,17 @@ z3::expr one_key_found_in_both_maps(int map_id, bool is_map1_wt, z3::expr k1, z3
     z3::expr f_k1_both_exist = (addr_v1 != NULL_ADDR_EXPR) && (addr_v2 != NULL_ADDR_EXPR);
     z3::expr f_k1_both_inexist = (addr_v1 == NULL_ADDR_EXPR) && (addr_v2 == NULL_ADDR_EXPR);
     if (is_map1_wt) {
-      f = f && z3::implies(f_found_same_key && f_v2_list[i],
-                           f_k1_both_inexist || (f_k1_both_exist && (v1 == v2_list[i])));
+      z3::expr iv = sv2.update_is_valid();
+      cout << "one_key_found_in_both_maps 1: " << iv << " " << v1 << " " << v2_list[i] << endl;
+      f = f && z3::implies(f_found_same_key && f_v2_list[i] && (iv == (v1 == v2_list[i])),
+                           f_k1_both_inexist || (f_k1_both_exist && iv));
     } else {
       // is_map1_urt, only consider the case that k is in the map1, and addr_v in the mem1 WT
       // the latter constrain has been added before calling this function
-      f = f && z3::implies(f_found_same_key && f_v2_list[i] && f_k1_both_exist,
-                           v1 == v2_list[i]);
+      z3::expr iv = sv2.update_is_valid();
+      cout << "one_key_found_in_both_maps 2: " << iv << " " << v1 << " " << v2_list[i] << endl;
+      f = f && z3::implies(f_found_same_key && f_v2_list[i] && f_k1_both_exist && (iv == (v1 == v2_list[i])),
+                           iv);
     }
     f_k1_found_after_i = f_k1_found_after_i || f_k1_found_i;
   }
@@ -559,9 +558,11 @@ z3::expr one_key_found_in_both_maps(int map_id, bool is_map1_wt, z3::expr k1, z3
     z3::expr f_k1_both_exist = (addr_v1 != NULL_ADDR_EXPR) && (addr_v2 != NULL_ADDR_EXPR);
     z3::expr f_k1_both_inexist = (addr_v1 == NULL_ADDR_EXPR) && (addr_v2 == NULL_ADDR_EXPR);
     // only consider the case that k is in the map and addr_v is in the mem WT
+    z3::expr iv = sv2.update_is_valid();
+    cout << "one_key_found_in_both_maps 3: " << iv << " " << v1 << " " << v2_urt_list[i] << endl;
     f1 = f1 && z3::implies(f_found_same_key && f_v2_urt_list[i] &&
-                           f_addr_v2_in_mem2_wt_list[i] && f_k1_both_exist,
-                           v1 == v2_urt_list[i]);
+                           f_addr_v2_in_mem2_wt_list[i] && f_k1_both_exist && (iv == (v1 == v2_urt_list[i])),
+                           iv);
   }
   z3::expr f_k1_not_in_map2_wt = key_not_in_map_wt(k1, map2._wt, sv2, false);
   f = f && z3::implies(f_k1_not_in_map2_wt, f1);
@@ -651,14 +652,13 @@ z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1, smt_var& sv2) {
   // 2. addr_v_out != NULL && addr_v_in != NULL && v_in == v_out
   // f = f && keys_found_in_one_map(map_id, sv1, sv2) &&
   //     keys_found_in_one_map(map_id, sv2, sv1);
-  z3::expr f1 = keys_found_in_one_map(map_id, sv1, sv2);
-  z3::expr f2 = keys_found_in_one_map(map_id, sv2, sv1);
+  // z3::expr f1 = keys_found_in_one_map(map_id, sv1, sv2);
+  // z3::expr f2 = keys_found_in_one_map(map_id, sv2, sv1);
   z3::expr map_eq = sv1.update_is_valid();
-  z3::expr map_eq1 = sv1.update_is_valid();
-  z3::expr map_eq2 = sv1.update_is_valid();
   cout << "smt_one_map_eq_chk, map_id:" << map_id << " "
-       << "map_eq:" << map_eq << " " << map_eq1 << " " << map_eq2 << endl;
-  return z3::implies((map_eq == f) && (map_eq1 == f1) && (map_eq2 == f2), map_eq && map_eq1 && map_eq2);
+       << "map_eq:" << map_eq << endl;
+  // return z3::implies((map_eq == f) && (map_eq1 == f1) && (map_eq2 == f2), map_eq && map_eq1 && map_eq2);
+  return z3::implies(map_eq == f, map_eq);
   return f;
 }
 
@@ -730,7 +730,8 @@ z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2) {
 }
 
 z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
-  return smt_map_eq_chk(sv1, sv2) && smt_pkt_eq_chk(sv1, sv2);
+  // return smt_map_eq_chk(sv1, sv2) && smt_pkt_eq_chk(sv1, sv2);
+  return smt_one_map_eq_chk(2, sv1, sv2); // for debug
 }
 
 // add the constrains on the input equivalence setting
