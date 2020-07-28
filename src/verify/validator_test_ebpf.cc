@@ -403,6 +403,21 @@ void test3() {
                  };
   vld.set_orig(p8, 16);
   print_test_res(vld.is_equal_to(p8, 16, p81, 16) == 1, "map helper function 8.1");
+
+  // modify a part of map1[1]
+  // mem_t::add_map(map_attr(16, 32, 32));  k_sz: 2 bytes, v_sz: 4 bytes
+  inst p9[9] = {inst(STH, 10, -2, 1), // k = 1
+                inst(MOV64XY, 2, 10),
+                inst(ADD64XC, 2, -2),
+                inst(LDMAPID, map1),
+                inst(CALL, BPF_FUNC_map_lookup),
+                inst(JEQXC, 0, 0, 1),
+                inst(STB, 0, 0, 1), // set map1[1][0] = 0, not modify map1[1][1...3]
+                inst(MOV64XC, 0, 1), // set the return value as 1
+                inst(EXIT),
+               };
+  vld.set_orig(p9, 9);
+  print_test_res(vld.is_equal_to(p9, 9, p9, 9) == 1, "map helper function 9.1");
 }
 
 void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
@@ -664,11 +679,16 @@ void test5() { // test pkt
 }
 
 int main() {
-  test1();
-  test2();
-  test3();
-  test4();
-  test5();
+  try {
+    test1();
+    test2();
+    test3();
+    test4();
+    test5();
+  } catch (const string err_msg) {
+    cout << err_msg << endl;
+  }
+
 
   return 0;
 }
