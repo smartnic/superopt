@@ -1226,7 +1226,8 @@ void test10() {
   test_name = "m_p1_2 != m_p2_1, m_p1_2 = delete &k1 m_p1_1";
   f_same_input = smt_one_map_set_same_input(map1, sv1, sv2);
   f_equal = smt_one_map_eq_chk(map1, sv1, sv2);
-  print_test_res(!is_valid(z3::implies(f && f_same_input, f_equal)), test_name);
+  print_test_res(!is_valid(z3::implies(f && f_same_input, f_equal), true), test_name);
+  return;
   test_name = "m_p1_2 != m_p2_1, m_p1_2 = delete &k1 m_p1_1, if k1 not in the input map";
   z3::expr f_path_cond = (addr_v_lookup_p1 != NULL_ADDR_EXPR);
   print_test_res(!is_valid(z3::implies(f && f_same_input && f_path_cond, f_equal)), test_name);

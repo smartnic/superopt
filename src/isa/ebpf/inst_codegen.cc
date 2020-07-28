@@ -408,6 +408,22 @@ z3::expr ld_n_bytes_from_urt(int n, z3::expr addr, smt_wt& urt, z3::expr out) {
   return f;
 }
 
+// for map equivalence check
+z3::expr ld_byte_from_map_mem_table(z3::expr addr, mem_table& mem_tbl, z3::expr out) {
+  z3::expr f_wt = ld_byte_from_wt(addr, mem_tbl._wt, out);
+  z3::expr f_not_in_wt = ! addr_in_addrs(addr, mem_tbl._wt.addr);
+  z3::expr f_urt = ld_byte_from_urt(addr, mem_tbl._urt, out);
+  return f_wt && z3::implies(f_not_in_wt, f_urt);
+}
+
+z3::expr ld_n_bytes_from_map_mem_table(int n, z3::expr addr, mem_table& mem_tbl, z3::expr out) {
+  z3::expr f = Z3_true;
+  for (int i = 0; i < n; i++) {
+    f = f && ld_byte_from_map_mem_table(addr + i, mem_tbl, out.extract(8 * i + 7, 8 * i));
+  }
+  return f;
+}
+
 // keys found in map of sv1, not in map of sv2
 // premise: 1. key not in map2 wt 2. !(key in map2 URT and mem2 WT)
 // for each key(k) in these keys, the latest write m[k] should be equal to the input
@@ -497,7 +513,7 @@ z3::expr keys_found_in_one_map(int map_id, smt_var& sv1, smt_var& sv2) {
   return f;
 }
 
-// map_tbl can be map WT or map URT, only load v from mem WT
+// map_tbl can be map WT or map URT, only load v from mem tables
 void constrains_on_vs_by_map_tbl_addr_vs(vector<z3::expr>& vs,
     vector<z3::expr>& f_vs, smt_map_wt& map_tbl, smt_var& sv, int v_sz_bit, int mem_id) {
   vs.clear();
@@ -505,8 +521,8 @@ void constrains_on_vs_by_map_tbl_addr_vs(vector<z3::expr>& vs,
   for (int i = 0; i < map_tbl.size(); i++) {
     z3::expr v = sv.update_val(v_sz_bit);
     z3::expr addr_v = map_tbl.addr_v[i];
-    smt_wt& mem_wt = sv.mem_var._mem_tables[mem_id]._wt;
-    z3::expr f_v = ld_n_bytes_from_wt(v_sz_bit / NUM_BYTE_BITS, addr_v, mem_wt, v);
+    mem_table& mem_tbl = sv.mem_var._mem_tables[mem_id];
+    z3::expr f_v = ld_n_bytes_from_map_mem_table(v_sz_bit / NUM_BYTE_BITS, addr_v, mem_tbl, v);
     vs.push_back(v);
     f_vs.push_back(f_v);
   }
@@ -655,11 +671,13 @@ z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1, smt_var& sv2) {
   // z3::expr f1 = keys_found_in_one_map(map_id, sv1, sv2);
   // z3::expr f2 = keys_found_in_one_map(map_id, sv2, sv1);
   z3::expr map_eq = sv1.update_is_valid();
+  // z3::expr map_eq1 = sv1.update_is_valid();
+  // z3::expr map_eq2 = sv1.update_is_valid();
   cout << "smt_one_map_eq_chk, map_id:" << map_id << " "
        << "map_eq:" << map_eq << endl;
   // return z3::implies((map_eq == f) && (map_eq1 == f1) && (map_eq2 == f2), map_eq && map_eq1 && map_eq2);
   return z3::implies(map_eq == f, map_eq);
-  return f;
+  // return f;
 }
 
 // add the constrains on the input equivalence setting
@@ -805,6 +823,26 @@ z3::expr predicate_map_lookup_k_in_map_urt(z3::expr k, z3::expr addr_map_v, map_
   return f;
 }
 
+// this func is only called by map lookup helper functions
+z3::expr predicate_st_byte_in_mem_urt(int table_id, z3::expr addr, smt_var& sv,
+                                      unsigned int block, z3::expr cond) {
+  smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
+  z3::expr v = sv.update_val();
+  z3::expr f = urt_element_constrain(addr, v, urt);
+  urt.add(block, addr, v);
+  return f;
+}
+
+// this func is only called by map lookup helper functions
+z3::expr predicate_st_n_bytes_in_mem_urt(int n, int table_id, z3::expr addr, smt_var& sv,
+    unsigned int block, z3::expr cond) {
+  z3::expr f = string_to_expr("true");
+  for (int i = 0; i < n; i++) {
+    f = f && predicate_st_byte_in_mem_urt(table_id, addr + i, sv, block, cond);
+  }
+  return f;
+}
+
 // "addr_map_v" is the return value
 z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
                                      smt_var& sv, unsigned int block) {
@@ -855,6 +893,9 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
     // cout << "add ptr in predicate_map_lookup_helper: " << addr_map_v << endl;
     mem.add_ptr_by_map_id(addr_map_v, map_id, cond); // todo: what if addr_map_v == NULL
     mem._map_tables[map_id]._urt.add(block, is_valid, k, addr_map_v);
+    int table_id = sv.mem_var.get_mem_table_id(MEM_TABLE_map, map_id);
+    int v_sz = mem_t::map_val_sz(map_id);
+    predicate_st_n_bytes_in_mem_urt(v_sz / NUM_BYTE_BITS, table_id, addr_map_v, sv, block, map_id_path_conds[i]);
   }
   return f_ret;
 }
@@ -1056,14 +1097,16 @@ string z3_bv_2_hex_str(z3::expr z3_bv) {
 // if z3 bv64 is not a constant: 1. assert flag is true, assert(false)
 // 2. assert flag is false, return 0
 uint64_t get_uint64_from_bv64(z3::expr& z3_val, bool assert) {
+  cout << "get_uint64_from_bv64: " << z3_val << endl;
   bool is_num = z3_val.is_numeral();
   if (is_num) return z3_val.get_numeral_uint64();
-
-  if (assert) {
-    assert(false);
-  } else {
-    return 0;
-  }
+  cout << "get_uint64_from_bv64 fails" << endl;
+  return 0;
+  // if (assert) {
+  //   assert(false);
+  // } else {
+  //   return 0;
+  // }
 }
 
 // get an addr-val list for the given memory table
