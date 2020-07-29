@@ -646,8 +646,8 @@ z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2) {
 }
 
 z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
-  return smt_map_eq_chk(sv1, sv2) && smt_pkt_eq_chk(sv1, sv2);
-  // return smt_pkt_eq_chk(2, sv1, sv2); // for debug
+  // return smt_map_eq_chk(sv1, sv2) && smt_pkt_eq_chk(sv1, sv2);
+  return smt_pkt_eq_chk(sv1, sv2); // for debug
 }
 
 // add the constrains on the input equivalence setting
