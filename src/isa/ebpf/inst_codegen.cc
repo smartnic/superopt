@@ -569,12 +569,19 @@ z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1, smt_var& sv2) {
   for (int i = 0; i < k2_list.size(); i++) {
     cout << k2_list[i] << " " << addr_v2_list[i] << " " << f_k2_list[i] << endl;
   }
-  f = f && smt_one_map_eq_chk_k_in_both_map(k1_list, k2_list, f_k1_list, f_k2_list,
-      addr_v1_list, addr_v2_list, v1_out_list, v2_out_list, f_v1_out_list, f_v2_out_list, sv1);
-  f = f && smt_one_map_eq_chk_k_in_one_map(k1_list, f_k1_list, addr_v1_list,
-      v1_out_list, f_v1_out_list, map_id, sv1, sv2); // k in map1 not in map2
-  f = f && smt_one_map_eq_chk_k_in_one_map(k2_list, f_k2_list, addr_v2_list,
-      v2_out_list, f_v2_out_list, map_id, sv2, sv1); // k in map2 not in map1
+  z3::expr map_eq1 = sv1.update_is_valid();
+  z3::expr map_eq2 = sv1.update_is_valid();
+  z3::expr map_eq3 = sv1.update_is_valid();
+  cout << "smt_one_map_eq_chk: " << map_eq1 << " " << map_eq2 << " " << map_eq3 << endl;
+  z3::expr f1 = smt_one_map_eq_chk_k_in_both_map(k1_list, k2_list, f_k1_list, f_k2_list,
+                addr_v1_list, addr_v2_list, v1_out_list, v2_out_list, f_v1_out_list, f_v2_out_list, sv1);
+  z3::expr f2 = smt_one_map_eq_chk_k_in_one_map(k1_list, f_k1_list, addr_v1_list,
+                v1_out_list, f_v1_out_list, map_id, sv1, sv2); // k in map1 not in map2
+  z3::expr f3 = smt_one_map_eq_chk_k_in_one_map(k2_list, f_k2_list, addr_v2_list,
+                v2_out_list, f_v2_out_list, map_id, sv2, sv1); // k in map2 not in map1
+  f = z3::implies(map_eq1 == f1, map_eq1) &&
+      z3::implies(map_eq2 == f2, map_eq2) &&
+      z3::implies(map_eq3 == f3, map_eq3);
   return f;
 }
 
