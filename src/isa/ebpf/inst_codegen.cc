@@ -5,8 +5,8 @@ using namespace std;
 default_random_engine gen_codegen;
 uniform_real_distribution<double> unidist_codegen(0.0, 1.0);
 
-z3::expr latest_write_element(int idx, vector<z3::expr>& x);
-z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& x);
+z3::expr latest_write_element(int idx, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
+z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
 z3::expr key_not_found_after_idx(z3::expr key, int idx, smt_map_wt& m_wt);
 z3::expr key_not_in_map_wt(z3::expr k, smt_map_wt& m_wt, smt_var& sv, bool same_pgms = false, unsigned int block = 0);
 
@@ -100,11 +100,10 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
   for (int i = 0; i < ids.size(); i++) cout << ids[i] << " " << id_pcs[i] << endl;
   if (ids.size() == 0) return Z3_true; // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
-    z3::expr a = sv.update_mem_addr();
+    z3::expr is_valid = sv.update_is_valid();
     z3::expr cond = path_cond && id_pcs[i];
-    f = f && z3::implies(!cond, a == NULL_ADDR) &&
-        z3::implies(cond, a == addr + off);
-    sv.mem_var.add_in_mem_table_wt(ids[i], block, a, in.extract(7, 0));
+    f = f && (is_valid == cond);
+    sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr + off, in.extract(7, 0));
   }
   return f;
 }
@@ -134,7 +133,8 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, smt_wt& urt) {
   // a, it implies v is equal to the value of addr1
   for (int i = urt.addr.size() - 1; i >= 0; i--) {
     f = f && z3::implies((a != NULL_ADDR_EXPR) &&
-                         (a == urt.addr[i]),
+                         (a == urt.addr[i]) &&
+                         urt.is_valid[i],
                          v == urt.val[i]);
   }
   // case 3: "a" cannot be found in wt or urt.
@@ -154,11 +154,10 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, z3::expr& table_id_pa
     int is_pc_match = sv.pgm_dag.is_b_on_root2a_path(block, wt.block[i]);
     // cout << "is_pc_match: " << is_pc_match << endl;
     if (is_pc_match == INT_false) continue;
-    f = f && z3::implies((!f_found_in_wt_after_i) &&
-                         (a == wt.addr[i]) && (a != NULL_ADDR_EXPR),
+    z3::expr f_same = (a != NULL_ADDR_EXPR) && (a == wt.addr[i]) && wt.is_valid[i];
+    f = f && z3::implies((!f_found_in_wt_after_i) && f_same,
                          out == wt.val[i]);
-    f_found_in_wt_after_i = f_found_in_wt_after_i ||
-                            ((a == wt.addr[i]) && (a != NULL_ADDR_EXPR));
+    f_found_in_wt_after_i = f_found_in_wt_after_i || f_same;
   }
   // stack does not have urt
   if (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
@@ -170,10 +169,6 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, z3::expr& table_id_pa
   f = f && (not_found_in_wt == (!f_found_in_wt_after_i));
   f = f && z3::implies(not_found_in_wt, urt_element_constrain(a, out, urt));
   // add element in urt
-  z3::expr new_addr = sv.update_mem_addr();
-  // if "a" can be found in wt, set "new_addr" as NULL_ADDR
-  // to indicate that this entry to be added in the urt is invalid. else,
-  // "new_addr" is "a"
   // An example that will cause a problem in equvialence check if just add (a, out) in urt
   // and add an entry in map URT using the same approach
   // example: pgm1: update k v m, lookup k m; pgm2: lookup k m
@@ -182,9 +177,9 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, z3::expr& table_id_pa
   // in map WT, then the constrain on "addr_v" is that addr_v == addr_v' found in map WT,
   // and mem[addr_v'] == v because of the update. Thus, for pgm1, the update v is the same
   // as uninitialized lookup v.
-  f = f && z3::implies((!not_found_in_wt) || (!cond), new_addr == NULL_ADDR_EXPR);
-  f = f && z3::implies(not_found_in_wt && cond, new_addr == a);
-  urt.add(block, new_addr, out);
+  z3::expr is_valid = sv.update_is_valid();
+  f = f && (is_valid == (not_found_in_wt && cond));
+  urt.add(block, is_valid, a, out);
   // TODO: find another way to process safety check
   // // safety check
   // // address "a" within the memory range that does not allow ur
@@ -225,56 +220,21 @@ z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, u
 
 // return the FOL formula that x[idx] is the latest write in x
 // that is, for any i > idx, x[idx] != x[i]
-z3::expr latest_write_element(int idx, vector<z3::expr>& x) {
+z3::expr latest_write_element(int idx, vector<z3::expr>& is_valid_list, vector<z3::expr>& x) {
   z3::expr f = string_to_expr("true");
   for (int i = x.size() - 1; i > idx; i--) {
-    f = f && (x[idx] != x[i]);
+    f = f && ((x[idx] != x[i]) || (! is_valid_list[i]));
   }
   return f;
 }
 
 // return the FOL formula that a (a!=null) can be found in x
 // that is, for each x[i], a != x[i]
-z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& x) {
+z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x) {
   z3::expr f = string_to_expr("false");
   for (int i = 0; i < x.size(); i++) {
-    f = f || ((a != NULL_ADDR_EXPR) && (a == x[i]));
+    f = f || ((a != NULL_ADDR_EXPR) && (a == x[i]) && is_valid_list[i]);
   }
-  return f;
-}
-
-z3::expr stack_addr_in_one_wt(smt_wt& x, smt_wt& y,
-                              z3::expr stack_start_addr, z3::expr stack_end_addr) {
-  z3::expr f = string_to_expr("true");
-  for (int i = x.addr.size() - 1; i >= 0; i--) {
-    f = f && z3::implies(addr_in_range(x.addr[i], stack_start_addr, stack_end_addr) &&
-                         (!addr_in_addrs(x.addr[i], y.addr)),
-                         false);
-  }
-  return f;
-}
-
-// need memory WTs, stack memory range
-z3::expr smt_stack_eq_chk(smt_wt& x, smt_wt& y,
-                          z3::expr stack_start_addr, z3::expr stack_end_addr) {
-  z3::expr f = string_to_expr("true");
-  // case 1: addrs can be found in both WTs
-  z3::expr f_addr_x = string_to_expr("true");
-  z3::expr f_addr_y = string_to_expr("true");
-  for (int i = x.addr.size() - 1; i >= 0; i--) {
-    f_addr_x = addr_in_range(x.addr[i], stack_start_addr, stack_end_addr) &&
-               latest_write_element(i, x.addr);
-    for (int j = y.addr.size() - 1; j >= 0; j--) {
-      f_addr_y = addr_in_range(y.addr[j], stack_start_addr, stack_end_addr) &&
-                 latest_write_element(j, y.addr);
-      f = f && z3::implies(f_addr_x && f_addr_y && (x.addr[i] == y.addr[j]),
-                           x.val[i] == y.val[j]);
-    }
-  }
-  // case 2: addrs can only be found in one WT.
-  // If these addrs are found, the result is false.
-  f = f && stack_addr_in_one_wt(x, y, stack_start_addr, stack_end_addr) &&
-      stack_addr_in_one_wt(y, x, stack_start_addr, stack_end_addr);
   return f;
 }
 
@@ -292,9 +252,9 @@ z3::expr pkt_addr_in_one_wt(smt_var& sv1, smt_var& sv2) {
   for (int i = wt1.size() - 1; i >= 0; i--) {
     z3::expr a_out = wt1.addr[i];
     z3::expr v_out = wt1.val[i];
-    z3::expr f_a_out = latest_write_element(i, wt1.addr);
-    z3::expr f_a_not_in_wt2 = !addr_in_addrs(a_out, wt2.addr);
-    z3::expr f_a_in_urt1 = addr_in_addrs(a_out, urt1.addr);
+    z3::expr f_a_out = latest_write_element(i, wt1.is_valid, wt1.addr);
+    z3::expr f_a_not_in_wt2 = !addr_in_addrs(a_out, wt2.is_valid, wt2.addr);
+    z3::expr f_a_in_urt1 = addr_in_addrs(a_out, urt1.is_valid, urt1.addr);
     f = f && z3::implies((a_out != NULL_ADDR_EXPR) && f_a_out && f_a_not_in_wt2, f_a_in_urt1);
 
     for (int j = 0; j < urt1.size(); j++) {
@@ -325,12 +285,12 @@ z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
     for (int i = wt1.size() - 1; i >= 0; i--) {
       z3::expr a1 = wt1.addr[i];
       z3::expr v1 = wt1.val[i];
-      z3::expr f_a1 = latest_write_element(i, wt1.addr);
+      z3::expr f_a1 = latest_write_element(i, wt1.is_valid, wt1.addr);
 
       for (int j = wt2.size() - 1; j >= 0; j--) {
         z3::expr a2 = wt2.addr[j];
         z3::expr v2 = wt2.val[j];
-        z3::expr f_a2 = latest_write_element(j, wt2.addr);
+        z3::expr f_a2 = latest_write_element(j, wt2.is_valid, wt2.addr);
         f = f && z3::implies((a1 != NULL_ADDR_EXPR) && f_a1 && f_a2 && (a1 == a2), v1 == v2);
       }
     }
@@ -440,7 +400,7 @@ void get_k_addr_v_and_constraints_list(vector<z3::expr>& k_list, vector<z3::expr
 // for map equivalence check
 z3::expr ld_byte_from_map_mem_table(z3::expr addr, mem_table& mem_tbl, z3::expr out) {
   z3::expr f_wt = ld_byte_from_wt(addr, mem_tbl._wt, out);
-  z3::expr f_not_in_wt = ! addr_in_addrs(addr, mem_tbl._wt.addr);
+  z3::expr f_not_in_wt = ! addr_in_addrs(addr, mem_tbl._wt.is_valid, mem_tbl._wt.addr);
   z3::expr f_urt = ld_byte_from_urt(addr, mem_tbl._urt, out);
   return f_wt && z3::implies(f_not_in_wt, f_urt);
 }
@@ -732,11 +692,11 @@ z3::expr predicate_map_lookup_k_in_map_urt(z3::expr k, z3::expr addr_map_v, map_
 
 // this func is only called by map lookup helper functions
 z3::expr predicate_st_byte_in_mem_urt(int table_id, z3::expr addr, smt_var& sv,
-                                      unsigned int block, z3::expr cond) {
+                                      unsigned int block, z3::expr is_valid) {
   smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
   z3::expr v = sv.update_val();
   z3::expr f = urt_element_constrain(addr, v, urt);
-  urt.add(block, addr, v);
+  urt.add(block, is_valid, addr, v);
   return f;
 }
 
@@ -744,8 +704,10 @@ z3::expr predicate_st_byte_in_mem_urt(int table_id, z3::expr addr, smt_var& sv,
 z3::expr predicate_st_n_bytes_in_mem_urt(int n, int table_id, z3::expr addr, smt_var& sv,
     unsigned int block, z3::expr cond) {
   z3::expr f = string_to_expr("true");
+  z3::expr is_valid = sv.update_is_valid();
+  f = f && (is_valid == cond);
   for (int i = 0; i < n; i++) {
-    f = f && predicate_st_byte_in_mem_urt(table_id, addr + i, sv, block, cond);
+    f = f && predicate_st_byte_in_mem_urt(table_id, addr + i, sv, block, is_valid);
   }
   return f;
 }
@@ -1021,6 +983,10 @@ void get_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
                       z3::model& mdl, smt_var& sv, int mem_id) {
   smt_wt& mem_urt = sv.mem_var._mem_tables[mem_id]._urt;
   for (int i = 0; i < mem_urt.size(); i++) {
+    z3::expr z3_is_valid = mem_urt.is_valid[i];
+    int is_valid = mdl.eval(z3_is_valid).bool_value();
+    if (is_valid != 1) continue; // -1 means z3 false, 1 means z3 true, 0: z3 const (not know it is true or false)
+
     z3::expr z3_addr = mem_urt.addr[i];
     z3::expr z3_addr_eval = mdl.eval(z3_addr);
     if (!z3_addr_eval.is_numeral()) continue;

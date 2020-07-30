@@ -386,10 +386,12 @@ bool smt_wt::is_equal(z3::expr e1, z3::expr e2) {
 }
 
 smt_wt& smt_wt::operator=(const smt_wt &rhs) {
+  block.clear();
+  is_valid.clear();
   addr.clear();
   val.clear();
   for (int i = 0; i < rhs.addr.size(); i++) {
-    add(rhs.block[i], rhs.addr[i], rhs.val[i]);
+    add(rhs.block[i], rhs.is_valid[i], rhs.addr[i], rhs.val[i]);
   }
   return *this;
 }
@@ -406,7 +408,8 @@ bool smt_wt::operator==(const smt_wt &rhs) {
 
 ostream& operator<<(ostream& out, const smt_wt& s) {
   for (int i = 0; i < s.addr.size(); i++) {
-    out << i << ": " << s.addr[i].simplify() << " " << s.val[i].simplify() << endl;
+    out << i << ": " << s.block[i] << " " << s.is_valid[i] << " "
+        << s.addr[i].simplify() << " " << s.val[i].simplify() << endl;
   }
   return out;
 }
@@ -501,16 +504,18 @@ int smt_mem::get_type(int mem_table_id) {
   return _mem_tables[mem_table_id]._type;
 }
 
-void smt_mem::add_in_mem_table_wt(int mem_table_id, unsigned int block, z3::expr addr, z3::expr val) {
+void smt_mem::add_in_mem_table_wt(int mem_table_id, unsigned int block,
+                                  z3::expr is_valid, z3::expr addr, z3::expr val) {
   assert(mem_table_id >= 0);
   assert(mem_table_id < _mem_tables.size());
-  _mem_tables[mem_table_id]._wt.add(block, addr, val);
+  _mem_tables[mem_table_id]._wt.add(block, is_valid, addr, val);
 }
 
-void smt_mem::add_in_mem_table_urt(int mem_table_id, unsigned int block, z3::expr addr, z3::expr val) {
+void smt_mem::add_in_mem_table_urt(int mem_table_id, unsigned int block,
+                                   z3::expr is_valid, z3::expr addr, z3::expr val) {
   assert(mem_table_id >= 0);
   assert(mem_table_id < _mem_tables.size());
-  _mem_tables[mem_table_id]._urt.add(block, addr, val);
+  _mem_tables[mem_table_id]._urt.add(block, is_valid, addr, val);
 }
 
 void smt_mem::add_ptr(z3::expr ptr_expr, int table_id, z3::expr path_cond) {

@@ -108,12 +108,13 @@ class smt_wt {
   bool is_equal(z3::expr e1, z3::expr e2);
  public:
   vector<unsigned int> block;
+  vector<z3::expr> is_valid; // flag, indicate whether this entry is valid or not
   vector<z3::expr> addr; // 64-bit bitvector
   vector<z3::expr> val;  // 8-bit bitvector
-  void add(unsigned int b, z3::expr a, z3::expr v) {
-    block.push_back(b); addr.push_back(a); val.push_back(v);
+  void add(unsigned int b, z3::expr iv, z3::expr a, z3::expr v) {
+    block.push_back(b); is_valid.push_back(iv); addr.push_back(a); val.push_back(v);
   }
-  void clear() {block.clear(); addr.clear(); val.clear();}
+  void clear() {block.clear(); is_valid.clear(); addr.clear(); val.clear();}
   unsigned int size() {return addr.size();}
   smt_wt& operator=(const smt_wt &rhs);
   bool operator==(const smt_wt &rhs);
@@ -199,8 +200,8 @@ class smt_mem {
   void get_mem_table_id(vector<int>& table_ids, vector<z3::expr>& path_conds, z3::expr ptr_expr);
   int get_mem_table_id(int type, int map_id = -1);
   int get_type(int mem_table_id);
-  void add_in_mem_table_wt(int mem_table_id, unsigned int block, z3::expr addr, z3::expr val);
-  void add_in_mem_table_urt(int mem_table_id, unsigned int block, z3::expr addr, z3::expr val);
+  void add_in_mem_table_wt(int mem_table_id, unsigned int block, z3::expr is_valid, z3::expr addr, z3::expr val);
+  void add_in_mem_table_urt(int mem_table_id, unsigned int block, z3::expr is_valid, z3::expr addr, z3::expr val);
   void add_ptr(z3::expr ptr_expr, int table_id, z3::expr path_cond = Z3_true);
   void add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr, z3::expr path_cond = Z3_true);
   void add_ptr_by_map_id(z3::expr ptr_expr, int map_id, z3::expr path_cond = Z3_true);
