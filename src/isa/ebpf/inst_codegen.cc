@@ -7,6 +7,7 @@ uniform_real_distribution<double> unidist_codegen(0.0, 1.0);
 
 z3::expr latest_write_element(int idx, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
 z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
+z3::expr addr_in_addrs_map_mem(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
 z3::expr key_not_found_after_idx(z3::expr key, int idx, smt_map_wt& m_wt);
 z3::expr key_not_in_map_wt(z3::expr k, smt_map_wt& m_wt, smt_var& sv, bool same_pgms = false, unsigned int block = 0);
 
@@ -93,17 +94,24 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
   z3::expr path_cond = sv.mem_var.get_block_path_cond(block) && cond;
   z3::expr f = Z3_true;
   vector<int> ids;
-  vector<z3::expr> id_pcs;
-  sv.mem_var.get_mem_table_id(ids, id_pcs, addr);
+  vector<mem_ptr_info> info_list;
+  sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
   cout << "enter predicate_st_byte" << endl;
   cout << "addr: " << addr << endl;
-  for (int i = 0; i < ids.size(); i++) cout << ids[i] << " " << id_pcs[i] << endl;
+  for (int i = 0; i < ids.size(); i++) cout << ids[i] << " " << info_list[i].off << " " << info_list[i].path_cond << endl;
   if (ids.size() == 0) return Z3_true; // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
     z3::expr is_valid = sv.update_is_valid();
-    z3::expr cond = path_cond && id_pcs[i];
+    z3::expr cond = path_cond && info_list[i].path_cond;
     f = f && (is_valid == cond);
-    sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr + off, in.extract(7, 0));
+    bool is_stack_or_pkt = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
+                           (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt));
+    if (is_stack_or_pkt) { // addr in the entry is offset
+      z3::expr addr_off = off + info_list[i].off;
+      sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr_off, in.extract(7, 0));
+    } else {
+      sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr + off, in.extract(7, 0));
+    }
   }
   return f;
 }
@@ -122,7 +130,7 @@ inline z3::expr addr_in_range(z3::expr addr, z3::expr start, z3::expr end) {
   return (uge(addr, start) && uge(end, addr));
 }
 
-z3::expr urt_element_constrain(z3::expr a, z3::expr v, smt_wt& urt) {
+z3::expr urt_element_constrain_map_mem(z3::expr a, z3::expr v, smt_wt& urt) {
   z3::expr f = string_to_expr("true");
   // add constrains on the new symbolic value "v" according to the following cases:
   // case 1: "a" can be found in wt(addr1), the case is processed in
@@ -142,11 +150,26 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, smt_wt& urt) {
   return f;
 }
 
-z3::expr predicate_ld_byte_for_one_mem_table(int table_id, z3::expr& table_id_path_cond,
-    z3::expr addr, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond = Z3_true) {
-  cond = table_id_path_cond && sv.mem_var.get_block_path_cond(block) && cond;
+z3::expr urt_element_constrain(z3::expr a, z3::expr v, smt_wt& urt) {
+  z3::expr f = Z3_true;
+  for (int i = 0; i < urt.addr.size(); i++) {
+    f = f && z3::implies((a == urt.addr[i]) &&
+                         urt.is_valid[i],
+                         v == urt.val[i]);
+  }
+  return f;
+}
+
+z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_info,
+    z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond = Z3_true) {
+  cond = ptr_info.path_cond && sv.mem_var.get_block_path_cond(block) && cond;
   smt_wt& wt = sv.mem_var._mem_tables[table_id]._wt;
-  z3::expr a = addr;
+  z3::expr a = addr + off;
+  bool is_stack_or_pkt = (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
+                         (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt));
+  if (is_stack_or_pkt) {
+    a = ptr_info.off + off;
+  }
   z3::expr f_found_in_wt_after_i = string_to_expr("false");
   z3::expr f = string_to_expr("true");
   // cout << "wt.addr.size(): " << wt.addr.size() << endl;
@@ -155,6 +178,8 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, z3::expr& table_id_pa
     // cout << "is_pc_match: " << is_pc_match << endl;
     if (is_pc_match == INT_false) continue;
     z3::expr f_same = (a != NULL_ADDR_EXPR) && (a == wt.addr[i]) && wt.is_valid[i];
+    if (is_stack_or_pkt) f_same = (a == wt.addr[i]) && wt.is_valid[i];
+
     f = f && z3::implies((!f_found_in_wt_after_i) && f_same,
                          out == wt.val[i]);
     f_found_in_wt_after_i = f_found_in_wt_after_i || f_same;
@@ -167,7 +192,8 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, z3::expr& table_id_pa
   smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
   z3::expr not_found_in_wt = sv.update_is_valid();
   f = f && (not_found_in_wt == (!f_found_in_wt_after_i));
-  f = f && z3::implies(not_found_in_wt, urt_element_constrain(a, out, urt));
+  if (is_stack_or_pkt) f = f && z3::implies(not_found_in_wt, urt_element_constrain(a, out, urt));
+  else f = f && z3::implies(not_found_in_wt, urt_element_constrain_map_mem(a, out, urt));
   // add element in urt
   // An example that will cause a problem in equvialence check if just add (a, out) in urt
   // and add an entry in map URT using the same approach
@@ -197,15 +223,15 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr ou
   // cout << "addr: " << addr << endl;
   z3::expr f = Z3_true;
   vector<int> ids;
-  vector<z3::expr> id_pcs;
-  sv.mem_var.get_mem_table_id(ids, id_pcs, addr);
+  vector<mem_ptr_info> info_list;
+  sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
   cout << "enter predicate_ld_byte" << endl;
   cout << "addr: " << addr << endl;
-  for (int i = 0; i < ids.size(); i++) cout << ids[i] << " " << id_pcs[i] << endl;
+  for (int i = 0; i < ids.size(); i++) cout << ids[i] << " " << info_list[i].off << " " << info_list[i].path_cond << endl;
   // cout << "ids.size(): " << ids.size() << endl;
   if (ids.size() == 0) return Z3_true; // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
-    f = f && predicate_ld_byte_for_one_mem_table(ids[i], id_pcs[i], addr + off, sv, out, block, cond);
+    f = f && predicate_ld_byte_for_one_mem_table(ids[i], info_list[i], addr, off, sv, out, block, cond);
   }
   return f;
 }
@@ -230,10 +256,18 @@ z3::expr latest_write_element(int idx, vector<z3::expr>& is_valid_list, vector<z
 
 // return the FOL formula that a (a!=null) can be found in x
 // that is, for each x[i], a != x[i]
-z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x) {
+z3::expr addr_in_addrs_map_mem(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x) {
   z3::expr f = string_to_expr("false");
   for (int i = 0; i < x.size(); i++) {
     f = f || ((a != NULL_ADDR_EXPR) && (a == x[i]) && is_valid_list[i]);
+  }
+  return f;
+}
+
+z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x) {
+  z3::expr f = string_to_expr("false");
+  for (int i = 0; i < x.size(); i++) {
+    f = f || ((a == x[i]) && is_valid_list[i]);
   }
   return f;
 }
@@ -250,17 +284,19 @@ z3::expr pkt_addr_in_one_wt(smt_var& sv1, smt_var& sv2) {
   smt_wt& wt2 = sv2.mem_var._mem_tables[id1]._wt;
   smt_wt& urt1 = sv1.mem_var._mem_tables[id2]._urt;
   for (int i = wt1.size() - 1; i >= 0; i--) {
+    z3::expr iv_out = wt1.is_valid[i];
     z3::expr a_out = wt1.addr[i];
     z3::expr v_out = wt1.val[i];
-    z3::expr f_a_out = latest_write_element(i, wt1.is_valid, wt1.addr);
+    z3::expr f_a_out = iv_out && latest_write_element(i, wt1.is_valid, wt1.addr);
     z3::expr f_a_not_in_wt2 = !addr_in_addrs(a_out, wt2.is_valid, wt2.addr);
     z3::expr f_a_in_urt1 = addr_in_addrs(a_out, urt1.is_valid, urt1.addr);
-    f = f && z3::implies((a_out != NULL_ADDR_EXPR) && f_a_out && f_a_not_in_wt2, f_a_in_urt1);
+    f = f && z3::implies(f_a_out && f_a_not_in_wt2, f_a_in_urt1);
 
     for (int j = 0; j < urt1.size(); j++) {
+      z3::expr iv_in = urt1.is_valid[j];
       z3::expr a_in = urt1.addr[j];
       z3::expr v_in = urt1.val[j];
-      f = f && z3::implies((a_out != NULL_ADDR_EXPR) && f_a_out &&
+      f = f && z3::implies(iv_in && f_a_out &&
                            f_a_not_in_wt2 && (a_out == a_in),
                            v_out == v_in);
     }
@@ -283,15 +319,17 @@ z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
   // case 1: pkt address in both wts, latest write should be the same
   if ((wt1.size() > 0) && (wt2.size() > 0)) {
     for (int i = wt1.size() - 1; i >= 0; i--) {
+      z3::expr iv1 = wt1.is_valid[i];
       z3::expr a1 = wt1.addr[i];
       z3::expr v1 = wt1.val[i];
       z3::expr f_a1 = latest_write_element(i, wt1.is_valid, wt1.addr);
 
       for (int j = wt2.size() - 1; j >= 0; j--) {
+        z3::expr iv2 = wt2.is_valid[j];
         z3::expr a2 = wt2.addr[j];
         z3::expr v2 = wt2.val[j];
         z3::expr f_a2 = latest_write_element(j, wt2.is_valid, wt2.addr);
-        f = f && z3::implies((a1 != NULL_ADDR_EXPR) && f_a1 && f_a2 && (a1 == a2), v1 == v2);
+        f = f && z3::implies(iv1 && iv2 && f_a1 && f_a2 && (a1 == a2), v1 == v2);
       }
     }
   }
@@ -400,7 +438,7 @@ void get_k_addr_v_and_constraints_list(vector<z3::expr>& k_list, vector<z3::expr
 // for map equivalence check
 z3::expr ld_byte_from_map_mem_table(z3::expr addr, mem_table& mem_tbl, z3::expr out) {
   z3::expr f_wt = ld_byte_from_wt(addr, mem_tbl._wt, out);
-  z3::expr f_not_in_wt = ! addr_in_addrs(addr, mem_tbl._wt.is_valid, mem_tbl._wt.addr);
+  z3::expr f_not_in_wt = ! addr_in_addrs_map_mem(addr, mem_tbl._wt.is_valid, mem_tbl._wt.addr);
   z3::expr f_urt = ld_byte_from_urt(addr, mem_tbl._urt, out);
   return f_wt && z3::implies(f_not_in_wt, f_urt);
 }
@@ -634,15 +672,16 @@ z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
   if (!cond) return f;
 
   for (int i = 0; i < mem1_urt.size(); i++) {
+    z3::expr iv1 = mem1_urt.is_valid[i];
     z3::expr a1 = mem1_urt.addr[i];
     z3::expr v1 = mem1_urt.val[i];
-    z3::expr f_a1 = (a1 != NULL_ADDR_EXPR);
 
     for (int j = 0; j < mem2_urt.size(); j++) {
+      z3::expr iv2 = mem2_urt.is_valid[j];
       z3::expr a2 = mem2_urt.addr[j];
       z3::expr v2 = mem2_urt.val[j];
 
-      f = f && z3::implies(f_a1 && (a1 == a2), v1 == v2);
+      f = f && z3::implies(iv1 && iv2 && (a1 == a2), v1 == v2);
     }
   }
   return f;
@@ -695,7 +734,7 @@ z3::expr predicate_st_byte_in_mem_urt(int table_id, z3::expr addr, smt_var& sv,
                                       unsigned int block, z3::expr is_valid) {
   smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
   z3::expr v = sv.update_val();
-  z3::expr f = urt_element_constrain(addr, v, urt);
+  z3::expr f = urt_element_constrain_map_mem(addr, v, urt);
   urt.add(block, is_valid, addr, v);
   return f;
 }
@@ -980,7 +1019,8 @@ uint64_t get_uint64_from_bv64(z3::expr& z3_val, bool assert) {
 
 // get an addr-val list for the given memory table
 void get_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
-                      z3::model& mdl, smt_var& sv, int mem_id) {
+                      z3::model& mdl, smt_var& sv, int mem_id,
+                      uint64_t addr_start = 0) {
   smt_wt& mem_urt = sv.mem_var._mem_tables[mem_id]._urt;
   for (int i = 0; i < mem_urt.size(); i++) {
     z3::expr z3_is_valid = mem_urt.is_valid[i];
@@ -990,8 +1030,8 @@ void get_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
     z3::expr z3_addr = mem_urt.addr[i];
     z3::expr z3_addr_eval = mdl.eval(z3_addr);
     if (!z3_addr_eval.is_numeral()) continue;
-    uint64_t addr = z3_addr_eval.get_numeral_uint64();
-    // addr whose value is NULL means the item <addr, val> is invalid
+    uint64_t addr = z3_addr_eval.get_numeral_uint64() + addr_start;
+    // addr whose value is NULL means the entry is invalid
     if (addr == NULL_ADDR) continue;
 
     z3::expr z3_val = mdl.eval(mem_urt.val[i]); // z3 bv8
@@ -1062,18 +1102,20 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv, int 
 // 2. traverse mem_addr_val list, if the addr is in input memory address range, update "input"
 void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
   if (mem_t::_layout._pkt_sz == 0) return;
-  int pkt_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
-  assert(pkt_mem_id != -1);
-  vector<pair< uint64_t, uint8_t>> mem_addr_val;
-  get_mem_from_mdl(mem_addr_val, mdl, sv, pkt_mem_id);
 
-  // set pkt with random values
-  input.set_pkt_random_val();
+
   z3::expr z3_pkt_start = mdl.eval(sv.get_pkt_start_addr());
   z3::expr z3_pkt_end = mdl.eval(sv.get_pkt_end_addr());
   uint64_t pkt_start = get_uint64_from_bv64(z3_pkt_start, true);
   uint64_t pkt_end = get_uint64_from_bv64(z3_pkt_end, true);
 
+  int pkt_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
+  assert(pkt_mem_id != -1);
+  vector<pair< uint64_t, uint8_t>> mem_addr_val;
+  get_mem_from_mdl(mem_addr_val, mdl, sv, pkt_mem_id, pkt_start);
+
+  // set pkt with random values
+  input.set_pkt_random_val();
   for (int i = 0; i < mem_addr_val.size(); i++) {
     uint64_t addr = mem_addr_val[i].first;
     uint8_t val = mem_addr_val[i].second;

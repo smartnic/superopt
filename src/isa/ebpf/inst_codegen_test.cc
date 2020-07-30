@@ -253,11 +253,11 @@ void test5() {
   int stack_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
   smt_wt *s = &sv.mem_var._mem_tables[stack_mem_id]._wt;
   // add the initial pointers
-  sv.mem_var.add_ptr(addr, stack_mem_id);
+  sv.mem_var.add_ptr(addr, stack_mem_id, ZERO_ADDR_OFF_EXPR);
   // (write addr+off, 8, in, s)
   // out == (read addr+off, 8, s)
   z3::expr f_st = predicate_st8(v(vals[0]), addr, offs[0], sv);
-  z3::expr smt = (s->addr[0] == (addr + offs[0])) && (s->val[0] == to_expr(vals[0], 8));
+  z3::expr smt = (s->addr[0] == offs[0]) && (s->val[0] == to_expr(vals[0], 8));
   print_test_res(is_valid(z3::implies(f_mem_layout_constrain && f_st, smt)), "predicate_st8 1");
   z3::expr out = new_out();
   smt = f_mem_layout_constrain && f_st && predicate_ld8(addr, offs[0], sv, out);
@@ -265,7 +265,7 @@ void test5() {
   print_test_res(is_valid(smt), "predicate_ld8 1");
 
   f_st = f_st && predicate_st8(v(vals[1]), addr, offs[1], sv);
-  smt = (s->addr[1] == (addr + offs[1])) && (s->val[1] == to_expr(vals[1], 8));
+  smt = (s->addr[1] == offs[1]) && (s->val[1] == to_expr(vals[1], 8));
   print_test_res(is_valid(z3::implies(f_mem_layout_constrain && f_st, smt)), "predicate_st8 2");
   out = new_out();
   smt = f_mem_layout_constrain && f_st &&
@@ -275,7 +275,7 @@ void test5() {
 
   // test rewrite
   f_st = f_st && predicate_st8(v(vals[1]), addr, offs[0], sv);
-  smt = (s->addr[2] == (addr + offs[0])) && (s->val[2] == to_expr(vals[1], 8));
+  smt = (s->addr[2] == offs[0]) && (s->val[2] == to_expr(vals[1], 8));
   print_test_res(is_valid(z3::implies(f_mem_layout_constrain && f_st, smt)), "predicate_st8 3");
   out = new_out();
   smt = f_mem_layout_constrain && f_st && predicate_ld8(addr, offs[0], sv, out);
@@ -410,7 +410,7 @@ void test7() {
   int map_id = 0;
   z3::expr map_s = sv.get_map_start_addr(map_id);
   int map_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_map, map_id);
-  sv.mem_var.add_ptr(map_s, map_mem_id);
+  sv.mem_var.add_ptr(map_s, map_mem_id, ZERO_ADDR_OFF_EXPR);
   z3::expr f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr out = new_out();
   z3::expr smt = f_mem_layout_constrain && (out == v1) && predicate_ld8(map_s, v(0), sv, out);
@@ -439,7 +439,7 @@ void test8() {
   z3::expr f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr stack_s = sv.get_stack_start_addr();
   int stack_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
-  sv.mem_var.add_ptr(stack_s, stack_mem_id);
+  sv.mem_var.add_ptr(stack_s, stack_mem_id, ZERO_ADDR_OFF_EXPR);
 
   cout << "  1. test properties of lookup after update/delete in map" << endl;
   // test *(lookup &k1 (update &k1 &v1 m))
@@ -449,7 +449,7 @@ void test8() {
   z3::expr addr_v1 = stack_s + 1;
   z3::expr v_lookup_1 = v("v_lookup_1");
   z3::expr addr_v_lookup_1 = v("addr_v_lookup_1");
-  sv.mem_var.add_ptr(addr_v1, stack_mem_id);
+  sv.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
   sv.add_expr_map_id(map1, v(map1_id));
   z3::expr f = predicate_st8(k1, addr_k1, v(0), sv) && // *addr_k1 = k1 (addr_k1 in the stack)
                predicate_st8(v1, addr_v1, v(0), sv); // *addr_v1 = v1 (addr_v1 in the stack)
@@ -465,8 +465,8 @@ void test8() {
   z3::expr v2 = to_expr("v2", 8);
   z3::expr addr_k2 = stack_s + 2;
   z3::expr addr_v2 = stack_s + 3;
-  sv.mem_var.add_ptr(addr_k2, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v2, stack_mem_id);
+  sv.mem_var.add_ptr(addr_k2, stack_mem_id, addr_k2 - stack_s);
+  sv.mem_var.add_ptr(addr_v2, stack_mem_id, addr_v2 - stack_s);
   f = f && predicate_st8(k2, addr_k2, v(0), sv) &&
       predicate_st8(v2, addr_v2, v(0), sv);
   z3::expr addr_map_v2 = v("addr_map_v2");
@@ -508,9 +508,9 @@ void test8() {
   sv.clear();
   sv.init();
   stack_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
-  sv.mem_var.add_ptr(stack_s, stack_mem_id);
-  sv.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv.mem_var.add_ptr(addr_k2, stack_mem_id);
+  sv.mem_var.add_ptr(stack_s, stack_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv.mem_var.add_ptr(addr_k2, stack_mem_id, addr_k2 - stack_s);
   sv.add_expr_map_id(map1, v(map1_id));
 
   f_mem_layout_constrain = sv.mem_layout_constrain();
@@ -571,9 +571,9 @@ void test8() {
   sv.clear();
   sv.init();
   stack_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
-  sv.mem_var.add_ptr(stack_s, stack_mem_id);
-  sv.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v1, stack_mem_id);
+  sv.mem_var.add_ptr(stack_s, stack_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
   sv.add_expr_map_id(map1, v(map1_id));
 
   f_mem_layout_constrain = sv.mem_layout_constrain();
@@ -599,11 +599,11 @@ void test8() {
   mem_t::add_map(map_attr(8, 8, 512));
   sv.init();
   stack_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
-  sv.mem_var.add_ptr(stack_s, stack_mem_id);
-  sv.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv.mem_var.add_ptr(addr_k2, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v1, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v2, stack_mem_id);
+  sv.mem_var.add_ptr(stack_s, stack_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv.mem_var.add_ptr(addr_k2, stack_mem_id, addr_k2 - stack_s);
+  sv.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
+  sv.mem_var.add_ptr(addr_v2, stack_mem_id, addr_v2 - stack_s);
   sv.add_expr_map_id(map1, v(map1_id));
   sv.add_expr_map_id(map2, v(map2_id));
   f_mem_layout_constrain = sv.mem_layout_constrain();
@@ -655,7 +655,7 @@ void test8() {
   print_test_res(is_valid(f_expected), "m1 update not affect m2 uninitialized lookup");
 
   z3::expr addr_k3 = stack_s + 4;
-  sv.mem_var.add_ptr(addr_k3, stack_mem_id);
+  sv.mem_var.add_ptr(addr_k3, stack_mem_id, addr_k3 - stack_s);
   z3::expr k3 = to_expr("k3", 8);
   f = f && predicate_st8(k3, addr_k3, v(0), sv); // *addr_k3 = k3 (addr_k3 in the stack)
   f = f && predicate_map_lookup_helper(map1, addr_k3, p1, sv);
@@ -670,9 +670,9 @@ void test8() {
   sv.clear();
   sv.init();
   stack_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
-  sv.mem_var.add_ptr(stack_s, stack_mem_id);
-  sv.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v1, stack_mem_id);
+  sv.mem_var.add_ptr(stack_s, stack_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
   sv.add_expr_map_id(map1, v(map1_id));
   f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr out = new_out();
@@ -701,7 +701,7 @@ void test8() {
   sv.clear();
   sv.init();
   stack_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
-  sv.mem_var.add_ptr(stack_s, stack_mem_id);
+  sv.mem_var.add_ptr(stack_s, stack_mem_id, ZERO_ADDR_OFF_EXPR);
   f_mem_layout_constrain = sv.mem_layout_constrain();
   k1 = to_expr("k1", 8); // used by map1
   v1 = to_expr("v1", 8);
@@ -711,10 +711,10 @@ void test8() {
   addr_v1 = stack_s + 1;
   addr_k2 = stack_s + 2;
   addr_v2 = stack_s + 4;
-  sv.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v1, stack_mem_id);
-  sv.mem_var.add_ptr(addr_k2, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v2, stack_mem_id);
+  sv.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
+  sv.mem_var.add_ptr(addr_k2, stack_mem_id, addr_k2 - stack_s);
+  sv.mem_var.add_ptr(addr_v2, stack_mem_id, addr_v2 - stack_s);
   sv.add_expr_map_id(map1, v(map1_id));
   sv.add_expr_map_id(map2, v(map2_id));
 
@@ -824,10 +824,10 @@ void test9() {
   sv.mem_var.set_stack_start(stack_s);
   sv.init();
   int stack_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
-  sv.mem_var.add_ptr(addr_k1_expr, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v1_expr, stack_mem_id);
-  sv.mem_var.add_ptr(addr_k2_expr, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v2_expr, stack_mem_id);
+  sv.mem_var.add_ptr(addr_k1_expr, stack_mem_id, addr_k1_expr - stack_s_expr);
+  sv.mem_var.add_ptr(addr_v1_expr, stack_mem_id, addr_v1_expr - stack_s_expr);
+  sv.mem_var.add_ptr(addr_k2_expr, stack_mem_id, addr_k2_expr - stack_s_expr);
+  sv.mem_var.add_ptr(addr_v2_expr, stack_mem_id, addr_v2_expr - stack_s_expr);
   sv.add_expr_map_id(map1_expr, v(map1));
   sv.add_expr_map_id(map2_expr, v(map2));
 
@@ -919,8 +919,8 @@ void test9() {
   sv.init();
   sv.mem_var.set_stack_start(stack_s);
   stack_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
-  sv.mem_var.add_ptr(addr_k1_expr, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v1_expr, stack_mem_id);
+  sv.mem_var.add_ptr(addr_k1_expr, stack_mem_id, addr_k1_expr - stack_s_expr);
+  sv.mem_var.add_ptr(addr_v1_expr, stack_mem_id, addr_v1_expr - stack_s_expr);
   sv.add_expr_map_id(map1_expr, v(map1));
   f = f_map_id && f_stack_s;
   compute_st8(k1, addr_k1, 0);
@@ -978,10 +978,10 @@ void test9() {
   stack_s_expr = v("stack_s");
   addr_k1_expr = v("stack_s") + 0, addr_v1_expr = v("stack_s") + 1;
   addr_k2_expr = v("stack_s") + 2, addr_v2_expr = v("stack_s") + 4;
-  sv.mem_var.add_ptr(addr_k1_expr, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v1_expr, stack_mem_id);
-  sv.mem_var.add_ptr(addr_k2_expr, stack_mem_id);
-  sv.mem_var.add_ptr(addr_v2_expr, stack_mem_id);
+  sv.mem_var.add_ptr(addr_k1_expr, stack_mem_id, addr_k1_expr - stack_s_expr);
+  sv.mem_var.add_ptr(addr_v1_expr, stack_mem_id, addr_v1_expr - stack_s_expr);
+  sv.mem_var.add_ptr(addr_k2_expr, stack_mem_id, addr_k2_expr - stack_s_expr);
+  sv.mem_var.add_ptr(addr_v2_expr, stack_mem_id, addr_v2_expr - stack_s_expr);
   sv.add_expr_map_id(map1_expr, v(map1));
   sv.add_expr_map_id(map2_expr, v(map2));
   f_stack_s = (v("stack_s") == v(stack_s));
@@ -1080,14 +1080,14 @@ void test10() {
   z3::expr addr_k1 = stack_s + 0, addr_v1 = stack_s + 1;
   z3::expr addr_k2 = stack_s + 2, addr_v2 = stack_s + 3;
   int stack_mem_id = sv1.mem_var.get_mem_table_id(MEM_TABLE_stack);
-  sv1.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv1.mem_var.add_ptr(addr_v1, stack_mem_id);
-  sv1.mem_var.add_ptr(addr_k2, stack_mem_id);
-  sv1.mem_var.add_ptr(addr_v2, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_v1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_k2, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_v2, stack_mem_id);
+  sv1.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv1.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
+  sv1.mem_var.add_ptr(addr_k2, stack_mem_id, addr_k2 - stack_s);
+  sv1.mem_var.add_ptr(addr_v2, stack_mem_id, addr_v2 - stack_s);
+  sv2.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv2.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
+  sv2.mem_var.add_ptr(addr_k2, stack_mem_id, addr_k2 - stack_s);
+  sv2.mem_var.add_ptr(addr_v2, stack_mem_id, addr_v2 - stack_s);
   sv1.add_expr_map_id(addr_map1, v(map1));
   sv2.add_expr_map_id(addr_map1, v(map1));
   // test map without process, i.e., no elements in map tables
@@ -1150,10 +1150,10 @@ void test10() {
   sv1.clear(); sv2.clear();
   sv1.init();
   sv2.init();
-  sv1.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv1.mem_var.add_ptr(addr_v1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_v1, stack_mem_id);
+  sv1.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv1.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
+  sv2.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv2.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
   sv1.add_expr_map_id(addr_map1, v(map1));
   sv2.add_expr_map_id(addr_map1, v(map1));
   f_mem_layout_constrain = sv1.mem_layout_constrain();
@@ -1176,14 +1176,14 @@ void test10() {
   sv1.clear(); sv2.clear();
   sv1.init();
   sv2.init();
-  sv1.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv1.mem_var.add_ptr(addr_v1, stack_mem_id);
-  sv1.mem_var.add_ptr(addr_k2, stack_mem_id);
-  sv1.mem_var.add_ptr(addr_v2, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_v1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_k2, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_v2, stack_mem_id);
+  sv1.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv1.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
+  sv1.mem_var.add_ptr(addr_k2, stack_mem_id, addr_k2 - stack_s);
+  sv1.mem_var.add_ptr(addr_v2, stack_mem_id, addr_v2 - stack_s);
+  sv2.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv2.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
+  sv2.mem_var.add_ptr(addr_k2, stack_mem_id, addr_k2 - stack_s);
+  sv2.mem_var.add_ptr(addr_v2, stack_mem_id, addr_v2 - stack_s);
   sv1.add_expr_map_id(addr_map1, v(map1));
   sv2.add_expr_map_id(addr_map1, v(map1));
   f_mem_layout_constrain = sv1.mem_layout_constrain();
@@ -1202,7 +1202,7 @@ void test10() {
   f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p1, sv1);
   f = f && predicate_ld8(addr_v_lookup_p1, v(0), sv1, v_lookup_p1);
   z3::expr stack_addr_v_lookup_p1 = stack_s + 4;
-  sv1.mem_var.add_ptr(stack_addr_v_lookup_p1, stack_mem_id);
+  sv1.mem_var.add_ptr(stack_addr_v_lookup_p1, stack_mem_id, stack_addr_v_lookup_p1 - stack_s);
   f = f && predicate_st8(v_lookup_p1, stack_addr_v_lookup_p1, v(0), sv1);
   // store v_lookup_k1_p2 (= m_p2[k1]) in the stack (addr: stack_addr_v_lookup_p2)
   z3::expr addr_v_lookup_p2 = new_addr_v_lookup();
@@ -1210,7 +1210,7 @@ void test10() {
   f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup_p2, sv2);
   f = f && predicate_ld8(addr_v_lookup_p2, v(0), sv2, v_lookup_p2);
   z3::expr stack_addr_v_lookup_p2 = stack_s + 5;
-  sv2.mem_var.add_ptr(stack_addr_v_lookup_p2, stack_mem_id);
+  sv2.mem_var.add_ptr(stack_addr_v_lookup_p2, stack_mem_id, stack_addr_v_lookup_p2 - stack_s);
   f = f && predicate_st8(v_lookup_p2, stack_addr_v_lookup_p2, v(0), sv2);
 
   test_name = "m_p1_0 == m_p2_0";
@@ -1282,10 +1282,10 @@ void test10() {
   mem_t::add_map(map_attr(32, 16, 512));
   sv1.init();
   sv2.init();
-  sv1.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv1.mem_var.add_ptr(addr_v1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_v1, stack_mem_id);
+  sv1.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv1.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
+  sv2.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv2.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
   sv1.add_expr_map_id(addr_map1, v(map1));
   sv2.add_expr_map_id(addr_map1, v(map1));
   f_mem_layout_constrain = sv1.mem_layout_constrain();
@@ -1305,8 +1305,8 @@ void test10() {
   f = f && predicate_ld16(addr_v_lookup_p2, v(0), sv2, v_lookup_p2);
   stack_addr_v_lookup_p1 = stack_s + 6;
   stack_addr_v_lookup_p2 = stack_s + 8;
-  sv1.mem_var.add_ptr(stack_addr_v_lookup_p1, stack_mem_id);
-  sv2.mem_var.add_ptr(stack_addr_v_lookup_p2, stack_mem_id);
+  sv1.mem_var.add_ptr(stack_addr_v_lookup_p1, stack_mem_id, stack_addr_v_lookup_p1 - stack_s);
+  sv2.mem_var.add_ptr(stack_addr_v_lookup_p2, stack_mem_id, stack_addr_v_lookup_p2 - stack_s);
   f = f && predicate_st16(v_lookup_p1, stack_addr_v_lookup_p1, v(0), sv1) &&
       predicate_st16(v_lookup_p2, stack_addr_v_lookup_p2, v(0), sv2);
   test_name = "m_p1_1 != m_p2_0, m_p1_1 = update &k1 &v1 m_p1_0";
@@ -1346,10 +1346,10 @@ void test10() {
   k1 = to_expr("k1", 8), v1 = to_expr("v1", 8);
   stack_s = sv1.get_stack_start_addr();
   addr_k1 = stack_s + 0, addr_v1 = stack_s + 1;
-  sv1.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv1.mem_var.add_ptr(addr_v1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_v1, stack_mem_id);
+  sv1.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv1.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
+  sv2.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv2.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
   sv1.add_expr_map_id(addr_map1, v(map1));
   sv1.add_expr_map_id(addr_map2, v(map2));
   sv2.add_expr_map_id(addr_map1, v(map1));
@@ -1360,12 +1360,12 @@ void test10() {
       predicate_st8(v1, addr_v1, v(0), sv2);
   f = f && f_mem_layout_constrain && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv1);
   f = f && predicate_map_update_helper(addr_map1, addr_k1, addr_v1, new_out(), sv2);
-  f_same_input = smt_one_map_set_same_input(map1, sv1, sv2);
+  f_same_input = smt_map_set_same_input(sv1, sv2);
   f_equal = smt_map_eq_chk(sv1, sv2);
   print_test_res(is_valid(z3::implies(f && f_same_input, f_equal) == string_to_expr("true")), "1");
   f = f && predicate_map_update_helper(addr_map2, addr_k1, addr_v1, new_out(), sv1);
   f = f && predicate_map_update_helper(addr_map2, addr_k1, addr_v1, new_out(), sv2);
-  f_same_input = smt_one_map_set_same_input(map1, sv1, sv2);
+  f_same_input = smt_map_set_same_input(sv1, sv2);
   f_equal = smt_map_eq_chk(sv1, sv2);
   print_test_res(is_valid(z3::implies(f && f_same_input, f_equal) == string_to_expr("true")), "2");
 
@@ -1373,10 +1373,10 @@ void test10() {
   sv1.clear(); sv2.clear();
   sv1.init();
   sv2.init();
-  sv1.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv1.mem_var.add_ptr(addr_v1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_k1, stack_mem_id);
-  sv2.mem_var.add_ptr(addr_v1, stack_mem_id);
+  sv1.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv1.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
+  sv2.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
+  sv2.mem_var.add_ptr(addr_v1, stack_mem_id, addr_v1 - stack_s);
   sv1.add_expr_map_id(addr_map1, v(map1));
   sv2.add_expr_map_id(addr_map1, v(map1));
   f_mem_layout_constrain = sv1.mem_layout_constrain();
@@ -1478,10 +1478,10 @@ void test12() {
   z3::expr f = Z3_true;
   int stack_mem_id = sv1.mem_var.get_mem_table_id(MEM_TABLE_stack);
 #define PRED_ST(key, k_sz, val, v_sz, addr_k, addr_v)  \
-  sv1.mem_var.add_ptr(addr_k, stack_mem_id);           \
-  sv2.mem_var.add_ptr(addr_k, stack_mem_id);           \
-  sv1.mem_var.add_ptr(addr_v, stack_mem_id);           \
-  sv2.mem_var.add_ptr(addr_v, stack_mem_id);           \
+  sv1.mem_var.add_ptr(addr_k, stack_mem_id, addr_k - stack_s); \
+  sv2.mem_var.add_ptr(addr_k, stack_mem_id, addr_k - stack_s); \
+  sv1.mem_var.add_ptr(addr_v, stack_mem_id, addr_v - stack_s); \
+  sv2.mem_var.add_ptr(addr_v, stack_mem_id, addr_v - stack_s); \
   f = f && predicate_st##k_sz(key, addr_k, v(0), sv1); \
   f = f && predicate_st##k_sz(key, addr_k, v(0), sv2); \
   f = f && predicate_st##v_sz(val, addr_v, v(0), sv1); \
@@ -1577,15 +1577,17 @@ void test13() {
   z3::expr pkt_s = sv1.get_pkt_start_addr(); // sv1, sv2 have the same pkt start address
   z3::expr pkt_e = sv1.get_pkt_end_addr();
   int stack_mem_id = sv1.mem_var.get_mem_table_id(MEM_TABLE_stack);
-  sv1.mem_var.add_ptr(sv1.get_stack_start_addr(), stack_mem_id);
-  sv1.mem_var.add_ptr(sv1.get_stack_end_addr(), stack_mem_id);
-  sv2.mem_var.add_ptr(sv1.get_stack_start_addr(), stack_mem_id);
-  sv2.mem_var.add_ptr(sv1.get_stack_end_addr(), stack_mem_id);
+  z3::expr stack_s = sv1.get_stack_start_addr();
+  z3::expr stack_e = sv1.get_stack_end_addr();
+  sv1.mem_var.add_ptr(stack_s, stack_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv1.mem_var.add_ptr(stack_e, stack_mem_id, stack_e - stack_s);
+  sv2.mem_var.add_ptr(stack_s, stack_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv2.mem_var.add_ptr(stack_e, stack_mem_id, stack_e - stack_s);
   int pkt_mem_id = sv1.mem_var.get_mem_table_id(MEM_TABLE_pkt);
-  sv1.mem_var.add_ptr(pkt_s, pkt_mem_id);
-  sv1.mem_var.add_ptr(pkt_e, pkt_mem_id);
-  sv2.mem_var.add_ptr(pkt_s, pkt_mem_id);
-  sv2.mem_var.add_ptr(pkt_e, pkt_mem_id);
+  sv1.mem_var.add_ptr(pkt_s, pkt_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv1.mem_var.add_ptr(pkt_e, pkt_mem_id, pkt_e - pkt_s);
+  sv2.mem_var.add_ptr(pkt_s, pkt_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv2.mem_var.add_ptr(pkt_e, pkt_mem_id, pkt_e - pkt_s);
 
 #define PKT_SAME_INPUT_CHK(addr, off, is_equal, test_name) \
   pkt_same_input_chk(addr, off, is_equal, test_name, f_operations, f_mem_layout_constrain, sv1, sv2);
@@ -1593,9 +1595,9 @@ void test13() {
   PKT_SAME_INPUT_CHK(pkt_s, v(0), true, "1")
   PKT_SAME_INPUT_CHK(pkt_e, v(0), true, "2")
   PKT_SAME_INPUT_CHK(pkt_s, v(56), true, "3")
-  PKT_SAME_INPUT_CHK(pkt_e, v(1), false, "4")
-  // this test may be a part of the safety check
-  //PKT_SAME_INPUT_CHK(pkt_s, v((int64_t) - 1), false, "5")
+  // these tests may be a part of the safety check
+  // PKT_SAME_INPUT_CHK(pkt_e, v(1), false, "4")
+  // PKT_SAME_INPUT_CHK(pkt_s, v((int64_t) - 1), false, "5")
   PKT_SAME_INPUT_CHK(sv1.get_stack_start_addr(), v(0), false, "6")
   PKT_SAME_INPUT_CHK(sv1.get_stack_end_addr(), v(0), false, "7")
 
@@ -1611,10 +1613,10 @@ void test13() {
   sv1.init();
   sv2.init();
   pkt_mem_id = sv1.mem_var.get_mem_table_id(MEM_TABLE_pkt);
-  sv1.mem_var.add_ptr(pkt_s, pkt_mem_id);
-  sv1.mem_var.add_ptr(pkt_e, pkt_mem_id);
-  sv2.mem_var.add_ptr(pkt_s, pkt_mem_id);
-  sv2.mem_var.add_ptr(pkt_e, pkt_mem_id);
+  sv1.mem_var.add_ptr(pkt_s, pkt_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv1.mem_var.add_ptr(pkt_e, pkt_mem_id, pkt_e - pkt_s);
+  sv2.mem_var.add_ptr(pkt_s, pkt_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv2.mem_var.add_ptr(pkt_e, pkt_mem_id, pkt_e - pkt_s);
 #define PKT_EQ_CHK(is_equal, test_name) \
   pkt_eq_chk(is_equal, test_name, f_operations, f_mem_layout_constrain, sv1, sv2);
 
@@ -1658,10 +1660,10 @@ void test13() {
   sv1.init();
   sv2.init();
   pkt_mem_id = sv1.mem_var.get_mem_table_id(MEM_TABLE_pkt);
-  sv1.mem_var.add_ptr(pkt_s, pkt_mem_id);
-  sv1.mem_var.add_ptr(pkt_e, pkt_mem_id);
-  sv2.mem_var.add_ptr(pkt_s, pkt_mem_id);
-  sv2.mem_var.add_ptr(pkt_e, pkt_mem_id);
+  sv1.mem_var.add_ptr(pkt_s, pkt_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv1.mem_var.add_ptr(pkt_e, pkt_mem_id, pkt_e - pkt_s);
+  sv2.mem_var.add_ptr(pkt_s, pkt_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv2.mem_var.add_ptr(pkt_e, pkt_mem_id, pkt_e - pkt_s);
   f_mem_layout_constrain = sv1.mem_layout_constrain();
   f_operations = Z3_true;
   pkt_s = sv1.get_pkt_start_addr(); // sv1, sv2 have the same pkt start address

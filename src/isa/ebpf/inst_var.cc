@@ -474,14 +474,14 @@ z3::expr smt_mem::get_and_update_addr_v_next(int map_id) {
   return res;
 }
 
-void smt_mem::get_mem_table_id(vector<int>& table_ids, vector<z3::expr>& path_conds, z3::expr ptr_expr) {
+void smt_mem::get_mem_ptr_info(vector<int>& table_ids, vector<mem_ptr_info>& ptr_info_list, z3::expr ptr_expr) {
   table_ids.clear();
-  path_conds.clear();
+  ptr_info_list.clear();
   for (int i = 0; i < _mem_tables.size(); i++) {
     if (! _mem_tables[i].is_ptr_in_ptrs(ptr_expr)) continue;
-    z3::expr pc = _mem_tables[i].get_ptr_path_cond(ptr_expr);
+    mem_ptr_info ptr_info = _mem_tables[i].get_ptr_info(ptr_expr);
     table_ids.push_back(i);
-    path_conds.push_back(pc);
+    ptr_info_list.push_back(ptr_info);
   }
 }
 
@@ -518,18 +518,19 @@ void smt_mem::add_in_mem_table_urt(int mem_table_id, unsigned int block,
   _mem_tables[mem_table_id]._urt.add(block, is_valid, addr, val);
 }
 
-void smt_mem::add_ptr(z3::expr ptr_expr, int table_id, z3::expr path_cond) {
+void smt_mem::add_ptr(z3::expr ptr_expr, int table_id, z3::expr off, z3::expr path_cond) {
   assert(table_id >= 0);
   assert(table_id < _mem_tables.size());
-  _mem_tables[table_id].add_ptr(ptr_expr, path_cond);
+  _mem_tables[table_id].add_ptr(ptr_expr, path_cond, off);
 }
 
-void smt_mem::add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr, z3::expr path_cond) {
+void smt_mem::add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr, z3::expr ptr_minus_ptr_from, z3::expr path_cond) {
   unsigned int ptr_from_id = ptr_from_expr.id();
   for (int i = 0; i < _mem_tables.size(); i++) {
     auto found = _mem_tables[i]._ptrs.find(ptr_from_id);
     if (found != _mem_tables[i]._ptrs.end()) {
-      _mem_tables[i].add_ptr(ptr_expr, path_cond);
+      z3::expr off = found->second.off + ptr_minus_ptr_from;
+      _mem_tables[i].add_ptr(ptr_expr, path_cond, off);
     }
   }
 }
@@ -537,7 +538,8 @@ void smt_mem::add_ptr(z3::expr ptr_expr, z3::expr ptr_from_expr, z3::expr path_c
 void smt_mem::add_ptr_by_map_id(z3::expr ptr_expr, int map_id, z3::expr path_cond) {
   int table_id = get_mem_table_id(MEM_TABLE_map, map_id);
   if (table_id != -1) {
-    _mem_tables[table_id].add_ptr(ptr_expr, path_cond);
+    // for map memory table, addr_off won't be used. so set it as zero
+    _mem_tables[table_id].add_ptr(ptr_expr, path_cond, ZERO_ADDR_OFF_EXPR);
   }
 }
 
@@ -736,16 +738,17 @@ void smt_var::set_new_node_id(unsigned int node_id, vector<unsigned int>& nodes_
     // 2. update pointers
     // for each register, get the table_id list and the corresponding path condition list
     vector<bool> table_ids(mem_var._mem_tables.size(), false);
-    vector<z3::expr> path_conds(mem_var._mem_tables.size(), Z3_false);
+    vector<mem_ptr_info> infos(mem_var._mem_tables.size());
     for (int j = 0; j < nodes_in.size(); j++) {
       z3::expr reg_ptr = nodes_in_regs[nodes_in[j]][i];
       vector<int> ids;
-      vector<z3::expr> pcs;
-      mem_var.get_mem_table_id(ids, pcs, reg_ptr);
+      vector<mem_ptr_info> info_list;
+      mem_var.get_mem_ptr_info(ids, info_list, reg_ptr);
       for (int k = 0; k < ids.size(); k++) {
         int id = ids[k];
         // merge path condition for the same table id
-        path_conds[id] = path_conds[id] || (pcs[k] && node_in_pc_list[j]);
+        infos[id].path_cond = infos[id].path_cond || (info_list[k].path_cond && node_in_pc_list[j]);
+        infos[id].off = info_list[k].off;
         if (! table_ids[id]) {
           table_ids[id] = true;
         }
@@ -754,7 +757,7 @@ void smt_var::set_new_node_id(unsigned int node_id, vector<unsigned int>& nodes_
     // update mem_table's pointers
     for (int j = 0; j < table_ids.size(); j++) {
       if (! table_ids[j]) continue;
-      mem_var.add_ptr(cur_reg, j, path_conds[j].simplify());
+      mem_var.add_ptr(cur_reg, j, infos[j].off, infos[j].path_cond);
     }
   }
 }
@@ -764,10 +767,10 @@ void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_
   mem_var.init_by_layout(n_blocks);
   if (node_id == 0) {
     int stack_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_stack);
-    mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id, Z3_true); // r10 is the stack pointer
+    mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id, ZERO_ADDR_OFF_EXPR, Z3_true); // r10 is the stack pointer
     if (mem_t::_layout._pkt_sz > 0) {
       int pkt_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_pkt);
-      mem_var.add_ptr(get_init_reg_var(1), pkt_mem_table_id, Z3_true); // r1 is the pkt pointer
+      mem_var.add_ptr(get_init_reg_var(1), pkt_mem_table_id, ZERO_ADDR_OFF_EXPR, Z3_true); // r1 is the pkt pointer
     }
   }
 }
