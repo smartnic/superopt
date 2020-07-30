@@ -509,6 +509,7 @@ z3::expr smt_one_map_eq_chk_k_in_one_map(vector<z3::expr>& k1_list, vector<z3::e
     z3::expr f_k1_not_in_map2 = key_not_in_map_wt(k1_list[i], map2._wt, sv2) && // k1 not in map2 wt
                                 key_not_in_map_wt(k1_list[i], map2._urt, sv2);   // k1 not in map2 urt
     z3::expr f_k1_in_map1_urt = !key_not_in_map_wt(k1_list[i], map1._urt, sv1);
+    f = f && z3::implies(f_k1_not_in_map2 && f_k1_list[i], f_k1_in_map1_urt);
 
     for (int j = 0; j < map1._urt.size(); j++) {
       z3::expr k1_in = map1._urt.key[j];
@@ -521,7 +522,7 @@ z3::expr smt_one_map_eq_chk_k_in_one_map(vector<z3::expr>& k1_list, vector<z3::e
                                             (v_eq == (v1_list[i] == v1_in_list[j])),
                                             (addr_v1 != NULL_ADDR_EXPR) &&
                                             (addr_v1_in != NULL_ADDR_EXPR) && v_eq);
-      f = f && z3::implies(f_found_same_key, f_k1_in_map1_urt && (f_k_both_inexist || f_k_both_exist));
+      f = f && z3::implies(f_found_same_key, f_k_both_inexist || f_k_both_exist);
     }
   }
   return f;
