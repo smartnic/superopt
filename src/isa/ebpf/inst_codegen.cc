@@ -395,7 +395,7 @@ z3::expr ld_byte_from_urt(z3::expr addr, smt_wt& urt, z3::expr out) {
   z3::expr a = addr;
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < urt.addr.size(); i++) {
-    f = f && z3::implies(urt.is_valid[i] && (a == urt.addr[i]) && (a != NULL_ADDR_EXPR), out == urt.val[i]);
+    f = f && z3::implies((a == urt.addr[i]) && (a != NULL_ADDR_EXPR), out == urt.val[i]);
   }
   return f;
 }
