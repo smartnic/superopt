@@ -180,9 +180,6 @@ netronome_inst_parse_test.out: netronome_inst_z3_parse.o $(NETRONOME)inst.cc $(N
 netronome_inst_z3_parse.o: $(NETRONOME)inst_parse_test.cc
 	$(CXX) $(NETRONOME_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(NETRONOME)inst_z3_parse.o  -I../z3/src/api -I../z3/src/api/c++ $(NETRONOME)inst_parse_test.cc
 
-# Main executable for netronome
-
-
 
 clean:
 	for i in */; do find . -name "*.o" -delete; done
