@@ -375,7 +375,7 @@ z3::expr ld_byte_from_wt(z3::expr addr, smt_wt& wt, z3::expr out) {
   z3::expr f = string_to_expr("true");
   z3::expr f_found_after_i = string_to_expr("false");
   for (int i = wt.addr.size() - 1; i >= 0; i--) {
-    z3::expr f_found_i = (a == wt.addr[i]) && (a != NULL_ADDR_EXPR);
+    z3::expr f_found_i = wt.is_valid[i] && (a == wt.addr[i]) && (a != NULL_ADDR_EXPR);
     f = f && z3::implies((!f_found_after_i) && f_found_i, // latest write
                          out == wt.val[i]);
     f_found_after_i = f_found_after_i || f_found_i;
@@ -395,7 +395,7 @@ z3::expr ld_byte_from_urt(z3::expr addr, smt_wt& urt, z3::expr out) {
   z3::expr a = addr;
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < urt.addr.size(); i++) {
-    f = f && z3::implies((a == urt.addr[i]) && (a != NULL_ADDR_EXPR), out == urt.val[i]);
+    f = f && z3::implies(urt.is_valid[i] && (a == urt.addr[i]) && (a != NULL_ADDR_EXPR), out == urt.val[i]);
   }
   return f;
 }
