@@ -132,7 +132,12 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   _store_post = post;
   _store_f = smt;
   model mdl(smt_c);
+
+  auto t1 = NOW;
   int is_equal = is_smt_valid(smt, mdl);
+  auto t2 = NOW;
+  cout << DUR(t1, t2) << " us" << endl;
+
   if (is_equal == 0) {
     // cout << is_equal << endl;
     cout << mdl << endl;

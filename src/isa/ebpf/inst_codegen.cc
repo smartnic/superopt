@@ -98,8 +98,9 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
   sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
   cout << "enter predicate_st_byte" << endl;
   cout << "addr: " << addr << endl;
+  cout << "pc: " << path_cond.simplify() << endl;
   for (int i = 0; i < ids.size(); i++) cout << ids[i] << " " << info_list[i].off << " " << info_list[i].path_cond << endl;
-  if (ids.size() == 0) return Z3_true; // todo: addr is not a pointer
+  if (ids.size() == 0) {cout << "error!!!" << endl; return Z3_true;} // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
     z3::expr is_valid = sv.update_is_valid();
     z3::expr cond = path_cond && info_list[i].path_cond;
@@ -108,6 +109,7 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
                            (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt));
     if (is_stack_or_pkt) { // addr in the entry is offset
       z3::expr addr_off = off + info_list[i].off;
+      cout << "is_stack_or_pkt  addr_off: " << addr_off.simplify() << endl;
       sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr_off, in.extract(7, 0));
     } else {
       sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr + off, in.extract(7, 0));
@@ -175,7 +177,7 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
   // cout << "wt.addr.size(): " << wt.addr.size() << endl;
   for (int i = wt.addr.size() - 1; i >= 0; i--) {
     int is_pc_match = sv.pgm_dag.is_b_on_root2a_path(block, wt.block[i]);
-    // cout << "is_pc_match: " << is_pc_match << endl;
+    cout << "is_pc_match: " << is_pc_match << endl;
     if (is_pc_match == INT_false) continue;
     z3::expr f_same = (a != NULL_ADDR_EXPR) && (a == wt.addr[i]) && wt.is_valid[i];
     if (is_stack_or_pkt) f_same = (a == wt.addr[i]) && wt.is_valid[i];
@@ -229,7 +231,7 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr ou
   cout << "addr: " << addr << endl;
   for (int i = 0; i < ids.size(); i++) cout << ids[i] << " " << info_list[i].off << " " << info_list[i].path_cond << endl;
   // cout << "ids.size(): " << ids.size() << endl;
-  if (ids.size() == 0) return Z3_true; // todo: addr is not a pointer
+  if (ids.size() == 0) {cout << "error!!!" << endl; return Z3_true;} // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
     f = f && predicate_ld_byte_for_one_mem_table(ids[i], info_list[i], addr, off, sv, out, block, cond);
   }
@@ -359,7 +361,7 @@ z3::expr key_not_in_map_wt(z3::expr k, smt_map_wt& m_wt, smt_var& sv, bool same_
   for (int i = 0; i < m_wt.key.size(); i++) {
     if (same_pgms) {
       int is_pc_match = sv.pgm_dag.is_b_on_root2a_path(block, m_wt.block[i]);
-      // cout << "is_pc_match: " << is_pc_match << endl;
+      cout << "is_pc_match: " << is_pc_match << endl;
       if (is_pc_match == INT_false) continue;
     }
 
@@ -700,7 +702,7 @@ z3::expr predicate_map_lookup_k_in_map_wt(z3::expr k, z3::expr addr_map_v, smt_m
   z3::expr key_found_after_i = string_to_expr("false");
   for (int i = m_wt.key.size() - 1; i >= 0; i--) {
     int is_pc_match = sv.pgm_dag.is_b_on_root2a_path(block, m_wt.block[i]);
-    // cout << "is_pc_match: " << is_pc_match << endl;
+    cout << "is_pc_match: " << is_pc_match << endl;
     if (is_pc_match == INT_false) continue;
     // the same key in the same map
     z3::expr key_found_i = (m_wt.is_valid[i] == Z3_true) && // valid entry
@@ -719,7 +721,7 @@ z3::expr predicate_map_lookup_k_in_map_urt(z3::expr k, z3::expr addr_map_v, map_
   z3::expr f1 = key_not_in_map_wt(k, map_table._wt, sv, true, block);
   for (int i = map_table._urt.key.size() - 1; i >= 0; i--) {
     int is_pc_match = sv.pgm_dag.is_b_on_root2a_path(block, map_table._urt.block[i]);
-    // cout << "is_pc_match: " << is_pc_match << endl;
+    cout << "is_pc_match: " << is_pc_match << endl;
     if (is_pc_match == INT_false) continue;
 
     z3::expr f2 = (map_table._urt.is_valid[i] == Z3_true) &&
@@ -764,7 +766,7 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   cout << "enter predicate_map_lookup_helper" << endl;
   cout << "addr_map: " << addr_map << endl;
   for (int i = 0; i < map_ids.size(); i++) cout << map_ids[i] << " " << map_id_path_conds[i] << endl;
-  if (map_ids.size() == 0) return f_ret; // todo: addr_map is not a pointer
+  if (map_ids.size() == 0) {cout << "error!!!" << endl; return f_ret;} // todo: addr_map is not a pointer
   for (int i = 0; i < map_ids.size(); i++) {
     // cout << map_ids[i] << " " << map_id_path_conds[i] << endl;
     int map_id = map_ids[i];
@@ -834,7 +836,7 @@ z3::expr predicate_map_update_helper_for_one_map(int map_id, z3::expr map_id_pat
   for (int i = mem._map_tables[map_id]._wt.key.size() - 1; i >= 0; i--) { // latest entry
     smt_map_wt& m_wt = mem._map_tables[map_id]._wt;
     int is_pc_match = sv.pgm_dag.is_b_on_root2a_path(block, m_wt.block[i]);
-    // cout << "is_pc_match: " << is_pc_match << endl;
+    cout << "is_pc_match: " << is_pc_match << endl;
     if (is_pc_match == INT_false) continue;
 
     z3::expr key_found_i = (m_wt.is_valid[i] == Z3_true) && // valid entry
@@ -851,7 +853,7 @@ z3::expr predicate_map_update_helper_for_one_map(int map_id, z3::expr map_id_pat
   smt_map_wt& m_urt = mem._map_tables[map_id]._urt;
   for (int i = 0; i < m_urt.size(); i++) {
     int is_pc_match = sv.pgm_dag.is_b_on_root2a_path(block, m_urt.block[i]);
-    // cout << "is_pc_match: " << is_pc_match << endl;
+    cout << "is_pc_match: " << is_pc_match << endl;
     if (is_pc_match == INT_false) continue;
 
     z3::expr key_found_i = (m_urt.is_valid[i] == Z3_true) && // valid entry
@@ -891,7 +893,7 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   cout << "enter predicate_map_update_helper" << endl;
   cout << "addr_map: " << addr_map << endl;
   for (int i = 0; i < map_ids.size(); i++) cout << map_ids[i] << " " << map_id_path_conds[i] << endl;
-  if (map_ids.size() == 0) return f_ret; // todo: addr_map is not a pointer
+  if (map_ids.size() == 0) {cout << "error!!!" << endl; return f_ret;} // todo: addr_map is not a pointer
   for (int i = 0; i < map_ids.size(); i++) {
     f_ret = f_ret && predicate_map_update_helper_for_one_map(map_ids[i], map_id_path_conds[i],
             addr_k, addr_v, out, sv, block);
@@ -960,7 +962,7 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   cout << "enter predicate_map_delete_helper" << endl;
   cout << "addr_map: " << addr_map << endl;
   for (int i = 0; i < map_ids.size(); i++) cout << map_ids[i] << " " << map_id_path_conds[i] << endl;
-  if (map_ids.size() == 0) return f_ret; // todo: addr_map is not a pointer
+  if (map_ids.size() == 0) {cout << "error!!!" << endl; return f_ret;} // todo: addr_map is not a pointer
   for (int i = 0; i < map_ids.size(); i++) {
     f_ret = f_ret && predicate_map_delete_helper_for_one_map(map_ids[i], map_id_path_conds[i],
             addr_k, out, sv, block);

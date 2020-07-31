@@ -114,6 +114,7 @@ class smt_wt {
   vector<z3::expr> val;  // 8-bit bitvector
   void add(unsigned int b, z3::expr iv, z3::expr a, z3::expr v) {
     block.push_back(b); is_valid.push_back(iv); addr.push_back(a.simplify()); val.push_back(v);
+    cout << "mem add entry: " << b << " " << iv << " " << a.simplify() << " " << v.simplify() << endl;
   }
   void clear() {block.clear(); is_valid.clear(); addr.clear(); val.clear();}
   unsigned int size() {return addr.size();}
@@ -133,6 +134,7 @@ class smt_map_wt {
     is_valid.push_back(iv);
     key.push_back(k);
     addr_v.push_back(v);
+    cout << "map add entry: " << b << " " << iv << " " << k << " " << v.simplify() << endl;
   }
   void clear() {block.clear(); is_valid.clear(); key.clear(); addr_v.clear();}
   unsigned int size() {return key.size();}
@@ -173,7 +175,7 @@ class mem_table {
   smt_wt _urt;
   void clear() {_ptrs.clear(); _wt.clear(); _urt.clear();}
   void add_ptr(z3::expr ptr_expr, z3::expr path_cond, z3::expr off) {
-    cout << "add_ptr: ptr:" << ptr_expr << ", off:" << off.simplify() << ", pc:" << path_cond.simplify() << endl;
+    cout << "add_ptr: ptr:" << ptr_expr << ", off:" << off.simplify() << ", \npc:" << path_cond.simplify() << endl;
     auto found = _ptrs.find(ptr_expr.id());
     if (found == _ptrs.end()) _ptrs.insert({ptr_expr.id(), mem_ptr_info(path_cond, off)});
     else {
@@ -268,9 +270,9 @@ class smt_var: public smt_var_base {
   void add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_cond = Z3_true);
   void add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond = Z3_true);
   void get_map_id(vector<int>& map_ids, vector<z3::expr>& path_conds, z3::expr e);
-  void set_new_node_id(unsigned int node_id, vector<unsigned int>& nodes_in,
-                       vector<z3::expr>& node_in_pc_list,
-                       vector<vector<z3::expr>>& nodes_in_regs);
+  void set_new_node_id(unsigned int node_id, const vector<unsigned int>& nodes_in,
+                       const vector<z3::expr>& node_in_pc_list,
+                       const vector<vector<z3::expr>>& nodes_in_regs);
   void init(unsigned int n_blocks = 1) {mem_var.init_by_layout(n_blocks);}
   void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks = 1);
   void clear();
