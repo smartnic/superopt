@@ -1,0 +1,1 @@
+my_map { type = 2, key_size = 4, value_size = 8, max_entries = 256, fd = 1 }
