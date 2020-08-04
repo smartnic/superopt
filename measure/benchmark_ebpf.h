@@ -5,6 +5,7 @@
 
 using namespace std;
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id);
+void read_input(inst** bm, char* insn_file, char* map_file);
 // N can not greater than 56 because of the limit of combination function
 #undef N0
 #undef N1
