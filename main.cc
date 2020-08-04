@@ -344,14 +344,22 @@ int main(int argc, char* argv[]) {
   input_paras in_para;
   set_default_para_vals(in_para);
   if (! parse_input(argc, argv, in_para)) return 0;
+
   cout << in_para;
   store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
   auto start = NOW;
-  init_benchmarks(&bm, bm_optis_orig, in_para.bm);
+  if (argc > 2) {
+    cout<<"argv[1] = " << argv[1] << std::endl;
+    cout<<"argv[2] = " << argv[2] << std::endl;
+    read_input(&bm, argv[1], argv[2]);
+  }
+  else {
+    init_benchmarks(&bm, bm_optis_orig, in_para.bm);
+  }
   int num_examples = 30;
   inputs.resize(num_examples);
-  for (int i = 0; i < num_examples; i++) {
+  for (int i = 0; i < inputs.size(); i++) {
     inputs[i].init();
   }
   gen_random_input(inputs, -50, 50);

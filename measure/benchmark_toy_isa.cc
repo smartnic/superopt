@@ -1,5 +1,9 @@
 #include "benchmark_toy_isa.h"
 
+#include <iostream>
+#include <fstream>
+#include <stdint.h>
+
 using namespace std;
 
 ostream& operator<<(ostream& out, vector<int>& v) {
@@ -189,8 +193,60 @@ inst bm_opti27[N] = {inst(ADDXY, 0, 0),
                      inst(),
                      inst(),
                     };
+struct bpf_insn {
 
+    uint8_t opcode;
+    uint8_t dst_reg:4;
+    uint8_t src_reg:4;
+    short off; 
+    int imm; 
+};
+
+void read_maps() {
+
+  FILE* fp;
+
+  fp = fopen("/home/mikewong/Documents/smartnic/superopt/inputs/socket1.maps", "r"); 
+  char * line = NULL;
+  size_t len = 0;
+  ssize_t read;
+
+  if (fp == NULL) {
+
+    std::cerr<<"Error: BPF maps file could not be opened" << std::endl;
+    exit(1);
+  }
+  while (read = getline (&line, &len, fp) != -1){
+      printf("%s\n", line);
+  }
+  fclose(fp);
+}
+void read_insns() {
+
+
+    FILE *fp;
+    fp = fopen("/home/mikewong/Documents/smartnic/superopt/inputs/socket1.ins", "r"); 
+    if (fp == NULL ) {
+      std::cerr<<"Error: BPF insns file could not be opened" << std::endl;
+      exit(1);
+    }
+
+    inst* insns;
+    vector<inst> vec;
+
+    bpf_insn input;
+    // read file contents till end of file 
+    while(fread(&input, sizeof(bpf_insn), 1, fp)) {
+      printf("op - %02x, src reg - %01x, dst reg - %01x, off - %04x, imm - %08x\t\n", 
+        input.opcode, input.dst_reg, input.src_reg, input.off, input.imm); 
+    }
+    fclose(fp); 
+  
+}
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
+
+  read_maps();
+  read_insns();
   inst::max_prog_len = N;
   switch (bm_id) {
     case 0:
