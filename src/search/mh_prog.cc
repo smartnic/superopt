@@ -220,7 +220,7 @@ double mh_sampler::alpha(prog* curr, prog* next, prog* orig) {
 
 prog* mh_sampler::mh_next(prog* curr, prog* orig) {
   prog* next = _next_proposal.next_proposal(curr);
-  next->canonicalize();
+  // next->canonicalize();
   double uni_sample = unidist_mh(gen_mh);
   double a = alpha(curr, next, orig);
   _meas_data.insert_proposal(*next, uni_sample < a);
@@ -276,7 +276,7 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
   prog *curr, *next;
   curr = new prog(orig);
   curr->reset_vals();
-  curr->canonicalize();
+  // curr->canonicalize();
   for (int i = 0; i < niter; i++) {
     if (_next_win.whether_to_reset(i)) {
       pair<int, int> win = _next_win.update_and_get_next_win();
@@ -289,7 +289,7 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
       if (curr != restart) {
         delete curr;
         curr = restart;
-        curr->canonicalize();
+        // curr->canonicalize();
       }
       pair<double, double> restart_we_wp = _restart.next_start_we_wp();
       _cost._w_e = restart_we_wp.first;

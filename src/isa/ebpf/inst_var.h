@@ -114,7 +114,7 @@ class smt_wt {
   vector<z3::expr> val;  // 8-bit bitvector
   void add(unsigned int b, z3::expr iv, z3::expr a, z3::expr v) {
     block.push_back(b); is_valid.push_back(iv); addr.push_back(a.simplify()); val.push_back(v);
-    cout << "mem add entry: " << b << " " << iv << " " << a.simplify() << " " << v.simplify() << endl;
+    // cout << "mem add entry: " << b << " " << iv << " " << a.simplify() << " " << v.simplify() << endl;
   }
   void clear() {block.clear(); is_valid.clear(); addr.clear(); val.clear();}
   unsigned int size() {return addr.size();}
@@ -134,7 +134,7 @@ class smt_map_wt {
     is_valid.push_back(iv);
     key.push_back(k);
     addr_v.push_back(v);
-    cout << "map add entry: " << b << " " << iv << " " << k << " " << v.simplify() << endl;
+    // cout << "map add entry: " << b << " " << iv << " " << k << " " << v.simplify() << endl;
   }
   void clear() {block.clear(); is_valid.clear(); key.clear(); addr_v.clear();}
   unsigned int size() {return key.size();}
@@ -175,7 +175,7 @@ class mem_table {
   smt_wt _urt;
   void clear() {_ptrs.clear(); _wt.clear(); _urt.clear();}
   void add_ptr(z3::expr ptr_expr, z3::expr path_cond, z3::expr off) {
-    cout << "add_ptr: ptr:" << ptr_expr << ", off:" << off.simplify() << ", \npc:" << path_cond.simplify() << endl;
+    // cout << "add_ptr: ptr:" << ptr_expr << ", off:" << off.simplify() << ", \npc:" << path_cond.simplify() << endl;
     auto found = _ptrs.find(ptr_expr.id());
     if (found == _ptrs.end()) _ptrs.insert({ptr_expr.id(), mem_ptr_info(path_cond, off)});
     else {

@@ -184,6 +184,7 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   int ex_set_size = _examples._exs.size();
 
   if (num_successful_ex == ex_set_size) {
+    synth->print();
     auto t1 = NOW;
     is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
     auto t2 = NOW;
@@ -214,7 +215,6 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
     cout << _vld._last_counterex.output << endl;
-    synth->print();
   }
   // in case there is overflow which makes a positive value become a negative value or
   // total_cost > ERROR_COST_MAX

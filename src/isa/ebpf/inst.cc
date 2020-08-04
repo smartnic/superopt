@@ -441,8 +441,8 @@ void inst::set_as_nop_inst() {
 #define R5 sv.get_cur_reg_var(5)
 
 z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
-  cout << endl << "...... block id: " << block << endl;;
-  print();
+  // cout << endl << "...... block id: " << block << endl;;
+  // print();
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
   // If opcode is valid, then define curDst, curSrc, imm and newDst
   int op_type = get_opcode_type();

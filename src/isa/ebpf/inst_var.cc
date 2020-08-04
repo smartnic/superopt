@@ -652,7 +652,7 @@ void smt_var::add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_co
 }
 
 void smt_var::add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond) {
-  cout << "add map_id: reg:" << e << ", map_id:" << map_id << ", pc:" << path_cond << endl;
+  // cout << "add map_id: reg:" << e << ", map_id:" << map_id << ", pc:" << path_cond << endl;
   if (mem_t::maps_number() == 0) return;
   unsigned int e_id = e.id();
   auto found = expr_map_id.find(e_id);
@@ -701,7 +701,7 @@ z3::expr smt_var::mem_layout_constrain() const {
 void smt_var::set_new_node_id(unsigned int node_id, const vector<unsigned int>& nodes_in,
                               const vector<z3::expr>& node_in_pc_list,
                               const vector<vector<z3::expr>>& nodes_in_regs) {
-  cout << "set_new_node_id block:" << node_id << endl;
+  // cout << "set_new_node_id block:" << node_id << endl;
   // set the register names first, use names later
   smt_var_base::set_new_node_id(node_id);
   // update path condition of this block
@@ -715,7 +715,7 @@ void smt_var::set_new_node_id(unsigned int node_id, const vector<unsigned int>& 
   if (nodes_in.size() > 0) num_regs = nodes_in_regs[0].size();
   for (int i = 0; i < num_regs; i++) {
     z3::expr cur_reg = get_init_reg_var(i);
-    cout << "cur_reg: " << cur_reg << endl;
+    // cout << "cur_reg: " << cur_reg << endl;
     // 1. update map ids
     if (expr_map_id.size() > 0) {
       vector<bool> map_ids(mem_t::maps_number(), false);
@@ -751,7 +751,7 @@ void smt_var::set_new_node_id(unsigned int node_id, const vector<unsigned int>& 
         // merge path condition for the same table id
         infos[id].path_cond = infos[id].path_cond || (info_list[k].path_cond && node_in_pc_list[j]);
         infos[id].off = info_list[k].off;
-        cout << "******   " << j << " " << nodes_in[j] << " off: " << infos[id].off << endl;
+        // cout << "******   " << j << " " << nodes_in[j] << " off: " << infos[id].off << endl;
         if (! table_ids[id]) {
           table_ids[id] = true;
         }

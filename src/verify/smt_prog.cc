@@ -229,7 +229,7 @@ void smt_prog::init_pgm_dag(unsigned int root_node) {
       sv.pgm_dag.add_edge_a2b(i, g.nodes_out[i][j]);
     }
   }
-  cout << sv.pgm_dag << endl;
+  // cout << sv.pgm_dag << endl;
 }
 
 expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
@@ -238,7 +238,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
     // illegal input would be detected: 1. program with loop
     // 2. program that goes to the invalid instruction
     g.gen_graph(inst_lst, length);
-    cout << "graph: " << g << endl;
+    // cout << "graph: " << g << endl;
   } catch (const string err_msg) {
     throw (err_msg);
   }
@@ -290,8 +290,8 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
     // update post path condtions "path_con" created by current basic block b
     gen_post_path_con(sv, b, inst_lst[g.nodes[b]._end]);
   }
-  cout << "program final memory tables" << endl;
-  cout << sv.mem_var << endl;
+  // cout << "program final memory tables" << endl;
+  // cout << sv.mem_var << endl;
   // program FOL formula; f_prog = f_block[0] && ... && f_block[n]
   expr f_prog = f_block[0];
   for (size_t i = 1; i < f_block.size(); i++) {

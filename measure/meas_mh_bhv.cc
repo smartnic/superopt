@@ -73,9 +73,9 @@ void store_proposals_to_file(string file_name,
     p.to_abs_bv(bv);
     fout << d._proposals[i].second << " "
          << p._error_cost << " "
-         << p._perf_cost << " "
-         << prog_rel_bv_to_str(p.to_rel_bv(optimals)) << " "
-         << prog_abs_bv_to_str(bv) << endl;
+         << p._perf_cost << " " << endl;
+         // << prog_rel_bv_to_str(p.to_rel_bv(optimals)) << " "
+         // << prog_abs_bv_to_str(bv) << endl;
   }
   fout.close();
 }
@@ -94,9 +94,9 @@ void store_programs_to_file(string file_name,
     p.to_abs_bv(bv);
     fout << d._programs[i].first << " "
          << p._error_cost << " "
-         << p._perf_cost << " "
-         << prog_rel_bv_to_str(p.to_rel_bv(optimals)) << " "
-         << prog_abs_bv_to_str(bv) << endl;
+         << p._perf_cost << " " << endl;
+         // << prog_rel_bv_to_str(p.to_rel_bv(optimals)) << " "
+         // << prog_abs_bv_to_str(bv) << endl;
   }
   fout.close();
 }

@@ -136,7 +136,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   auto t1 = NOW;
   int is_equal = is_smt_valid(smt, mdl);
   auto t2 = NOW;
-  cout << DUR(t1, t2) << " us" << endl;
+  cout << "validator is_smt_valid: " << DUR(t1, t2) << " us" << " " << is_equal << endl;
 
   if (is_equal == 0) {
     // cout << is_equal << endl;
