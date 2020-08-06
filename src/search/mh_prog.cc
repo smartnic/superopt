@@ -278,6 +278,7 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
   curr->reset_vals();
   // curr->canonicalize();
   for (int i = 0; i < niter; i++) {
+    cout << "iter: " << i << endl;
     if (_next_win.whether_to_reset(i)) {
       pair<int, int> win = _next_win.update_and_get_next_win();
       cout << "set window at iteration " << i << endl;
