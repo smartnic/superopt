@@ -236,6 +236,23 @@ void test4() {
   compute_st64(x, (uint64_t)a4, 0);
   print_test_res(check_array_equal(a4, expected4, 8), "compute st64");
   print_test_res(compute_ld64((uint64_t)expected4, 0) == x, "compute ld64");
+
+  // test compute_xadd64
+  int64_t y = 0xffffffffffffffff;
+  int64_t z = y - x;
+  uint8_t a5[8], expected5[8];
+  *(uint64_t*)a5 = 0;
+  *(uint64_t*)expected5 = y;
+  compute_st64(x, (uint64_t)a5, 0);
+  compute_xadd64(z, (uint64_t)a5, 0);
+  print_test_res(check_array_equal(a5, expected5, 8), "compute_xadd64");
+  // test compute_xadd32
+  uint8_t a6[8], expected6[8];
+  *(uint64_t*)a6 = 0;
+  *(uint64_t*)expected6 = (x & 0xffffffff00000000) | (y & 0xffffffff);
+  compute_st64(x, (uint64_t)a6, 0);
+  compute_xadd32(z, (uint64_t)a6, 0);
+  print_test_res(check_array_equal(a6, expected6, 8), "compute_xadd32");
 }
 
 void test5() {

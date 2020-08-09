@@ -63,6 +63,9 @@ inline void compute_st8(int64_t in, uint64_t addr, int64_t off);
 inline void compute_st16(int64_t in, uint64_t addr, int64_t off);
 inline void compute_st32(int64_t in, uint64_t addr, int64_t off);
 inline void compute_st64(int64_t in, uint64_t addr, int64_t off);
+// (u_sz)[addr+off] += in
+void compute_xadd64(int64_t in, uint64_t addr, int64_t off);
+void compute_xadd32(int64_t in, uint64_t addr, int64_t off);
 // map helper functions
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
                                  uint64_t r4, uint64_t r5, mem_t& m, simu_real& sr);
@@ -364,6 +367,16 @@ COMPUTE_LDST(8, uint8_t)
 COMPUTE_LDST(16, uint16_t)
 COMPUTE_LDST(32, uint32_t)
 COMPUTE_LDST(64, uint64_t)
+
+// for the current compiler version, compute_xadd does not lock memory
+#define COMPUTE_XADD(SIZE, SIZE_TYPE) \
+inline void compute_xadd##SIZE(int64_t in, uint64_t addr, int64_t off) { \
+  SIZE_TYPE a = in + *(SIZE_TYPE*)(addr + off); \
+  *(SIZE_TYPE*)(addr + off) = a; \
+}
+
+COMPUTE_XADD(32, uint32_t)
+COMPUTE_XADD(64, uint64_t)
 
 // implemented in inst_codegen.cc, where addr is a reg experssion
 z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv, unsigned int block = 0, z3::expr cond = Z3_true);
