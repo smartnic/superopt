@@ -352,6 +352,35 @@ void test5() {
   print_test_res(is_valid(smt), "predicate_st32/ld64");
   s->clear();
 
+  // test xadd64
+  z3::expr v64_1 = sv.new_var(64), v64_2 = sv.new_var(64), v64_3 = sv.new_var(64);
+  smt = f_mem_layout_constrain;
+  smt = smt && predicate_st64(v64_1, addr, offs[0], sv);
+  smt = smt && predicate_xadd64(v64_2, addr, offs[0], sv);
+  smt = smt && predicate_ld64(addr, offs[0], sv, v64_3);
+  smt = z3::implies(smt, v64_3 == (v64_1 + v64_2));
+  print_test_res(is_valid(smt), "predicate_xadd64");
+  s->clear();
+  // test xadd32 1
+  smt = f_mem_layout_constrain;
+  smt = smt && predicate_st32(v64_1, addr, offs[0], sv);
+  smt = smt && predicate_xadd32(v64_2, addr, offs[0], sv);
+  smt = smt && predicate_ld32(addr, offs[0], sv, v64_3);
+  smt = z3::implies(smt,
+                    (v64_3.extract(63, 32) == v32(0)) &&
+                    (v64_3.extract(31, 0) == (v64_1.extract(31, 0) + v64_2.extract(31, 0))));
+  print_test_res(is_valid(smt), "predicate_xadd32 1");
+  s->clear();
+  // test xadd32 2
+  smt = f_mem_layout_constrain;
+  smt = smt && predicate_st64(v64_1, addr, offs[0], sv);
+  smt = smt && predicate_xadd32(v64_2, addr, offs[0], sv);
+  smt = smt && predicate_ld64(addr, offs[0], sv, v64_3);
+  smt = z3::implies(smt,
+                    (v64_3.extract(63, 32) == v64_1.extract(63, 32)) &&
+                    (v64_3.extract(31, 0) == (v64_1.extract(31, 0) + v64_2.extract(31, 0))));
+  print_test_res(is_valid(smt), "predicate_xadd32 2");
+  s->clear();
   // // safety check
   // smt = predicate_ld8(NULL_ADDR_EXPR, v(0), m, v(x));
   // print_test_res(is_valid(smt == string_to_expr("false")), "safety check when ld from NULL_ADDR_EXPR");

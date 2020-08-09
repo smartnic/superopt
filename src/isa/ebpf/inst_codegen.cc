@@ -246,6 +246,24 @@ z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, u
   return f;
 }
 
+z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block) {
+  z3::expr v64_1 = sv.new_var(64);
+  z3::expr f = predicate_ld64(addr, off, sv, v64_1, block);
+  z3::expr v64_2 = sv.new_var(64);
+  f = f && (v64_2 == (v64_1 + in));
+  f = f && predicate_st64(v64_2, addr, off, sv, block);
+  return f;
+}
+
+z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block) {
+  z3::expr v64_1 = sv.new_var(64);
+  z3::expr f = predicate_ld32(addr, off, sv, v64_1, block);
+  z3::expr v64_2 = sv.new_var(64);
+  f = f && (v64_2 == (v64_1 + in));
+  f = f && predicate_st32(v64_2, addr, off, sv, block);
+  return f;
+}
+
 // return the FOL formula that x[idx] is the latest write in x
 // that is, for any i > idx, x[idx] != x[i]
 z3::expr latest_write_element(int idx, vector<z3::expr>& is_valid_list, vector<z3::expr>& x) {

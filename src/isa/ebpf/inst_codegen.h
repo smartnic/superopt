@@ -102,6 +102,10 @@ inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr
 inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
+// *(u64*)(addr+off) += in
+z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
+// *(u32*)(addr+off) += in
+z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
 // out == map_id, and track the out
 z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned int block = 0);
 // map helper functions

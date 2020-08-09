@@ -240,7 +240,8 @@ struct map_id_pc {
 class smt_var: public smt_var_base {
  private:
   unsigned int mem_addr_id, is_vaild_id, key_cur_id,
-           val_cur_id, addr_v_cur_id, map_helper_func_ret_cur_id;
+           val_cur_id, addr_v_cur_id, map_helper_func_ret_cur_id,
+           var_cur_id;
   // key: expr id; value: a list of <map_id, path_cond of map_id>
   // program global variable
   unordered_map<unsigned int, vector<map_id_pc>> expr_map_id;
@@ -259,6 +260,7 @@ class smt_var: public smt_var_base {
   z3::expr update_val(unsigned int v_sz = NUM_BYTE_BITS);
   z3::expr update_addr_v();
   z3::expr update_map_helper_func_ret();
+  z3::expr new_var(unsigned int bit_sz);
   z3::expr get_stack_start_addr() {return mem_var._stack_start;} // return value: z3 bv64
   z3::expr get_stack_end_addr() {return (mem_var._stack_start + STACK_SIZE - 1);} // return value: z3 bv64
   z3::expr get_stack_bottom_addr() {return (mem_var._stack_start + STACK_SIZE);}

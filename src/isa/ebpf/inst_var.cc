@@ -579,6 +579,7 @@ smt_var::smt_var()
   val_cur_id = 0;
   addr_v_cur_id = 0;
   map_helper_func_ret_cur_id = 0;
+  var_cur_id = 0;
 }
 
 smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs)
@@ -590,6 +591,7 @@ smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_re
   val_cur_id = 0;
   addr_v_cur_id = 0;
   map_helper_func_ret_cur_id = 0;
+  var_cur_id = 0;
 }
 
 smt_var::~smt_var() {
@@ -629,6 +631,12 @@ z3::expr smt_var::update_map_helper_func_ret() {
   map_helper_func_ret_cur_id++;
   string name = "func_ret_" + _name + "_" + to_string(map_helper_func_ret_cur_id);
   return string_to_expr(name);
+}
+
+z3::expr smt_var::new_var(unsigned int bit_sz) {
+  var_cur_id++;
+  string name = "var_" + _name + "_" + to_string(var_cur_id);
+  return to_expr(name, bit_sz);
 }
 
 z3::expr smt_var::get_map_start_addr(int map_id) { // return value: z3 bv64
@@ -788,6 +796,7 @@ void smt_var::clear() {
     val_cur_id = 0;
     addr_v_cur_id = 0;
     map_helper_func_ret_cur_id = 0;
+    var_cur_id = 0;
   }
   mem_var.clear();
   expr_map_id.clear();
