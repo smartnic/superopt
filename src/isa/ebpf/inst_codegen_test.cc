@@ -1215,7 +1215,7 @@ void test10() {
   f = f && predicate_ld8(addr_v_lookup, v(0), sv1, new_v_lookup());
   addr_v_lookup = new_addr_v_lookup();
   f = f && predicate_map_lookup_helper(addr_map1, addr_k1, addr_v_lookup, sv2);
-  f = f && predicate_ld8(addr_v_lookup, v(0), sv1, new_v_lookup());
+  f = f && predicate_ld8(addr_v_lookup, v(0), sv2, new_v_lookup());
   test_name = "lookup not affect map equivalence check";
   MAP_EQ_CHK(map1, test_name, false)
 
@@ -1326,6 +1326,8 @@ void test10() {
   cout << "5. test k/v size > 1 byte" << endl;
   sv1.clear(); sv2.clear();
   mem_t::add_map(map_attr(32, 16, 512));
+  k1 = to_expr("k1", 32), v1 = to_expr("v1", 16);
+  addr_k1 = stack_s + 0, addr_v1 = stack_s + 4;
   sv1.init();
   sv2.init();
   sv1.mem_var.add_ptr(addr_k1, stack_mem_id, addr_k1 - stack_s);
@@ -1335,8 +1337,6 @@ void test10() {
   sv1.add_expr_map_id(addr_map1, v(map1));
   sv2.add_expr_map_id(addr_map1, v(map1));
   f_mem_layout_constrain = sv1.mem_layout_constrain();
-  k1 = to_expr("k1", 32), v1 = to_expr("v1", 16);
-  addr_k1 = stack_s + 0, addr_v1 = stack_s + 4;
   f = predicate_st32(k1, addr_k1, v(0), sv1) &&
       predicate_st16(v1, addr_v1, v(0), sv1) &&
       predicate_st32(k1, addr_k1, v(0), sv2) &&
@@ -1734,19 +1734,23 @@ void test13() {
 }
 
 int main() {
-  test1();
-  test2();
-  test3();
-  test4();
-  test5();
-  // test6(); // no need to test stack equivalence check
-  test7();
-  test8();
-  test9();
-  test10();
-  test11();
-  test12();
-  test13();
+  try {
+    test1();
+    test2();
+    test3();
+    test4();
+    test5();
+    // test6(); // no need to test stack equivalence check
+    test7();
+    test8();
+    test9();
+    test10();
+    test11();
+    test12();
+    test13();
+  } catch (const string err_msg) {
+    cout << err_msg << endl;
+  }
 
   return 0;
 }
