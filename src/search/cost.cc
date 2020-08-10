@@ -236,8 +236,11 @@ double cost::perf_cost(prog* synth, int len) {
 }
 
 double cost::total_prog_cost(prog* orig, int len1, prog* synth, int len2) {
+  bool flag = (synth->_error_cost == -1);
   double err_cost = error_cost(orig, len1, synth, len2);
   double per_cost = perf_cost(synth, len2);
-  cout << "cost: " << err_cost << " " << per_cost << endl;
+  if (flag)
+    cout << "cost: " << err_cost << " " << per_cost << " "
+         << (_w_e * err_cost) + (_w_p * per_cost) << endl;
   return (_w_e * err_cost) + (_w_p * per_cost);
 }
