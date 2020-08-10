@@ -264,6 +264,20 @@ inst instructions31[10] = {inst(MOV64XC, 1, 0x1),
                            inst(LDXDW, 0, 10, -8),
                            inst(EXIT),
                           };
+// test or64xc, or64xy
+// r0 = (r1 | 0x110) | 0x011 = r1 | 0x111
+inst instructions32[4] = {inst(OR64XC, 1, 0x110),
+                          inst(MOV64XC, 0, 0x011),
+                          inst(OR64XY, 0, 1),
+                          inst(EXIT),
+                         };
+// test and64xc, and64xy
+// r0 = (r1 & 0x011) & 0x110 = r1 & 0x10
+inst instructions33[4] = {inst(AND64XC, 1, 0x011),
+                          inst(MOV64XC, 0, 0x110),
+                          inst(AND64XY, 0, 1),
+                          inst(EXIT),
+                         };
 
 void test1() {
   mem_t::_layout.clear();
@@ -501,6 +515,17 @@ void test1() {
   expected.reg = 0x100000006;
   interpret(output, instructions31, 10, ps, input);
   print_test_res(output == expected, "interpret xadd32");
+
+  input.clear();
+  expected.clear();
+  input.reg = 0x100000000;
+  expected.reg = 0x100000111;
+  interpret(output, instructions32, 10, ps, input); // r0 = r1 | 0x11
+  print_test_res(output == expected, "interpret or64xc, or64xy");
+  input.reg = 0x100000011;
+  expected.reg = 0x10;
+  interpret(output, instructions33, 10, ps, input); // r0 = r1 & 0x10
+  print_test_res(output == expected, "interpret and64xc, and64xy");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output, bool flag = false) {
@@ -881,6 +906,10 @@ void test3() {
   // since there is no NOP in linux bpf
   inst prog2[] = {inst(ADD64XC, 3, 1),
                   inst(ADD64XY, 3, 1),
+                  inst(OR64XC, 3, 1),
+                  inst(OR64XY, 3, 1),
+                  inst(AND64XC, 3, 1),
+                  inst(AND64XY, 3, 1),
                   inst(LSH64XC, 3, 1),
                   inst(LSH64XY, 3, 1),
                   inst(RSH64XC, 3, 1),
@@ -938,6 +967,10 @@ void test3() {
                  };
   expected = "{7, 3, 0, 0, 1},"\
              "{15, 3, 1, 0, 0},"\
+             "{71, 3, 0, 0, 1},"\
+             "{79, 3, 1, 0, 0},"\
+             "{87, 3, 0, 0, 1},"\
+             "{95, 3, 1, 0, 0},"\
              "{103, 3, 0, 0, 1},"\
              "{111, 3, 1, 0, 0},"\
              "{119, 3, 0, 0, 1},"\

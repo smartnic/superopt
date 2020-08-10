@@ -58,7 +58,7 @@ void inst::set_imm(int op_value) {
     int value_map[3] = {16, 32, 64};
     _imm = value_map[op_value];
   } else {
-    unordered_set<int32_t> opcodes_set = {ADD64XC, MOV64XC, ADD32XC, OR32XC,
+    unordered_set<int32_t> opcodes_set = {ADD64XC, OR64XC, AND64XC, MOV64XC, ADD32XC, OR32XC,
                                           AND32XC, MOV32XC, LDMAPID, STB, STH, STW, STDW,
                                           JEQXC, JGTXC, JNEXC, JSGTXC, JEQ32XC, JNE32XC,
                                          };
@@ -84,6 +84,8 @@ void inst::set_imm(int op_value) {
 int32_t inst::get_max_imm() const {
   switch (_opcode) {
     case ADD64XC:
+    case OR64XC:
+    case AND64XC:
     case MOV64XC:
     case ADD32XC:
     case OR32XC:
@@ -131,6 +133,8 @@ int16_t inst::get_max_off(int inst_index) const {
 int32_t inst::get_min_imm() const {
   switch (_opcode) {
     case ADD64XC:
+    case OR64XC:
+    case AND64XC:
     case MOV64XC:
     case ADD32XC:
     case OR32XC:
@@ -194,6 +198,10 @@ string inst::opcode_to_str(int opcode) const {
     case NOP: return "nop";
     case ADD64XC: return "addxc";
     case ADD64XY: return "addxy";
+    case OR64XC: return "orxc";
+    case OR64XY: return "orxy";
+    case AND64XC: return "andxc";
+    case AND64XY: return "andxy";
     case LSH64XC: return "lshxc";
     case LSH64XY: return "lshxy";
     case RSH64XC: return "rshxc";
@@ -469,6 +477,10 @@ z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
   switch (_opcode) {
     case ADD64XC: sv.mem_var.add_ptr(NEWDST, CURDST, IMM, path_cond); return predicate_add(CURDST, IMM, NEWDST);
     case ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
+    case OR64XC: return predicate_or(CURDST, IMM, NEWDST);
+    case OR64XY: return predicate_or(CURDST, CURSRC, NEWDST);
+    case AND64XC: return predicate_and(CURDST, IMM, NEWDST);
+    case AND64XY: return predicate_and(CURDST, CURSRC, NEWDST);
     case LSH64XC: return predicate_lsh(CURDST, IMM, NEWDST);
     case LSH64XY: return predicate_lsh(CURDST, CURSRC_L6, NEWDST);
     case RSH64XC: return predicate_rsh(CURDST, IMM, NEWDST);
@@ -556,6 +568,10 @@ int opcode_2_idx(int opcode) {
     case NOP: return IDX_NOP;
     case ADD64XC: return IDX_ADD64XC;
     case ADD64XY: return IDX_ADD64XY;
+    case OR64XC: return IDX_OR64XC;
+    case OR64XY: return IDX_OR64XY;
+    case AND64XC: return IDX_AND64XC;
+    case AND64XY: return IDX_AND64XY;
     case LSH64XC: return IDX_LSH64XC;
     case LSH64XY: return IDX_LSH64XY;
     case RSH64XC: return IDX_RSH64XC;
@@ -748,6 +764,10 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     [IDX_NOP]      = && INSN_NOP,
     [IDX_ADD64XC]  = && INSN_ADD64XC,
     [IDX_ADD64XY]  = && INSN_ADD64XY,
+    [IDX_OR64XC]   = && INSN_OR64XC,
+    [IDX_OR64XY]   = && INSN_OR64XY,
+    [IDX_AND64XC]  = && INSN_AND64XC,
+    [IDX_AND64XY]  = && INSN_AND64XY,
     [IDX_LSH64XC]  = && INSN_LSH64XC,
     [IDX_LSH64XY]  = && INSN_LSH64XY,
     [IDX_RSH64XC]  = && INSN_RSH64XC,
@@ -821,6 +841,10 @@ INSN_NOP:
   ALU_UNARY(MOV64XY, mov, SRC)
   ALU_BINARY(ADD64XC, add, DST, IMM)
   ALU_BINARY(ADD64XY, add, DST, SRC)
+  ALU_BINARY(OR64XC, or , DST, IMM)
+  ALU_BINARY(OR64XY, or , DST, SRC)
+  ALU_BINARY(AND64XC, and , DST, IMM)
+  ALU_BINARY(AND64XY, and , DST, SRC)
   ALU_BINARY(LSH64XC, lsh, DST, IMM)
   ALU_BINARY(LSH64XY, lsh, DST, SRC_L6)
   ALU_BINARY(RSH64XC, rsh, DST, IMM)
