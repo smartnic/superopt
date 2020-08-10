@@ -259,6 +259,32 @@ inst bm_opti70[N7] = {inst(MOV64XY, 0, 1),
                       inst(),
                       inst(),
                      };
+// sampleip_kern
+inst bm8[N8] = {inst(183, 0, 2, 0, 1),
+                inst(99, 2, 10, -12, 0),
+                inst(121, 1, 1, 128, 0),
+                inst(123, 1, 10, -8, 0),
+                inst(191, 10, 2, 0, 0),
+                inst(7, 0, 2, 0, -8),
+                inst(LDMAPID, 1, 0),
+                inst(0, 0, 0, 0, 0),
+                inst(133, 0, 0, 0, 1),
+                inst(21, 0, 0, 4, 0),
+                inst(97, 0, 1, 0, 0),
+                inst(7, 0, 1, 0, 1),
+                inst(99, 1, 0, 0, 0),
+                inst(5, 0, 0, 8, 0),
+                inst(191, 10, 2, 0, 0),
+                inst(7, 0, 2, 0, -8),
+                inst(191, 10, 3, 0, 0),
+                inst(7, 0, 3, 0, -12),
+                inst(LDMAPID, 1, 0),
+                inst(0, 0, 0, 0, 0),
+                inst(183, 0, 4, 0, 1),
+                inst(133, 0, 0, 0, 2),
+                inst(183, 0, 0, 0, 0),
+                inst(149, 0, 0, 0, 0),
+               };
 
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
@@ -311,6 +337,12 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       inst::max_prog_len = N7;
       *bm = bm7;
       bm_optis_orig.push_back(bm_opti70);
+      return;
+    case 8:
+      inst::max_prog_len = N8;
+      mem_t::set_pkt_sz(160);
+      mem_t::add_map(map_attr(64, 32, N8));
+      *bm = bm8;
       return;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
