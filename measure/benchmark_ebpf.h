@@ -15,6 +15,7 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id);
 #undef N6
 #undef N7
 #undef N8
+#undef N9
 #define N0 7
 #define N1 7
 #define N2 16
@@ -24,6 +25,7 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id);
 #define N6 7
 #define N7 7
 #define N8 24
+#define N9 7
 
 extern inst bm0[N0];
 extern inst bm1[N1];
@@ -34,3 +36,4 @@ extern inst bm5[N5];
 extern inst bm6[N6];
 extern inst bm7[N7];
 extern inst bm8[N8];
+extern inst bm9[N9];
