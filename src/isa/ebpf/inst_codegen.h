@@ -45,7 +45,9 @@ inline int64_t compute_ldmapid(int64_t in, int64_t out = 0);
 // return (out = in1 op in2)
 inline int64_t compute_add(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_add32(int64_t in1, int64_t in2, int64_t out = 0);
+inline int64_t compute_or(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_or32(int64_t in1, int64_t in2, int64_t out = 0);
+inline int64_t compute_and(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_and32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_lsh(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_lsh32(int64_t in1, int64_t in2, int64_t out = 0);
@@ -87,7 +89,9 @@ inline z3::expr predicate_be64(z3::expr in, z3::expr out);
 // return (out == in1 op in2)
 inline z3::expr predicate_add(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_add32(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_or(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_or32(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_and(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_and32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_lsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_lsh32(z3::expr in1, z3::expr in2, z3::expr out);
@@ -154,10 +158,14 @@ void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model& mdl, smt_va
 #define MOV_EXPR(in, out) (out EQ in)
 /* Inputs in1, in2, out must be side-effect-free expressions. */
 #undef ADD_EXPR
+#undef OR_EXPR
+#undef AND_EXPR
 #undef LSH_EXPR
 #undef RSH_EXPR
 #undef ARSH_EXPR
 #define ADD_EXPR(in1, in2, out) (out EQ in1 + in2)
+#define OR_EXPR(in1, in2, out) (out EQ (in1 | in2))
+#define AND_EXPR(in1, in2, out) (out EQ (in1 & in2))
 #define LSH_EXPR(in1, in2, out) (out EQ LSH(in1, in2))
 #define RSH_EXPR(in1, in2, out) (out EQ RSH(in1, in2))
 #define ARSH_EXPR(in1, in2, out) (out EQ ARSH(in1, in2))
@@ -278,7 +286,9 @@ COMPUTE_UNARY(be64, BE64_EXPR)
 
 COMPUTE_BINARY(add, ADD_EXPR)
 COMPUTE_BINARY(add32, ADD32_EXPR)
+COMPUTE_BINARY(or, OR_EXPR)
 COMPUTE_BINARY(or32, OR32_EXPR)
+COMPUTE_BINARY(and, AND_EXPR)
 COMPUTE_BINARY(and32, AND32_EXPR)
 COMPUTE_BINARY(lsh, LSH_EXPR)
 COMPUTE_BINARY(lsh32, LSH32_EXPR)
@@ -344,7 +354,9 @@ PREDICATE_UNARY(be32, BE32_EXPR)
 PREDICATE_UNARY(be64, BE64_EXPR)
 PREDICATE_BINARY(add, ADD_EXPR)
 PREDICATE_BINARY(add32, ADD32_EXPR)
+PREDICATE_BINARY(or, OR_EXPR)
 PREDICATE_BINARY(or32, OR32_EXPR)
+PREDICATE_BINARY(and, AND_EXPR)
 PREDICATE_BINARY(and32, AND32_EXPR)
 PREDICATE_BINARY(lsh, LSH_EXPR)
 PREDICATE_BINARY(rsh, RSH_EXPR)
