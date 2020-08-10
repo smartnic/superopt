@@ -67,6 +67,46 @@ void test1() {
   vld.set_orig(instructions5, 3);
   print_test_res(vld.is_equal_to(instructions5, 3, instructions6, 9), "instructions5 == instructions6");
   print_test_res(vld.is_equal_to(instructions5, 3, instructions7, 4), "instructions5 == instructions7");
+
+  // test xadd64
+  // r0 = 0x100000002 + 0x300000004 = 0x400000006
+  inst instructions8[10] = {inst(MOV64XC, 1, 0x1),
+                            inst(LSH64XC, 1, 32),
+                            inst(ADD64XC, 1, 0x2), // r1 = 0x100000002
+                            inst(STXDW, 10, -8, 1),
+                            inst(MOV64XC, 2, 0x3),
+                            inst(LSH64XC, 2, 32),
+                            inst(ADD64XC, 2, 0x4), // r2 = 0x300000004
+                            inst(XADD64, 10, -8, 2),
+                            inst(LDXDW, 0, 10, -8),
+                            inst(EXIT),
+                           };
+  inst instructions9[10] = {inst(MOV64XC, 1, 0x1),
+                            inst(LSH64XC, 1, 32),
+                            inst(ADD64XC, 1, 0x2), // r1 = 0x100000002
+                            inst(STXDW, 10, -8, 1),
+                            inst(MOV64XC, 2, 0x3),
+                            inst(XADD32, 10, -4, 2),
+                            inst(MOV64XC, 2, 0x4),
+                            inst(XADD32, 10, -8, 2),
+                            inst(LDXDW, 0, 10, -8),
+                            inst(EXIT),
+                           };
+  // test xadd64
+  // r0 = 0x100000002 + 0x300000004 = 0x400000006
+  inst instructions10[8] = {inst(MOV64XC, 0, 0x1),
+                            inst(LSH64XC, 0, 32),
+                            inst(ADD64XC, 0, 0x2), // r1 = 0x100000002
+                            inst(MOV64XC, 1, 0x3),
+                            inst(LSH64XC, 1, 32),
+                            inst(ADD64XC, 1, 0x4), // r2 = 0x300000004
+                            inst(ADD64XY, 0, 1),
+                            inst(EXIT),
+                           };
+  vld.set_orig(instructions8, 10);
+  print_test_res(vld.is_equal_to(instructions8, 10, instructions8, 10), "instructions8 == instructions8");
+  print_test_res(vld.is_equal_to(instructions8, 10, instructions9, 10), "instructions8 == instructions9");
+  print_test_res(vld.is_equal_to(instructions8, 10, instructions10, 8), "instructions8 == instructions10");
 }
 
 void test2() {

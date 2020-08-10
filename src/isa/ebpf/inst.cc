@@ -231,6 +231,8 @@ string inst::opcode_to_str(int opcode) const {
     case STDW: return "stdw";
     case LDXDW: return "ldxdw";
     case STXDW: return "stxdw";
+    case XADD64: return "lock xadd64";
+    case XADD32: return "lock xadd32";
     case JA: return "ja";
     case JEQXC: return "jeqxc";
     case JEQXY: return "jeqxy";
@@ -518,6 +520,8 @@ z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
     case STH: return predicate_st16(IMM, CURDST, OFF, sv, block);
     case STW: return predicate_st32(IMM, CURDST, OFF, sv, block);
     case STDW: return predicate_st64(IMM, CURDST, OFF, sv, block);
+    case XADD64: return predicate_xadd64(CURSRC, CURDST, OFF, sv, block);
+    case XADD32: return predicate_xadd32(CURSRC, CURDST, OFF, sv, block);
     case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv, block);
     default: return string_to_expr("false");
   }
@@ -589,6 +593,8 @@ int opcode_2_idx(int opcode) {
     case STH: return IDX_STH;
     case STW: return IDX_STW;
     case STDW: return IDX_STDW;
+    case XADD64: return IDX_XADD64;
+    case XADD32: return IDX_XADD32;
     case JA: return IDX_JA;
     case JEQXC: return IDX_JEQXC;
     case JEQXY: return IDX_JEQXY;
@@ -700,6 +706,13 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     compute_st##SIZE(IMM, real_addr, 0);                           \
     CONT;
 
+#define XADD(SIZE)                                                 \
+  INSN_XADD##SIZE:                                                 \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
+    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    compute_xadd##SIZE(SRC, real_addr, 0);                         \
+    CONT;                                                          \
+
 #define BYTESWAP(OPCODE, OP)                                       \
   INSN_##OPCODE:                                                   \
     switch (IMM) {                                                 \
@@ -772,6 +785,8 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     [IDX_STH]      = && INSN_STH,
     [IDX_STW]      = && INSN_STW,
     [IDX_STDW]     = && INSN_STDW,
+    [IDX_XADD64]   = && INSN_XADD64,
+    [IDX_XADD32]   = && INSN_XADD32,
     [IDX_JA]       = && INSN_JA,
     [IDX_JEQXC]    = && INSN_JEQXC,
     [IDX_JEQXY]    = && INSN_JEQXY,
@@ -832,6 +847,9 @@ INSN_NOP:
   LDST(H,  16)
   LDST(W,  32)
   LDST(DW, 64)
+
+  XADD(32)
+  XADD(64)
 
   BYTESWAP(LE, le)
   BYTESWAP(BE, be)

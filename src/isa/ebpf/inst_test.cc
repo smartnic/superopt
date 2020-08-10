@@ -238,6 +238,33 @@ inst instructions29[9] = {inst(MOV64XC, 0, 0),
                           inst(EXIT),
                          };
 
+// test xadd64
+// r0 = 0x100000002 + 0x300000004 = 0x400000006
+inst instructions30[10] = {inst(MOV64XC, 1, 0x1),
+                           inst(LSH64XC, 1, 32),
+                           inst(ADD64XC, 1, 0x2), // r1 = 0x100000002
+                           inst(STXDW, 10, -8, 1),
+                           inst(MOV64XC, 2, 0x3),
+                           inst(LSH64XC, 2, 32),
+                           inst(ADD64XC, 2, 0x4), // r2 = 0x300000004
+                           inst(XADD64, 10, -8, 2),
+                           inst(LDXDW, 0, 10, -8),
+                           inst(EXIT),
+                          };
+// test xadd32
+// r0 = 0x100000002 + L32(0x300000004) = 0x100000006
+inst instructions31[10] = {inst(MOV64XC, 1, 0x1),
+                           inst(LSH64XC, 1, 32),
+                           inst(ADD64XC, 1, 0x2), // r1 = 0x100000002
+                           inst(STXDW, 10, -8, 1),
+                           inst(MOV64XC, 2, 0x3),
+                           inst(LSH64XC, 2, 32),
+                           inst(ADD64XC, 2, 0x4), // r2 = 0x300000004
+                           inst(XADD32, 10, -8, 2),
+                           inst(LDXDW, 0, 10, -8),
+                           inst(EXIT),
+                          };
+
 void test1() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
@@ -463,6 +490,17 @@ void test1() {
   expected.reg = 0x1;
   interpret(output, instructions29, 9, ps, input);
   print_test_res(output == expected, "interpret jmp32");
+
+  input.clear();
+  expected.clear();
+  input.reg = 0;
+  expected.reg = 0x400000006;
+  interpret(output, instructions30, 10, ps, input);
+  print_test_res(output == expected, "interpret xadd64");
+  input.reg = 0;
+  expected.reg = 0x100000006;
+  interpret(output, instructions31, 10, ps, input);
+  print_test_res(output == expected, "interpret xadd32");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output, bool flag = false) {
@@ -788,6 +826,23 @@ void test2() {
   inst insns14[2] = {inst(STDW, 10, -8, -1), inst(LDXDW, 0, 10, -8)};
   SMT_CHECK_LDST(-1, "smt LDXDW & STDW", insns14);
 
+#define SMT_CHECK_XADD(v1, v2, v3, v4, size, ld_output, test_name)           \
+  smt = f_mem_layout_constrain && f_r10;                                     \
+  smt = smt && inst(STW, 10, -4, v1).smt_inst(sv);                           \
+  smt = smt && inst(STW, 10, -8, v2).smt_inst(sv);                           \
+  smt = smt && inst(MOV64XC, 1, v3).smt_inst(sv);                            \
+  smt = smt && inst(LSH64XC, 1, 32).smt_inst(sv);                            \
+  smt = smt && inst(ADD64XC, 1, v4).smt_inst(sv);                            \
+  smt = smt && inst(XADD##size, 10, -8, 1).smt_inst(sv);                     \
+  smt = smt && inst(LDXDW, 0, 10, -8).smt_inst(sv);                          \
+  output = CURDST(inst(LDXDW, 0, 10, -8));                                   \
+  print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
+
+  SMT_CHECK_XADD(0x0, 0x1, 0x0, 0x2, 64, 0x3, "smt XADD64 1");
+  SMT_CHECK_XADD(0x1, 0x2, 0x3, 0x4, 64, 0x400000006, "smt XADD64 2");
+  SMT_CHECK_XADD(0x0, 0x1, 0x0, 0x2, 32, 0x3, "smt XADD32 1");
+  SMT_CHECK_XADD(0x1, 0x2, 0x3, 0x4, 32, 0x100000006, "smt XADD32 2");
+
 #undef CURDST
 #undef CURSRC
 #undef SMT_CHECK_LDST
@@ -863,6 +918,8 @@ void test3() {
                   inst(STH, 10, -4, 1),
                   inst(STW, 10, -4, 1),
                   inst(STDW, 10, -8, 1),
+                  inst(XADD64, 10, -8, 1),
+                  inst(XADD32, 10, -8, 1),
                   inst(JA, 1),
                   inst(JEQXC, 3, 1, 2),
                   inst(JEQXY, 3, 1, 2),
@@ -918,6 +975,8 @@ void test3() {
              "{106, 10, 0, -4, 1},"\
              "{98, 10, 0, -4, 1},"\
              "{122, 10, 0, -8, 1},"\
+             "{219, 10, 1, -8, 0},"\
+             "{195, 10, 1, -8, 0},"\
              "{5, 0, 0, 1, 0},"\
              "{21, 3, 0, 2, 1},"\
              "{29, 3, 1, 2, 0},"\

@@ -67,6 +67,8 @@ enum OPCODE_IDX {
   IDX_STH,
   IDX_STW,
   IDX_STDW,
+  IDX_XADD64,
+  IDX_XADD32,
   // JMP
   IDX_JA,
   IDX_JEQXC,
@@ -100,6 +102,7 @@ enum OPCODE_IDX {
 #define OPCODE_BPF_LDX_MEM(SIZE) BPF_LDX | BPF_SIZE(SIZE) | BPF_MEM
 #define OPCODE_BPF_STX_MEM(SIZE) BPF_STX | BPF_SIZE(SIZE) | BPF_MEM
 #define OPCODE_BPF_ST_MEM(SIZE) BPF_ST | BPF_SIZE(SIZE) | BPF_MEM
+#define OPCODE_BPF_XADD(SIZE) BPF_STX | BPF_XADD | BPF_SIZE(SIZE)
 #define OPCODE_BPF_JMP_IMM(OP) BPF_JMP | BPF_OP(OP) | BPF_K
 #define OPCODE_BPF_JMP_REG(OP) BPF_JMP | BPF_OP(OP) | BPF_X
 #define OPCODE_BPF_JMP32_IMM(OP) BPF_JMP32 | BPF_OP(OP) | BPF_K
@@ -150,6 +153,8 @@ enum OPCODES {
   STH      = OPCODE_BPF_ST_MEM(BPF_H),
   STW      = OPCODE_BPF_ST_MEM(BPF_W),
   STDW     = OPCODE_BPF_ST_MEM(BPF_DW),
+  XADD64   = OPCODE_BPF_XADD(BPF_DW),
+  XADD32   = OPCODE_BPF_XADD(BPF_W),
   JA       = OPCODE_BPF_JMP_A,
   JEQXC    = OPCODE_BPF_JMP_IMM(BPF_JEQ),
   JEQXY    = OPCODE_BPF_JMP_REG(BPF_JEQ),
@@ -209,6 +214,8 @@ static const int idx_2_opcode[NUM_INSTR] = {
   [IDX_STH] = STH,
   [IDX_STW] = STW,
   [IDX_STDW] = STDW,
+  [IDX_XADD64] = XADD64,
+  [IDX_XADD32] = XADD32,
   [IDX_JA] = JA,
   [IDX_JEQXC] = JEQXC,
   [IDX_JEQXY] = JEQXY,
@@ -267,6 +274,8 @@ static const int num_operands[NUM_INSTR] = {
   [IDX_STH]      = 3,
   [IDX_STW]      = 3,
   [IDX_STDW]     = 3,
+  [IDX_XADD64]   = 3,
+  [IDX_XADD32]   = 3,
   [IDX_JA]       = 1,
   [IDX_JEQXC]    = 3,
   [IDX_JEQXY]    = 3,
@@ -327,6 +336,8 @@ static const int insn_num_regs[NUM_INSTR] = {
   [IDX_STH]      = 1,
   [IDX_STW]      = 1,
   [IDX_STDW]     = 1,
+  [IDX_XADD64]   = 2,
+  [IDX_XADD32]   = 2,
   [IDX_JA]       = 0,
   [IDX_JEQXC]    = 1,
   [IDX_JEQXY]    = 2,
@@ -385,6 +396,8 @@ static const int opcode_type[NUM_INSTR] = {
   [IDX_STH]      = OP_ST,
   [IDX_STW]      = OP_ST,
   [IDX_STDW]     = OP_ST,
+  [IDX_XADD64]   = OP_ST,
+  [IDX_XADD32]   = OP_ST,
   [IDX_JA]       = OP_UNCOND_JMP,
   [IDX_JEQXC]    = OP_COND_JMP,
   [IDX_JEQXY]    = OP_COND_JMP,
@@ -483,6 +496,8 @@ static const int optable[NUM_INSTR] = {
   [IDX_STH]      = ST_OPS,
   [IDX_STW]      = ST_OPS,
   [IDX_STDW]     = ST_OPS,
+  [IDX_XADD64]   = STX_OPS,
+  [IDX_XADD32]   = STX_OPS,
   [IDX_JA]       = JA_OPS,
   [IDX_JEQXC]    = JMP_OPS_IMM,
   [IDX_JEQXY]    = JMP_OPS_REG,
