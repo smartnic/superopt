@@ -294,6 +294,20 @@ inst bm9[N9] = {inst(LDXB, 3, 1, 0), // r3 = *(u8 *)(r1 + 0)
                 inst(),
                 inst(),
                };
+// code segment from xdp1_kern
+inst bm10[N10] = {inst(LDXH, 2, 1, 0),
+                  inst(LDXH, 3, 1, 6),
+                  inst(STXH, 1, 0, 3),
+                  inst(LDXH, 3, 1, 8),
+                  inst(LDXH, 4, 1, 2),
+                  inst(STXH, 1, 8, 4),
+                  inst(STXH, 1, 2, 3),
+                  inst(LDXH, 3, 1, 10),
+                  inst(LDXH, 4, 1, 4),
+                  inst(STXH, 1, 10, 4),
+                  inst(STXH, 1, 4, 3),
+                  inst(STXH, 1, 6, 2),
+                 };
 
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
@@ -357,6 +371,12 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       inst::max_prog_len = N9;
       mem_t::set_pkt_sz(4);
       *bm = bm9;
+      return;
+    case 10:
+      inst::max_prog_len = N10;
+      mem_t::set_pkt_sz(16);
+      *bm = bm10;
+      return;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
       return;
