@@ -308,7 +308,32 @@ inst bm10[N10] = {inst(LDXH, 2, 1, 0),
                   inst(STXH, 1, 4, 3),
                   inst(STXH, 1, 6, 2),
                  };
-
+// syscall_tp_kern
+inst bm11[N11] = {inst(183, 0, 1, 0, 0),
+                  inst(99, 1, 10, -4, 0),
+                  inst(183, 0, 1, 0, 1),
+                  inst(99, 1, 10, -8, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -4),
+                  inst(LDMAPID, 1, 0),
+                  inst(),
+                  inst(133, 0, 0, 0, 1),
+                  inst(21, 0, 0, 4, 0),
+                  inst(97, 0, 1, 0, 0),
+                  inst(7, 0, 1, 0, 1),
+                  inst(99, 1, 0, 0, 0),
+                  inst(5, 0, 0, 8, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -4),
+                  inst(191, 10, 3, 0, 0),
+                  inst(7, 0, 3, 0, -8),
+                  inst(LDMAPID, 1, 0),
+                  inst(),
+                  inst(183, 0, 4, 0, 1),
+                  inst(133, 0, 0, 0, 2),
+                  inst(183, 0, 0, 0, 0),
+                  inst(149, 0, 0, 0, 0),
+                 };
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
@@ -376,6 +401,11 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       inst::max_prog_len = N10;
       mem_t::set_pkt_sz(16);
       *bm = bm10;
+      return;
+    case 11:
+      inst::max_prog_len = N11;
+      mem_t::add_map(map_attr(32, 32, N11));
+      *bm = bm11;
       return;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
