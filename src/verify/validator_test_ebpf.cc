@@ -746,6 +746,17 @@ void test5() { // test pkt
   vld.set_orig(p5, 9);
   print_test_res(vld.is_equal_to(p5, 9, p5, 9) == 1, "8");
   print_test_res(vld.is_equal_to(p5, 9, p6, 5) == 1, "9");
+
+  // test address track of addxy
+  inst p7[3] = {inst(ADD64XC, 1, 1),
+                inst(STB, 1, 0, 0xff),
+                inst(EXIT),
+               };
+  inst p8[2] = {inst(STB, 1, 1, 0xff),
+                inst(EXIT),
+               };
+  vld.set_orig(p7, 3);
+  print_test_res(vld.is_equal_to(p7, 3, p8, 2) == 1, "9");
 }
 
 int main() {
