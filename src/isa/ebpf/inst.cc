@@ -641,7 +641,7 @@ z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
     f = f && (sv.get_cur_reg_var(i) == 0);
   }
   // add the constrain of pkt if pkt in layout
-  if (mem_t::_layout._pkt_sz != 0) {
+  if (mem_t::get_pgm_input_type == PGM_INPUT_pkt) {
     f = f && (sv.get_cur_reg_var(1) == sv.get_pkt_start_addr());
   }
   return f;

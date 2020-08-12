@@ -90,6 +90,29 @@ z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned 
   return (map_id == out);
 }
 
+z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
+  if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
+    int pkt_ptrs_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs);
+    vector<int> ids;
+    vector<mem_ptr_info> info_list;
+    sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
+    for (int i = 0; i < ids.size(); i++) {
+      if (ids[i] != pkt_ptrs_mem_table) continue;
+      z3::expr addr_off = info_list[i].off + off;
+      // the first 4 bytes are the address of pkt start, the last are the address of pkt end
+      z3::expr pc_addr_off = (addr_off == ZERO_ADDR_OFF_EXPR) || (addr_off == to_expr((int64_t)4));
+      z3::expr pc = info_list[i].path_cond && sv.mem_var.get_block_path_cond(block);
+      int pkt_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
+      sv.mem_var.add_ptr(out, pkt_mem_table, addr_off, pc && pc_addr_off);
+    }
+  }
+  return ((out.extract(63, 32) == to_expr(0, 32)) &&
+          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block) &&
+          predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block) &&
+          predicate_ld_byte(addr, off + 2, sv, out.extract(23, 16), block) &&
+          predicate_ld_byte(addr, off + 3, sv, out.extract(31, 24), block));
+}
+
 z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block, z3::expr cond) {
   z3::expr path_cond = sv.mem_var.get_block_path_cond(block) && cond;
   z3::expr f = Z3_true;

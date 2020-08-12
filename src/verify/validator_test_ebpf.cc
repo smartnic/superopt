@@ -761,6 +761,30 @@ void test5() { // test pkt
   print_test_res(vld.is_equal_to(p7, 3, p8, 2) == 1, "9");
 }
 
+void test6() {
+  std::cout << "test 6: test \"PGM_INPUT_pkt_ptrs\" program input type" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+  mem_t::set_pkt_sz(16);
+  inst p1[4] = {inst(LDXW, 2, 1, 4),
+                inst(LDXW, 1, 1, 0),
+                inst(STB, 1, 0, 1),
+                inst(STB, 2, 0, 2),
+               };
+  inst p11[8] = {inst(LDXW, 2, 1, 4),
+                 inst(LDXW, 1, 1, 0),
+                 inst(STB, 1, 0, 1),
+                 inst(MOV64XY, 3, 2),
+                 inst(ADD64XC, 3, 0),
+                 inst(MOV64XC, 4, 0),
+                 inst(ADD64XY, 3, 4),
+                 inst(STB, 3, 0, 2),
+                };
+  validator vld(p1, 4);
+  print_test_res(vld.is_equal_to(p1, 4, p1, 4) == 1, "1");
+  print_test_res(vld.is_equal_to(p1, 4, p11, 8) == 1, "2");
+}
+
 int main() {
   try {
     test1();
@@ -768,6 +792,7 @@ int main() {
     test3();
     test4();
     test5();
+    test6();
   } catch (const string err_msg) {
     cout << err_msg << endl;
   }

@@ -695,6 +695,9 @@ void smt_var::get_map_id(vector<int>& map_ids, vector<z3::expr>& path_conds, z3:
 // constrain:
 // 1. pkt_sz = 0: 0 < [memory start, memory end] <= max_uint64
 // 2. pkt_sz > 0: 0 < [memory start, memory end] < [pkt start, pkt end] <= max_uint64
+// 3. pgm input type == PGM_INPUT_pkt_ptrs: pkt address is 32-bit
+// 0 < [pkt start, pkt end] < [memory start, memory end] < {pkt start pointer, pkt end pointer} <= max_uint64
+// {pkt start pointer, pkt end pointer} takes 2 bytes
 z3::expr smt_var::mem_layout_constrain() const {
   z3::expr mem_start = mem_var._stack_start;
   int mem_sz = get_mem_size_by_layout();
@@ -703,16 +706,24 @@ z3::expr smt_var::mem_layout_constrain() const {
   z3::expr pkt_off = mem_var._pkt_off;
   z3::expr max_uint64 = to_expr((uint64_t)0xffffffffffffffff);
 
-  if (mem_t::get_pgm_input_type() == PGM_INPUT_constant) {
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_constant) {
     z3::expr f = (mem_start != NULL_ADDR_EXPR) &&
                  uge(max_uint64 - mem_off, mem_start);
     return f;
+  } else if (pgm_input_type == PGM_INPUT_pkt) {
+    z3::expr f = (mem_start != NULL_ADDR_EXPR) &&
+                 ugt(pkt_start, mem_off) && ugt(pkt_start - mem_off, mem_start) &&
+                 uge(max_uint64 - pkt_off, pkt_start);
+    return f;
+  } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    z3::expr f = (pkt_start.extract(63, 32) == NULL_ADDR_EXPR.extract(63, 32)) && // pkt address is 32-bit
+                 (pkt_start.extract(31, 0) != NULL_ADDR_EXPR.extract(31, 0)) &&  // pkt address is not NULL
+                 ugt(mem_start, pkt_start) && ugt(mem_start - pkt_off, mem_start) && // mem_start > pkt_end
+                 uge(max_uint64 - pkt_off - 2, mem_start); // 2 is for pkt start pointer and pkt end pointer
+    return f;
   }
-
-  z3::expr f = (mem_start != NULL_ADDR_EXPR) &&
-               ugt(pkt_start, mem_off) && ugt(pkt_start - mem_off, mem_start) &&
-               uge(max_uint64 - pkt_off, pkt_start);
-  return f;
+  return Z3_true;
 }
 
 void smt_var::set_new_node_id(unsigned int node_id, const vector<unsigned int>& nodes_in,
@@ -785,12 +796,30 @@ void smt_var::set_new_node_id(unsigned int node_id, const vector<unsigned int>& 
 void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks) {
   smt_var_base::init(prog_id, node_id, num_regs);
   mem_var.init_by_layout(n_blocks);
-  if (node_id == 0) {
-    int stack_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_stack);
-    mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id, to_expr(STACK_SIZE), Z3_true); // r10 is the stack pointer
-    if (mem_t::_layout._pkt_sz > 0) {
-      int pkt_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_pkt);
-      mem_var.add_ptr(get_init_reg_var(1), pkt_mem_table_id, ZERO_ADDR_OFF_EXPR, Z3_true); // r1 is the pkt pointer
+  int root = 0;
+  if (node_id != root) return;
+  int stack_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_stack);
+  mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id, to_expr(STACK_SIZE), Z3_true); // r10 is the stack pointer
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt) {
+    int pkt_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_pkt);
+    mem_var.add_ptr(get_init_reg_var(1), pkt_mem_table_id, ZERO_ADDR_OFF_EXPR, Z3_true); // r1 is the pkt pointer
+  }
+  // deal with the case that input is packet pointers
+  // init the memory table of packet pointers
+  // pkt_start = *(u32 *)(r1 + 0); pkt_end(=pkt_start+pkt_off) = *(u32 *)(r1 + 0);
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    int mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs);
+    mem_var.add_ptr(get_init_reg_var(1), mem_table_id, ZERO_ADDR_OFF_EXPR, Z3_true);
+    z3::expr pkt_start = mem_var._pkt_start;
+    z3::expr pkt_end = mem_var._pkt_start + mem_var._pkt_off;
+    for (int i = 0; i < 4; i++) { // the first 4 bytes are the address of pkt start
+      mem_var.add_in_mem_table_urt(mem_table_id, root, Z3_true, to_expr((int64_t)i),
+                                   pkt_start.extract(8 * i + 7, 8 * i));
+    }
+    for (int i = 4; i < 8; i++) { // the last 4 bytes are the address of pkt end
+      mem_var.add_in_mem_table_urt(mem_table_id, root, Z3_true, to_expr((int64_t)i),
+                                   pkt_end.extract(8 * i + 7, 8 * i));
     }
   }
 }
@@ -815,6 +844,7 @@ void smt_var::clear() {
 smt_var_bl::smt_var_bl() {
   int n_maps =  mem_t::maps_number();
   int n_mem_tables = 1 + n_maps; // stack + maps
+  if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) n_mem_tables++;
   if (mem_t::mem_t::_layout._pkt_sz > 0) n_mem_tables++;
   _mem_wt_sz.resize(n_mem_tables, 0);
   _mem_urt_sz.resize(n_mem_tables, 0);

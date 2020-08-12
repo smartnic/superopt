@@ -107,7 +107,7 @@ inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var
 // out == (read addr+off, sz, m); type: addr, off, out: bv64;
 inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
-inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
+z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 // *(u64*)(addr+off) += in
 z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
@@ -286,9 +286,9 @@ COMPUTE_UNARY(be64, BE64_EXPR)
 
 COMPUTE_BINARY(add, ADD_EXPR)
 COMPUTE_BINARY(add32, ADD32_EXPR)
-COMPUTE_BINARY(or, OR_EXPR)
+COMPUTE_BINARY( or , OR_EXPR)
 COMPUTE_BINARY(or32, OR32_EXPR)
-COMPUTE_BINARY(and, AND_EXPR)
+COMPUTE_BINARY( and , AND_EXPR)
 COMPUTE_BINARY(and32, AND32_EXPR)
 COMPUTE_BINARY(lsh, LSH_EXPR)
 COMPUTE_BINARY(lsh32, LSH32_EXPR)
@@ -354,9 +354,9 @@ PREDICATE_UNARY(be32, BE32_EXPR)
 PREDICATE_UNARY(be64, BE64_EXPR)
 PREDICATE_BINARY(add, ADD_EXPR)
 PREDICATE_BINARY(add32, ADD32_EXPR)
-PREDICATE_BINARY(or, OR_EXPR)
+PREDICATE_BINARY( or , OR_EXPR)
 PREDICATE_BINARY(or32, OR32_EXPR)
-PREDICATE_BINARY(and, AND_EXPR)
+PREDICATE_BINARY( and , AND_EXPR)
 PREDICATE_BINARY(and32, AND32_EXPR)
 PREDICATE_BINARY(lsh, LSH_EXPR)
 PREDICATE_BINARY(rsh, RSH_EXPR)
@@ -424,14 +424,6 @@ inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::exp
   return ((out.extract(63, 16) == to_expr(0, 48)) &&
           predicate_ld_byte(addr, off, sv, out.extract(7, 0), block) &&
           predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block));
-}
-
-inline z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
-  return ((out.extract(63, 32) == to_expr(0, 32)) &&
-          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block) &&
-          predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block) &&
-          predicate_ld_byte(addr, off + 2, sv, out.extract(23, 16), block) &&
-          predicate_ld_byte(addr, off + 3, sv, out.extract(31, 24), block));
 }
 
 inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
