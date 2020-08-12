@@ -211,6 +211,7 @@ class smt_mem {
   z3::expr _stack_start = string_to_expr("stack_start");
   z3::expr _pkt_start = string_to_expr("pkt_start");
   z3::expr _pkt_off = string_to_expr("pkt_off"); // pkt_off = pkt_sz - 1
+  z3::expr _pkt_start_ptr_addr = string_to_expr("pkt_start_ptr_addr");
   vector<mem_table> _mem_tables; // stack, pkt, map related memory
   vector<map_wt> _map_tables; // vector idx: map id
   vector<z3::expr> _addrs_map_v_next;
@@ -279,6 +280,7 @@ class smt_var: public smt_var_base {
   z3::expr get_map_end_addr(int map_id); // return value: z3 bv64
   z3::expr get_pkt_start_addr() {return mem_var._pkt_start;}
   z3::expr get_pkt_end_addr() {return (mem_var._pkt_start + mem_var._pkt_off);}
+  z3::expr get_pkt_start_ptr_addr() const {return mem_var._pkt_start_ptr_addr;}
   z3::expr mem_layout_constrain() const;
   void add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_cond = Z3_true);
   void add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond = Z3_true);

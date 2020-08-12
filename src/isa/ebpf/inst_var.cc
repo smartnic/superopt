@@ -704,6 +704,8 @@ z3::expr smt_var::mem_layout_constrain() const {
   z3::expr mem_off = to_expr((uint64_t)(mem_sz - 1));
   z3::expr pkt_start = mem_var._pkt_start;
   z3::expr pkt_off = mem_var._pkt_off;
+  z3::expr pkt_start_ptr_addr = get_pkt_start_ptr_addr();
+  int pkt_ptrs_off = 1; // two elements: pkt start pointer and pkt end pointer
   z3::expr max_uint64 = to_expr((uint64_t)0xffffffffffffffff);
 
   int pgm_input_type = mem_t::get_pgm_input_type();
@@ -720,7 +722,9 @@ z3::expr smt_var::mem_layout_constrain() const {
     z3::expr f = (pkt_start.extract(63, 32) == NULL_ADDR_EXPR.extract(63, 32)) && // pkt address is 32-bit
                  (pkt_start.extract(31, 0) != NULL_ADDR_EXPR.extract(31, 0)) &&  // pkt address is not NULL
                  ugt(mem_start, pkt_start) && ugt(mem_start - pkt_off, mem_start) && // mem_start > pkt_end
-                 uge(max_uint64 - pkt_off - 2, mem_start); // 2 is for pkt start pointer and pkt end pointer
+                 ugt(pkt_start_ptr_addr, mem_start) &&
+                 ugt(pkt_start_ptr_addr - mem_off, mem_start) && // pkt_start_ptr_addr > mem_end
+                 uge(max_uint64 - pkt_ptrs_off, pkt_start_ptr_addr); // max_uint64 > pkt_end_ptr_addr
     return f;
   }
   return Z3_true;

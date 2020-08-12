@@ -640,9 +640,12 @@ z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
   for (size_t i = 2; i < 10; i++) {
     f = f && (sv.get_cur_reg_var(i) == 0);
   }
-  // add the constrain of pkt if pkt in layout
-  if (mem_t::get_pgm_input_type == PGM_INPUT_pkt) {
+  // add the relationship of r1 and address according to the program inpu type
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt) {
     f = f && (sv.get_cur_reg_var(1) == sv.get_pkt_start_addr());
+  } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    f = f && (sv.get_cur_reg_var(1) == sv.get_pkt_start_ptr_addr());
   }
   return f;
 }
