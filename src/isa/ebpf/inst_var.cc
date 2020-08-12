@@ -453,7 +453,7 @@ void smt_mem::init_by_layout(unsigned int n_blocks) {
   int n_mem_tables = 1 + n_maps; // stack + maps
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) n_mem_tables++;
-  if (mem_t::mem_t::_layout._pkt_sz > 0) n_mem_tables++;
+  if (mem_t::_layout._pkt_sz > 0) n_mem_tables++;
   _mem_tables.resize(n_mem_tables);
   int i = 0;
   _mem_tables[i]._type = MEM_TABLE_stack;
@@ -462,7 +462,7 @@ void smt_mem::init_by_layout(unsigned int n_blocks) {
     _mem_tables[i]._type = MEM_TABLE_pkt_ptrs;
     i++;
   }
-  if (mem_t::mem_t::_layout._pkt_sz > 0) {
+  if (mem_t::_layout._pkt_sz > 0) {
     _mem_tables[i]._type = MEM_TABLE_pkt;
     i++;
   }
@@ -798,6 +798,7 @@ void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_
   mem_var.init_by_layout(n_blocks);
   int root = 0;
   if (node_id != root) return;
+  // todo: move the init of root node into inst::smt_set_pre?
   int stack_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_stack);
   mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id, to_expr(STACK_SIZE), Z3_true); // r10 is the stack pointer
   int pgm_input_type = mem_t::get_pgm_input_type();
@@ -845,7 +846,7 @@ smt_var_bl::smt_var_bl() {
   int n_maps =  mem_t::maps_number();
   int n_mem_tables = 1 + n_maps; // stack + maps
   if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) n_mem_tables++;
-  if (mem_t::mem_t::_layout._pkt_sz > 0) n_mem_tables++;
+  if (mem_t::_layout._pkt_sz > 0) n_mem_tables++;
   _mem_wt_sz.resize(n_mem_tables, 0);
   _mem_urt_sz.resize(n_mem_tables, 0);
   _map_wt_sz.resize(n_maps, 0);
