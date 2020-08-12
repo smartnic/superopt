@@ -473,10 +473,10 @@ z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
   int64_t imm = (int64_t)_imm;
   int64_t off = (int64_t)_off;
   z3::expr path_cond = sv.mem_var.get_block_path_cond(block);
-  // todo: need to deal with ADD64XY, and move the track of pointers in predicate functions
+  // todo: move the track of pointers in predicate functions
   switch (_opcode) {
     case ADD64XC: sv.mem_var.add_ptr(NEWDST, CURDST, IMM, path_cond); return predicate_add(CURDST, IMM, NEWDST);
-    case ADD64XY: return predicate_add(CURDST, CURSRC, NEWDST);
+    case ADD64XY: sv.mem_var.add_ptr(NEWDST, CURDST, CURSRC, path_cond); return predicate_add(CURDST, CURSRC, NEWDST);
     case OR64XC: return predicate_or(CURDST, IMM, NEWDST);
     case OR64XY: return predicate_or(CURDST, CURSRC, NEWDST);
     case AND64XC: return predicate_and(CURDST, IMM, NEWDST);

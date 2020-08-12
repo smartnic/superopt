@@ -868,6 +868,15 @@ void test2() {
   SMT_CHECK_XADD(0x0, 0x1, 0x0, 0x2, 32, 0x3, "smt XADD32 1");
   SMT_CHECK_XADD(0x1, 0x2, 0x3, 0x4, 32, 0x100000006, "smt XADD32 2");
 
+
+  // test the address track of "add64xy"
+  smt = f_mem_layout_constrain && f_r10;
+  smt = smt && inst(MOV64XC, 1, -1).smt_inst(sv);
+  smt = smt && inst(MOV64XY, 2, 10).smt_inst(sv);
+  smt = smt && inst(STB, 2, 0, 0xff).smt_inst(sv);
+  smt = smt && inst(LDXB, 0, 2, 0).smt_inst(sv);
+  output = CURDST(inst(LDXB, 0, 2, 0));
+  print_test_res(eval_output(smt, output) == (int64_t)0xff, "address track of add64xy");
 #undef CURDST
 #undef CURSRC
 #undef SMT_CHECK_LDST
