@@ -451,11 +451,17 @@ void smt_mem::init_by_layout(unsigned int n_blocks) {
     _addrs_map_v_next.push_back(start);
   }
   int n_mem_tables = 1 + n_maps; // stack + maps
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) n_mem_tables++;
   if (mem_t::mem_t::_layout._pkt_sz > 0) n_mem_tables++;
   _mem_tables.resize(n_mem_tables);
   int i = 0;
   _mem_tables[i]._type = MEM_TABLE_stack;
   i++;
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    _mem_tables[i]._type = MEM_TABLE_pkt_ptrs;
+    i++;
+  }
   if (mem_t::mem_t::_layout._pkt_sz > 0) {
     _mem_tables[i]._type = MEM_TABLE_pkt;
     i++;
@@ -465,6 +471,10 @@ void smt_mem::init_by_layout(unsigned int n_blocks) {
     _mem_tables[i]._map_id = map_id;
   }
   _map_tables.resize(n_maps);
+
+  if (pgm_input_type == PGM_INPUT_pkt) {
+    _pkt_off = to_expr((uint64_t)(mem_t::_layout._pkt_sz - 1));
+  }
 }
 
 z3::expr smt_mem::get_and_update_addr_v_next(int map_id) {
@@ -690,11 +700,10 @@ z3::expr smt_var::mem_layout_constrain() const {
   int mem_sz = get_mem_size_by_layout();
   z3::expr mem_off = to_expr((uint64_t)(mem_sz - 1));
   z3::expr pkt_start = mem_var._pkt_start;
-  int pkt_sz = mem_t::_layout._pkt_sz;
-  z3::expr pkt_off = to_expr((uint64_t)(pkt_sz - 1));
+  z3::expr pkt_off = mem_var._pkt_off;
   z3::expr max_uint64 = to_expr((uint64_t)0xffffffffffffffff);
 
-  if (pkt_sz == 0) {
+  if (mem_t::get_pgm_input_type() == PGM_INPUT_constant) {
     z3::expr f = (mem_start != NULL_ADDR_EXPR) &&
                  uge(max_uint64 - mem_off, mem_start);
     return f;

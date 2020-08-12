@@ -1622,6 +1622,7 @@ void test13() {
   mem_t::_layout.clear();
   unsigned int pkt_sz = 128;
   mem_t::add_map(map_attr(8, 8, 512));
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::set_pkt_sz(pkt_sz); // pkt size: 128 bytes
   unsigned int prog_id = 0, node_id = 0, num_regs = 11;
   smt_var sv1(prog_id, node_id, num_regs);
@@ -1664,6 +1665,7 @@ void test13() {
   mem_t::_layout.clear();
   pkt_sz = 128;
   mem_t::add_map(map_attr(8, 8, 512));
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::set_pkt_sz(pkt_sz); // pkt size: 128 bytes
   sv1.clear();
   sv2.clear();
@@ -1711,6 +1713,7 @@ void test13() {
   mem_t::_layout.clear();
   pkt_sz = 128;
   mem_t::add_map(map_attr(8, 8, 512));
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::set_pkt_sz(pkt_sz); // pkt size: 128 bytes
   sv1.clear();
   sv2.clear();

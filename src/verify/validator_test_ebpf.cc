@@ -516,6 +516,7 @@ void test4() {
   std::cout << "1. test map" << std::endl;
   // set memory layout: stack | map1 | map2
   mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
   mem_t::add_map(map_attr(16, 32, 32)); // k_sz: 16 bits; v_sz: 32 bits; max_entirs: 32
   mem_t::set_pkt_sz(128);
@@ -685,6 +686,7 @@ void test5() { // test pkt
   std::cout << "test 5: packet related program equivalence check" << endl;
   // set memory layout: stack | map1 | map2
   mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
   unsigned int pkt_sz = 128;
   mem_t::set_pkt_sz(pkt_sz); // pkt size: 128 bytes

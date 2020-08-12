@@ -338,6 +338,7 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
       inst::max_prog_len = N0;
+      mem_t::set_pgm_input_type(PGM_INPUT_constant);
       *bm = bm0;
       bm_optis_orig.push_back(bm_opti00);
       bm_optis_orig.push_back(bm_opti01);
@@ -347,11 +348,13 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
     case 1:
       inst::max_prog_len = N1;
       inst::add_sample_imm(vector<int32_t> {0xff0000});
+      mem_t::set_pgm_input_type(PGM_INPUT_constant);
       *bm = bm1;
       bm_optis_orig.push_back(bm_opti10);
       return;
     case 2:
       inst::max_prog_len = N2;
+      mem_t::set_pgm_input_type(PGM_INPUT_constant);
       mem_t::add_map(map_attr(8, 8, N2));
       *bm = bm2;
       bm_optis_orig.push_back(bm_opti20);
@@ -359,6 +362,7 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
     case 3:
       inst::max_prog_len = N3;
       inst::add_sample_imm(vector<int32_t> {264});
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(128);
       mem_t::add_map(map_attr(128, 64, N3)); // 8 items
       mem_t::add_map(map_attr(96, 96, N3));  // 12 items
@@ -367,43 +371,51 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       return;
     case 4:
       inst::max_prog_len = N4;
+      mem_t::set_pgm_input_type(PGM_INPUT_constant);
       *bm = bm4;
       bm_optis_orig.push_back(bm_opti40);
       return;
     case 5:
       inst::max_prog_len = N5;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(4);
       *bm = bm5;
       bm_optis_orig.push_back(bm_opti50);
       return;
     case 6:
       inst::max_prog_len = N6;
+      mem_t::set_pgm_input_type(PGM_INPUT_constant);
       *bm = bm6;
       bm_optis_orig.push_back(bm_opti60);
       return;
     case 7:
       inst::max_prog_len = N7;
+      mem_t::set_pgm_input_type(PGM_INPUT_constant);
       *bm = bm7;
       bm_optis_orig.push_back(bm_opti70);
       return;
     case 8:
       inst::max_prog_len = N8;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(160);
       mem_t::add_map(map_attr(64, 32, N8));
       *bm = bm8;
       return;
     case 9:
       inst::max_prog_len = N9;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(4);
       *bm = bm9;
       return;
     case 10:
       inst::max_prog_len = N10;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(16);
       *bm = bm10;
       return;
     case 11:
       inst::max_prog_len = N11;
+      mem_t::set_pgm_input_type(PGM_INPUT_constant);
       mem_t::add_map(map_attr(32, 32, N11));
       *bm = bm11;
       return;

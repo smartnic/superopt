@@ -28,8 +28,15 @@ struct map_attr { // map attribute
 };
 ostream& operator<<(ostream& out, const map_attr& m_attr);
 
+enum pgm_input_type {
+  PGM_INPUT_constant,
+  PGM_INPUT_pkt, // input(r1) -> pkt_start_addr
+  PGM_INPUT_pkt_ptrs, // input(r1) -> {pkt_start_addr(32-bit), pkt_end_addr(32-bit)}
+};
+
 class mem_layout {
  public:
+  int _pgm_input_type = PGM_INPUT_constant;
   unsigned int _stack_start = 0;
   vector<map_attr> _maps_attr;
   vector<unsigned int> _maps_start;
@@ -73,6 +80,8 @@ class mem_t {
   ~mem_t();
   static void add_map(map_attr m_attr);
   static void set_pkt_sz(unsigned int sz) {_layout._pkt_sz = sz;}
+  static void set_pgm_input_type(int type) {_layout._pgm_input_type = type;}
+  static int get_pgm_input_type() {return _layout._pgm_input_type;}
   static unsigned int maps_number() {return _layout._maps_attr.size();}
   static unsigned int map_key_sz(int map_id);
   static unsigned int map_val_sz(int map_id);
@@ -150,6 +159,7 @@ class map_wt {
 
 enum mem_table_type {
   MEM_TABLE_stack = 0,
+  MEM_TABLE_pkt_ptrs,
   MEM_TABLE_pkt,
   MEM_TABLE_map,
 };
@@ -200,6 +210,7 @@ class smt_mem {
  public:
   z3::expr _stack_start = string_to_expr("stack_start");
   z3::expr _pkt_start = string_to_expr("pkt_start");
+  z3::expr _pkt_off = string_to_expr("pkt_off"); // pkt_off = pkt_sz - 1
   vector<mem_table> _mem_tables; // stack, pkt, map related memory
   vector<map_wt> _map_tables; // vector idx: map id
   vector<z3::expr> _addrs_map_v_next;
@@ -267,7 +278,7 @@ class smt_var: public smt_var_base {
   z3::expr get_map_start_addr(int map_id); // return value: z3 bv64
   z3::expr get_map_end_addr(int map_id); // return value: z3 bv64
   z3::expr get_pkt_start_addr() {return mem_var._pkt_start;}
-  z3::expr get_pkt_end_addr() {return (mem_var._pkt_start + to_expr((uint64_t)mem_t::_layout._pkt_sz - 1));}
+  z3::expr get_pkt_end_addr() {return (mem_var._pkt_start + mem_var._pkt_off);}
   z3::expr mem_layout_constrain() const;
   void add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_cond = Z3_true);
   void add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond = Z3_true);
