@@ -334,6 +334,69 @@ inst bm11[N11] = {inst(183, 0, 1, 0, 0),
                   inst(183, 0, 0, 0, 0),
                   inst(149, 0, 0, 0, 0),
                  };
+// xdp1_kern
+inst bm12[N12] = {inst(97, 1, 2, 4, 0),
+                  inst(97, 1, 1, 0, 0),
+                  inst(191, 1, 3, 0, 0),
+                  inst(7, 0, 3, 0, 14),
+                  inst(45, 2, 3, 54, 0),
+                  inst(113, 1, 3, 12, 0),
+                  inst(113, 1, 4, 13, 0),
+                  inst(103, 0, 4, 0, 8),
+                  inst(79, 3, 4, 0, 0),
+                  inst(21, 0, 4, 2, 43144),
+                  inst(183, 0, 3, 0, 14),
+                  inst(85, 0, 4, 5, 129),
+                  inst(191, 1, 3, 0, 0),
+                  inst(7, 0, 3, 0, 18),
+                  inst(45, 2, 3, 44, 0),
+                  inst(183, 0, 3, 0, 18),
+                  inst(105, 1, 4, 16, 0),
+                  inst(191, 4, 5, 0, 0),
+                  inst(87, 0, 5, 0, 65535),
+                  inst(21, 0, 5, 1, 43144),
+                  inst(85, 0, 5, 9, 129),
+                  inst(191, 3, 5, 0, 0),
+                  inst(7, 0, 5, 0, 4),
+                  inst(191, 1, 4, 0, 0),
+                  inst(15, 5, 4, 0, 0),
+                  inst(45, 2, 4, 33, 0),
+                  inst(191, 1, 4, 0, 0),
+                  inst(15, 3, 4, 0, 0),
+                  inst(105, 4, 4, 2, 0),
+                  inst(191, 5, 3, 0, 0),
+                  inst(87, 0, 4, 0, 65535),
+                  inst(21, 0, 4, 8, 56710),
+                  inst(85, 0, 4, 15, 8),
+                  inst(15, 3, 1, 0, 0),
+                  inst(183, 0, 3, 0, 0),
+                  inst(191, 1, 4, 0, 0),
+                  inst(7, 0, 4, 0, 20),
+                  inst(45, 2, 4, 8, 0),
+                  inst(113, 1, 3, 9, 0),
+                  inst(5, 0, 0, 6, 0),
+                  inst(15, 3, 1, 0, 0),
+                  inst(183, 0, 3, 0, 0),
+                  inst(191, 1, 4, 0, 0),
+                  inst(7, 0, 4, 0, 40),
+                  inst(45, 2, 4, 1, 0),
+                  inst(113, 1, 3, 6, 0),
+                  inst(99, 3, 10, -4, 0),
+                  inst(5, 0, 0, 2, 0),
+                  inst(183, 0, 1, 0, 0),
+                  inst(99, 1, 10, -4, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -4),
+                  inst(24, 0, 1, 0, 0), // ldmapid
+                  inst(0, 0, 0, 0, 0),
+                  inst(133, 0, 0, 0, 1),
+                  inst(21, 0, 0, 3, 0),
+                  inst(121, 0, 1, 0, 0),
+                  inst(7, 0, 1, 0, 1),
+                  inst(123, 1, 0, 0, 0),
+                  inst(183, 0, 0, 0, 1),
+                  inst(149, 0, 0, 0, 0),
+                 };
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
@@ -418,6 +481,14 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::set_pgm_input_type(PGM_INPUT_constant);
       mem_t::add_map(map_attr(32, 32, N11));
       *bm = bm11;
+      return;
+    case 12:
+      inst::max_prog_len = N12;
+      inst::add_sample_imm(vector<int32_t> {14, 43144, 129, 18, 65535, 56710, 20, 40});
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+      mem_t::set_pkt_sz(256);
+      mem_t::add_map(map_attr(32, 32, N12));
+      *bm = bm12;
       return;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
