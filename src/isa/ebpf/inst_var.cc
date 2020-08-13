@@ -305,6 +305,51 @@ uint8_t* mem_t::get_pkt_end_addr() const {
   return &_pkt[mem_t::_layout._pkt_sz - 1];
 }
 
+uint32_t* mem_t::get_pkt_ptrs_start_addr() {
+  if (mem_t::get_pgm_input_type() != PGM_INPUT_pkt_ptrs) return nullptr;
+  return &_pkt_ptrs[0];
+}
+
+uint32_t* mem_t::get_pkt_ptrs_end_addr() {
+  if (mem_t::get_pgm_input_type() != PGM_INPUT_pkt_ptrs) return nullptr;
+  return &_pkt_ptrs[1] + sizeof(uint32_t) - 1;
+}
+
+uint64_t mem_t::get_simu_mem_start_addr() {
+  return _simu_mem_s;
+}
+
+uint64_t mem_t::get_simu_mem_end_addr() {
+  return (_simu_mem_s + _mem_size - 1);
+}
+
+uint64_t mem_t::get_simu_pkt_start_addr() {
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt) return _simu_pkt_s;
+  else if (pgm_input_type == PGM_INPUT_pkt_ptrs) return _pkt_ptrs[0];
+  else return NULL_ADDR;
+}
+
+uint64_t mem_t::get_simu_pkt_end_addr() {
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt) return (_simu_pkt_s + mem_t::_layout._pkt_sz - 1);
+  else if (pgm_input_type == PGM_INPUT_pkt_ptrs) return _pkt_ptrs[1];
+  else return NULL_ADDR;
+}
+
+uint64_t mem_t::get_simu_pkt_ptrs_start_addr() {
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) return _simu_pkt_ptrs_s;
+  else return NULL_ADDR;
+}
+
+uint64_t mem_t::get_simu_pkt_ptrs_end_addr() {
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  int pkt_ptrs_sz = 8; // 8 bytes, two 32-bit address
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) return (_simu_pkt_ptrs_s + pkt_ptrs_sz - 1);
+  else return NULL_ADDR;
+}
+
 mem_t& mem_t::operator=(const mem_t &rhs) {
   memcpy(_mem, rhs._mem, sizeof(uint8_t)*_mem_size);
   for (int i = 0; i < rhs._maps.size(); i++) _maps[i] = rhs._maps[i];
@@ -364,6 +409,15 @@ void mem_t::memory_access_check(uint64_t addr, uint64_t num_bytes) {
     legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
             (addr <= (max_uint64 - num_bytes + 1));
   }
+  if (legal) return;
+
+  if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
+    start = (uint64_t)get_pkt_ptrs_start_addr();
+    end = (uint64_t)get_pkt_ptrs_end_addr();
+    legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
+            (addr <= (max_uint64 - num_bytes + 1));
+  }
+
   if (!legal) {
     string err_msg = "unsafe memory access";
     throw (err_msg);
@@ -705,8 +759,9 @@ z3::expr smt_var::mem_layout_constrain() const {
   z3::expr pkt_start = mem_var._pkt_start;
   z3::expr pkt_off = mem_var._pkt_off;
   z3::expr pkt_start_ptr_addr = get_pkt_start_ptr_addr();
-  int pkt_ptrs_off = 1; // two elements: pkt start pointer and pkt end pointer
+  int pkt_ptrs_off = 8 - 1; // two elements: pkt start pointer and pkt end pointer
   z3::expr max_uint64 = to_expr((uint64_t)0xffffffffffffffff);
+  z3::expr max_uint32 = to_expr((uint64_t)0xffffffff);
 
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_constant) {
@@ -719,11 +774,12 @@ z3::expr smt_var::mem_layout_constrain() const {
                  uge(max_uint64 - pkt_off, pkt_start);
     return f;
   } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    z3::expr max_pkt_off = to_expr((uint64_t)mem_t::_layout._pkt_sz - 1);
     z3::expr f = (pkt_start.extract(63, 32) == NULL_ADDR_EXPR.extract(63, 32)) && // pkt address is 32-bit
                  (pkt_start.extract(31, 0) != NULL_ADDR_EXPR.extract(31, 0)) &&  // pkt address is not NULL
-                 ugt(mem_start, pkt_start) && ugt(mem_start - pkt_off, mem_start) && // mem_start > pkt_end
-                 ugt(pkt_start_ptr_addr, mem_start) &&
-                 ugt(pkt_start_ptr_addr - mem_off, mem_start) && // pkt_start_ptr_addr > mem_end
+                 uge(max_pkt_off, pkt_off) && uge(max_uint32 - pkt_off, pkt_start) &&
+                 ugt(mem_start, pkt_off) && ugt(mem_start - pkt_off, pkt_start) && // mem_start > pkt_end
+                 ugt(pkt_start_ptr_addr, mem_off) && ugt(pkt_start_ptr_addr - mem_off, mem_start) && // pkt_start_ptr_addr > mem_end
                  uge(max_uint64 - pkt_ptrs_off, pkt_start_ptr_addr); // max_uint64 > pkt_end_ptr_addr
     return f;
   }
@@ -992,7 +1048,7 @@ bool inout_t::operator==(const inout_t &rhs) const {
 
 ostream& operator<<(ostream& out, const inout_t& x) {
   out << hex << "simu_r10:" << x.input_simu_r10 << dec << " ";
-  out << "reg:" << x.reg << " ";
+  out << hex << "reg:" << x.reg << " " << dec;
   for (int i = 0; i < x.maps.size(); i++) {
     out << "map " << i << ": ";
     for (auto it = x.maps[i].begin(); it != x.maps[i].end(); it++) {
@@ -1003,6 +1059,8 @@ ostream& operator<<(ostream& out, const inout_t& x) {
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
     out << hex << setfill('0') << setw(2) << static_cast<int>(x.pkt[i]) << dec;
   }
+  out << " " << "pkt_ptrs:"
+      << hex << x.input_simu_pkt_ptrs[0] << "," << x.input_simu_pkt_ptrs[1] << dec;
   return out;
 }
 
@@ -1020,6 +1078,16 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   }
   unsigned int pkt_sz = mem_t::_layout._pkt_sz;
   memcpy(ps._mem._pkt, input.pkt, sizeof(uint8_t)*pkt_sz);
+
+  ps._mem._simu_mem_s = input.input_simu_r10 - STACK_SIZE;
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt) {
+    ps._mem._simu_pkt_s = (uint64_t)input.reg;
+  } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    ps._mem._simu_pkt_ptrs_s = (uint64_t)input.reg;
+    ps._mem._pkt_ptrs[0] = input.input_simu_pkt_ptrs[0];
+    ps._mem._pkt_ptrs[1] = input.input_simu_pkt_ptrs[1];
+  }
 }
 
 void update_output_by_ps(inout_t& output, const prog_state& ps) {
@@ -1055,10 +1123,21 @@ uint64_t get_simu_addr_by_real(uint64_t real_addr, mem_t& mem, simu_real sr) {
       (real_addr <= (uint64_t)mem.get_mem_end_addr())) {
     return (real_addr + sr.simu_r10 - sr.real_r10);
   }
-  // if real_addr not in mem, assume it is in pkt
-  if ((real_addr >= (uint64_t)mem.get_pkt_start_addr()) &&
-      (real_addr <= (uint64_t)mem.get_pkt_end_addr())) {
-    return (real_addr + sr.simu_r1 - sr.real_r1);
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt) {
+    // if real_addr not in mem, assume it is in pkt
+    if ((real_addr >= (uint64_t)mem.get_pkt_start_addr()) &&
+        (real_addr <= (uint64_t)mem.get_pkt_end_addr())) {
+      return (real_addr + sr.simu_r1 - sr.real_r1);
+    }
+  } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    if ((real_addr >= (uint64_t)mem.get_pkt_ptrs_start_addr()) &&
+        (real_addr <= (uint64_t)mem.get_pkt_ptrs_end_addr())) {
+      return (real_addr + sr.simu_r1 - sr.real_r1);
+    } else if ((real_addr >= (uint64_t)mem.get_pkt_start_addr()) &&
+               (real_addr <= (uint64_t)mem.get_pkt_end_addr())) {
+      return (real_addr + sr.simu_pkt - sr.real_pkt);
+    }
   }
 
   // else cannot convert real_addr to simu_addr, raise error
@@ -1067,18 +1146,26 @@ uint64_t get_simu_addr_by_real(uint64_t real_addr, mem_t& mem, simu_real sr) {
 }
 
 uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr) {
-  // real_addr may in mem or pkt
-  // assume real_addr in mem first
-  uint64_t real_addr = simu_addr + sr.real_r10 - sr.simu_r10;
-  if ((real_addr >= (uint64_t)mem.get_mem_start_addr()) &&
-      (real_addr <= (uint64_t)mem.get_mem_end_addr())) {
-    return real_addr;
+  if ((simu_addr >= mem.get_simu_mem_start_addr()) &&
+      (simu_addr <= mem.get_simu_mem_end_addr())) {
+    return (simu_addr + sr.real_r10 - sr.simu_r10);
   }
-  // if real_addr not in mem, assume it is in pkt
-  real_addr = simu_addr + sr.real_r1 - sr.simu_r1;
-  if ((real_addr >= (uint64_t)mem.get_pkt_start_addr()) &&
-      (real_addr <= (uint64_t)mem.get_pkt_end_addr())) {
-    return real_addr;
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt) {
+    if ((simu_addr >= mem.get_simu_pkt_start_addr()) &&
+        (simu_addr <= mem.get_simu_pkt_end_addr())) {
+      return (simu_addr + sr.real_r1 - sr.simu_r1);
+    }
+  } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    // assume addr is pkt_ptrs address
+    if ((simu_addr >= mem.get_simu_pkt_ptrs_start_addr()) &&
+        (simu_addr <= mem.get_simu_pkt_ptrs_end_addr())) {
+      return (simu_addr + sr.real_r1 - sr.simu_r1);
+    }
+    if ((simu_addr >= mem.get_simu_pkt_start_addr()) &&
+        (simu_addr <= mem.get_simu_pkt_end_addr())) {
+      return (simu_addr + sr.real_pkt - sr.simu_pkt);
+    }
   }
 
   // else cannot convert simu_addr to real_addr, raise error

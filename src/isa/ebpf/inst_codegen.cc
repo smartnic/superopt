@@ -1169,8 +1169,18 @@ void counterex_2_input_simu_r10(inout_t& input, z3::model& mdl, smt_var& sv) {
   input.input_simu_r10 = get_uint64_from_bv64(z3_stack_bottom, true); // r10: stack bottom
 }
 
+void counterex_2_input_simu_pkt_ptrs(inout_t& input, z3::model& mdl, smt_var& sv) {
+  if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
+    z3::expr z3_pkt_start = mdl.eval(sv.get_pkt_start_addr());
+    input.input_simu_pkt_ptrs[0] = (uint32_t)get_uint64_from_bv64(z3_pkt_start, true);
+    z3::expr z3_pkt_end = mdl.eval(sv.get_pkt_end_addr());
+    input.input_simu_pkt_ptrs[1] = (uint32_t)get_uint64_from_bv64(z3_pkt_end, true);
+  }
+}
+
 void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model& mdl, smt_var& sv) {
   counterex_2_input_simu_r10(input, mdl, sv);
+  counterex_2_input_simu_pkt_ptrs(input, mdl, sv);
   counterex_urt_2_input_mem(input, mdl, sv);
   for (int i = 0; i < mem_t::maps_number(); i++) {
     int mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_map, i);

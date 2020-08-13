@@ -780,9 +780,13 @@ void test6() {
                  inst(ADD64XY, 3, 4),
                  inst(STB, 3, 0, 2),
                 };
+  inst p12[2] = {inst(LDXW, 1, 1, 0),
+                 inst(STB, 1, 0, 1),
+                };
   validator vld(p1, 4);
   print_test_res(vld.is_equal_to(p1, 4, p1, 4) == 1, "1");
   print_test_res(vld.is_equal_to(p1, 4, p11, 8) == 1, "2");
+  print_test_res(vld.is_equal_to(p1, 4, p12, 2) == 0, "3");
 }
 
 int main() {

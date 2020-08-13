@@ -282,6 +282,7 @@ inst instructions33[4] = {inst(AND64XC, 1, 0x011),
 void test1() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::set_pkt_sz(512); // pkt sz: 512 bytes
   prog_state ps;
   ps.init();
@@ -427,20 +428,20 @@ void test1() {
 
   // r0 = L8(input), map0[0x11] = L8(input)
   input.reg = 0x1f;
-  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
+  input.input_simu_r10 = 1024; // set as a random value (> 512)
   expected.reg = 0x1f;
   expected.update_kv(0, "11", vector<uint8_t> {0x1f});
   // r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
   interpret(output, instructions21, 13, ps, input);
   input = output;
-  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
+  input.input_simu_r10 = 1024; // set as a random value (> 512)
   output.clear();
   // r0 = *(lookup &k m), where k = 0x11
   interpret(output, instructions23, 9, ps, input);
   print_test_res(output == expected, "interpret map input 1");
 
   input = output;
-  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
+  input.input_simu_r10 = 1024; // set as a random value (> 512)
   output.clear();
   // r0 = 0, no kv in map0
   expected.reg = 0;
@@ -448,13 +449,13 @@ void test1() {
   interpret(output, instructions22, 14, ps, input);
   // r0 = *(lookup &k m), where k = 0x11
   input = output;
-  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
+  input.input_simu_r10 = 1024; // set as a random value (> 512)
   output.clear();
   interpret(output, instructions23, 9, ps, input);
   print_test_res(output == expected, "interpret map input 2");
 
   input = output;
-  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
+  input.input_simu_r10 = 1024; // set as a random value (> 512)
   input.reg = 0x1f;
   output.clear();
   // r0 = L8(input), map0[0x11] = L8(input)
@@ -462,7 +463,7 @@ void test1() {
   expected.update_kv(0, "11", vector<uint8_t> {0x1f});
   interpret(output, instructions21, 13, ps, input);
   input = output;
-  input.input_simu_r10 = 0x22; // set as a random value (cannot be 0)
+  input.input_simu_r10 = 1024; // set as a random value (> 512)
   output.clear();
   interpret(output, instructions23, 9, ps, input);
   print_test_res(output == expected, "interpret map input 3");
@@ -584,6 +585,7 @@ void test2() {
 
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::set_pkt_sz(512); // pkt sz: 512 bytes
   inst insn = (NOP);
   int prog_id = 0, node_id = 0;
@@ -1093,12 +1095,77 @@ void test5() {
 #undef SMT_CHECK_MEM_SAFE
 }
 
+void test6() {
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+  mem_t::set_pkt_sz(4); // 4 bytes
+  prog_state ps;
+  ps.init();
+  inout_t input, output, expected;
+  input.init();
+  output.init();
+  expected.init();
+  input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
+  // check when pkt_sz is 2 bytes, which is smaller than the layout pkt sz 4
+  input.input_simu_pkt_ptrs[0] = (uint64_t)ps._mem.get_pkt_start_addr();
+  input.input_simu_pkt_ptrs[1] = input.input_simu_pkt_ptrs[0] + 1;
+  input.reg = (uint64_t)ps._mem.get_pkt_ptrs_start_addr();
+  cout << "Test 6: full interpretation check of PGM_INPUT_pkt_ptrs" << endl;
+  inst p1[3] = {inst(LDXW, 1, 1, 0), // r1 = pkt_start_addr
+                inst(LDXB, 3, 1, 0), // r3 = pkt[0]
+                inst(MOV64XY, 0, 3),
+               };
+  input.pkt[0] = 0x11;
+  input.pkt[1] = 0x22;
+  interpret(output, p1, 3, ps, input);
+  expected.pkt[0] = 0x11;
+  expected.pkt[1] = 0x22;
+  expected.reg = 0x11;
+  print_test_res(output == expected, "interpret program 1");
+
+  inst p2[6] = {inst(LDXW, 2, 1, 4), // r2 = pkt_end_addr
+                inst(LDXW, 1, 1, 0), // r1 = pkt_start_addr
+                inst(LDXB, 3, 1, 0), // r3 = pkt[0]
+                inst(LDXB, 4, 2, 0), // r4 = pkt[1]
+                inst(ADD64XY, 3, 4),
+                inst(MOV64XY, 0, 3),
+               };
+  input.pkt[0] = 0x11;
+  input.pkt[1] = 0x22;
+  interpret(output, p2, 6, ps, input);
+  expected.pkt[0] = 0x11;
+  expected.pkt[1] = 0x22;
+  expected.reg = 0x33;
+  print_test_res(output == expected, "interpret program 2");
+
+  inst p3[11] = {inst(LDXW, 2, 1, 4), // r2 = pkt_end_addr
+                 inst(LDXW, 1, 1, 0), // r1 = pkt_start_addr
+                 inst(MOV64XY, 3, 1),
+                 inst(ADD64XC, 3, 1),  // r3 = pkt_start_addr + 1
+                 inst(JEQXY, 2, 3, 2),
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                 inst(LDXB, 3, 1, 0), // r3 = pkt[0]
+                 inst(LDXB, 4, 2, 0), // r4 = pkt[1]
+                 inst(ADD64XY, 3, 4),
+                 inst(MOV64XY, 0, 3),
+                };
+  input.pkt[0] = 0x11;
+  input.pkt[1] = 0x22;
+  interpret(output, p3, 11, ps, input);
+  expected.pkt[0] = 0x11;
+  expected.pkt[1] = 0x22;
+  expected.reg = 0x33;
+  print_test_res(output == expected, "interpret program 3");
+}
+
 int main(int argc, char *argv[]) {
   test1();
   test2();
   test3();
   test4();
   test5();
+  test6();
 
   return 0;
 }

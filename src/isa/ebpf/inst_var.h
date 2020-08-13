@@ -76,6 +76,10 @@ class mem_t {
   uint8_t *_pkt = nullptr;
   vector<map_t> _maps;
   static mem_layout _layout;
+  uint64_t _simu_mem_s = 0;
+  uint64_t _simu_pkt_s = 0; // used when pgm input type is PGM_INPUT_pkt
+  uint64_t _simu_pkt_ptrs_s = 0; // used when pgm input type is PGM_INPUT_pkt_ptrs
+  uint32_t _pkt_ptrs[2] = {0, 0}; // 0: pkt_start_ptr, 1: pkt_end_ptr; these are simulated pkt addresses (32-bit)
   mem_t();
   ~mem_t();
   static void add_map(map_attr m_attr);
@@ -89,6 +93,7 @@ class mem_t {
   // 1. compute "_mem_size" and according to "_layout";
   // 2. allocate memory for "_mem", "_pkt"
   // 3. init _maps
+  // 4. init _pkt_ptrs
   void init_by_layout();
   static void set_map_attr(int map_id, map_attr m_attr);
   static unsigned int get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map);
@@ -101,6 +106,14 @@ class mem_t {
   uint8_t* get_mem_end_addr() const;
   uint8_t* get_pkt_start_addr() const;
   uint8_t* get_pkt_end_addr() const;
+  uint32_t* get_pkt_ptrs_start_addr();
+  uint32_t* get_pkt_ptrs_end_addr();
+  uint64_t get_simu_mem_start_addr();
+  uint64_t get_simu_mem_end_addr();
+  uint64_t get_simu_pkt_start_addr();
+  uint64_t get_simu_pkt_end_addr();
+  uint64_t get_simu_pkt_ptrs_start_addr();
+  uint64_t get_simu_pkt_ptrs_end_addr();
   mem_t& operator=(const mem_t &rhs);
   bool operator==(const mem_t &rhs);
   void cp_input_mem(const mem_t &rhs);
@@ -316,7 +329,9 @@ class prog_state: public prog_state_base {
 // BPF maps, register for input/output register
 class inout_t: public inout_t_base {
  public:
+  // uint64_t input_simu_r10, input_simu_pkt_ptrs[2];
   uint64_t input_simu_r10;
+  uint32_t input_simu_pkt_ptrs[2];
   int64_t reg;
   // kv map: k hex_string, v: vector<uint8_t>
   vector<unordered_map<string, vector<uint8_t>>> maps;
@@ -340,12 +355,20 @@ class inout_t: public inout_t_base {
 
 struct simu_real {
   uint64_t simu_r10, real_r10;
-  uint64_t simu_r1, real_r1; // if pkt_len != 0, input reg r1 contains the pkt start address
-  simu_real(uint64_t si_r10 = 0, uint64_t re_r10 = 0, uint64_t si_r1 = 0, uint64_t re_r1 = 0) {
+  uint64_t simu_r1, real_r1;
+  uint64_t simu_pkt, real_pkt; // used when pgm input type is PGM_INPUT_pkt_ptrs
+  simu_real(uint64_t si_r10 = 0, uint64_t re_r10 = 0, uint64_t si_r1 = 0, uint64_t re_r1 = 0,
+            uint64_t si_pkt = 0, uint64_t re_pkt = 0) {
+    set_vals(si_r10, re_r10, si_r1, re_r1, si_pkt, re_pkt);
+  }
+  void set_vals(uint64_t si_r10 = 0, uint64_t re_r10 = 0, uint64_t si_r1 = 0, uint64_t re_r1 = 0,
+                uint64_t si_pkt = 0, uint64_t re_pkt = 0) {
     simu_r10 = si_r10;
     real_r10 = re_r10;
     simu_r1 = si_r1;
     real_r1 = re_r1;
+    simu_pkt = si_pkt;
+    real_pkt = re_pkt;
   }
 };
 

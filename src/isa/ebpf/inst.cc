@@ -752,15 +752,26 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
 
   inst* insn = program;
   ps.clear();
-  // set real_r10 as frame pointer, the bottom of the stack
-  uint64_t real_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
-  uint64_t real_r1 = (uint64_t)ps._mem.get_pkt_start_addr();
   // register r10 is set by update_ps_by_input
   update_ps_by_input(ps, input);
+  // set real_r10 as frame pointer, the bottom of the stack
+  uint64_t real_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
   uint64_t simu_r10 = (uint64_t)ps._regs[10];
-  uint64_t simu_r1 = (uint64_t)ps._regs[1];
-  if (real_r1 == 0) real_r1 = simu_r1;
-  simu_real sr(simu_r10, real_r10, simu_r1, real_r1);
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  simu_real sr;
+  if (pgm_input_type != PGM_INPUT_pkt_ptrs) {
+    uint64_t real_r1 = (uint64_t)ps._mem.get_pkt_start_addr();
+    uint64_t simu_r1 = (uint64_t)ps._regs[1];
+    if (real_r1 == 0) real_r1 = simu_r1;
+    sr.set_vals(simu_r10, real_r10, simu_r1, real_r1);
+  } else { // PGM_INPUT_pkt_ptrs
+    // r1 is pkt_ptrs address
+    uint64_t real_r1 = (uint64_t)ps._mem.get_pkt_ptrs_start_addr();
+    uint64_t simu_r1 = (uint64_t)ps._regs[1];
+    uint64_t real_pkt = (uint64_t)ps._mem.get_pkt_start_addr();
+    uint64_t simu_pkt = (uint64_t)input.input_simu_pkt_ptrs[0];
+    sr.set_vals(simu_r10, real_r10, simu_r1, real_r1, simu_pkt, real_pkt);
+  }
   uint64_t real_addr = 0; // used as temporary variable in instruction execution
 
   static void *jumptable[NUM_INSTR] = {
