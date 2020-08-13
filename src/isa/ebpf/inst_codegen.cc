@@ -128,11 +128,12 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
     z3::expr is_valid = sv.update_is_valid();
     z3::expr cond = path_cond && info_list[i].path_cond;
     f = f && (is_valid == cond);
-    bool is_stack_or_pkt = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
-                           (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt));
-    if (is_stack_or_pkt) { // addr in the entry is offset
+    bool is_addr_off_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
+                             (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
+                             (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs));
+    if (is_addr_off_table) { // addr in the entry is offset
       z3::expr addr_off = off + info_list[i].off;
-      // cout << "is_stack_or_pkt  addr_off: " << addr_off.simplify() << endl;
+      // cout << "is_addr_off_table  addr_off: " << addr_off.simplify() << endl;
       sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr_off, in.extract(7, 0));
     } else {
       sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr + off, in.extract(7, 0));
@@ -190,9 +191,10 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
   cond = ptr_info.path_cond && sv.mem_var.get_block_path_cond(block) && cond;
   smt_wt& wt = sv.mem_var._mem_tables[table_id]._wt;
   z3::expr a = addr + off;
-  bool is_stack_or_pkt = (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
-                         (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt));
-  if (is_stack_or_pkt) {
+  bool is_addr_off_table = (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
+                           (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
+                           (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs));
+  if (is_addr_off_table) {
     a = ptr_info.off + off;
   }
   z3::expr f_found_in_wt_after_i = string_to_expr("false");
@@ -203,7 +205,7 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
     // cout << "is_pc_match: " << is_pc_match << endl;
     if (is_pc_match == INT_false) continue;
     z3::expr f_same = (a != NULL_ADDR_EXPR) && (a == wt.addr[i]) && wt.is_valid[i];
-    if (is_stack_or_pkt) f_same = (a == wt.addr[i]) && wt.is_valid[i];
+    if (is_addr_off_table) f_same = (a == wt.addr[i]) && wt.is_valid[i];
 
     f = f && z3::implies((!f_found_in_wt_after_i) && f_same,
                          out == wt.val[i]);
@@ -217,7 +219,7 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
   smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
   z3::expr not_found_in_wt = sv.update_is_valid();
   f = f && (not_found_in_wt == (!f_found_in_wt_after_i));
-  if (is_stack_or_pkt) f = f && z3::implies(not_found_in_wt, urt_element_constrain(a, out, urt));
+  if (is_addr_off_table) f = f && z3::implies(not_found_in_wt, urt_element_constrain(a, out, urt));
   else f = f && z3::implies(not_found_in_wt, urt_element_constrain_map_mem(a, out, urt));
   // add element in urt
   // An example that will cause a problem in equvialence check if just add (a, out) in urt

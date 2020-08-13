@@ -878,8 +878,8 @@ void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_
       mem_var.add_in_mem_table_urt(mem_table_id, root, Z3_true, to_expr((int64_t)i),
                                    pkt_start.extract(8 * i + 7, 8 * i));
     }
-    for (int i = 4; i < 8; i++) { // the last 4 bytes are the address of pkt end
-      mem_var.add_in_mem_table_urt(mem_table_id, root, Z3_true, to_expr((int64_t)i),
+    for (int i = 0; i < 4; i++) { // the last 4 bytes are the address of pkt end
+      mem_var.add_in_mem_table_urt(mem_table_id, root, Z3_true, to_expr((int64_t)(i + 4)),
                                    pkt_end.extract(8 * i + 7, 8 * i));
     }
   }

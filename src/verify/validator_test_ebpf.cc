@@ -787,6 +787,58 @@ void test6() {
   print_test_res(vld.is_equal_to(p1, 4, p1, 4) == 1, "1");
   print_test_res(vld.is_equal_to(p1, 4, p11, 8) == 1, "2");
   print_test_res(vld.is_equal_to(p1, 4, p12, 2) == 0, "3");
+
+  inst p2[11] = {inst(LDXW, 2, 1, 4), // r2 = pkt_end_addr
+                 inst(LDXW, 1, 1, 0), // r1 = pkt_start_addr
+                 inst(MOV64XY, 3, 1),
+                 inst(ADD64XC, 3, 1),  // r3 = pkt_start_addr + 1
+                 inst(JGTXY, 2, 3, 2),
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                 inst(LDXB, 3, 1, 0), // r3 = pkt[0]
+                 inst(LDXB, 4, 2, 0), // r4 = pkt[1]
+                 inst(ADD64XY, 3, 4),
+                 inst(MOV64XY, 0, 3),
+                };
+  inst p21[11] = {inst(LDXW, 2, 1, 4), // r2 = pkt_end_addr
+                  inst(LDXW, 1, 1, 0), // r1 = pkt_start_addr
+                  inst(MOV64XY, 3, 1),
+                  inst(ADD64XC, 3, 1),  // r3 = pkt_start_addr + 1
+                  inst(JGTXY, 2, 3, 2),
+                  inst(MOV64XC, 0, 1),
+                  inst(EXIT),
+                  inst(LDXB, 3, 1, 0), // r3 = pkt[0]
+                  inst(LDXB, 4, 2, 0), // r4 = pkt[1]
+                  inst(ADD64XY, 3, 4),
+                  inst(MOV64XY, 0, 3),
+                 };
+  vld.set_orig(p2, 11);
+  print_test_res(vld.is_equal_to(p2, 11, p2, 11) == 1, "2.1");
+  print_test_res(vld.is_equal_to(p2, 11, p21, 11) == 0, "2.2");
+
+  inst p3[9] = {inst(LDXW, 2, 1, 4),
+                inst(LDXW, 1, 1, 0),
+                inst(MOV64XY, 3, 1),
+                inst(ADD64XC, 3, 14),
+                inst(JGTXY, 3, 2, 2),
+                inst(MOV64XC, 0, 0),
+                inst(EXIT),
+                inst(MOV64XC, 0, 1),
+                inst(EXIT),
+               };
+  inst p31[9] = {inst(LDXW, 2, 1, 4),
+                 inst(LDXW, 1, 1, 0),
+                 inst(MOV64XY, 3, 1),
+                 inst(ADD64XC, 3, 14),
+                 inst(JGTXY, 3, 2, 2),
+                 inst(MOV64XC, 0, 2),
+                 inst(EXIT),
+                 inst(MOV64XC, 0, 1),
+                 inst(EXIT),
+                };
+  vld.set_orig(p3, 9);
+  print_test_res(vld.is_equal_to(p3, 9, p3, 9) == 1, "3.1");
+  print_test_res(vld.is_equal_to(p3, 9, p31, 9) == 0, "3.2");
 }
 
 int main() {
