@@ -575,7 +575,7 @@ class inst: public inst_base {
   int32_t _src_reg;
   int32_t _imm;
   int16_t _off;
-  inst(int opcode, int32_t src_reg, int32_t dst_reg, int32_t off, int16_t imm) {
+  inst(int opcode, int32_t src_reg, int32_t dst_reg, int16_t off, int32_t imm) {
     _opcode  = opcode;
     _dst_reg = dst_reg;
     _src_reg = src_reg;
