@@ -186,7 +186,13 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (num_successful_ex == ex_set_size) {
     synth->print();
     auto t1 = NOW;
-    is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+    try {
+      is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+    } catch (const string err_msg) {
+      // illegal program
+      synth->set_error_cost(ERROR_COST_MAX);
+      return ERROR_COST_MAX;
+    }
     auto t2 = NOW;
     auto dur = DUR(t1, t2);
     // cout << dur << endl;
