@@ -445,8 +445,8 @@ static const int opcode_type[NUM_INSTR] = {
 // static constexpr int32_t MIN_IMM = 0x80000000;
 static constexpr int32_t MAX_IMM = 10;
 static constexpr int32_t MIN_IMM = -10;
-static constexpr int32_t MAX_OFF = 0x7fff;
-static constexpr int32_t MIN_OFF = 0xffff8000;
+static constexpr int16_t MAX_OFF = 10;
+static constexpr int16_t MIN_OFF = -10;
 static constexpr int32_t MAX_IMM_SH32 = 31;
 static constexpr int32_t MAX_IMM_SH64 = 63;
 // 3 types of OP_IMM_ENDIAN: 16, 32, 64
@@ -560,6 +560,7 @@ static const int optable[NUM_INSTR] = {
 class inst: public inst_base {
  private:
   void set_imm(int op_value);
+  void set_off(int op_value);
   int32_t get_max_imm() const;
   int32_t get_min_imm() const;
   int16_t get_max_off(int inst_index) const;
@@ -571,6 +572,8 @@ class inst: public inst_base {
   // union([MIN_IMM, MAX_IMM], _sample_neg_imms, _sample_pos_imms)
   static vector<int32_t> _sample_neg_imms; // store negative numbers
   static vector<int32_t> _sample_pos_imms; // store positive numbers
+  static vector<int32_t> _sample_neg_offs; // store negative offsets
+  static vector<int32_t> _sample_pos_offs; // store positive offsets
   int32_t _dst_reg;
   int32_t _src_reg;
   int32_t _imm;
@@ -594,6 +597,7 @@ class inst: public inst_base {
   vector<int> get_canonical_reg_list() const;
   static vector<int> get_isa_canonical_reg_list();
   static void add_sample_imm(const vector<int32_t>& nums);
+  static void add_sample_off(const vector<int16_t>& nums);
   int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
   int32_t get_min_operand_val(int op_index, int inst_index = 0) const;
   int get_jmp_dis() const;

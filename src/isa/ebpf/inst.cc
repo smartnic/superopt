@@ -7,6 +7,8 @@ using namespace std;
 
 vector<int32_t> inst::_sample_neg_imms;
 vector<int32_t> inst::_sample_pos_imms;
+vector<int32_t> inst::_sample_neg_offs;
+vector<int32_t> inst::_sample_pos_offs;
 
 inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
   int32_t arg[3] = {arg1, arg2, arg3};
@@ -81,6 +83,26 @@ void inst::set_imm(int op_value) {
   }
 }
 
+void inst::set_off(int op_value) {
+  int op_type = get_opcode_type();
+  if ((op_type == OP_UNCOND_JMP) || (op_type == OP_COND_JMP)) {
+    _off = op_value;
+    return;
+  }
+  // deal with the case: OP_ST and OP_LD
+  if (op_value < MIN_OFF) {
+    int idx = op_value - MIN_OFF + _sample_neg_offs.size();
+    assert(idx < _sample_neg_offs.size());
+    _imm = _sample_neg_offs[idx];
+  } else if (op_value > MAX_OFF) {
+    int idx = op_value - MAX_OFF - 1;
+    assert(idx < _sample_pos_offs.size());
+    _imm = _sample_pos_offs[idx];
+  } else {
+    _off = op_value;
+  }
+}
+
 int32_t inst::get_max_imm() const {
   switch (_opcode) {
     case ADD64XC:
@@ -121,9 +143,9 @@ int16_t inst::get_max_off(int inst_index) const {
   int op_type = get_opcode_type();
   switch (op_type) {
     case OP_LD:
-    case OP_ST: return 10; // assume only stack
+    case OP_ST: return MAX_OFF + _sample_pos_offs.size();
     case OP_UNCOND_JMP:
-    case OP_COND_JMP: return min(MAX_OFF, inst::max_prog_len - inst_index - 2);
+    case OP_COND_JMP: return inst::max_prog_len - inst_index - 2;
     default: cout << "Error: no off in instruction: ";
       print();
       return 0;
@@ -170,7 +192,7 @@ int16_t inst::get_min_off() const {
   int op_type = get_opcode_type();
   switch (op_type) {
     case OP_LD:
-    case OP_ST: return -10; // assume only stack
+    case OP_ST: return MIN_OFF - _sample_neg_offs.size();
     case OP_UNCOND_JMP:
     case OP_COND_JMP: return 0; // assume only jump forward
     default: cout << "Error: no off in instruction: ";
@@ -185,7 +207,7 @@ void inst::set_operand(int op_index, op_t op_value) {
   switch (operand_type) {
     case OP_DST_REG: _dst_reg = op_value; return;
     case OP_SRC_REG: _src_reg = op_value; return;
-    case OP_OFF: _off = op_value; return;
+    case OP_OFF: set_off(op_value); return;
     case OP_IMM: set_imm(op_value); return;
     default: cout << "Error: set_operand cannot find operand_type for instruction: ";
       print();
@@ -319,6 +341,17 @@ void inst::add_sample_imm(const vector<int32_t>& nums) {
       sorted_vec_insert(num, _sample_neg_imms);
     } else if (num > MAX_IMM) {
       sorted_vec_insert(num, _sample_pos_imms);
+    }
+  }
+}
+
+void inst::add_sample_off(const vector<int16_t>& nums) {
+  for (int i = 0; i < nums.size(); i++) {
+    int16_t num = nums[i];
+    if (num < MIN_OFF) {
+      sorted_vec_insert(num, _sample_neg_offs);
+    } else if (num > MAX_OFF) {
+      sorted_vec_insert(num, _sample_pos_offs);
     }
   }
 }
