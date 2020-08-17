@@ -501,6 +501,34 @@ inst bm16[N16] = {inst(97, 1, 1, 12, 0),
                   inst(191, 1, 0, 0, 0),
                   inst(149, 0, 0, 0, 0),
                  };
+// xdp_monitor_kern, xdp_cpumap_enqueue
+inst bm17[N17] = {inst(191, 1, 6, 0, 0),
+                  inst(183, 0, 0, 0, 1),
+                  inst(97, 6, 1, 28, 0),
+                  inst(99, 1, 10, -4, 0),
+                  inst(37, 0, 1, 20, 63),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -4),
+                  inst(24, 0, 1, 0, 0),
+                  inst(),
+                  inst(133, 0, 0, 0, 1),
+                  inst(191, 0, 1, 0, 0),
+                  inst(183, 0, 0, 0, 0),
+                  inst(21, 0, 1, 12, 0),
+                  inst(97, 6, 2, 24, 0),
+                  inst(121, 1, 3, 0, 0),
+                  inst(15, 2, 3, 0, 0),
+                  inst(123, 3, 1, 0, 0),
+                  inst(97, 6, 3, 20, 0),
+                  inst(121, 1, 4, 8, 0),
+                  inst(15, 3, 4, 0, 0),
+                  inst(123, 4, 1, 8, 0),
+                  inst(21, 0, 2, 3, 0),
+                  inst(121, 1, 2, 16, 0),
+                  inst(7, 0, 2, 0, 1),
+                  inst(123, 2, 1, 16, 0),
+                  inst(149, 0, 0, 0, 0),
+                 };
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
@@ -616,6 +644,12 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::set_pkt_sz(32);
       mem_t::add_map(map_attr(32, 64, N16));
       *bm = bm16;
+    case 17:
+      inst::max_prog_len = N17;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(40);
+      mem_t::add_map(map_attr(32, 256, N17));
+      *bm = bm17;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
       return;
