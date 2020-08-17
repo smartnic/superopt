@@ -397,6 +397,44 @@ inst bm12[N12] = {inst(97, 1, 2, 4, 0),
                   inst(183, 0, 0, 0, 1),
                   inst(149, 0, 0, 0, 0),
                  };
+// xdp_monitor_kern, section: tracepoint/xdp/xdp_devmap_xmit
+inst bm13[N13] = {inst(191, 1, 6, 0, 0),
+                  inst(183, 0, 7, 0, 0),
+                  inst(99, 7, 10, -4, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -4),
+                  inst(24, 0, 1, 0, 0),
+                  inst(),
+                  inst(133, 0, 0, 0, 1),
+                  inst(21, 0, 0, 25, 0),
+                  inst(97, 6, 1, 24, 0),
+                  inst(103, 0, 1, 0, 32),
+                  inst(199, 0, 1, 0, 32),
+                  inst(121, 0, 2, 0, 0),
+                  inst(15, 1, 2, 0, 0),
+                  inst(123, 2, 0, 0, 0),
+                  inst(121, 0, 2, 16, 0),
+                  inst(7, 0, 2, 0, 1),
+                  inst(97, 6, 1, 20, 0),
+                  inst(123, 2, 0, 16, 0),
+                  inst(103, 0, 1, 0, 32),
+                  inst(199, 0, 1, 0, 32),
+                  inst(121, 0, 2, 8, 0),
+                  inst(15, 1, 2, 0, 0),
+                  inst(123, 2, 0, 8, 0),
+                  inst(97, 6, 2, 36, 0),
+                  inst(21, 0, 2, 3, 0),
+                  inst(121, 0, 2, 24, 0),
+                  inst(7, 0, 2, 0, 1),
+                  inst(123, 2, 0, 24, 0),
+                  inst(183, 0, 7, 0, 1),
+                  inst(101, 0, 1, 3, -1),
+                  inst(121, 0, 1, 24, 0),
+                  inst(7, 0, 1, 0, 1),
+                  inst(123, 1, 0, 24, 0),
+                  inst(191, 7, 0, 0, 0),
+                  inst(149, 0, 0, 0, 0),
+                 };
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
@@ -407,91 +445,104 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       bm_optis_orig.push_back(bm_opti01);
       bm_optis_orig.push_back(bm_opti02);
       bm_optis_orig.push_back(bm_opti03);
-      return;
+      break;
     case 1:
       inst::max_prog_len = N1;
-      inst::add_sample_imm(vector<int32_t> {0xff0000});
       mem_t::set_pgm_input_type(PGM_INPUT_constant);
       *bm = bm1;
       bm_optis_orig.push_back(bm_opti10);
-      return;
+      break;
     case 2:
       inst::max_prog_len = N2;
       mem_t::set_pgm_input_type(PGM_INPUT_constant);
       mem_t::add_map(map_attr(8, 8, N2));
       *bm = bm2;
       bm_optis_orig.push_back(bm_opti20);
-      return;
+      break;
     case 3:
       inst::max_prog_len = N3;
-      inst::add_sample_imm(vector<int32_t> {264});
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(128);
       mem_t::add_map(map_attr(128, 64, N3)); // 8 items
       mem_t::add_map(map_attr(96, 96, N3));  // 12 items
       mem_t::add_map(map_attr(64, 128, N3)); // 16 items  => 36 items
       *bm = bm3;
-      return;
+      break;
     case 4:
       inst::max_prog_len = N4;
       mem_t::set_pgm_input_type(PGM_INPUT_constant);
       *bm = bm4;
       bm_optis_orig.push_back(bm_opti40);
-      return;
+      break;
     case 5:
       inst::max_prog_len = N5;
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(4);
       *bm = bm5;
       bm_optis_orig.push_back(bm_opti50);
-      return;
+      break;
     case 6:
       inst::max_prog_len = N6;
       mem_t::set_pgm_input_type(PGM_INPUT_constant);
       *bm = bm6;
       bm_optis_orig.push_back(bm_opti60);
-      return;
+      break;
     case 7:
       inst::max_prog_len = N7;
       mem_t::set_pgm_input_type(PGM_INPUT_constant);
       *bm = bm7;
       bm_optis_orig.push_back(bm_opti70);
-      return;
+      break;
     case 8:
       inst::max_prog_len = N8;
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(160);
       mem_t::add_map(map_attr(64, 32, N8));
       *bm = bm8;
-      return;
+      break;
     case 9:
       inst::max_prog_len = N9;
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(4);
       *bm = bm9;
-      return;
+      break;
     case 10:
       inst::max_prog_len = N10;
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(16);
       *bm = bm10;
-      return;
+      break;
     case 11:
       inst::max_prog_len = N11;
       mem_t::set_pgm_input_type(PGM_INPUT_constant);
       mem_t::add_map(map_attr(32, 32, N11));
       *bm = bm11;
-      return;
+      break;
     case 12:
       inst::max_prog_len = N12;
-      inst::add_sample_imm(vector<int32_t> {14, 43144, 129, 18, 65535, 56710, 20, 40});
       mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
       mem_t::set_pkt_sz(256);
       mem_t::add_map(map_attr(32, 32, N12));
       *bm = bm12;
-      return;
+      break;
+    case 13:
+      inst::max_prog_len = N13;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(64);
+      mem_t::add_map(map_attr(32, 256, N13));
+      *bm = bm13;
+      break;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
       return;
   }
+  // init sample immediate numbers and offsets
+  vector<int32_t> imms;
+  vector<int16_t> offs;
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    imms.push_back((*bm)[i]._imm);
+    offs.push_back((*bm)[i]._off);
+  }
+  inst::add_sample_imm(imms);
+  inst::add_sample_off(offs);
 }

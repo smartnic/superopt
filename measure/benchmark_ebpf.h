@@ -31,6 +31,7 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id);
 #define N10 12
 #define N11 24
 #define N12 61
+#define N13 36
 
 extern inst bm0[N0];
 extern inst bm1[N1];
@@ -45,3 +46,4 @@ extern inst bm9[N9];
 extern inst bm10[N10];
 extern inst bm11[N11];
 extern inst bm12[N12];
+extern inst bm13[N13];
