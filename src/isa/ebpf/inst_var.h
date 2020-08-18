@@ -272,7 +272,6 @@ class smt_var: public smt_var_base {
   unordered_map<unsigned int, vector<map_id_pc>> expr_map_id;
  public:
   smt_mem mem_var;
-  dag pgm_dag;
   smt_var();
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
   // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs

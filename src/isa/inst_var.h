@@ -28,6 +28,25 @@ z3::expr to_expr(uint64_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(int32_t x, unsigned sz = NUM_REG_BITS);
 z3::expr to_expr(string s, unsigned sz);
 
+class dag { // directed acyclic graph
+ private:
+  bool is_path_a2b(unsigned int a, unsigned int b);
+  bool is_path_a2b_without_c(unsigned int a, unsigned int b, unsigned int c);
+ public:
+  unsigned int root;
+  vector<vector<unsigned int>> out_edges_list; // outgoing edges, list index: node id
+  dag(unsigned int n_nodes = 1, unsigned int root_node = 0) {init(n_nodes, root_node);}
+  void init(unsigned int n_nodes, unsigned int root_node) {
+    out_edges_list.resize(n_nodes);
+    root = root_node;
+  }
+  void add_edge_a2b(unsigned int a, unsigned int b) {
+    out_edges_list[a].push_back(b);
+  }
+  int is_b_on_root2a_path(unsigned int a, unsigned int b);
+  friend ostream& operator<<(ostream& out, const dag& d);
+};
+
 // SMT Variable format
 // register: r_[prog_id]_[node_id]_[reg_id]_[version_id]
 class smt_var_base {
@@ -39,19 +58,22 @@ class smt_var_base {
   vector<unsigned int> reg_cur_id;
   vector<z3::expr> reg_var;
  public:
+  dag pgm_dag;
   smt_var_base();
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
   // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs
   smt_var_base(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
   ~smt_var_base();
-  void set_new_node_id(unsigned int node_id);
+  void set_new_node_id(unsigned int node_id, const vector<unsigned int>& nodes_in,
+                       const vector<z3::expr>& node_in_pc_list,
+                       const vector<vector<z3::expr>>& nodes_in_regs);
   z3::expr update_path_cond();
   // inital value for [versionId] is 0, and increases when updated
   z3::expr update_reg_var(unsigned int reg_id);
   z3::expr get_cur_reg_var(unsigned int reg_id);
   z3::expr get_init_reg_var(unsigned int reg_id);
   void init() {}
-  void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs);
+  void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks = 1);
   void clear();
 };
 
@@ -70,25 +92,6 @@ class inout_t_base {
   void init() {RAISE_EXCEPTION("inout_t::init()");}
   bool operator==(const inout_t_base &rhs) const {RAISE_EXCEPTION("inout_t::operator==");}
   friend ostream& operator<<(ostream& out, const inout_t_base& x) {RAISE_EXCEPTION("inout_t::operator<<");}
-};
-
-class dag { // directed acyclic graph
- private:
-  bool is_path_a2b(unsigned int a, unsigned int b);
-  bool is_path_a2b_without_c(unsigned int a, unsigned int b, unsigned int c);
- public:
-  unsigned int root;
-  vector<vector<unsigned int>> out_edges_list; // outgoing edges, list index: node id
-  dag(unsigned int n_nodes = 1, unsigned int root_node = 0) {init(n_nodes, root_node);}
-  void init(unsigned int n_nodes, unsigned int root_node) {
-    out_edges_list.resize(n_nodes);
-    root = root_node;
-  }
-  void add_edge_a2b(unsigned int a, unsigned int b) {
-    out_edges_list[a].push_back(b);
-  }
-  int is_b_on_root2a_path(unsigned int a, unsigned int b);
-  friend ostream& operator<<(ostream& out, const dag& d);
 };
 
 // exposed APIs

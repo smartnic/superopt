@@ -146,7 +146,7 @@ void inst::set_as_nop_inst() {
 #define NEWDST sv.update_reg_var(DSTREG(*this))
 #define IMM2 to_expr(IMM2VAL(*this))
 
-z3::expr inst::smt_inst(smt_var& sv, z3::expr cond) const {
+z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
   z3::expr curDst = string_to_expr("false");
   z3::expr curSrc = string_to_expr("false");
   z3::expr newDst = string_to_expr("false");

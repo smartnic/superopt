@@ -152,7 +152,7 @@ class inst: public inst_base {
   int get_insn_num_regs() const {return insn_num_regs[_opcode];}
   int get_opcode_type() const {return opcode_type[_opcode];}
   // smt
-  z3::expr smt_inst(smt_var& sv, z3::expr cond = Z3_true) const;
+  z3::expr smt_inst(smt_var& sv, unsigned int block = 0) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;
   static z3::expr smt_set_pre(z3::expr input, smt_var& sv);
 };

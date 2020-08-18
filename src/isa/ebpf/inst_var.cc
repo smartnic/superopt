@@ -791,7 +791,7 @@ void smt_var::set_new_node_id(unsigned int node_id, const vector<unsigned int>& 
                               const vector<vector<z3::expr>>& nodes_in_regs) {
   // cout << "set_new_node_id block:" << node_id << endl;
   // set the register names first, use names later
-  smt_var_base::set_new_node_id(node_id);
+  smt_var_base::set_new_node_id(node_id, nodes_in, node_in_pc_list, nodes_in_regs);
   // update path condition of this block
   z3::expr path_cond = Z3_false;
   for (int i = 0; i < node_in_pc_list.size(); i++) {
