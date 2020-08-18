@@ -69,7 +69,8 @@ int validator::is_smt_valid(expr& smt, model& mdl) {
 // todo: move pre constrain setting as a call from class inst
 void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs,
                         unsigned int input_reg) {
-  smt_var sv(prog_id, 0, num_regs);
+  smt_var sv;
+  sv.init(prog_id, 0, num_regs);
   expr input = string_to_expr("input");
   // TODO: set input limit, need to be generalized
   expr p = (input >= -1024) && (input <= 1024);
@@ -132,7 +133,6 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   _store_post = post;
   _store_f = smt;
   model mdl(smt_c);
-
   auto t1 = NOW;
   int is_equal = is_smt_valid(smt, mdl);
   auto t2 = NOW;

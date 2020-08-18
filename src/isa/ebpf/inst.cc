@@ -668,11 +668,7 @@ z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
   z3::expr f = string_to_expr("true");
   f = (sv.get_cur_reg_var(1) == input) &&
       (sv.get_cur_reg_var(10) == sv.get_stack_bottom_addr()) &&
-      sv.mem_layout_constrain() &&
-      (sv.get_cur_reg_var(0) == 0);
-  for (size_t i = 2; i < 10; i++) {
-    f = f && (sv.get_cur_reg_var(i) == 0);
-  }
+      sv.mem_layout_constrain();
   // add the relationship of r1 and address according to the program inpu type
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt) {

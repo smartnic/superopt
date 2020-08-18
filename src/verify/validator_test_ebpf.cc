@@ -173,25 +173,27 @@ void test2() {
   print_test_res(vld.is_equal_to(p3, 5, p4, 4), "p3 == p4");
 
   // test no jmp
-  inst p5[8] = {inst(STXB, 10, -1, 1),
+  inst p5[9] = {inst(STXB, 10, -1, 1),
                 inst(JEQXY, 1, 2, 2), // jmp case 1, r1 == r2
                 inst(STXB, 10, -1, 2),
                 inst(JEQXY, 1, 3, 2), // jmp case 2, r1 == r3
                 inst(STXB, 10, -1, 3),
                 inst(JEQXY, 1, 4, 0), // jmp case 3, r1 == r4
                 inst(LDXB, 0, 10, -1),
+                inst(MOV64XC, 0, 0),
                 inst(EXIT),
                };
-  inst p6[7] = {inst(STXB, 10, -1, 1),
+  inst p6[8] = {inst(STXB, 10, -1, 1),
                 inst(JEQXY, 1, 2, 2), // jmp case 1, r1 == r2
                 inst(STXB, 10, -1, 2),
                 inst(JEQXY, 1, 3, 1), // jmp case 2, r1 == r3
                 inst(STXB, 10, -1, 3),
                 inst(LDXB, 0, 10, -1),
+                inst(MOV64XC, 0, 0),
                 inst(EXIT),
                };
-  vld.set_orig(p5, 8);
-  print_test_res(vld.is_equal_to(p5, 8, p6, 7), "p5 == p6");
+  vld.set_orig(p5, 9);
+  print_test_res(vld.is_equal_to(p5, 9, p6, 8), "p5 == p6");
 
   // test concrete execution of multiple memory tables
   // different addrs from different path conditions
@@ -396,7 +398,9 @@ void test3() {
   print_test_res(vld.is_equal_to(p61, 16, p61, 16) == 1, "map helper function 6.3");
   print_test_res(vld.is_equal_to(p61, 16, p6, 12) == 1, "map helper function 6.4");
 
-  inst p7[19] = {inst(STB, 10, -1, 1), // *(r10-1) = 1
+  inst p7[21] = {inst(MOV64XC, 0, 0),
+                 inst(MOV64XC, 9, 0),
+                 inst(STB, 10, -1, 1), // *(r10-1) = 1
                  inst(STB, 10, -2, 2), // *(r10-2) = 2
                  inst(MOV64XY, 2, 10), // r2 = r10-1
                  inst(ADD64XC, 2, -1),
@@ -416,7 +420,9 @@ void test3() {
                  inst(LDXB, 0, 0, 0),
                  inst(EXIT),
                 };
-  inst p71[16] = {inst(STB, 10, -1, 1), // *(r10-1) = 1
+  inst p71[18] = {inst(MOV64XC, 0, 0),
+                  inst(MOV64XC, 9, 0),
+                  inst(STB, 10, -1, 1), // *(r10-1) = 1
                   inst(STB, 10, -2, 2), // *(r10-2) = 2
                   inst(MOV64XY, 2, 10), // r2 = r10-1
                   inst(ADD64XC, 2, -1),
@@ -433,9 +439,9 @@ void test3() {
                   inst(MOV64XC, 0, 2),
                   inst(EXIT),
                  };
-  vld.set_orig(p7, 19);
-  print_test_res(vld.is_equal_to(p7, 19, p7, 19) == 1, "map helper function 7.1");
-  print_test_res(vld.is_equal_to(p7, 19, p71, 16) == 1, "map helper function 7.2");
+  vld.set_orig(p7, 21);
+  print_test_res(vld.is_equal_to(p7, 21, p7, 21) == 1, "map helper function 7.1");
+  print_test_res(vld.is_equal_to(p7, 20, p71, 18) == 1, "map helper function 7.2");
 
   inst p8[16] = {inst(STB, 10, -2, 0),
                  inst(MOV64XC, 1, k1), // *addr_k = 0x11
@@ -729,36 +735,40 @@ void test5() { // test pkt
   vld.set_orig(p4, 6);
   print_test_res(vld.is_equal_to(p4, 6, p4, 6) == 1, "7");
 
-  inst p5[9] = {inst(STB, 10, -1, 1),
+  inst p5[10] = {inst(MOV64XC, 0, 0),
+                 inst(STB, 10, -1, 1),
+                 inst(STB, 1, 1, 2),
+                 inst(MOV64XY, 2, 10),
+                 inst(ADD64XC, 2, -1),
+                 inst(JGTXY, 10, 0, 2),
+                 inst(MOV64XY, 2, 1),
+                 inst(ADD64XC, 2, 1),
+                 inst(LDXB, 0, 2, 0),
+                 inst(EXIT),
+                };
+  inst p6[6] = {inst(MOV64XC, 0, 0),
                 inst(STB, 1, 1, 2),
-                inst(MOV64XY, 2, 10),
-                inst(ADD64XC, 2, -1),
-                inst(JGTXY, 10, 0, 2),
-                inst(MOV64XY, 2, 1),
-                inst(ADD64XC, 2, 1),
-                inst(LDXB, 0, 2, 0),
-                inst(EXIT),
-               };
-  inst p6[5] = {inst(STB, 1, 1, 2),
                 inst(MOV64XC, 0, 1),
                 inst(JGTXY, 10, 0, 1),
                 inst(MOV64XC, 1, 2),
                 inst(EXIT),
                };
-  vld.set_orig(p5, 9);
-  print_test_res(vld.is_equal_to(p5, 9, p5, 9) == 1, "8");
-  print_test_res(vld.is_equal_to(p5, 9, p6, 5) == 1, "9");
+  vld.set_orig(p5, 10);
+  print_test_res(vld.is_equal_to(p5, 10, p5, 10) == 1, "8");
+  print_test_res(vld.is_equal_to(p5, 10, p6, 6) == 1, "9");
 
   // test address track of addxy
-  inst p7[3] = {inst(ADD64XC, 1, 1),
+  inst p7[4] = {inst(MOV64XC, 0, 0),
+                inst(ADD64XC, 1, 1),
                 inst(STB, 1, 0, 0xff),
                 inst(EXIT),
                };
-  inst p8[2] = {inst(STB, 1, 1, 0xff),
+  inst p8[3] = {inst(MOV64XC, 0, 0),
+                inst(STB, 1, 1, 0xff),
                 inst(EXIT),
                };
   vld.set_orig(p7, 3);
-  print_test_res(vld.is_equal_to(p7, 3, p8, 2) == 1, "9");
+  print_test_res(vld.is_equal_to(p7, 4, p8, 3) == 1, "9");
 }
 
 void test6() {
@@ -766,12 +776,14 @@ void test6() {
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
   mem_t::set_pkt_sz(16);
-  inst p1[4] = {inst(LDXW, 2, 1, 4),
+  inst p1[5] = {inst(MOV64XC, 0, 0),
+                inst(LDXW, 2, 1, 4),
                 inst(LDXW, 1, 1, 0),
                 inst(STB, 1, 0, 1),
                 inst(STB, 2, 0, 2),
                };
-  inst p11[8] = {inst(LDXW, 2, 1, 4),
+  inst p11[9] = {inst(MOV64XC, 0, 0),
+                 inst(LDXW, 2, 1, 4),
                  inst(LDXW, 1, 1, 0),
                  inst(STB, 1, 0, 1),
                  inst(MOV64XY, 3, 2),
@@ -780,13 +792,14 @@ void test6() {
                  inst(ADD64XY, 3, 4),
                  inst(STB, 3, 0, 2),
                 };
-  inst p12[2] = {inst(LDXW, 1, 1, 0),
+  inst p12[3] = {inst(MOV64XC, 0, 0),
+                 inst(LDXW, 1, 1, 0),
                  inst(STB, 1, 0, 1),
                 };
-  validator vld(p1, 4);
-  print_test_res(vld.is_equal_to(p1, 4, p1, 4) == 1, "1");
-  print_test_res(vld.is_equal_to(p1, 4, p11, 8) == 1, "2");
-  print_test_res(vld.is_equal_to(p1, 4, p12, 2) == 0, "3");
+  validator vld(p1, 5);
+  print_test_res(vld.is_equal_to(p1, 5, p1, 5) == 1, "1");
+  print_test_res(vld.is_equal_to(p1, 5, p11, 9) == 1, "2");
+  print_test_res(vld.is_equal_to(p1, 5, p12, 3) == 0, "3");
 
   inst p2[11] = {inst(LDXW, 2, 1, 4), // r2 = pkt_end_addr
                  inst(LDXW, 1, 1, 0), // r1 = pkt_start_addr
