@@ -530,6 +530,89 @@ inst bm17[N17] = {inst(191, 1, 6, 0, 0),
                   inst(123, 2, 1, 16, 0),
                   inst(149, 0, 0, 0, 0),
                  };
+// syscall_tp_kern, section: tracepoint/syscalls/sys_enter_open
+inst bm18[N18] = {inst(183, 0, 1, 0, 0),
+                  inst(99, 1, 10, -4, 0),
+                  inst(183, 0, 1, 0, 1),
+                  inst(99, 1, 10, -8, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -4),
+                  inst(24, 0, 1, 0, 0),
+                  inst(),
+                  inst(133, 0, 0, 0, 1),
+                  inst(21, 0, 0, 4, 0),
+                  inst(97, 0, 1, 0, 0),
+                  inst(7, 0, 1, 0, 1),
+                  inst(99, 1, 0, 0, 0),
+                  inst(5, 0, 0, 8, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -4),
+                  inst(191, 10, 3, 0, 0),
+                  inst(7, 0, 3, 0, -8),
+                  inst(24, 0, 1, 0, 0),
+                  inst(),
+                  inst(183, 0, 4, 0, 1),
+                  inst(133, 0, 0, 0, 2),
+                  inst(183, 0, 0, 0, 0),
+                  inst(149, 0, 0, 0, 0),
+                 };
+// lwt_len_hist_kern
+inst bm19[N19] = {inst(183, 0, 2, 0, 1),
+                  inst(123, 2, 10, -16, 0),
+                  inst(97, 1, 1, 0, 0),
+                  inst(183, 0, 4, 0, 1),
+                  inst(37, 0, 1, 1, 65535),
+                  inst(183, 0, 4, 0, 0),
+                  inst(103, 0, 4, 0, 4),
+                  inst(127, 4, 1, 0, 0),
+                  inst(103, 0, 1, 0, 32),
+                  inst(119, 0, 1, 0, 32),
+                  inst(183, 0, 3, 0, 1),
+                  inst(37, 0, 1, 1, 255),
+                  inst(183, 0, 3, 0, 0),
+                  inst(103, 0, 3, 0, 3),
+                  inst(127, 3, 1, 0, 0),
+                  inst(79, 4, 3, 0, 0),
+                  inst(103, 0, 1, 0, 32),
+                  inst(119, 0, 1, 0, 32),
+                  inst(183, 0, 4, 0, 1),
+                  inst(37, 0, 1, 1, 15),
+                  inst(183, 0, 4, 0, 0),
+                  inst(103, 0, 4, 0, 2),
+                  inst(79, 4, 3, 0, 0),
+                  inst(127, 4, 1, 0, 0),
+                  inst(103, 0, 1, 0, 32),
+                  inst(119, 0, 1, 0, 32),
+                  inst(37, 0, 1, 1, 3),
+                  inst(183, 0, 2, 0, 0),
+                  inst(103, 0, 2, 0, 1),
+                  inst(79, 2, 3, 0, 0),
+                  inst(127, 2, 1, 0, 0),
+                  inst(24, 0, 2, 0, -2),
+                  inst(95, 2, 1, 0, 0),
+                  inst(119, 0, 1, 0, 1),
+                  inst(79, 1, 3, 0, 0),
+                  inst(123, 3, 10, -8, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -8),
+                  inst(24, 0, 1, 0, 0),
+                  inst(),
+                  inst(133, 0, 0, 0, 1),
+                  inst(21, 0, 0, 3, 0),
+                  inst(183, 0, 1, 0, 1),
+                  inst(219, 1, 0, 0, 0),
+                  inst(5, 0, 0, 8, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -8),
+                  inst(191, 10, 3, 0, 0),
+                  inst(7, 0, 3, 0, -16),
+                  inst(24, 0, 1, 0, 0),
+                  inst(),
+                  inst(183, 0, 4, 0, 0),
+                  inst(133, 0, 0, 0, 2),
+                  inst(183, 0, 0, 0, 0),
+                  inst(149, 0, 0, 0, 0),
+                 };
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
@@ -654,6 +737,19 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::set_pkt_sz(40);
       mem_t::add_map(map_attr(32, 256, N17));
       *bm = bm17;
+      break;
+    case 18:
+      inst::max_prog_len = N18;
+      mem_t::set_pgm_input_type(PGM_INPUT_constant);
+      mem_t::add_map(map_attr(32, 32, N18));
+      *bm = bm18;
+      break;
+    case 19:
+      inst::max_prog_len = N19;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
+      mem_t::add_map(map_attr(64, 64, N19));
+      *bm = bm19;
       break;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
