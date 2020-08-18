@@ -28,7 +28,7 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id);
 #define N7 7
 #define N8 24
 #define N9 7
-#define N10 12
+#define N10 13
 #define N11 24
 #define N12 61
 #define N13 36

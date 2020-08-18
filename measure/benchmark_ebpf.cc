@@ -65,12 +65,12 @@ inst bm_opti10[N1] = {inst(MOV32XY, 0, 1), // w0 = w1
 inst bm2[N2] = {inst(STXB, 10, -2, 1),    // *(r10-2) = L8(input)
                 inst(MOV64XC, 1, 0x01),   // *(r10-1) = 0x01
                 inst(STXB, 10, -1, 1),
-                inst(MOV64XC, 1, 0),      // r1 = map0
+                inst(LDMAPID, 1, 0),      // r1 = map0
                 inst(MOV64XY, 2, 10),     // r2 = r10 - 1
                 inst(ADD64XC, 2, -1),
                 inst(CALL, BPF_FUNC_map_lookup), // r0 = &map0[0x01]
                 inst(JEQXC, 0, 0, 7),   // if r0 == 0, exit else map0[0x01] = L8(input)
-                inst(MOV64XC, 1, 0),    // r1 = map0
+                inst(LDMAPID, 1, 0),    // r1 = map0
                 inst(MOV64XY, 2, 10),   // r2 = r10 - 1
                 inst(ADD64XC, 2, -1),
                 inst(MOV64XY, 3, 10),   // r3 = r10 - 2
@@ -82,7 +82,7 @@ inst bm2[N2] = {inst(STXB, 10, -2, 1),    // *(r10-2) = L8(input)
 inst bm_opti20[N2] = {inst(STXB, 10, -2, 1),    // *(r10-2) = L8(input)
                       inst(MOV64XC, 1, 0x01),   // *(r10-1) = 0x01
                       inst(STXB, 10, -1, 1),
-                      inst(MOV64XC, 1, 0),      // r1 = map0
+                      inst(LDMAPID, 1, 0),      // r1 = map0
                       inst(MOV64XY, 2, 10),     // r2 = r10 - 1
                       inst(ADD64XC, 2, -1),
                       inst(CALL, BPF_FUNC_map_lookup), // r0 = &map0[0x01]
@@ -100,7 +100,7 @@ inst bm3[N3] = {inst(191, 1, 6, 0, 0),
                 inst(183, 0, 1, 0, 0),
                 inst(97, 6, 2, 36, 0),
                 inst(86, 0, 2, 4, 6),
-                inst(0, 0, 0, 0, 0), // call 7 modified as nop
+                inst(MOV32XY, 0, 10), // call 7 modified as w0 = r10
                 inst(188, 0, 1, 0, 0),
                 inst(103, 0, 1, 0, 32),
                 inst(119, 0, 1, 0, 32),
@@ -213,12 +213,12 @@ inst bm5[N5] = {inst(STB, 1, 0, 0), // *(u8 *)(pkt + 0) = 0
                 inst(STB, 1, 1, 0), // *(u8 *)(pkt + 1) = 0
                 inst(STB, 1, 2, 0), // *(u8 *)(pkt + 2) = 0
                 inst(STB, 1, 3, 0), // *(u8 *)(pkt + 3) = 0
-                inst(),
+                inst(MOV64XC, 0, 0),
                 inst(),
                 inst(),
                };
 inst bm_opti50[N5] = {inst(STW, 1, 0, 0), // *(u32 *)(pkt + 0) = 0
-                      inst(),
+                      inst(MOV64XC, 0, 0),
                       inst(),
                       inst(),
                       inst(),
@@ -307,6 +307,7 @@ inst bm10[N10] = {inst(LDXH, 2, 1, 0),
                   inst(STXH, 1, 10, 4),
                   inst(STXH, 1, 4, 3),
                   inst(STXH, 1, 6, 2),
+                  inst(MOV64XC, 0, 0),
                  };
 // syscall_tp_kern
 inst bm11[N11] = {inst(183, 0, 1, 0, 0),
@@ -632,24 +633,28 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::set_pkt_sz(40);
       mem_t::add_map(map_attr(32, 256, N14));
       *bm = bm14;
+      break;
     case 15:
       inst::max_prog_len = N15;
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(32);
       mem_t::add_map(map_attr(32, 64, N15));
       *bm = bm15;
+      break;
     case 16:
       inst::max_prog_len = N16;
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(32);
       mem_t::add_map(map_attr(32, 64, N16));
       *bm = bm16;
+      break;
     case 17:
       inst::max_prog_len = N17;
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(40);
       mem_t::add_map(map_attr(32, 256, N17));
       *bm = bm17;
+      break;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
       return;
