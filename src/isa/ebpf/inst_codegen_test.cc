@@ -869,6 +869,7 @@ void test9() {
   int64_t k1 = 0x1, v1 = 0x11;
   int64_t k2 = 0x2, v2 = 0x22;
   uint64_t stack_s = (uint64_t)m.get_stack_start_addr();
+  m._simu_mem_s = stack_s;
   uint64_t addr_k1 = stack_s, addr_v1 = stack_s + 1;
   uint64_t addr_k2 = stack_s + 2, addr_v2 = stack_s + 3;
   z3::expr stack_s_expr = v("stack_s");
@@ -1026,6 +1027,7 @@ void test9() {
   m.init_by_layout();
   sr.simu_r10 = (uint64_t)m.get_stack_bottom_addr();
   sr.real_r10 = (uint64_t)m.get_stack_bottom_addr();
+  m._simu_mem_s = (uint64_t)m.get_stack_start_addr();
   sv.init();
   k1 = 0x1, v1 = 0x11; // used by map1
   k2 = 0x1111, v2 = (int64_t)0xffffffff; //used by map2
