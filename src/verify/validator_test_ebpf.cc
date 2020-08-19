@@ -137,6 +137,18 @@ void test1() {
   vld.set_orig(instructions13, 4);
   print_test_res(vld.is_equal_to(instructions13, 4, instructions13, 4), "instructions13 == instructions13");
   print_test_res(vld.is_equal_to(instructions13, 4, instructions14, 3), "instructions13 == instructions14");
+
+  // test initial value of stack, stack has non initial value
+  inst instructions15[2] = {inst(LDXB, 0, 10, -1),
+                            inst(EXIT),
+                           };
+  inst instructions16[3] = {inst(STB, 10, -1, 1),
+                            inst(LDXB, 0, 10, -1),
+                            inst(EXIT),
+                           };
+  vld.set_orig(instructions15, 2);
+  print_test_res(vld.is_equal_to(instructions15, 2, instructions15, 2) == 0, "instructions15 != instructions15");
+  print_test_res(vld.is_equal_to(instructions15, 2, instructions16, 3) == 0, "instructions15 != instructions16");
 }
 
 void test2() {
