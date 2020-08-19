@@ -694,17 +694,17 @@ map_attr extract_attrs_from_map(string str) {
                   inst::max_prog_len);
 }
 
-void read_desc(char* map_file) {
+void read_desc(const char* desc_file) {
 
   FILE* fp;
 
-  fp = fopen(map_file, "r");
+  fp = fopen(desc_file, "r");
   char* line = NULL;
   size_t len = 0;
   ssize_t read;
 
   if (fp == NULL) {
-    std::cerr << "Error: BPF maps file could not be opened" << std::endl;
+    std::cerr << "Error: BPF description file could not be opened" << std::endl;
     exit(1);
   }
 
@@ -730,12 +730,13 @@ void read_desc(char* map_file) {
   }
   fclose(fp);
 }
-void read_insns(inst** bm, char* insn_file) {
+
+void read_insns(inst** bm, const char* insn_file) {
 
   FILE *fp;
   fp = fopen(insn_file, "r");
   if (fp == NULL ) {
-    std::cerr << "Error: BPF insns file could not be opened" << std::endl;
+    std::cerr << "Error: BPF bytecode file could not be opened" << std::endl;
     exit(1);
   }
   inst* insns;
@@ -759,7 +760,7 @@ void read_insns(inst** bm, char* insn_file) {
   cout << "inst:max_prog_len set as " << insn_vec.size() << endl;
 }
 
-void read_input(inst** bm, char* insn_file, char* desc_file) {
+void init_benchmark_from_file(inst** bm, const char* insn_file, const char* desc_file) {
   // call insns first to set the max_pgm_len;
   // init benchmark, set max_pgm_len
   read_insns(bm, insn_file);

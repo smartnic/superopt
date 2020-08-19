@@ -30,6 +30,9 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
   out << "meas_mode:" << ip.meas_mode << endl
       << "path_out:" << ip.path_out << endl
       << "bm:" << ip.bm << endl
+      << "bm_from_file: " << ip.bm_from_file << ", "
+      << "bytecode: " << ip.bytecode << ", "
+      << "desc: " << ip.desc << endl
       << "niter:" << ip.niter << endl
       << "w_e:" << ip.w_e << endl
       << "w_p:" << ip.w_p << endl
@@ -121,6 +124,14 @@ void store_config_to_file(const input_paras &in_para) {
   fout.open(file_name, ios::out | ios::trunc);
   fout << in_para;
   fout.close();
+}
+
+string para_bm_desc() {
+  string s = "There are two ways for the compiler to get benchmarks: \n"\
+             "1. read benchmark which is in the code: use `--bm`;\n" \
+             "2. (only support ebpf)read benchmark from files: use `--bytecode` and `--desc` to " \
+             "set the input file path. There is an example in input/";
+  return s;
 }
 
 string para_st_ex_desc() {
@@ -226,7 +237,11 @@ void usage() {
        << setw(W) << "-n arg" << ": number of iterations" << endl
        << setw(W) << "-m" << ": turn on measurement" << endl
        << setw(W) << "--path_out arg" << ": output file path" << endl
+       << endl << para_bm_desc() << endl
        << setw(W) << "--bm arg" << ": benchmark ID. toy_isa: 0 - 2; ebpf: 0 - 2" << endl
+       << setw(W) << "--bm_from_file" << ": benchmark from file flag. the default is false" << endl
+       << setw(W) << "--bytecode arg" << ": bpf bytecode file" << endl
+       << setw(W) << "--desc arg" << ": bpf bytecode description file" << endl
        << setw(W) << "--w_e arg" << ": weight of error cost in cost function" << endl
        << setw(W) << "--w_p arg" << ": weight of performance cost in cost function" << endl
        << setw(W) << "--st_ex arg" << ": " +  para_st_ex_desc() << endl
@@ -268,21 +283,24 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
   static struct option long_opts[] = {
     {"path_out", required_argument, nullptr, 0},
     {"bm", required_argument, nullptr, 1},
-    {"w_e", required_argument, nullptr, 2},
-    {"w_p", required_argument, nullptr, 3},
-    {"st_ex", required_argument, nullptr, 4},
-    {"st_eq", required_argument, nullptr, 5},
-    {"st_avg", required_argument, nullptr, 6},
-    {"st_when_to_restart", required_argument, nullptr, 7},
-    {"st_when_to_restart_niter", required_argument, nullptr, 8},
-    {"st_start_prog", required_argument, nullptr, 9},
-    {"restart_w_e_list", required_argument, nullptr, 10},
-    {"restart_w_p_list", required_argument, nullptr, 11},
-    {"reset_win_niter", required_argument, nullptr, 12},
-    {"win_s_list", required_argument, nullptr, 13},
-    {"win_e_list", required_argument, nullptr, 14},
-    {"p_inst_operand", required_argument, nullptr, 15},
-    {"p_inst", required_argument, nullptr, 16},
+    {"bm_from_file", no_argument, nullptr, 2},
+    {"bytecode", required_argument, nullptr, 3},
+    {"desc", required_argument, nullptr, 4},
+    {"w_e", required_argument, nullptr, 5},
+    {"w_p", required_argument, nullptr, 6},
+    {"st_ex", required_argument, nullptr, 7},
+    {"st_eq", required_argument, nullptr, 8},
+    {"st_avg", required_argument, nullptr, 9},
+    {"st_when_to_restart", required_argument, nullptr, 10},
+    {"st_when_to_restart_niter", required_argument, nullptr, 11},
+    {"st_start_prog", required_argument, nullptr, 12},
+    {"restart_w_e_list", required_argument, nullptr, 13},
+    {"restart_w_p_list", required_argument, nullptr, 14},
+    {"reset_win_niter", required_argument, nullptr, 15},
+    {"win_s_list", required_argument, nullptr, 16},
+    {"win_e_list", required_argument, nullptr, 17},
+    {"p_inst_operand", required_argument, nullptr, 18},
+    {"p_inst", required_argument, nullptr, 19},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -294,21 +312,24 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 'n': in_para.niter = stoi(optarg); break;
       case 0: in_para.path_out = optarg; break;
       case 1: in_para.bm = stoi(optarg); break;
-      case 2: in_para.w_e = stod(optarg); break;
-      case 3: in_para.w_p = stod(optarg); break;
-      case 4: in_para.st_ex = stoi(optarg); break;
-      case 5: in_para.st_eq = stoi(optarg); break;
-      case 6: in_para.st_avg = stoi(optarg); break;
-      case 7: in_para.st_when_to_restart = stoi(optarg); break;
-      case 8: in_para.st_when_to_restart_niter = stoi(optarg); break;
-      case 9: in_para.st_start_prog = stoi(optarg); break;
-      case 10: set_w_list(in_para.restart_w_e_list, optarg); break;
-      case 11: set_w_list(in_para.restart_w_p_list, optarg); break;
-      case 12: in_para.reset_win_niter = stoi(optarg); break;
-      case 13: set_win_list(in_para.win_s_list, optarg); break;
-      case 14: set_win_list(in_para.win_e_list, optarg); break;
-      case 15: in_para.p_inst_operand = stod(optarg); break;
-      case 16: in_para.p_inst = stod(optarg); break;
+      case 2: in_para.bm_from_file = true; break;
+      case 3: in_para.bytecode = optarg; break;
+      case 4: in_para.desc = optarg; break;
+      case 5: in_para.w_e = stod(optarg); break;
+      case 6: in_para.w_p = stod(optarg); break;
+      case 7: in_para.st_ex = stoi(optarg); break;
+      case 8: in_para.st_eq = stoi(optarg); break;
+      case 9: in_para.st_avg = stoi(optarg); break;
+      case 10: in_para.st_when_to_restart = stoi(optarg); break;
+      case 11: in_para.st_when_to_restart_niter = stoi(optarg); break;
+      case 12: in_para.st_start_prog = stoi(optarg); break;
+      case 13: set_w_list(in_para.restart_w_e_list, optarg); break;
+      case 14: set_w_list(in_para.restart_w_p_list, optarg); break;
+      case 15: in_para.reset_win_niter = stoi(optarg); break;
+      case 16: set_win_list(in_para.win_s_list, optarg); break;
+      case 17: set_win_list(in_para.win_e_list, optarg); break;
+      case 18: in_para.p_inst_operand = stod(optarg); break;
+      case 19: in_para.p_inst = stod(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -319,6 +340,9 @@ void set_default_para_vals(input_paras &in_para) {
   in_para.meas_mode = false;
   in_para.path_out = "measure/";
   in_para.bm = 0;
+  in_para.bm_from_file = false;
+  in_para.bytecode = "";
+  in_para.desc = "";
   in_para.niter = 10;
   in_para.w_e = 1.0;
   in_para.w_p = 0.0;
@@ -349,10 +373,8 @@ int main(int argc, char* argv[]) {
   store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
   auto start = NOW;
-  if (argc > 2) {
-    cout << "argv[1] = " << argv[1] << std::endl;
-    cout << "argv[2] = " << argv[2] << std::endl;
-    read_input(&bm, argv[1], argv[2]);
+  if (in_para.bm_from_file) {
+    init_benchmark_from_file(&bm, in_para.bytecode.c_str(), in_para.desc.c_str());
   } else {
     init_benchmarks(&bm, bm_optis_orig, in_para.bm);
   }
@@ -363,7 +385,7 @@ int main(int argc, char* argv[]) {
   }
   gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);
-  if (argc > 2) {
+  if (in_para.bm_from_file) {
     delete[] bm;
   }
   auto end = NOW;

@@ -7,6 +7,9 @@ using namespace std;
 struct input_paras {
   int niter;
   int bm;
+  bool bm_from_file;
+  string bytecode;
+  string desc;
   double w_e;
   double w_p;
   bool meas_mode;
