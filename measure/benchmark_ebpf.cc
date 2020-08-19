@@ -719,8 +719,8 @@ void read_insns(inst** bm, char* insn_file) {
     inst curr_inst((int)input.opcode,
                    (int32_t)input.src_reg,
                    (int32_t)input.dst_reg,
-                   (int32_t)input.off,
-                   (int16_t)input.imm);
+                   (int16_t)input.off,
+                   (int32_t)input.imm);
 
     curr_inst.print();
     cout << "Bytecode string: " << curr_inst.get_bytecode_str() << std::endl;
