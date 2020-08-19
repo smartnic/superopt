@@ -728,7 +728,10 @@ void read_insns(inst** bm, char* insn_file) {
     cout << std::endl;
 
   }
-  *bm = &insn_vec[0];
+  *bm = new inst[insn_vec.size()];
+  for (int i = 0; i < insn_vec.size(); i++) {
+    (*bm)[i] = insn_vec[i];
+  }
   fclose(fp);
 
 }

@@ -363,6 +363,9 @@ int main(int argc, char* argv[]) {
   }
   gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);
+  if (argc > 2) {
+    delete[] bm;
+  }
   auto end = NOW;
   cout << "validator time: " << dur_sum << endl;
   if (n_sum_long > 0)
