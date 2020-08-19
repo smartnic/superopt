@@ -350,11 +350,10 @@ int main(int argc, char* argv[]) {
   vector<inst*> bm_optis_orig;
   auto start = NOW;
   if (argc > 2) {
-    cout<<"argv[1] = " << argv[1] << std::endl;
-    cout<<"argv[2] = " << argv[2] << std::endl;
+    cout << "argv[1] = " << argv[1] << std::endl;
+    cout << "argv[2] = " << argv[2] << std::endl;
     read_input(&bm, argv[1], argv[2]);
-  }
-  else {
+  } else {
     init_benchmarks(&bm, bm_optis_orig, in_para.bm);
   }
   int num_examples = 30;

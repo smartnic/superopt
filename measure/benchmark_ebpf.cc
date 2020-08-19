@@ -1,6 +1,6 @@
 #include "benchmark_ebpf.h"
 #include <map>
-#include <algorithm> 
+#include <algorithm>
 #include <cctype>
 #include <locale>
 
@@ -623,39 +623,39 @@ inst bm19[N19] = {inst(183, 0, 2, 0, 1),
 // than insn
 struct bpf_insn {
 
-    uint8_t opcode;
-    uint8_t dst_reg:4;
-    uint8_t src_reg:4;
-    short off; 
-    int imm; 
+  uint8_t opcode;
+  uint8_t dst_reg: 4;
+  uint8_t src_reg: 4;
+  short off;
+  int imm;
 };
 
 
 // trim from start (in place)
 static inline void ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
-        return !std::isspace(ch);
-    }));
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
+    return !std::isspace(ch);
+  }));
 }
 
 // trim from end (in place)
 static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) {
-        return !std::isspace(ch);
-    }).base(), s.end());
+  s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) {
+    return !std::isspace(ch);
+  }).base(), s.end());
 }
 
 // trim from both ends (in place)
 static inline void trim(std::string &s) {
-    ltrim(s);
-    rtrim(s);
+  ltrim(s);
+  rtrim(s);
 }
 
 map_attr extract_attrs_from_map(std::string curr_map) {
-  
+
   int open_brace_idx = curr_map.find("{");
   int close_brace_idx = curr_map.find("}");
-  std::string attr_str(curr_map.substr(open_brace_idx + 2, close_brace_idx - 2));  
+  std::string attr_str(curr_map.substr(open_brace_idx + 2, close_brace_idx - 2));
   size_t comma_pos = 0;
   std::map <std::string, int> attr_map;
 
@@ -664,7 +664,7 @@ map_attr extract_attrs_from_map(std::string curr_map) {
     std::string attr_assignment = attr_str.substr(0, comma_pos);
     size_t assign_pos = 0;
     if ((assign_pos = attr_assignment.find('=')) != std::string::npos) {
-      std::string attr_name = attr_assignment.substr(0, assign_pos); 
+      std::string attr_name = attr_assignment.substr(0, assign_pos);
       std::string attr_value_str = attr_assignment.substr(assign_pos + 1, attr_assignment.size() - 1);
       trim(attr_value_str);
       int attr_value = atoi(&attr_value_str[0]);
@@ -673,64 +673,64 @@ map_attr extract_attrs_from_map(std::string curr_map) {
     }
     attr_str.erase(0, comma_pos + 1);
   }
- 
-  return map_attr(attr_map["key_size"], 
-        attr_map["value_size"], 
-        attr_map["max_entries"]);
+
+  return map_attr(attr_map["key_size"],
+                  attr_map["value_size"],
+                  attr_map["max_entries"]);
 }
 
 void read_maps(char* map_file) {
 
   FILE* fp;
 
-  fp = fopen(map_file, "r"); 
+  fp = fopen(map_file, "r");
   char* line = NULL;
   size_t len = 0;
   ssize_t read;
 
   if (fp == NULL) {
-    std::cerr<<"Error: BPF maps file could not be opened" << std::endl;
+    std::cerr << "Error: BPF maps file could not be opened" << std::endl;
     exit(1);
   }
-  while (read = getline (&line, &len, fp) != -1){
+  while (read = getline (&line, &len, fp) != -1) {
 
-      std::string curr_map(line); 
-      mem_t::add_map(extract_attrs_from_map(curr_map)); 
+    std::string curr_map(line);
+    mem_t::add_map(extract_attrs_from_map(curr_map));
   }
   fclose(fp);
 }
 void read_insns(inst** bm, char* insn_file) {
 
-    FILE *fp;
-    fp = fopen(insn_file, "r"); 
-    if (fp == NULL ) {
-      std::cerr<<"Error: BPF insns file could not be opened" << std::endl;
-      exit(1);
-    }
-    inst* insns;
-    vector<inst> insn_vec;
-    bpf_insn input;
-    // read file contents till end of file 
-    while(fread(&input, sizeof(bpf_insn), 1, fp)) {
+  FILE *fp;
+  fp = fopen(insn_file, "r");
+  if (fp == NULL ) {
+    std::cerr << "Error: BPF insns file could not be opened" << std::endl;
+    exit(1);
+  }
+  inst* insns;
+  vector<inst> insn_vec;
+  bpf_insn input;
+  // read file contents till end of file
+  while (fread(&input, sizeof(bpf_insn), 1, fp)) {
 
-      printf("opcode - %02x, src reg - %01x, dst reg - %01x, off - %04x, imm - %08x\t\n", 
-        input.opcode, input.dst_reg, input.src_reg, input.off, input.imm); 
+    printf("opcode - %02x, src reg - %01x, dst reg - %01x, off - %04x, imm - %08x\t\n",
+           input.opcode, input.dst_reg, input.src_reg, input.off, input.imm);
 
-        inst curr_inst((int)input.opcode, 
-                (int32_t)input.src_reg, 
-                (int32_t)input.dst_reg, 
-                (int32_t)input.off, 
-                (int16_t)input.imm);
-    
-        curr_inst.print();
-        cout << "Bytecode string: " << curr_inst.get_bytecode_str() << std::endl; 
-        insn_vec.push_back(curr_inst);
-        cout << std::endl;
-        
-    }
-    *bm = &insn_vec[0];
-    fclose(fp); 
-  
+    inst curr_inst((int)input.opcode,
+                   (int32_t)input.src_reg,
+                   (int32_t)input.dst_reg,
+                   (int32_t)input.off,
+                   (int16_t)input.imm);
+
+    curr_inst.print();
+    cout << "Bytecode string: " << curr_inst.get_bytecode_str() << std::endl;
+    insn_vec.push_back(curr_inst);
+    cout << std::endl;
+
+  }
+  *bm = &insn_vec[0];
+  fclose(fp);
+
 }
 
 void read_input(inst** bm, char* insn_file, char* map_file) {
