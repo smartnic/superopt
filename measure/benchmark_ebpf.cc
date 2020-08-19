@@ -1,8 +1,8 @@
-#include "benchmark_ebpf.h"
-#include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <cctype>
 #include <locale>
+#include "benchmark_ebpf.h"
 
 using namespace std;
 
@@ -624,8 +624,8 @@ inst bm19[N19] = {inst(183, 0, 2, 0, 1),
 struct bpf_insn {
 
   uint8_t opcode;
-  uint8_t dst_reg: 4;
   uint8_t src_reg: 4;
+  uint8_t dst_reg: 4;
   short off;
   int imm;
 };
@@ -651,13 +651,12 @@ static inline void trim(std::string &s) {
   rtrim(s);
 }
 
-map_attr extract_attrs_from_map(std::string curr_map) {
-
-  int open_brace_idx = curr_map.find("{");
-  int close_brace_idx = curr_map.find("}");
-  std::string attr_str(curr_map.substr(open_brace_idx + 2, close_brace_idx - 2));
+void parse_str(unordered_map<string, int>& str_map, string str) {
+  str_map.clear();
+  int open_brace_idx = str.find("{");
+  int close_brace_idx = str.find("}");
+  std::string attr_str(str.substr(open_brace_idx + 2, close_brace_idx - 2));
   size_t comma_pos = 0;
-  std::map <std::string, int> attr_map;
 
   while ((comma_pos = attr_str.find(',')) != std::string::npos) {
 
@@ -669,17 +668,33 @@ map_attr extract_attrs_from_map(std::string curr_map) {
       trim(attr_value_str);
       int attr_value = atoi(&attr_value_str[0]);
       trim(attr_name);
-      attr_map[attr_name] = attr_value;
+      str_map[attr_name] = attr_value;
     }
     attr_str.erase(0, comma_pos + 1);
   }
-
-  return map_attr(attr_map["key_size"],
-                  attr_map["value_size"],
-                  attr_map["max_entries"]);
 }
 
-void read_maps(char* map_file) {
+int extract_pgm_input_type(string str) {
+  unordered_map<string, int> str_map;
+  parse_str(str_map, str);
+  return str_map["pgm_input_type"];
+}
+
+int extract_max_pkt_sz(string str) {
+  unordered_map<string, int> str_map;
+  parse_str(str_map, str);
+  return str_map["max_pkt_sz"];
+}
+
+map_attr extract_attrs_from_map(string str) {
+  unordered_map<string, int> attr_map;
+  parse_str(attr_map, str);
+  return map_attr(attr_map["key_size"] * NUM_BYTE_BITS,
+                  attr_map["value_size"] * NUM_BYTE_BITS,
+                  inst::max_prog_len);
+}
+
+void read_desc(char* map_file) {
 
   FILE* fp;
 
@@ -692,10 +707,26 @@ void read_maps(char* map_file) {
     std::cerr << "Error: BPF maps file could not be opened" << std::endl;
     exit(1);
   }
-  while (read = getline (&line, &len, fp) != -1) {
 
-    std::string curr_map(line);
-    mem_t::add_map(extract_attrs_from_map(curr_map));
+  int count = 0;
+  while (read = getline (&line, &len, fp) != -1) {
+    string str(line);
+    if (count == 0) {
+      int n = extract_pgm_input_type(str);
+      cout << "program input type set as " << n << endl;
+      mem_t::set_pgm_input_type(n);
+    } else if (count == 1) {
+      int n = extract_max_pkt_sz(str);
+      cout << "maximum packet size set as " << n << " bytes" << endl;
+      mem_t::set_pkt_sz(n);
+    } else {
+      map_attr mp = extract_attrs_from_map(str);
+      cout << "add map " << "k_sz: " << mp.key_sz / NUM_BYTE_BITS << " bytes, "
+           << "v_sz: " << mp.val_sz / NUM_BYTE_BITS << " bytes, "
+           << "max_num: " << mp.max_entries << endl;
+      mem_t::add_map(mp);
+    }
+    count++;
   }
   fclose(fp);
 }
@@ -712,35 +743,28 @@ void read_insns(inst** bm, char* insn_file) {
   bpf_insn input;
   // read file contents till end of file
   while (fread(&input, sizeof(bpf_insn), 1, fp)) {
-
-    printf("opcode - %02x, src reg - %01x, dst reg - %01x, off - %04x, imm - %08x\t\n",
-           input.opcode, input.dst_reg, input.src_reg, input.off, input.imm);
-
     inst curr_inst((int)input.opcode,
                    (int32_t)input.src_reg,
                    (int32_t)input.dst_reg,
                    (int16_t)input.off,
                    (int32_t)input.imm);
-
-    curr_inst.print();
-    cout << "Bytecode string: " << curr_inst.get_bytecode_str() << std::endl;
     insn_vec.push_back(curr_inst);
-    cout << std::endl;
-
   }
   *bm = new inst[insn_vec.size()];
   for (int i = 0; i < insn_vec.size(); i++) {
     (*bm)[i] = insn_vec[i];
   }
   fclose(fp);
-
+  inst::max_prog_len = insn_vec.size();
+  cout << "inst:max_prog_len set as " << insn_vec.size() << endl;
 }
 
-void read_input(inst** bm, char* insn_file, char* map_file) {
-
-  read_maps(map_file);
+void read_input(inst** bm, char* insn_file, char* desc_file) {
+  // call insns first to set the max_pgm_len;
+  // init benchmark, set max_pgm_len
   read_insns(bm, insn_file);
-
+  // set program input type, packet size, map attributes
+  read_desc(desc_file);
 }
 
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
