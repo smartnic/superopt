@@ -71,11 +71,12 @@ void compute_xadd32(int64_t in, uint64_t addr, int64_t off);
 // map helper functions
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
                                  uint64_t r4, uint64_t r5, simu_real& sr, prog_state& ps);
-uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, prog_state& ps, simu_real& sr);
+uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, prog_state& ps, simu_real& sr,
+                                   bool chk_safety = false); // false is for unit tests
 uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_v, prog_state& ps,
-                                   simu_real& sr);
+                                   simu_real& sr, bool chk_safety = false); // false is for unit tests
 uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, prog_state& ps,
-                                   simu_real& sr);
+                                   simu_real& sr, bool chk_safety = false); // false is for unit tests
 /* type of parameters (in, in1, in2, out) is z3 64-bit bitvector */
 // return (out == op in)
 inline z3::expr predicate_mov(z3::expr in, z3::expr out);

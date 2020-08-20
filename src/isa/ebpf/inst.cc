@@ -895,24 +895,24 @@ INSN_NOP:
   ALU_BINARY_SHIFT(ARSH, arsh)
 #undef ALU_BINARY_SHIFT
 
-#define LDST(SIZEOP, SIZE)                                         \
-  INSN_LDX##SIZEOP:                                                \
-    ps.reg_safety_chk(DST_ID, vector<int>{SRC_ID});                \
-    real_addr = get_real_addr_by_simu(SRC + OFF, MEM, SR);         \
-    ps.memory_safety_chk(real_addr, SIZE/8);                       \
-    DST = compute_ld##SIZE(real_addr, 0);                          \
-    CONT;                                                          \
-  INSN_STX##SIZEOP:                                                \
-    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
-    ps.memory_safety_chk(real_addr, SIZE/8);                       \
-    compute_st##SIZE(SRC, real_addr, 0);                           \
-    CONT;                                                          \
-  INSN_ST##SIZEOP:                                                 \
-    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
-    ps.memory_safety_chk(real_addr, SIZE/8);                       \
-    compute_st##SIZE(IMM, real_addr, 0);                           \
+#define LDST(SIZEOP, SIZE)                                           \
+  INSN_LDX##SIZEOP:                                                  \
+    ps.reg_safety_chk(DST_ID, vector<int>{SRC_ID});                  \
+    real_addr = get_real_addr_by_simu(SRC + OFF, MEM, SR);           \
+    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, true);  \
+    DST = compute_ld##SIZE(real_addr, 0);                            \
+    CONT;                                                            \
+  INSN_STX##SIZEOP:                                                  \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});          \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);           \
+    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false); \
+    compute_st##SIZE(SRC, real_addr, 0);                             \
+    CONT;                                                            \
+  INSN_ST##SIZEOP:                                                   \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                  \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);           \
+    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false); \
+    compute_st##SIZE(IMM, real_addr, 0);                             \
     CONT;
   LDST(B,  8)
   LDST(H,  16)
@@ -920,12 +920,12 @@ INSN_NOP:
   LDST(DW, 64)
 #undef LDST
 
-#define XADD(SIZE)                                                 \
-  INSN_XADD##SIZE:                                                 \
-    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
-    ps.memory_safety_chk(real_addr, SIZE/8);                       \
-    compute_xadd##SIZE(SRC, real_addr, 0);                         \
+#define XADD(SIZE)                                                   \
+  INSN_XADD##SIZE:                                                   \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});          \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);           \
+    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false); \
+    compute_xadd##SIZE(SRC, real_addr, 0);                           \
     CONT;
   XADD(32)
   XADD(64)

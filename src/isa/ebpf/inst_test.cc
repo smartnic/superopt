@@ -1167,6 +1167,7 @@ void test_read_before_write(inst* pgm, int len, bool is_safe_expected, string te
   inout_t input, output;
   input.init();
   output.init();
+  input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
   bool is_safe_actual = true;
   string err_msg_actual = "";
   try {
@@ -1216,6 +1217,28 @@ void test7() {
 
   inst p10[2] = {inst(LE, 0, 32), inst(EXIT)};
   test_read_before_write(p10, 2, false, "10");
+
+  cout << "2. stack read before write" << endl;
+  inst p2_1[3] = {inst(STB, 10, -1, 2),
+                  inst(LDXB, 0, 10, -1),
+                  inst(EXIT),
+                 };
+  test_read_before_write(p2_1, 3, true, "2.1");
+
+  inst p2_2[2] = {inst(LDXB, 0, 10, -1), inst(EXIT)};
+  test_read_before_write(p2_2, 2, false, "2.2");
+
+  inst p2_3[3] = {inst(STB, 10, -2, 2),
+                  inst(LDXH, 0, 10, -2),
+                  inst(EXIT),
+                 };
+  test_read_before_write(p2_3, 3, false, "2.3");
+
+  inst p2_4[2] = {inst(LDXB, 0, 10, -512), inst(EXIT)};
+  test_read_before_write(p2_4, 2, false, "2.4");
+
+  inst p2_5[2] = {inst(LDXB, 0, 10, -64), inst(EXIT)};
+  test_read_before_write(p2_5, 2, false, "2.5");
 }
 
 int main(int argc, char *argv[]) {

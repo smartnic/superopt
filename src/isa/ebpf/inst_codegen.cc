@@ -13,10 +13,11 @@ z3::expr key_not_in_map_wt(z3::expr k, smt_map_wt& m_wt, smt_var& sv, bool same_
 
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
                                  uint64_t r4, uint64_t r5, simu_real& sr, prog_state& ps) {
+  bool chk_safety = true;
   switch (func_id) {
-    case BPF_FUNC_map_lookup: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_lookup_helper(r1, r2, ps, sr);
-    case BPF_FUNC_map_update: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_map_update_helper(r1, r2, r3, ps, sr);
-    case BPF_FUNC_map_delete: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_delete_helper(r1, r2, ps, sr);
+    case BPF_FUNC_map_lookup: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_lookup_helper(r1, r2, ps, sr, chk_safety);
+    case BPF_FUNC_map_update: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_map_update_helper(r1, r2, r3, ps, sr, chk_safety);
+    case BPF_FUNC_map_delete: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_delete_helper(r1, r2, ps, sr, chk_safety);
     default: cout << "Error: unknown function id " << func_id << endl; return -1;
   }
 }
@@ -37,12 +38,13 @@ string ld_n_bytes_from_addr(const uint8_t* a, const size_t n) {
 
 // return addr_v
 uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, prog_state& ps,
-                                   simu_real& sr) {
+                                   simu_real& sr, bool chk_safety) {
   int map_id = addr_map;
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
   uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr);
   // safety check to avoid segmentation fault
-  ps.memory_safety_chk(real_addr_k, k_sz);
+  bool is_mem_read = true;
+  ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read);
   // get key from memory
   string k = ld_n_bytes_from_addr((uint8_t*)real_addr_k, k_sz);
   map_t& mp = ps._mem._maps[map_id];
@@ -55,11 +57,12 @@ uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, prog_state& ps
 }
 
 uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_v, prog_state& ps,
-                                   simu_real& sr) {
+                                   simu_real& sr, bool chk_safety) {
   int map_id = addr_map;
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
   uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr);
-  ps.memory_safety_chk(real_addr_k, k_sz);
+  bool is_mem_read = true;
+  ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read);
   // get key and value from memory
   string k = ld_n_bytes_from_addr((uint8_t*)real_addr_k, k_sz);
   uint64_t real_addr_v = get_real_addr_by_simu(addr_v, ps._mem, sr);
@@ -68,11 +71,12 @@ uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_
 }
 
 uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, prog_state& ps,
-                                   simu_real& sr) {
+                                   simu_real& sr, bool chk_safety) {
   int map_id = addr_map;
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
   uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr);
-  ps.memory_safety_chk(real_addr_k, k_sz);
+  bool is_mem_read = true;
+  ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read);
   string k = ld_n_bytes_from_addr((uint8_t*)real_addr_k, k_sz);
   map_t& mp = ps._mem._maps[map_id];
   auto it = mp._k2idx.find(k);

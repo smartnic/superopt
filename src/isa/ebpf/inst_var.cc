@@ -939,12 +939,9 @@ void prog_state::init() {
   init_safety_chk();
 }
 
-
-// memory_safety_chk is used to
-// 1. avoid segmentation fault: If memory access not in the legal range, throw error
-//    safe address: [get_mem_start_addr(), get_mem_end_addr()]
-// 2. stack read before write check
-void prog_state::memory_safety_chk(uint64_t addr, uint64_t num_bytes) {
+// memory_access_chk is used to avoid segmentation fault: If memory access not in the legal range, throw error
+// safe address: [get_mem_start_addr(), get_mem_end_addr()]
+void prog_state::memory_access_chk(uint64_t addr, uint64_t num_bytes) {
   // to avoid overflow
   uint64_t start = (uint64_t)_mem.get_mem_start_addr();
   uint64_t end = (uint64_t)_mem.get_mem_end_addr();
@@ -973,6 +970,31 @@ void prog_state::memory_safety_chk(uint64_t addr, uint64_t num_bytes) {
   if (!legal) {
     string err_msg = "unsafe memory access";
     throw (err_msg);
+  }
+}
+
+// memory_access_and_safety_chk is used to
+// 1. avoid segmentation fault: If memory access not in the legal range, throw error
+// 2. stack read before write check
+void prog_state::memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes, bool chk_safety, bool is_read) {
+  memory_access_chk(addr, num_bytes);
+  if (! chk_safety) return;
+  // stack read before write check
+  uint64_t start = (uint64_t)_mem.get_stack_start_addr();
+  uint64_t end = (uint64_t)_mem.get_stack_bottom_addr() - 1;
+  uint64_t max_uint64 = 0xffffffffffffffff;
+  bool is_stack_addr = (addr >= start) && (addr + num_bytes - 1 <= end) &&
+                       (addr <= (max_uint64 - num_bytes + 1));
+  if (! is_stack_addr) return;
+  int idx_s = addr - start;
+  if (is_read) {
+    for (int i = 0; i < num_bytes; i++) {
+      if (_stack_readable[idx_s + i]) continue;
+      string err_msg = "stack[" + to_string(idx_s + i) + "] is not readable.";
+      throw (err_msg);
+    }
+  } else {
+    for (int i = 0; i < num_bytes; i++) _stack_readable[idx_s + i] = true;
   }
 }
 
