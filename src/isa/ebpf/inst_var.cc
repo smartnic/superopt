@@ -391,39 +391,6 @@ void mem_t::cp_input_mem(const mem_t &rhs) {
   }
 }
 
-// safe address: [get_mem_start_addr(), get_mem_end_addr()]
-void mem_t::memory_access_check(uint64_t addr, uint64_t num_bytes) {
-  // to avoid overflow
-  uint64_t start = (uint64_t)get_mem_start_addr();
-  uint64_t end = (uint64_t)get_mem_end_addr();
-  uint64_t max_uint64 = 0xffffffffffffffff;
-  bool legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
-               (addr <= (max_uint64 - num_bytes + 1));
-  if (legal) return;
-
-  if (mem_t::_layout._pkt_sz == 0) {
-    legal = false;
-  } else {
-    start = (uint64_t)get_pkt_start_addr();
-    end = (uint64_t)get_pkt_end_addr();
-    legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
-            (addr <= (max_uint64 - num_bytes + 1));
-  }
-  if (legal) return;
-
-  if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
-    start = (uint64_t)get_pkt_ptrs_start_addr();
-    end = (uint64_t)get_pkt_ptrs_end_addr();
-    legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
-            (addr <= (max_uint64 - num_bytes + 1));
-  }
-
-  if (!legal) {
-    string err_msg = "unsafe memory access";
-    throw (err_msg);
-  }
-}
-
 void mem_t::clear() {
   memset(_mem, 0, sizeof(uint8_t)*_mem_size);
   for (int i = 0; i < _maps.size(); i++) _maps[i].clear();
@@ -970,6 +937,43 @@ void prog_state::reg_safety_chk(int reg_write, vector<int> reg_read_list) {
 void prog_state::init() {
   _mem.init_by_layout();
   init_safety_chk();
+}
+
+
+// memory_safety_chk is used to
+// 1. avoid segmentation fault: If memory access not in the legal range, throw error
+//    safe address: [get_mem_start_addr(), get_mem_end_addr()]
+// 2. stack read before write check
+void prog_state::memory_safety_chk(uint64_t addr, uint64_t num_bytes) {
+  // to avoid overflow
+  uint64_t start = (uint64_t)_mem.get_mem_start_addr();
+  uint64_t end = (uint64_t)_mem.get_mem_end_addr();
+  uint64_t max_uint64 = 0xffffffffffffffff;
+  bool legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
+               (addr <= (max_uint64 - num_bytes + 1));
+  if (legal) return;
+
+  if (mem_t::_layout._pkt_sz == 0) {
+    legal = false;
+  } else {
+    start = (uint64_t)_mem.get_pkt_start_addr();
+    end = (uint64_t)_mem.get_pkt_end_addr();
+    legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
+            (addr <= (max_uint64 - num_bytes + 1));
+  }
+  if (legal) return;
+
+  if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
+    start = (uint64_t)_mem.get_pkt_ptrs_start_addr();
+    end = (uint64_t)_mem.get_pkt_ptrs_end_addr();
+    legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
+            (addr <= (max_uint64 - num_bytes + 1));
+  }
+
+  if (!legal) {
+    string err_msg = "unsafe memory access";
+    throw (err_msg);
+  }
 }
 
 void prog_state::print() const {

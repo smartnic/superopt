@@ -117,9 +117,6 @@ class mem_t {
   mem_t& operator=(const mem_t &rhs);
   bool operator==(const mem_t &rhs);
   void cp_input_mem(const mem_t &rhs);
-  // memory_access_check is used to avoid segmentation fault
-  // If memory access not in the legal range, throw error
-  void memory_access_check(uint64_t addr, uint64_t num_bytes);
   void clear();
   friend ostream& operator<<(ostream& out, const mem_t& mem);
 };
@@ -318,13 +315,14 @@ class smt_var_bl {
 class prog_state: public prog_state_base {
  public:
   mem_t _mem;
-  // _reg_readable/_stack_readable are used to indicate whether this register/stack byte
+  // _reg_readable/_stack_readable is used to indicate whether this register/stack byte
   // is readable or not.
   vector<bool> _reg_readable;
   vector<bool> _stack_readable;
   prog_state();
   void init_safety_chk();
   void reg_safety_chk(int reg_write, vector<int> reg_read_list = {});
+  void memory_safety_chk(uint64_t addr, uint64_t num_bytes);
   void init();
   void print() const;
   void clear();

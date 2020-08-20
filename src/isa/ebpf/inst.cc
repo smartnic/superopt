@@ -899,19 +899,19 @@ INSN_NOP:
   INSN_LDX##SIZEOP:                                                \
     ps.reg_safety_chk(DST_ID, vector<int>{SRC_ID});                \
     real_addr = get_real_addr_by_simu(SRC + OFF, MEM, SR);         \
-    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    ps.memory_safety_chk(real_addr, SIZE/8);                       \
     DST = compute_ld##SIZE(real_addr, 0);                          \
     CONT;                                                          \
   INSN_STX##SIZEOP:                                                \
     ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
     real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
-    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    ps.memory_safety_chk(real_addr, SIZE/8);                       \
     compute_st##SIZE(SRC, real_addr, 0);                           \
     CONT;                                                          \
   INSN_ST##SIZEOP:                                                 \
     ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
     real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
-    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    ps.memory_safety_chk(real_addr, SIZE/8);                       \
     compute_st##SIZE(IMM, real_addr, 0);                           \
     CONT;
   LDST(B,  8)
@@ -924,7 +924,7 @@ INSN_NOP:
   INSN_XADD##SIZE:                                                 \
     ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
     real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
-    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    ps.memory_safety_chk(real_addr, SIZE/8);                       \
     compute_xadd##SIZE(SRC, real_addr, 0);                         \
     CONT;
   XADD(32)
@@ -986,7 +986,7 @@ INSN_JA:
 INSN_CALL:
   // safety check of helper functions is inside compute_helper_function(),
   // since different functions have different parameters
-  R0 = compute_helper_function(IMM, R1, R2, R3, R4, R5, MEM, SR, ps);
+  R0 = compute_helper_function(IMM, R1, R2, R3, R4, R5, SR, ps);
   CONT;
 
 INSN_EXIT:

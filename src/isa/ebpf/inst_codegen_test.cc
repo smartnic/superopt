@@ -830,17 +830,17 @@ void test8() {
 }
 
 #define MAP_UPDATE(map, addr_k, addr_v) \
-  compute_map_update_helper(map, addr_k, addr_v, m, sr); \
+  compute_map_update_helper(map, addr_k, addr_v, ps, sr); \
   f = f && predicate_map_update_helper(map##_expr, addr_k##_expr, addr_v##_expr, new_out(), sv);
 
 #define MAP_DELETE(map, addr_k) \
-  compute_map_delete_helper(map, addr_k, m, sr); \
+  compute_map_delete_helper(map, addr_k, ps, sr); \
   f = f && predicate_map_delete_helper(map##_expr, addr_k##_expr, new_out(), sv);
 
 #define MAP_LOOKUP_AND_LD(map, addr_k, v_expected, test_name) \
   addr_v_lookup_expr = new_addr_v_lookup(); \
   v_lookup_expr = new_v_lookup(); \
-  addr_v_lookup = compute_map_lookup_helper(map, addr_k, m, sr); \
+  addr_v_lookup = compute_map_lookup_helper(map, addr_k, ps, sr); \
   v_lookup = compute_ld8(addr_v_lookup, 0); \
   f = f && predicate_map_lookup_helper(map##_expr, addr_k##_expr, addr_v_lookup_expr, sv); \
   f = f && predicate_ld8(addr_v_lookup_expr, v(0), sv, v_lookup_expr); \
@@ -849,7 +849,7 @@ void test8() {
 
 #define MAP_LOOKUP(map, addr_k, addr_v_expected, test_name) \
   addr_v_lookup_expr = new_addr_v_lookup(); \
-  addr_v_lookup = compute_map_lookup_helper(map, addr_k, m, sr); \
+  addr_v_lookup = compute_map_lookup_helper(map, addr_k, ps, sr); \
   f = f && predicate_map_lookup_helper(map##_expr, addr_k##_expr, addr_v_lookup_expr, sv); \
   f_expected = (eval_output(f, addr_v_lookup_expr) == v(addr_v_lookup)); \
   print_test_res(is_valid(f_expected == string_to_expr("true")) && (addr_v_lookup == addr_v_expected), test_name);
@@ -860,7 +860,8 @@ void test9() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512)); // add two maps with 1-byte k/v size, 512 max entries
   mem_t::add_map(map_attr(8, 8, 512));
-  mem_t m;
+  prog_state ps;
+  mem_t& m = ps._mem;
   m.init_by_layout();
   simu_real sr((uint64_t)m.get_stack_bottom_addr(), (uint64_t)m.get_stack_bottom_addr());
   int map1 = 0, map2 = 1;
@@ -989,7 +990,7 @@ void test9() {
   uint64_t del_ret;
 #define MAP_DELETE_RET(map, addr_k) \
   del_ret_expr = new_out(); \
-  del_ret = compute_map_delete_helper(map, addr_k, m, sr); \
+  del_ret = compute_map_delete_helper(map, addr_k, ps, sr); \
   f = f && predicate_map_delete_helper(map##_expr, addr_k##_expr, del_ret_expr, sv);
 
   MAP_DELETE_RET(map1, addr_k1)  // del m1[k1]
@@ -1058,7 +1059,7 @@ void test9() {
 #define MAP1_LOOKUP_AND_LD(v_expected, test_name) \
   addr_v_lookup_expr = new_addr_v_lookup(); \
   v_lookup_expr = new_v_lookup(); \
-  addr_v_lookup = compute_map_lookup_helper(map1, addr_k1, m, sr); \
+  addr_v_lookup = compute_map_lookup_helper(map1, addr_k1, ps, sr); \
   v_lookup = compute_ld8(addr_v_lookup, 0); \
   f = f && predicate_map_lookup_helper(map1_expr, addr_k1_expr, addr_v_lookup_expr, sv); \
   f = f && predicate_ld8(addr_v_lookup_expr, v(0), sv, v_lookup_expr); \
@@ -1068,7 +1069,7 @@ void test9() {
 #define MAP2_LOOKUP_AND_LD(v_expected, test_name) \
   addr_v_lookup_expr = new_addr_v_lookup(); \
   v_lookup_expr = new_v_lookup(); \
-  addr_v_lookup = compute_map_lookup_helper(map2, addr_k2, m, sr); \
+  addr_v_lookup = compute_map_lookup_helper(map2, addr_k2, ps, sr); \
   v_lookup = compute_ld32(addr_v_lookup, 0); \
   f = f && predicate_map_lookup_helper(map2_expr, addr_k2_expr, addr_v_lookup_expr, sv); \
   f = f && predicate_ld32(addr_v_lookup_expr, v(0), sv, v_lookup_expr); \
@@ -1077,14 +1078,14 @@ void test9() {
 
 #define MAP1_LOOKUP(addr_v_expected, test_name) \
   addr_v_lookup_expr = new_addr_v_lookup(); \
-  addr_v_lookup = compute_map_lookup_helper(map1, addr_k1, m, sr); \
+  addr_v_lookup = compute_map_lookup_helper(map1, addr_k1, ps, sr); \
   f = f && predicate_map_lookup_helper(map1_expr, addr_k1_expr, addr_v_lookup_expr, sv); \
   f_expected = (eval_output(f, addr_v_lookup_expr) == v(addr_v_expected)); \
   print_test_res(is_valid(f_expected == string_to_expr("true")) && (addr_v_lookup == addr_v_expected), test_name);
 
 #define MAP2_LOOKUP(addr_v_expected, test_name) \
   addr_v_lookup_expr = new_addr_v_lookup(); \
-  addr_v_lookup = compute_map_lookup_helper(map2, addr_k2, m, sr); \
+  addr_v_lookup = compute_map_lookup_helper(map2, addr_k2, ps, sr); \
   f = f && predicate_map_lookup_helper(map2_expr, addr_k2_expr, addr_v_lookup_expr, sv); \
   f_expected = (eval_output(f, addr_v_lookup_expr) == v(addr_v_expected)); \
   print_test_res(is_valid(f_expected == string_to_expr("true")) && (addr_v_lookup == addr_v_expected), test_name);
