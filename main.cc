@@ -7,6 +7,7 @@
 #include <set>
 #include <utility>
 #include <iomanip>
+#include <limits>
 #include <getopt.h>
 #include <chrono>
 #include "src/utils.h"
@@ -336,7 +337,32 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
   return true;
 }
 
-void set_default_para_vals(input_paras &in_para) {
+// best programs are programs with the smallest performance cost among zero-error-cost programs
+void get_best_pgms_from_candidates(vector<prog*>& best_pgms) {
+  double min_perf_cost = numeric_limits<double>::max();
+  // get the minimum performance cost with zero error cost
+  for (auto& element : prog_dic) {
+    vector<prog*>& pl = element.second; // list of progs with the same hash
+    for (auto p : pl) {
+      if (p->_error_cost == 0) {
+        min_perf_cost = min(min_perf_cost, p->_perf_cost);
+      }
+    }
+  }
+
+  best_pgms.clear();
+  for (auto& element : prog_dic) {
+    vector<prog*>& pl = element.second; // list of progs with the same hash
+    for (auto p : pl) {
+      if ((p->_error_cost == 0) && (p->_perf_cost == min_perf_cost)) {
+        prog* p_copy = new prog(*p);
+        best_pgms.push_back(p_copy);
+      }
+    }
+  }
+}
+
+void set_default_para_vals(input_paras & in_para) {
   in_para.meas_mode = false;
   in_para.path_out = "measure/";
   in_para.bm = 0;
@@ -385,10 +411,21 @@ int main(int argc, char* argv[]) {
   }
   gen_random_input(inputs, -50, 50);
   run_mh_sampler(in_para, bm_optis_orig);
+  vector<prog*> best_pgms;
+  get_best_pgms_from_candidates(best_pgms);
   if (in_para.bm_from_file) {
     delete[] bm;
   }
   auto end = NOW;
+
+  cout << "Best program(s): " << endl;
+  for (auto p : best_pgms) {
+    p->print();
+  }
+  for (auto p : best_pgms) {
+    delete p;
+  }
+
   cout << "validator time: " << dur_sum << endl;
   if (n_sum_long > 0)
     cout << "validator long time: " << dur_sum_long << " " << n_sum_long << " " << dur_sum_long / n_sum_long << endl;
