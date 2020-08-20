@@ -727,57 +727,8 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
 #define R5 ps._regs[5]
 #define SR sr
 
-#define ALU_UNARY(OPCODE, OP, OPERAND)                             \
-  INSN_##OPCODE:                                                   \
-    DST = compute_##OP(OPERAND);                                   \
-    CONT;
-
-#define ALU_BINARY(OPCODE, OP, OPERAND1, OPERAND2)                 \
-  INSN_##OPCODE:                                                   \
-    DST = compute_##OP(OPERAND1, OPERAND2);                        \
-    CONT;
-
-#define LDST(SIZEOP, SIZE)                                         \
-  INSN_LDX##SIZEOP:                                                \
-    real_addr = get_real_addr_by_simu(SRC + OFF, MEM, SR);         \
-    ps._mem.memory_access_check(real_addr, SIZE/8);                \
-    DST = compute_ld##SIZE(real_addr, 0);                          \
-    CONT;                                                          \
-  INSN_STX##SIZEOP:                                                \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
-    ps._mem.memory_access_check(real_addr, SIZE/8);                \
-    compute_st##SIZE(SRC, real_addr, 0);                           \
-    CONT;                                                          \
-  INSN_ST##SIZEOP:                                                 \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
-    ps._mem.memory_access_check(real_addr, SIZE/8);                \
-    compute_st##SIZE(IMM, real_addr, 0);                           \
-    CONT;
-
-#define XADD(SIZE)                                                 \
-  INSN_XADD##SIZE:                                                 \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
-    ps._mem.memory_access_check(real_addr, SIZE/8);                \
-    compute_xadd##SIZE(SRC, real_addr, 0);                         \
-    CONT;                                                          \
-
-#define BYTESWAP(OPCODE, OP)                                       \
-  INSN_##OPCODE:                                                   \
-    switch (IMM) {                                                 \
-      case 16: DST = compute_##OP##16(DST);break;                  \
-      case 32: DST = compute_##OP##32(DST);break;                  \
-      case 64: DST = compute_##OP##64(DST);break;                  \
-      default: cout << "[Error] imm " << IMM                       \
-                    << " is not 16, 32, 64" << endl;               \
-               break;                                              \
-    }                                                              \
-    CONT;
-
-#define COND_JMP(OPCODE, OP, OPERAND1, OPERAND2)                   \
-  INSN_##OPCODE:                                                   \
-    if (OPERAND1 OP OPERAND2)                                      \
-      insn += OFF;                                                 \
-  CONT;
+#define DST_ID (insn->_dst_reg)
+#define SRC_ID (insn->_src_reg)
 
   inst* insn = program;
   ps.clear();
@@ -880,68 +831,162 @@ select_insn:
 INSN_NOP:
   CONT;
 
-  ALU_UNARY(MOV64XC, mov, IMM)
-  ALU_UNARY(MOV64XY, mov, SRC)
-  ALU_BINARY(ADD64XC, add, DST, IMM)
-  ALU_BINARY(ADD64XY, add, DST, SRC)
-  ALU_BINARY(OR64XC, or , DST, IMM)
-  ALU_BINARY(OR64XY, or , DST, SRC)
-  ALU_BINARY(AND64XC, and , DST, IMM)
-  ALU_BINARY(AND64XY, and , DST, SRC)
-  ALU_BINARY(LSH64XC, lsh, DST, IMM)
-  ALU_BINARY(LSH64XY, lsh, DST, SRC_L6)
-  ALU_BINARY(RSH64XC, rsh, DST, IMM)
-  ALU_BINARY(RSH64XY, rsh, DST, SRC_L6)
-  ALU_BINARY(ARSH64XC, arsh, DST, IMM)
-  ALU_BINARY(ARSH64XY, arsh, DST, SRC_L6)
+#define ALU_UNARY(OPCODE, OP)                                      \
+  INSN_##OPCODE##64XC:                                             \
+    ps.reg_safety_chk(DST_ID);                                     \
+    DST = compute_##OP(IMM);                                       \
+    CONT;                                                          \
+  INSN_##OPCODE##64XY:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{SRC_ID});                \
+    DST = compute_##OP(SRC);                                       \
+    CONT;                                                          \
+  INSN_##OPCODE##32XC:                                             \
+    ps.reg_safety_chk(DST_ID);                                     \
+    DST = compute_##OP##32(IMM);                                   \
+    CONT;                                                          \
+  INSN_##OPCODE##32XY:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{SRC_ID});                \
+    DST = compute_##OP##32(SRC);                                   \
+    CONT;
+  ALU_UNARY(MOV, mov)
+#undef ALU_UNARY
 
-  ALU_UNARY(MOV32XC, mov32, IMM)
-  ALU_UNARY(MOV32XY, mov32, SRC)
-  ALU_BINARY(ADD32XC, add32, DST, IMM)
-  ALU_BINARY(ADD32XY, add32, DST, SRC)
-  ALU_BINARY(OR32XC, or32, DST, IMM)
-  ALU_BINARY(OR32XY, or32, DST, SRC)
-  ALU_BINARY(AND32XC, and32, DST, IMM)
-  ALU_BINARY(AND32XY, and32, DST, SRC)
-  ALU_BINARY(LSH32XC, lsh32, DST, IMM)
-  ALU_BINARY(LSH32XY, lsh32, DST, SRC_L5)
-  ALU_BINARY(RSH32XC, rsh32, DST, IMM)
-  ALU_BINARY(RSH32XY, rsh32, DST, SRC_L5)
-  ALU_BINARY(ARSH32XC, arsh32, DST, IMM)
-  ALU_BINARY(ARSH32XY, arsh32, DST, SRC_L5)
+#define ALU_BINARY(OPCODE, OP)                                     \
+  INSN_##OPCODE##64XC:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
+    DST = compute_##OP(DST, IMM);                                  \
+    CONT;                                                          \
+  INSN_##OPCODE##64XY:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
+    DST = compute_##OP(DST, SRC);                                  \
+    CONT;                                                          \
+  INSN_##OPCODE##32XC:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
+    DST = compute_##OP##32(DST, IMM);                              \
+    CONT;                                                          \
+  INSN_##OPCODE##32XY:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
+    DST = compute_##OP##32(DST, SRC);                              \
+    CONT;
+  ALU_BINARY(ADD, add)
+  ALU_BINARY(OR, or )
+  ALU_BINARY(AND, and )
+#undef ALU_BINARY
 
+#define ALU_BINARY_SHIFT(OPCODE, OP)                               \
+  INSN_##OPCODE##64XC:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
+    DST = compute_##OP(DST, IMM);                                  \
+    CONT;                                                          \
+  INSN_##OPCODE##64XY:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
+    DST = compute_##OP(DST, SRC_L6);                               \
+    CONT;                                                          \
+  INSN_##OPCODE##32XC:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
+    DST = compute_##OP##32(DST, IMM);                              \
+    CONT;                                                          \
+  INSN_##OPCODE##32XY:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
+    DST = compute_##OP##32(DST, SRC_L5);                           \
+    CONT;
+  ALU_BINARY_SHIFT(LSH, lsh)
+  ALU_BINARY_SHIFT(RSH, rsh)
+  ALU_BINARY_SHIFT(ARSH, arsh)
+#undef ALU_BINARY_SHIFT
+
+#define LDST(SIZEOP, SIZE)                                         \
+  INSN_LDX##SIZEOP:                                                \
+    ps.reg_safety_chk(DST_ID, vector<int>{SRC_ID});                \
+    real_addr = get_real_addr_by_simu(SRC + OFF, MEM, SR);         \
+    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    DST = compute_ld##SIZE(real_addr, 0);                          \
+    CONT;                                                          \
+  INSN_STX##SIZEOP:                                                \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
+    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    compute_st##SIZE(SRC, real_addr, 0);                           \
+    CONT;                                                          \
+  INSN_ST##SIZEOP:                                                 \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
+    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    compute_st##SIZE(IMM, real_addr, 0);                           \
+    CONT;
   LDST(B,  8)
   LDST(H,  16)
   LDST(W,  32)
   LDST(DW, 64)
+#undef LDST
 
+#define XADD(SIZE)                                                 \
+  INSN_XADD##SIZE:                                                 \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);         \
+    ps._mem.memory_access_check(real_addr, SIZE/8);                \
+    compute_xadd##SIZE(SRC, real_addr, 0);                         \
+    CONT;
   XADD(32)
   XADD(64)
+#undef XADD
 
+#define BYTESWAP(OPCODE, OP)                                       \
+  INSN_##OPCODE:                                                   \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
+    switch (IMM) {                                                 \
+      case 16: DST = compute_##OP##16(DST);break;                  \
+      case 32: DST = compute_##OP##32(DST);break;                  \
+      case 64: DST = compute_##OP##64(DST);break;                  \
+      default: cout << "[Error] imm " << IMM                       \
+                    << " is not 16, 32, 64" << endl;               \
+               break;                                              \
+    }                                                              \
+    CONT;
   BYTESWAP(LE, le)
   BYTESWAP(BE, be)
+#undef BYTESWAP
 
-  ALU_UNARY(LDMAPID, ldmapid, IMM)
+INSN_LDMAPID:
+  ps.reg_safety_chk(DST_ID);
+  DST = compute_ldmapid(IMM);
+  CONT;
 
 INSN_JA:
   insn += OFF;
   CONT;
 
-  COND_JMP(JEQXC, ==, DST, IMM)
-  COND_JMP(JEQXY, ==, DST, SRC)
-  COND_JMP(JGTXC, >, UDST, UIMM)
-  COND_JMP(JGTXY, >, UDST, USRC)
-  COND_JMP(JNEXC, !=, DST, IMM)
-  COND_JMP(JNEXY, !=, DST, SRC)
-  COND_JMP(JSGTXC, >, DST, IMM)
-  COND_JMP(JSGTXY, >, DST, SRC)
-  COND_JMP(JEQ32XC, ==, DST_L32, IMM_L32)
-  COND_JMP(JEQ32XY, ==, DST_L32, SRC_L32)
-  COND_JMP(JNE32XC, !=, DST_L32, IMM_L32)
-  COND_JMP(JNE32XY, !=, DST_L32, SRC_L32)
+#define COND_JMP(OPCODE, OP, DST_REG, SRC_REG, IMM_NUM)            \
+  INSN_##OPCODE##XC:                                               \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
+    if (DST_REG OP IMM_NUM)                                        \
+      insn += OFF;                                                 \
+  CONT;                                                            \
+  INSN_##OPCODE##XY:                                               \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
+    if (DST_REG OP SRC_REG)                                        \
+      insn += OFF;                                                 \
+  CONT;                                                            \
+  INSN_##OPCODE##32XC:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
+    if (L32(DST_REG) OP L32(IMM_NUM))                              \
+      insn += OFF;                                                 \
+  CONT;                                                            \
+  INSN_##OPCODE##32XY:                                             \
+    ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});        \
+    if (L32(DST_REG) OP L32(SRC_REG))                              \
+      insn += OFF;                                                 \
+  CONT;
+  COND_JMP(JEQ, ==, UDST, USRC, UIMM)
+  COND_JMP(JGT,  >, UDST, USRC, UIMM)
+  COND_JMP(JNE, !=, UDST, USRC, UIMM)
+  COND_JMP(JSGT, >, DST, SRC, IMM)
+#undef COND_JMP
 
 INSN_CALL:
-  R0 = compute_helper_function(IMM, R1, R2, R3, R4, R5, MEM, SR);
+  // safety check of helper functions is inside compute_helper_function(),
+  // since different functions have different parameters
+  R0 = compute_helper_function(IMM, R1, R2, R3, R4, R5, MEM, SR, ps);
   CONT;
 
 INSN_EXIT:

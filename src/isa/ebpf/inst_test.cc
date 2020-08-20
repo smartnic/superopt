@@ -1159,6 +1159,65 @@ void test6() {
   print_test_res(output == expected, "interpret program 3");
 }
 
+void test_read_before_write(inst* pgm, int len, bool is_safe_expected, string test_name) {
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_constant);
+  prog_state ps;
+  ps.init();
+  inout_t input, output;
+  input.init();
+  output.init();
+  bool is_safe_actual = true;
+  string err_msg_actual = "";
+  try {
+    interpret(output, pgm, len, ps, input);
+  } catch (string err_msg) {
+    is_safe_actual = false;
+    err_msg_actual = err_msg;
+  }
+  bool res = false;
+  if (is_safe_expected) res = (is_safe_actual);
+  else res = (! is_safe_actual) && (err_msg_actual.find("not readable") != string::npos);
+  print_test_res(res, test_name);
+}
+
+void test7() {
+  cout << "Test 13: test safety check" << endl;
+  cout << "1. register read before write" << endl;
+  inst p1[3] = {inst(MOV64XY, 2, 1), // r1, r10 is readable without assigning value
+                inst(MOV64XC, 3, 10),
+                inst(EXIT),
+               };
+  test_read_before_write(p1, 3, true, "1");
+
+  inst p2[2] = {inst(MOV64XY, 2, 0), inst(EXIT)};
+  test_read_before_write(p2, 2, false, "2");
+
+  inst p3[2] = {inst(JEQXC, 2, 1, 0), inst(EXIT)};
+  test_read_before_write(p3, 2, false, "3");
+
+  inst p4[2] = {inst(JEQXY, 2, 1, 0), inst(EXIT)};
+  test_read_before_write(p4, 2, false, "4");
+
+  inst p5[2] = {inst(LDXB, 0, 0, 0), inst(EXIT)};
+  test_read_before_write(p5, 2, false, "5");
+
+  inst p6[2] = {inst(STXB, 0, 0, 0), inst(EXIT)};
+  test_read_before_write(p6, 2, false, "6");
+
+  inst p7[2] = {inst(XADD64, 0, 0, 0), inst(EXIT)};
+  test_read_before_write(p7, 2, false, "7");
+
+  inst p8[2] = {inst(ADD64XC, 0, 0), inst(EXIT)};
+  test_read_before_write(p8, 2, false, "8");
+
+  inst p9[2] = {inst(CALL, 1), inst(EXIT)};
+  test_read_before_write(p9, 2, false, "9");
+
+  inst p10[2] = {inst(LE, 0, 32), inst(EXIT)};
+  test_read_before_write(p10, 2, false, "10");
+}
+
 int main(int argc, char *argv[]) {
   test1();
   test2();
@@ -1166,6 +1225,7 @@ int main(int argc, char *argv[]) {
   test4();
   test5();
   test6();
+  test7();
 
   return 0;
 }

@@ -945,8 +945,31 @@ z3::expr smt_var_bl::gen_smt_after_smt_block(smt_var& sv, z3::expr& pc) {
   return f;
 }
 
+prog_state::prog_state() {
+  _regs.resize(NUM_REGS, 0);
+  init_safety_chk();
+}
+
+void prog_state::init_safety_chk() {
+  _reg_readable.resize(NUM_REGS, false);
+  _reg_readable[1] = true; // r1 and r10 are in the program input
+  _reg_readable[10] = true;
+  _stack_readable.resize(STACK_SIZE, false);
+}
+
+void prog_state::reg_safety_chk(int reg_write, vector<int> reg_read_list) {
+  // check whether reg_read is readable first, then set the reg_write is readable
+  for (int i = 0; i < reg_read_list.size(); i++) {
+    if (_reg_readable[reg_read_list[i]]) continue;
+    string err_msg = "register " + to_string(reg_read_list[i]) + " is not readable.";
+    throw (err_msg);
+  }
+  _reg_readable[reg_write] = true;
+}
+
 void prog_state::init() {
   _mem.init_by_layout();
+  init_safety_chk();
 }
 
 void prog_state::print() const {
@@ -958,6 +981,8 @@ void prog_state::print() const {
 void prog_state::clear() {
   prog_state_base::clear();
   _mem.clear();
+  _reg_readable.clear();
+  _stack_readable.clear();
 }
 
 inout_t::inout_t() {
@@ -1066,6 +1091,7 @@ ostream& operator<<(ostream& out, const inout_t& x) {
 
 
 void update_ps_by_input(prog_state& ps, const inout_t& input) {
+  ps.init_safety_chk();
   ps._regs[10] = input.input_simu_r10;
   // cp input register
   ps._regs[1] = input.reg;

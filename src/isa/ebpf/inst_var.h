@@ -318,7 +318,13 @@ class smt_var_bl {
 class prog_state: public prog_state_base {
  public:
   mem_t _mem;
-  prog_state() {_regs.resize(NUM_REGS, 0);}
+  // _reg_readable/_stack_readable are used to indicate whether this register/stack byte
+  // is readable or not.
+  vector<bool> _reg_readable;
+  vector<bool> _stack_readable;
+  prog_state();
+  void init_safety_chk();
+  void reg_safety_chk(int reg_write, vector<int> reg_read_list = {});
   void init();
   void print() const;
   void clear();

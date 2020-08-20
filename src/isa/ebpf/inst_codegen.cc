@@ -12,11 +12,11 @@ z3::expr key_not_found_after_idx(z3::expr key, int idx, smt_map_wt& m_wt);
 z3::expr key_not_in_map_wt(z3::expr k, smt_map_wt& m_wt, smt_var& sv, bool same_pgms = false, unsigned int block = 0);
 
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
-                                 uint64_t r4, uint64_t r5, mem_t& m, simu_real& sr) {
+                                 uint64_t r4, uint64_t r5, mem_t& m, simu_real& sr, prog_state& ps) {
   switch (func_id) {
-    case BPF_FUNC_map_lookup: return compute_map_lookup_helper(r1, r2, m, sr);
-    case BPF_FUNC_map_update: return compute_map_update_helper(r1, r2, r3, m, sr);
-    case BPF_FUNC_map_delete: return compute_map_delete_helper(r1, r2, m, sr);
+    case BPF_FUNC_map_lookup: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_lookup_helper(r1, r2, m, sr);
+    case BPF_FUNC_map_update: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_map_update_helper(r1, r2, r3, m, sr);
+    case BPF_FUNC_map_delete: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_delete_helper(r1, r2, m, sr);
     default: cout << "Error: unknown function id " << func_id << endl; return -1;
   }
 }

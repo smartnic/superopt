@@ -70,7 +70,7 @@ void compute_xadd64(int64_t in, uint64_t addr, int64_t off);
 void compute_xadd32(int64_t in, uint64_t addr, int64_t off);
 // map helper functions
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
-                                 uint64_t r4, uint64_t r5, mem_t& m, simu_real& sr);
+                                 uint64_t r4, uint64_t r5, mem_t& m, simu_real& sr, prog_state& ps);
 uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, mem_t& m, simu_real& sr);
 uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_v, mem_t& m,
                                    simu_real& sr);
