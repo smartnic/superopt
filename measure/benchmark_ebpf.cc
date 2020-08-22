@@ -617,7 +617,46 @@ inst bm19[N19] = {inst(183, 0, 2, 0, 1),
                   inst(183, 0, 0, 0, 0),
                   inst(149, 0, 0, 0, 0),
                  };
-
+// cilium: bpf_network, section: from-network
+inst bm20[N20] = {inst(180, 0, 2, 0, 0),
+                  inst(99, 2, 1, 64, 0),
+                  inst(183, 0, 2, 0, 0),
+                  inst(99, 2, 1, 60, 0),
+                  inst(99, 2, 1, 56, 0),
+                  inst(99, 2, 1, 52, 0),
+                  inst(99, 2, 1, 48, 0),
+                  inst(97, 1, 6, 0, 0),
+                  inst(123, 2, 10, -8, 0),
+                  inst(123, 2, 10, -16, 0),
+                  inst(183, 0, 1, 0, 259),
+                  inst(123, 1, 10, -24, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -24),
+                  inst(24, 0, 1, 0, 0), // ldmapid r1 = 0
+                  inst(0, 0, 0, 0, 0),
+                  inst(133, 0, 0, 0, 1),
+                  inst(21, 0, 0, 7, 0),
+                  inst(121, 0, 1, 0, 0),
+                  inst(7, 0, 1, 0, 1),
+                  inst(123, 1, 0, 0, 0),
+                  inst(121, 0, 1, 8, 0),
+                  inst(15, 6, 1, 0, 0),
+                  inst(123, 1, 0, 8, 0),
+                  inst(5, 0, 0, 11, 0),
+                  inst(183, 0, 1, 0, 1),
+                  inst(123, 1, 10, -16, 0),
+                  inst(123, 6, 10, -8, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -24),
+                  inst(191, 10, 3, 0, 0),
+                  inst(7, 0, 3, 0, -16),
+                  inst(24, 0, 1, 0, 0), // ldmapid r1 = 0
+                  inst(0, 0, 0, 0),
+                  inst(180, 0, 4, 0, 0),
+                  inst(133, 0, 0, 0, 2),
+                  inst(180, 0, 0, 0, 0),
+                  inst(149, 0, 0, 0, 0),
+                 };
 // Struct needs to be defined because the loader writes to
 // the .ins file using bpf_insn which has a different size
 // than insn
@@ -906,6 +945,13 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::add_map(map_attr(64, 64, N19));
       *bm = bm19;
       break;
+    case 20:
+      inst::max_prog_len = N20;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(68);
+      mem_t::add_map(map_attr(64, 128, N20));
+      *bm = bm20;
+      break;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
       return;
@@ -919,4 +965,17 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   }
   inst::add_sample_imm(imms);
   inst::add_sample_off(offs);
+  cout << "sample_neg_imms: ";
+  for (int i = 0; i < inst::_sample_neg_imms.size(); i++)
+    cout << inst::_sample_neg_imms[i] << " ";
+  cout << endl << "sample_pos_imms: ";
+  for (int i = 0; i < inst::_sample_pos_imms.size(); i++)
+    cout << inst::_sample_pos_imms[i] << " ";
+  cout << endl << "sample_neg_offs: ";
+  for (int i = 0; i < inst::_sample_neg_offs.size(); i++)
+    cout << inst::_sample_neg_offs[i] << " ";
+  cout << endl << "sample_pos_offs: ";
+  for (int i = 0; i < inst::_sample_pos_offs.size(); i++)
+    cout << inst::_sample_pos_offs[i] << " ";
+  cout << endl;
 }
