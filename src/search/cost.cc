@@ -184,7 +184,6 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   int ex_set_size = _examples._exs.size();
 
   if (num_successful_ex == ex_set_size) {
-    synth->print();
     auto t1 = NOW;
     try {
       is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);

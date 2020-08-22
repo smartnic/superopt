@@ -220,6 +220,11 @@ double mh_sampler::alpha(prog* curr, prog* next, prog* orig) {
 
 prog* mh_sampler::mh_next(prog* curr, prog* orig) {
   prog* next = _next_proposal.next_proposal(curr);
+  // print each modification
+  for (int i = _next_proposal. _win_start; i < _next_proposal._win_end; i++) {
+    cout << i << ": ";
+    next->inst_list[i].print();
+  }
   // next->canonicalize();
   double uni_sample = unidist_mh(gen_mh);
   double a = alpha(curr, next, orig);
