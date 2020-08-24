@@ -960,6 +960,7 @@ void test3() {
                   inst(STDW, 10, -8, 1),
                   inst(XADD64, 10, -8, 1),
                   inst(XADD32, 10, -8, 1),
+                  inst(LDABSH, 1),
                   inst(JA, 1),
                   inst(JEQXC, 3, 1, 2),
                   inst(JEQXY, 3, 1, 2),
@@ -1021,6 +1022,7 @@ void test3() {
              "{122, 10, 0, -8, 1},"\
              "{219, 10, 1, -8, 0},"\
              "{195, 10, 1, -8, 0},"\
+             "{40, 0, 0, 0, 1},"\
              "{5, 0, 0, 1, 0},"\
              "{21, 3, 0, 2, 1},"\
              "{29, 3, 1, 2, 0},"\
@@ -1241,6 +1243,30 @@ void test7() {
   test_read_before_write(p2_5, 2, false, "2.5");
 }
 
+void test8() {
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_skb);
+  mem_t::set_pkt_sz(16); // pkt sz: 512 bytes
+  mem_t::set_skb_sz(16);
+  prog_state ps;
+  ps.init();
+  inout_t input, output, expected;
+  input.init();
+  output.init();
+  expected.init();
+  input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
+  cout << "Test 1: skb full interpretation check" << endl;
+  // test skb load, ldabsh
+  inst p1[2] = {inst(LDABSH, 0),
+                inst(EXIT),
+               };
+  input.set_skb_random_val();
+  expected = input;
+  expected.reg = (input.skb[1] << 8) | input.skb[0];
+  interpret(output, p1, 2, ps, input);
+  print_test_res(output == expected, "LDABSH");
+}
+
 int main(int argc, char *argv[]) {
   test1();
   test2();
@@ -1249,6 +1275,7 @@ int main(int argc, char *argv[]) {
   test5();
   test6();
   test7();
+  test8();
 
   return 0;
 }

@@ -73,6 +73,7 @@ enum OPCODE_IDX {
   IDX_STDW,
   IDX_XADD64,
   IDX_XADD32,
+  IDX_LDABSH,
   // JMP
   IDX_JA,
   IDX_JEQXC,
@@ -107,6 +108,7 @@ enum OPCODE_IDX {
 #define OPCODE_BPF_STX_MEM(SIZE) BPF_STX | BPF_SIZE(SIZE) | BPF_MEM
 #define OPCODE_BPF_ST_MEM(SIZE) BPF_ST | BPF_SIZE(SIZE) | BPF_MEM
 #define OPCODE_BPF_XADD(SIZE) BPF_STX | BPF_XADD | BPF_SIZE(SIZE)
+#define OPCODE_BPF_LDABS(SIZE) BPF_LD | BPF_ABS | BPF_SIZE(SIZE)
 #define OPCODE_BPF_JMP_IMM(OP) BPF_JMP | BPF_OP(OP) | BPF_K
 #define OPCODE_BPF_JMP_REG(OP) BPF_JMP | BPF_OP(OP) | BPF_X
 #define OPCODE_BPF_JMP32_IMM(OP) BPF_JMP32 | BPF_OP(OP) | BPF_K
@@ -163,6 +165,7 @@ enum OPCODES {
   STDW     = OPCODE_BPF_ST_MEM(BPF_DW),
   XADD64   = OPCODE_BPF_XADD(BPF_DW),
   XADD32   = OPCODE_BPF_XADD(BPF_W),
+  LDABSH   = OPCODE_BPF_LDABS(BPF_H),
   JA       = OPCODE_BPF_JMP_A,
   JEQXC    = OPCODE_BPF_JMP_IMM(BPF_JEQ),
   JEQXY    = OPCODE_BPF_JMP_REG(BPF_JEQ),
@@ -228,6 +231,7 @@ static const int idx_2_opcode[NUM_INSTR] = {
   [IDX_STDW] = STDW,
   [IDX_XADD64] = XADD64,
   [IDX_XADD32] = XADD32,
+  [IDX_LDABSH] = LDABSH,
   [IDX_JA] = JA,
   [IDX_JEQXC] = JEQXC,
   [IDX_JEQXY] = JEQXY,
@@ -292,6 +296,7 @@ static const int num_operands[NUM_INSTR] = {
   [IDX_STDW]     = 3,
   [IDX_XADD64]   = 3,
   [IDX_XADD32]   = 3,
+  [IDX_LDABSH]   = 1,
   [IDX_JA]       = 1,
   [IDX_JEQXC]    = 3,
   [IDX_JEQXY]    = 3,
@@ -358,6 +363,7 @@ static const int insn_num_regs[NUM_INSTR] = {
   [IDX_STDW]     = 1,
   [IDX_XADD64]   = 2,
   [IDX_XADD32]   = 2,
+  [IDX_LDABSH]   = 0,
   [IDX_JA]       = 0,
   [IDX_JEQXC]    = 1,
   [IDX_JEQXY]    = 2,
@@ -422,6 +428,7 @@ static const int opcode_type[NUM_INSTR] = {
   [IDX_STDW]     = OP_ST,
   [IDX_XADD64]   = OP_ST,
   [IDX_XADD32]   = OP_ST,
+  [IDX_LDABSH]   = OP_LD,
   [IDX_JA]       = OP_UNCOND_JMP,
   [IDX_JEQXC]    = OP_COND_JMP,
   [IDX_JEQXY]    = OP_COND_JMP,
@@ -474,6 +481,7 @@ enum OPERANDS {
 #define LDX_OPS (FSTOP(OP_DST_REG) | SNDOP(OP_SRC_REG) | TRDOP(OP_OFF))
 #define STX_OPS (FSTOP(OP_DST_REG) | SNDOP(OP_OFF) | TRDOP(OP_SRC_REG))
 #define ST_OPS  (FSTOP(OP_DST_REG) | SNDOP(OP_OFF) | TRDOP(OP_IMM))
+#define LDABS_OPS (FSTOP(OP_IMM) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 #define JA_OPS (FSTOP(OP_OFF) | SNDOP(OP_UNUSED) | TRDOP(OP_UNUSED))
 #define JMP_OPS_IMM (FSTOP(OP_DST_REG) | SNDOP(OP_IMM) | TRDOP(OP_OFF))
 #define JMP_OPS_REG (FSTOP(OP_DST_REG) | SNDOP(OP_SRC_REG) | TRDOP(OP_OFF))
@@ -526,6 +534,7 @@ static const int optable[NUM_INSTR] = {
   [IDX_STDW]     = ST_OPS,
   [IDX_XADD64]   = STX_OPS,
   [IDX_XADD32]   = STX_OPS,
+  [IDX_LDABSH]   = LDABS_OPS,
   [IDX_JA]       = JA_OPS,
   [IDX_JEQXC]    = JMP_OPS_IMM,
   [IDX_JEQXY]    = JMP_OPS_REG,
@@ -552,6 +561,7 @@ static const int optable[NUM_INSTR] = {
 #undef LDX_OPS
 #undef STX_OPS
 #undef ST_OPS
+#undef LDABS_OPS
 #undef JMP_OPS_IMM
 #undef JMP_OPS_REG
 #undef CALL_OPS

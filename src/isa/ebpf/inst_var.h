@@ -32,6 +32,7 @@ enum pgm_input_type {
   PGM_INPUT_constant,
   PGM_INPUT_pkt, // input(r1) -> pkt_start_addr
   PGM_INPUT_pkt_ptrs, // input(r1) -> {pkt_start_addr(32-bit), pkt_end_addr(32-bit)}
+  PGM_INPUT_skb,
 };
 
 class mem_layout {
@@ -41,7 +42,8 @@ class mem_layout {
   vector<map_attr> _maps_attr;
   vector<unsigned int> _maps_start;
   unsigned int _pkt_sz = 0; // means no pkt, unit: byte
-  void clear() {_maps_attr.clear(); _maps_start.clear(); _pkt_sz = 0;}
+  unsigned int _skb_sz = 0; // means no skb, unit: byte
+  void clear() {_maps_attr.clear(); _maps_start.clear(); _pkt_sz = 0; _skb_sz = 0;}
   friend ostream& operator<<(ostream& out, const mem_layout& layout);
 };
 
@@ -74,16 +76,19 @@ class mem_t {
   // should ensure memory is contiguous, because of the assumption in memory_access_check
   uint8_t *_mem = nullptr;
   uint8_t *_pkt = nullptr;
+  uint8_t *_skb = nullptr;
   vector<map_t> _maps;
   static mem_layout _layout;
   uint64_t _simu_mem_s = 0;
   uint64_t _simu_pkt_s = 0; // used when pgm input type is PGM_INPUT_pkt
   uint64_t _simu_pkt_ptrs_s = 0; // used when pgm input type is PGM_INPUT_pkt_ptrs
+  uint64_t _simu_skb_s = 0;
   uint32_t _pkt_ptrs[2] = {0, 0}; // 0: pkt_start_ptr, 1: pkt_end_ptr; these are simulated pkt addresses (32-bit)
   mem_t();
   ~mem_t();
   static void add_map(map_attr m_attr);
   static void set_pkt_sz(unsigned int sz) {_layout._pkt_sz = sz;}
+  static void set_skb_sz(unsigned int sz) {_layout._skb_sz = sz;}
   static void set_pgm_input_type(int type) {_layout._pgm_input_type = type;}
   static int get_pgm_input_type() {return _layout._pgm_input_type;}
   static unsigned int maps_number() {return _layout._maps_attr.size();}
@@ -91,7 +96,7 @@ class mem_t {
   static unsigned int map_val_sz(int map_id);
   static unsigned int map_max_entries(int map_id);
   // 1. compute "_mem_size" and according to "_layout";
-  // 2. allocate memory for "_mem", "_pkt"
+  // 2. allocate memory for "_mem", "_pkt", "_skb"
   // 3. init _maps
   // 4. init _pkt_ptrs
   void init_by_layout();
@@ -106,17 +111,21 @@ class mem_t {
   uint8_t* get_mem_end_addr() const;
   uint8_t* get_pkt_start_addr() const;
   uint8_t* get_pkt_end_addr() const;
+  uint8_t* get_skb_start_addr() const;
+  uint8_t* get_skb_end_addr() const;
+  uint8_t* get_skb_addr_by_offset(int off) const;
   uint32_t* get_pkt_ptrs_start_addr();
   uint32_t* get_pkt_ptrs_end_addr();
   uint64_t get_simu_mem_start_addr();
   uint64_t get_simu_mem_end_addr();
   uint64_t get_simu_pkt_start_addr();
   uint64_t get_simu_pkt_end_addr();
+  uint64_t get_simu_skb_start_addr();
+  uint64_t get_simu_skb_end_addr();
   uint64_t get_simu_pkt_ptrs_start_addr();
   uint64_t get_simu_pkt_ptrs_end_addr();
   mem_t& operator=(const mem_t &rhs);
   bool operator==(const mem_t &rhs);
-  void cp_input_mem(const mem_t &rhs);
   void clear();
   friend ostream& operator<<(ostream& out, const mem_t& mem);
 };
@@ -340,6 +349,7 @@ class inout_t: public inout_t_base {
   // kv map: k hex_string, v: vector<uint8_t>
   vector<unordered_map<string, vector<uint8_t>>> maps;
   uint8_t* pkt = nullptr;
+  uint8_t* skb = nullptr;  // only for input
   inout_t();
   inout_t(const inout_t& rhs); // deep copy for vector push back
   ~inout_t();
@@ -349,6 +359,7 @@ class inout_t: public inout_t_base {
   bool k_in_map(int map_id, string k);
   // set pkt with random values
   void set_pkt_random_val();
+  void set_skb_random_val();
   void clear();
   void init();
   void operator=(const inout_t &rhs);

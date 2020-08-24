@@ -61,7 +61,7 @@ void inst::set_imm(int op_value) {
     _imm = value_map[op_value];
   } else {
     unordered_set<int32_t> opcodes_set = {ADD64XC, OR64XC, AND64XC, MOV64XC, ADD32XC, OR32XC,
-                                          AND32XC, MOV32XC, LDMAPID, STB, STH, STW, STDW,
+                                          AND32XC, MOV32XC, LDMAPID, STB, STH, STW, STDW, LDABSH,
                                           JEQXC, JGTXC, JNEXC, JSGTXC, JEQ32XC, JNE32XC,
                                          };
     auto found = opcodes_set.find(_opcode);
@@ -117,6 +117,7 @@ int32_t inst::get_max_imm() const {
     case STH:
     case STW:
     case STDW:
+    case LDABSH:
     case JEQXC:
     case JGTXC:
     case JNEXC:
@@ -166,6 +167,7 @@ int32_t inst::get_min_imm() const {
     case STH:
     case STW:
     case STDW:
+    case LDABSH:
     case JEQXC:
     case JGTXC:
     case JNEXC:
@@ -263,6 +265,7 @@ string inst::opcode_to_str(int opcode) const {
     case STXDW: return "stxdw";
     case XADD64: return "lock xadd64";
     case XADD32: return "lock xadd32";
+    case LDABSH: return "ldabsh";
     case JA: return "ja";
     case JEQXC: return "jeqxc";
     case JEQXY: return "jeqxy";
@@ -644,6 +647,7 @@ int opcode_2_idx(int opcode) {
     case STDW: return IDX_STDW;
     case XADD64: return IDX_XADD64;
     case XADD32: return IDX_XADD32;
+    case LDABSH: return IDX_LDABSH;
     case JA: return IDX_JA;
     case JEQXC: return IDX_JEQXC;
     case JEQXY: return IDX_JEQXY;
@@ -801,6 +805,7 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     [IDX_STDW]     = && INSN_STDW,
     [IDX_XADD64]   = && INSN_XADD64,
     [IDX_XADD32]   = && INSN_XADD32,
+    [IDX_LDABSH]   = && INSN_LDABSH,
     [IDX_JA]       = && INSN_JA,
     [IDX_JEQXC]    = && INSN_JEQXC,
     [IDX_JEQXY]    = && INSN_JEQXY,
@@ -930,6 +935,12 @@ INSN_NOP:
   XADD(32)
   XADD(64)
 #undef XADD
+
+INSN_LDABSH:
+  real_addr = (uint64_t)ps._mem.get_skb_addr_by_offset(IMM);
+  ps.memory_access_and_safety_chk(real_addr, 2, true, true);
+  R0 = compute_ld16(real_addr, 0);
+  CONT;
 
 #define BYTESWAP(OPCODE, OP)                                       \
   INSN_##OPCODE:                                                   \
