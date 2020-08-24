@@ -1794,6 +1794,35 @@ void test14() {
   smt = z3::implies(f_pgm && f_same_input,
                     (off1_val_1 == off1_val_2) && (off2_val_1 == off2_val_2));
   print_test_res(is_valid(smt), "2");
+
+  cout << "3. test counterex" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_skb);
+  mem_t::set_skb_sz(16); // skb size: 16 bytes
+  mem_t::set_pkt_sz(16); // pkt size: 16 bytes
+  prog_id1 = 0, prog_id2 = 1;
+  node_id = 0, num_regs = 11;
+  sv1.init(prog_id1, node_id, num_regs);
+  sv2.init(prog_id2, node_id, num_regs);
+  f_mem_layout_constrain = sv.mem_layout_constrain();
+  off1 = v(0);
+  off2 = v(2);
+  z3::expr off1_val = new_out(), off2_val = new_out();
+  f_pgm = f_mem_layout_constrain;
+  f_pgm = f_pgm && predicate_ldabsh(off1, sv1, off1_val);
+  f_pgm = f_pgm && predicate_ldabsh(off2, sv2, off2_val);
+  f_same_input = smt_skb_set_same_input(sv1, sv2);
+  smt = z3::implies(f_pgm && f_same_input, off1_val == off2_val);
+  z3::model mdl(smt_c);
+  get_counterex_model(mdl, smt);
+  inout_t input;
+  input.init();
+  inout_t input_expected;
+  input_expected.init();
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2);
+  bool res = (input.skb[0] != input.skb[2]) || (input.skb[1] != input.skb[3]);
+  print_test_res(res, "1");
 }
 
 int main() {

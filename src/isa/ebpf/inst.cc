@@ -570,6 +570,7 @@ z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
     case STDW: return predicate_st64(IMM, CURDST, OFF, sv, block);
     case XADD64: return predicate_xadd64(CURSRC, CURDST, OFF, sv, block);
     case XADD32: return predicate_xadd32(CURSRC, CURDST, OFF, sv, block);
+    case LDABSH: return predicate_ldabsh(IMM, sv, R0, block);
     case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv, block);
     default: return string_to_expr("false");
   }

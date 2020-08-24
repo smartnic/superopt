@@ -698,6 +698,24 @@ void test4() {
                  inst(EXIT),
                 };
   chk_counterex_by_vld_to_interpreter(p5, 3, p51, 7, "1", vld, ps);
+
+  // test skb
+  std::cout << "3. test skb" << std::endl;
+  // set memory layout: stack | map1 | map2
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_skb);
+  mem_t::set_pkt_sz(16);
+  mem_t::set_skb_sz(16);
+  inst p2_1[2] = {inst(LDABSH, 0),
+                  inst(EXIT),
+                 };
+  inst p2_2[2] = {inst(LDABSH, 1),
+                  inst(EXIT),
+                 };
+  prog_state ps_skb;
+  ps_skb.init();
+  validator vld_skb(p2_1, 2);
+  chk_counterex_by_vld_to_interpreter(p2_1, 2, p2_2, 2, "1", vld_skb, ps_skb);
 }
 
 void test5() { // test pkt
