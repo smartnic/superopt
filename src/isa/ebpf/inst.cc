@@ -941,6 +941,7 @@ INSN_LDABSH:
   real_addr = (uint64_t)ps._mem.get_skb_addr_by_offset(IMM);
   ps.memory_access_and_safety_chk(real_addr, 2, true, true);
   R0 = compute_ld16(real_addr, 0);
+  ps.reg_safety_chk(0); // set r0 is readable
   CONT;
 
 #define BYTESWAP(OPCODE, OP)                                       \
