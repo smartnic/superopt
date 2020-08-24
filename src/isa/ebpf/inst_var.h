@@ -179,6 +179,7 @@ class map_wt {
 enum mem_table_type {
   MEM_TABLE_stack = 0,
   MEM_TABLE_pkt_ptrs,
+  MEM_TABLE_skb,
   MEM_TABLE_pkt,
   MEM_TABLE_map,
 };

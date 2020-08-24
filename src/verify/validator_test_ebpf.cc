@@ -866,6 +866,21 @@ void test6() {
   print_test_res(vld.is_equal_to(p3, 9, p31, 9) == 0, "3.2");
 }
 
+
+void test7() {
+  std::cout << "test 7: test \"PGM_INPUT_skb\" program input type" << endl;
+  std::cout << "1. test equivalence check" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_skb);
+  mem_t::set_pkt_sz(16);
+  mem_t::set_skb_sz(16);
+  inst p1[2] = {inst(LDABSH, 0),
+                inst(EXIT),
+               };
+  validator vld(p1, 2);
+  print_test_res(vld.is_equal_to(p1, 2, p1, 2) == 1, "1.1");
+}
+
 int main() {
   try {
     test1();
@@ -874,8 +889,9 @@ int main() {
     test4();
     test5();
     test6();
+    test7();
   } catch (const string err_msg) {
-    cout << err_msg << endl;
+    cout << "NOT SUCCESS: " << err_msg << endl;
   }
 
 

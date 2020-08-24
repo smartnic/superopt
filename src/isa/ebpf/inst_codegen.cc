@@ -293,6 +293,29 @@ z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
   return f;
 }
 
+// out == *(u8*)skb[off], out: bv8
+z3::expr predicate_ldabs_byte(z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0) {
+  z3::expr f = Z3_true;
+  if (mem_t::get_pgm_input_type() != PGM_INPUT_skb) return f; // mean no constraints
+  z3::expr cond = sv.mem_var.get_block_path_cond(block);
+  // todo: check the off range
+  int table_id = sv.mem_var.get_mem_table_id(MEM_TABLE_skb);
+  // skb stable has no wt, so only need to search off in the urt
+  smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
+  f = urt_element_constrain(off, out, urt);
+  z3::expr is_valid = sv.update_is_valid();
+  f = f && (is_valid == cond);
+  urt.add(block, is_valid, off, out);
+  return f;
+}
+
+// out == *(u8*)skb[off], out: bv64
+z3::expr predicate_ldabsh(z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
+  return ((out.extract(63, 16) == to_expr(0, 48)) &&
+          predicate_ldabs_byte(off, sv, out.extract(7, 0), block) &&
+          predicate_ldabs_byte(off + 1, sv, out.extract(15, 8), block));
+}
+
 // return the FOL formula that x[idx] is the latest write in x
 // that is, for any i > idx, x[idx] != x[i]
 z3::expr latest_write_element(int idx, vector<z3::expr>& is_valid_list, vector<z3::expr>& x) {
@@ -706,12 +729,13 @@ z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
   return smt_map_eq_chk(sv1, sv2) && smt_pkt_eq_chk(sv1, sv2);
 }
 
-// add the constrains on the input equivalence setting
-// the same content in the same pkt address in mem_p1 URT == mem_p2 URT
-z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
-  if (mem_t::_layout._pkt_sz == 0) return Z3_true;
-  int id1 = sv1.mem_var.get_mem_table_id(MEM_TABLE_pkt);
-  int id2 = sv2.mem_var.get_mem_table_id(MEM_TABLE_pkt);
+// add the constraints on the input equivalence setting
+// the same content in the same memory address in mem_p1 URT == mem_p2 URT
+// todo: need to add the legal offset range check?
+z3::expr smt_array_mem_set_same_input(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_table_type) {
+  if (mem_sz == 0) return Z3_true;
+  int id1 = sv1.mem_var.get_mem_table_id(mem_table_type);
+  int id2 = sv2.mem_var.get_mem_table_id(mem_table_type);
   assert(id1 != -1);
   assert(id2 != -1);
   z3::expr f = Z3_true;
@@ -736,9 +760,18 @@ z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
   return f;
 }
 
+z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
+  return smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);
+}
+
+z3::expr smt_skb_set_same_input(smt_var& sv1, smt_var& sv2) {
+  return smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._skb_sz, MEM_TABLE_skb);
+}
+
 z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2) {
-  z3::expr f = smt_map_set_same_input(sv1, sv2) &&
-               smt_pkt_set_same_input(sv1, sv2);
+  z3::expr f = smt_map_set_same_input(sv1, sv2);
+  f = f && smt_pkt_set_same_input(sv1, sv2);
+  f = f && smt_skb_set_same_input(sv1, sv2);
   return f;
 }
 

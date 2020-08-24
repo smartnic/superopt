@@ -114,6 +114,8 @@ inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::exp
 z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
 // *(u32*)(addr+off) += in
 z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
+// out == *(u16*)skb[off]
+z3::expr predicate_ldabsh(z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 // out == map_id, and track the out
 z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned int block = 0);
 // map helper functions
@@ -147,6 +149,7 @@ z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1,
 z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2);
 z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2);
 z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2);
+z3::expr smt_skb_set_same_input(smt_var& sv1, smt_var& sv2);
 // For the conversion from counterexample (z3 model from validator)
 // to input memory (mem_t) for interpreter
 string z3_bv_2_hex_str(z3::expr z3_bv);

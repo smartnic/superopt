@@ -501,13 +501,19 @@ void smt_mem::init_by_layout(unsigned int n_blocks) {
   int n_mem_tables = 1 + n_maps; // stack + maps
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) n_mem_tables++;
+  if (pgm_input_type == PGM_INPUT_skb) n_mem_tables++;
   if (mem_t::_layout._pkt_sz > 0) n_mem_tables++;
   _mem_tables.resize(n_mem_tables);
+
   int i = 0;
   _mem_tables[i]._type = MEM_TABLE_stack;
   i++;
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     _mem_tables[i]._type = MEM_TABLE_pkt_ptrs;
+    i++;
+  }
+  if (pgm_input_type == PGM_INPUT_skb) {
+    _mem_tables[i]._type = MEM_TABLE_skb;
     i++;
   }
   if (mem_t::_layout._pkt_sz > 0) {
