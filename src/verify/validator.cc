@@ -44,7 +44,12 @@ void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv
   // for different path conditions, which seems to cost more time than interpret(.)
   // TODO: for BPF, if return value is an address (ex, &map[k]), the output will be different
   // record in https://github.com/smartnic/superopt/issues/83
-  interpret(_last_counterex.output, orig, length, ps, _last_counterex.input);
+  try {
+    interpret(_last_counterex.output, orig, length, ps, _last_counterex.input);
+  } catch (const string err_msg) {
+    // interpret throws error because of stack uninitialized read,
+    // and for this case, only counterex's input is needed
+  }
 }
 
 int validator::is_smt_valid(expr& smt, model& mdl) {
