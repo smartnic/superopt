@@ -266,6 +266,7 @@ string inst::opcode_to_str(int opcode) const {
     case XADD64: return "lock xadd64";
     case XADD32: return "lock xadd32";
     case LDABSH: return "ldabsh";
+    case LDINDH: return "ldindh";
     case JA: return "ja";
     case JEQXC: return "jeqxc";
     case JEQXY: return "jeqxy";
@@ -571,6 +572,7 @@ z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
     case XADD64: return predicate_xadd64(CURSRC, CURDST, OFF, sv, block);
     case XADD32: return predicate_xadd32(CURSRC, CURDST, OFF, sv, block);
     case LDABSH: return predicate_ldabsh(IMM, sv, R0, block);
+    case LDINDH: return predicate_ldabsh(CURSRC, sv, R0, block); // todo: modify the function name
     case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv, block);
     default: return string_to_expr("false");
   }
@@ -807,6 +809,7 @@ void interpret(inout_t& output, inst* program, int length, prog_state &ps, const
     [IDX_XADD64]   = && INSN_XADD64,
     [IDX_XADD32]   = && INSN_XADD32,
     [IDX_LDABSH]   = && INSN_LDABSH,
+    [IDX_LDINDH]   = && INSN_LDINDH,
     [IDX_JA]       = && INSN_JA,
     [IDX_JEQXC]    = && INSN_JEQXC,
     [IDX_JEQXY]    = && INSN_JEQXY,
@@ -942,6 +945,11 @@ INSN_LDABSH:
   ps.memory_access_and_safety_chk(real_addr, 2, true, true);
   R0 = compute_ld16(real_addr, 0);
   ps.reg_safety_chk(0); // set r0 is readable
+  CONT;
+INSN_LDINDH:
+  ps.reg_safety_chk(DST_ID, vector<int> {SRC_ID});
+  real_addr = (uint64_t)ps._mem.get_skb_addr_by_offset(SRC);
+  R0 = compute_ld16(real_addr, 0);
   CONT;
 
 #define BYTESWAP(OPCODE, OP)                                       \
