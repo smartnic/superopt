@@ -740,7 +740,6 @@ void read_desc(const char* desc_file) {
   fp = fopen(desc_file, "r");
   char* line = NULL;
   size_t len = 0;
-  ssize_t read;
 
   if (fp == NULL) {
     std::cerr << "Error: BPF description file could not be opened" << std::endl;
@@ -748,7 +747,7 @@ void read_desc(const char* desc_file) {
   }
 
   int count = 0;
-  while (read = getline (&line, &len, fp) != -1) {
+  while (getline (&line, &len, fp) != -1) {
     string str(line);
     if (count == 0) {
       int n = extract_pgm_input_type(str);
