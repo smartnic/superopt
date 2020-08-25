@@ -33,7 +33,6 @@ ostream& operator<<(ostream& out, const mem_layout& layout) {
     out << layout._maps_start[i] << " " << layout._maps_attr[i] << endl;
   }
   out << "packet<len>: " << layout._pkt_sz << endl;
-  out << "skb<len>: " << layout._skb_sz << endl;
   return out;
 }
 
@@ -224,10 +223,6 @@ void mem_t::init_by_layout() {
     _pkt = nullptr;
   }
 
-  if (_skb != nullptr) {
-    delete []_skb;
-    _skb = nullptr;
-  }
   _maps.clear();
   int n_maps = maps_number();
   _mem_size = get_mem_size_by_layout();
@@ -239,8 +234,6 @@ void mem_t::init_by_layout() {
 
   _pkt = new uint8_t[_layout._pkt_sz];
   memset(_pkt, 0, sizeof(uint8_t)*_layout._pkt_sz);
-  _skb = new uint8_t[_layout._skb_sz];
-  memset(_skb, 0, sizeof(uint8_t)*_layout._skb_sz);
 }
 
 void mem_t::set_map_attr(int map_id, map_attr m_attr) {
@@ -313,22 +306,13 @@ uint8_t* mem_t::get_pkt_end_addr() const {
   return &_pkt[mem_t::_layout._pkt_sz - 1];
 }
 
-uint8_t* mem_t::get_skb_start_addr() const {
-  if (mem_t::_layout._skb_sz == 0) return nullptr;
-  return &_skb[0];
-}
-uint8_t* mem_t::get_skb_end_addr() const {
-  if (mem_t::_layout._skb_sz == 0) return nullptr;
-  return &_skb[mem_t::_layout._skb_sz - 1];
-}
-
-uint8_t* mem_t::get_skb_addr_by_offset(int off) const {
-  int skb_sz = mem_t::_layout._skb_sz;
-  if ((off >= 0) && (off < skb_sz)) {
-    return &_skb[off];
+uint8_t* mem_t::get_pkt_addr_by_offset(int off) const {
+  int pkt_sz = mem_t::_layout._pkt_sz;
+  if ((off >= 0) && (off < pkt_sz)) {
+    return &_pkt[off];
   }
-  string err_msg = "offset " + to_string(off) + " is outside the legal skb offsets[0, "
-                   + to_string(skb_sz) + ")";
+  string err_msg = "offset " + to_string(off) + " is outside the legal pkt_sz offsets[0, "
+                   + to_string(pkt_sz) + ")";
   throw (err_msg);
 }
 
@@ -366,18 +350,6 @@ uint64_t mem_t::get_simu_pkt_end_addr() {
   else return NULL_ADDR;
 }
 
-uint64_t mem_t::get_simu_skb_start_addr() {
-  int pgm_input_type = mem_t::get_pgm_input_type();
-  if (pgm_input_type == PGM_INPUT_skb) return _simu_skb_s;
-  else return NULL_ADDR;
-}
-
-uint64_t mem_t::get_simu_skb_end_addr() {
-  int pgm_input_type = mem_t::get_pgm_input_type();
-  if (pgm_input_type == PGM_INPUT_skb) return (_simu_skb_s + mem_t::_layout._skb_sz - 1);
-  else return NULL_ADDR;
-}
-
 uint64_t mem_t::get_simu_pkt_ptrs_start_addr() {
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) return _simu_pkt_ptrs_s;
@@ -411,9 +383,6 @@ bool mem_t::operator==(const mem_t &rhs) {
   for (int i = 0; i < _layout._pkt_sz; i++) {
     if (_pkt[i] != rhs._pkt[i]) return false;
   }
-  for (int i = 0; i < _layout._skb_sz; i++) {
-    if (_skb[i] != rhs._skb[i]) return false;
-  }
   return true;
 }
 
@@ -421,7 +390,6 @@ void mem_t::clear() {
   memset(_mem, 0, sizeof(uint8_t)*_mem_size);
   for (int i = 0; i < _maps.size(); i++) _maps[i].clear();
   memset(_pkt, 0, sizeof(uint8_t)*_layout._pkt_sz);
-  memset(_skb, 0, sizeof(uint8_t)*_layout._skb_sz);
 }
 
 /* class smt_wt start */
@@ -501,7 +469,6 @@ void smt_mem::init_by_layout(unsigned int n_blocks) {
   int n_mem_tables = 1 + n_maps; // stack + maps
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) n_mem_tables++;
-  if (pgm_input_type == PGM_INPUT_skb) n_mem_tables++;
   if (mem_t::_layout._pkt_sz > 0) n_mem_tables++;
   _mem_tables.resize(n_mem_tables);
 
@@ -510,10 +477,6 @@ void smt_mem::init_by_layout(unsigned int n_blocks) {
   i++;
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     _mem_tables[i]._type = MEM_TABLE_pkt_ptrs;
-    i++;
-  }
-  if (pgm_input_type == PGM_INPUT_skb) {
-    _mem_tables[i]._type = MEM_TABLE_skb;
     i++;
   }
   if (mem_t::_layout._pkt_sz > 0) {
@@ -1001,13 +964,6 @@ void prog_state::memory_access_chk(uint64_t addr, uint64_t num_bytes) {
             (addr <= (max_uint64 - num_bytes + 1));
   }
 
-  if (pgm_input_type == PGM_INPUT_skb) {
-    start = (uint64_t)_mem.get_skb_start_addr();
-    end = (uint64_t)_mem.get_skb_end_addr();
-    legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
-            (addr <= (max_uint64 - num_bytes + 1));
-  }
-
   if (!legal) {
     string err_msg = "unsafe memory access";
     throw (err_msg);
@@ -1058,8 +1014,6 @@ inout_t::inout_t() {
   input_simu_r10 = r10_min + (r10_max - r10_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
   pkt = new uint8_t[mem_t::_layout._pkt_sz];
   memset(pkt, 0, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
-  skb = new uint8_t[mem_t::_layout._skb_sz];
-  memset(skb, 0, sizeof(uint8_t)*mem_t::_layout._skb_sz);
 }
 
 // deep copy for vector push back
@@ -1069,17 +1023,12 @@ inout_t::inout_t(const inout_t& rhs) {
   reg = rhs.reg;
   maps = rhs.maps;
   memcpy(pkt, rhs.pkt, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
-  memcpy(skb, rhs.skb, sizeof(uint8_t)*mem_t::_layout._skb_sz);
 }
 
 inout_t::~inout_t() {
   if (pkt != nullptr) {
     delete []pkt;
     pkt = nullptr;
-  }
-  if (skb != nullptr) {
-    delete []skb;
-    skb = nullptr;
   }
 }
 
@@ -1104,13 +1053,6 @@ void inout_t::set_pkt_random_val() {
   }
 }
 
-void inout_t::set_skb_random_val() {
-  for (int i = 0; i < mem_t::_layout._skb_sz; i++) {
-    uint8_t val = 0xff * unidist_ebpf_inst_var(gen_ebpf_inst_var);
-    skb[i] = val;
-  }
-}
-
 void inout_t::clear() {
   reg = 0;
   for (int i = 0; i < maps.size(); i++) maps[i].clear();
@@ -1127,7 +1069,6 @@ void inout_t::operator=(const inout_t &rhs) {
   reg = rhs.reg;
   maps = rhs.maps;
   memcpy(pkt, rhs.pkt, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
-  memcpy(skb, rhs.skb, sizeof(uint8_t)*mem_t::_layout._skb_sz);
 }
 
 bool inout_t::operator==(const inout_t &rhs) const {
@@ -1168,10 +1109,6 @@ ostream& operator<<(ostream& out, const inout_t& x) {
   }
   out << " " << "pkt_ptrs:"
       << hex << x.input_simu_pkt_ptrs[0] << "," << x.input_simu_pkt_ptrs[1] << dec;
-  out << " " << "skb: ";
-  for (int i = 0; i < mem_t::_layout._skb_sz; i++) {
-    out << hex << setfill('0') << setw(2) << static_cast<int>(x.skb[i]) << dec;
-  }
   return out;
 }
 
@@ -1190,8 +1127,6 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   }
   unsigned int pkt_sz = mem_t::_layout._pkt_sz;
   memcpy(ps._mem._pkt, input.pkt, sizeof(uint8_t)*pkt_sz);
-  unsigned int skb_sz = mem_t::_layout._skb_sz;
-  memcpy(ps._mem._skb, input.skb, sizeof(uint8_t)*skb_sz);
 
   ps._mem._simu_mem_s = input.input_simu_r10 - STACK_SIZE;
   int pgm_input_type = mem_t::get_pgm_input_type();
@@ -1254,14 +1189,6 @@ uint64_t get_simu_addr_by_real(uint64_t real_addr, mem_t& mem, simu_real sr) {
     }
   }
 
-  if (pgm_input_type == PGM_INPUT_skb) { // check whether it is skb
-    uint64_t real_skb_s = (uint64_t)mem.get_skb_start_addr();
-    uint64_t real_skb_e = (uint64_t)mem.get_skb_end_addr();
-    if ((real_addr >= real_skb_s) && (real_addr <= real_skb_e)) {
-      return (real_addr + mem.get_simu_skb_start_addr() - real_skb_s);
-    }
-  }
-
   // else cannot convert real_addr to simu_addr, raise error
   string err_msg = "convert real_addr to simu_addr fail";
   throw (err_msg);
@@ -1287,14 +1214,6 @@ uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr) {
     if ((simu_addr >= mem.get_simu_pkt_start_addr()) &&
         (simu_addr <= mem.get_simu_pkt_end_addr())) {
       return (simu_addr + sr.real_pkt - sr.simu_pkt);
-    }
-  }
-
-  if (pgm_input_type == PGM_INPUT_skb) {
-    uint64_t simu_skb_s = mem.get_simu_skb_start_addr();
-    uint64_t simu_skb_e = mem.get_simu_skb_end_addr();
-    if ((simu_addr >= simu_skb_s) && (simu_addr <= simu_skb_e)) {
-      return (simu_addr + (uint64_t)mem.get_skb_start_addr() - simu_skb_s);
     }
   }
 
@@ -1360,7 +1279,6 @@ void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max)
   // 2. Generate pkt, set pkt with random values
   for (int i = 0; i < inputs.size(); i++) {
     inputs[i].set_pkt_random_val();
-    inputs[i].set_skb_random_val();
   }
   // 3. Generate input register r1
   if (mem_t::_layout._pkt_sz == 0) { // case 1: r1 is not used as pkt address

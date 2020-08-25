@@ -705,7 +705,6 @@ void test4() {
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
   mem_t::set_pkt_sz(16);
-  mem_t::set_skb_sz(16);
   inst p2_1[2] = {inst(LDABSH, 0),
                   inst(EXIT),
                  };
@@ -891,7 +890,6 @@ void test7() {
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
   mem_t::set_pkt_sz(16);
-  mem_t::set_skb_sz(16);
   inst p1[2] = {inst(LDABSH, 0),
                 inst(EXIT),
                };

@@ -1247,7 +1247,6 @@ void test8() {
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
   mem_t::set_pkt_sz(16); // pkt sz: 512 bytes
-  mem_t::set_skb_sz(16);
   prog_state ps;
   ps.init();
   inout_t input, output, expected;
@@ -1260,9 +1259,9 @@ void test8() {
   inst p1[2] = {inst(LDABSH, 0),
                 inst(EXIT),
                };
-  input.set_skb_random_val();
+  input.set_pkt_random_val();
   expected = input;
-  expected.reg = (input.skb[1] << 8) | input.skb[0];
+  expected.reg = (input.pkt[1] << 8) | input.pkt[0];
   interpret(output, p1, 2, ps, input);
   print_test_res(output == expected, "LDABSH");
 }

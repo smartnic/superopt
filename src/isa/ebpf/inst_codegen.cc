@@ -296,10 +296,10 @@ z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
 // out == *(u8*)skb[off], out: bv8
 z3::expr predicate_ldabs_byte(z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0) {
   z3::expr f = Z3_true;
-  if (mem_t::get_pgm_input_type() != PGM_INPUT_skb) return f; // mean no constraints
+  if (mem_t::_layout._pkt_sz == 0) return f; // mean no constraints
   z3::expr cond = sv.mem_var.get_block_path_cond(block);
   // todo: check the off range
-  int table_id = sv.mem_var.get_mem_table_id(MEM_TABLE_skb);
+  int table_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
   // skb stable has no wt, so only need to search off in the urt
   smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
   f = urt_element_constrain(off, out, urt);
@@ -764,14 +764,9 @@ z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
   return smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);
 }
 
-z3::expr smt_skb_set_same_input(smt_var& sv1, smt_var& sv2) {
-  return smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._skb_sz, MEM_TABLE_skb);
-}
-
 z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2) {
   z3::expr f = smt_map_set_same_input(sv1, sv2);
   f = f && smt_pkt_set_same_input(sv1, sv2);
-  f = f && smt_skb_set_same_input(sv1, sv2);
   return f;
 }
 
@@ -1096,10 +1091,11 @@ uint64_t get_uint64_from_bv64(z3::expr& z3_val, bool assert) {
   }
 }
 
-// get an addr-val list for the given memory table
+// get an addr-val list for the given memory table,
+// if the null_addr_chk is true, the NULL value address in the memory table entry will be ignored
 void get_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
                       z3::model& mdl, smt_var& sv, int mem_id,
-                      bool null_addr_chk = true, uint64_t addr_start = 0) {
+                      bool null_addr_chk = true) {
   smt_wt& mem_urt = sv.mem_var._mem_tables[mem_id]._urt;
   for (int i = 0; i < mem_urt.size(); i++) {
     z3::expr z3_is_valid = mem_urt.is_valid[i];
@@ -1109,9 +1105,9 @@ void get_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
     z3::expr z3_addr = mem_urt.addr[i];
     z3::expr z3_addr_eval = mdl.eval(z3_addr);
     if (!z3_addr_eval.is_numeral()) continue;
-    uint64_t addr = z3_addr_eval.get_numeral_uint64() + addr_start;
+    uint64_t addr = z3_addr_eval.get_numeral_uint64();
     // addr whose value is NULL means the entry is invalid
-    if (addr == NULL_ADDR) continue;
+    if ((addr == NULL_ADDR) && null_addr_chk) continue;
 
     z3::expr z3_val = mdl.eval(mem_urt.val[i]); // z3 bv8
     // That z3_val is not numeral means z3 does not care about "z3_val"'s val
@@ -1176,44 +1172,23 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv, int 
   }
 }
 
-// set input memory, for now, set pkt, skb
+// set input memory, for now, set pkt
 // 1. get mem_addr_val list according to the pkt mem urt;
 // 2. traverse mem_addr_val list, if the addr is in input memory address range, update "input"
 void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
   if (mem_t::_layout._pkt_sz > 0) {
-    z3::expr z3_pkt_start = mdl.eval(sv.get_pkt_start_addr());
-    z3::expr z3_pkt_end = mdl.eval(sv.get_pkt_end_addr());
-    uint64_t pkt_start = get_uint64_from_bv64(z3_pkt_start, false);
-    if (pkt_start != 0) { // == 0 means z3 does not care about pkt_start
-      uint64_t pkt_end = get_uint64_from_bv64(z3_pkt_end, false);
-
-      int pkt_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
-      assert(pkt_mem_id != -1);
-      vector<pair< uint64_t, uint8_t>> mem_addr_val;
-      get_mem_from_mdl(mem_addr_val, mdl, sv, pkt_mem_id, true, pkt_start);
-
-      // set pkt with random values
-      input.set_pkt_random_val();
-      for (int i = 0; i < mem_addr_val.size(); i++) {
-        uint64_t addr = mem_addr_val[i].first;
-        uint8_t val = mem_addr_val[i].second;
-        int idx = addr - pkt_start;
-        input.pkt[idx] = val;
-      }
-    }
-  }
-
-  if (mem_t::_layout._skb_sz > 0) {
-    int skb_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_skb);
-    assert(skb_mem_id != -1);
+    int pkt_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
+    assert(pkt_mem_id != -1);
     vector<pair< uint64_t, uint8_t>> mem_addr_val;
-    // no need to chk address is null, since in skb table addr is off_set
-    get_mem_from_mdl(mem_addr_val, mdl, sv, skb_mem_id, false);
-    input.set_skb_random_val();
+    bool pkt_null_off_chk = false; // since pkt is offset-record in the table
+    get_mem_from_mdl(mem_addr_val, mdl, sv, pkt_mem_id, pkt_null_off_chk);
+
+    // set pkt with random values
+    input.set_pkt_random_val();
     for (int i = 0; i < mem_addr_val.size(); i++) {
       uint64_t off = mem_addr_val[i].first;
       uint8_t val = mem_addr_val[i].second;
-      if (off < mem_t::_layout._skb_sz) input.skb[off] = val;
+      input.pkt[off] = val;
     }
   }
 }

@@ -941,14 +941,14 @@ INSN_NOP:
 #undef XADD
 
 INSN_LDABSH:
-  real_addr = (uint64_t)ps._mem.get_skb_addr_by_offset(IMM);
+  ps.reg_safety_chk(0); // set r0 is readable
+  real_addr = (uint64_t)ps._mem.get_pkt_addr_by_offset(IMM);
   ps.memory_access_and_safety_chk(real_addr, 2, true, true);
   R0 = compute_ld16(real_addr, 0);
-  ps.reg_safety_chk(0); // set r0 is readable
   CONT;
 INSN_LDINDH:
-  ps.reg_safety_chk(DST_ID, vector<int> {SRC_ID});
-  real_addr = (uint64_t)ps._mem.get_skb_addr_by_offset(SRC);
+  ps.reg_safety_chk(0, vector<int> {SRC_ID});
+  real_addr = (uint64_t)ps._mem.get_pkt_addr_by_offset(SRC);
   R0 = compute_ld16(real_addr, 0);
   CONT;
 

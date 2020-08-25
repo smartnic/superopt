@@ -1755,7 +1755,6 @@ void test14() {
   cout << "1. test ldabs" << endl;
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
-  mem_t::set_skb_sz(16); // skb size: 16 bytes
   mem_t::set_pkt_sz(16); // pkt size: 16 bytes
   unsigned int prog_id = 0, node_id = 0, num_regs = 11;
   smt_var sv;
@@ -1771,7 +1770,6 @@ void test14() {
   cout << "2. test set the same input" << endl;
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
-  mem_t::set_skb_sz(16); // skb size: 16 bytes
   mem_t::set_pkt_sz(16); // pkt size: 16 bytes
   unsigned int prog_id1 = 0, prog_id2 = 1;
   node_id = 0, num_regs = 11;
@@ -1783,14 +1781,14 @@ void test14() {
   off1_val_1 = new_out(), off1_val_2 = new_out();
   z3::expr f_pgm = f_mem_layout_constrain && predicate_ldabsh(off1, sv1, off1_val_1);
   f_pgm = f_pgm && predicate_ldabsh(off1, sv2, off1_val_2);
-  z3::expr f_same_input = smt_skb_set_same_input(sv1, sv2);
+  z3::expr f_same_input = smt_pkt_set_same_input(sv1, sv2);
   smt = z3::implies(f_pgm && f_same_input, off1_val_1 == off1_val_2);
   print_test_res(is_valid(smt), "1");
   z3::expr off2 = v("off2");
   z3::expr off2_val_1 = new_out(), off2_val_2 = new_out();
   f_pgm = f_pgm && predicate_ldabsh(off2, sv1, off2_val_1);
   f_pgm = f_pgm && predicate_ldabsh(off2, sv2, off2_val_2);
-  f_same_input = smt_skb_set_same_input(sv1, sv2);
+  f_same_input = smt_pkt_set_same_input(sv1, sv2);
   smt = z3::implies(f_pgm && f_same_input,
                     (off1_val_1 == off1_val_2) && (off2_val_1 == off2_val_2));
   print_test_res(is_valid(smt), "2");
@@ -1798,10 +1796,11 @@ void test14() {
   cout << "3. test counterex" << endl;
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
-  mem_t::set_skb_sz(16); // skb size: 16 bytes
   mem_t::set_pkt_sz(16); // pkt size: 16 bytes
   prog_id1 = 0, prog_id2 = 1;
   node_id = 0, num_regs = 11;
+  sv1.clear();
+  sv2.clear();
   sv1.init(prog_id1, node_id, num_regs);
   sv2.init(prog_id2, node_id, num_regs);
   f_mem_layout_constrain = sv.mem_layout_constrain();
@@ -1811,7 +1810,7 @@ void test14() {
   f_pgm = f_mem_layout_constrain;
   f_pgm = f_pgm && predicate_ldabsh(off1, sv1, off1_val);
   f_pgm = f_pgm && predicate_ldabsh(off2, sv2, off2_val);
-  f_same_input = smt_skb_set_same_input(sv1, sv2);
+  f_same_input = smt_pkt_set_same_input(sv1, sv2);
   smt = z3::implies(f_pgm && f_same_input, off1_val == off2_val);
   z3::model mdl(smt_c);
   get_counterex_model(mdl, smt);
@@ -1821,7 +1820,7 @@ void test14() {
   input_expected.init();
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2);
-  bool res = (input.skb[0] != input.skb[2]) || (input.skb[1] != input.skb[3]);
+  bool res = (input.pkt[0] != input.pkt[2]) || (input.pkt[1] != input.pkt[3]);
   print_test_res(res, "1");
 }
 

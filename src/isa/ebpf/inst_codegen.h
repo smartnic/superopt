@@ -149,7 +149,6 @@ z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1,
 z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2);
 z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2);
 z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2);
-z3::expr smt_skb_set_same_input(smt_var& sv1, smt_var& sv2);
 // For the conversion from counterexample (z3 model from validator)
 // to input memory (mem_t) for interpreter
 string z3_bv_2_hex_str(z3::expr z3_bv);
