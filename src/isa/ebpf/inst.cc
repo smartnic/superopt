@@ -93,11 +93,11 @@ void inst::set_off(int op_value) {
   if (op_value < MIN_OFF) {
     int idx = op_value - MIN_OFF + _sample_neg_offs.size();
     assert(idx < _sample_neg_offs.size());
-    _imm = _sample_neg_offs[idx];
+    _off = _sample_neg_offs[idx];
   } else if (op_value > MAX_OFF) {
     int idx = op_value - MAX_OFF - 1;
     assert(idx < _sample_pos_offs.size());
-    _imm = _sample_pos_offs[idx];
+    _off = _sample_pos_offs[idx];
   } else {
     _off = op_value;
   }
