@@ -651,6 +651,7 @@ int opcode_2_idx(int opcode) {
     case XADD64: return IDX_XADD64;
     case XADD32: return IDX_XADD32;
     case LDABSH: return IDX_LDABSH;
+    case LDINDH: return IDX_LDINDH;
     case JA: return IDX_JA;
     case JEQXC: return IDX_JEQXC;
     case JEQXY: return IDX_JEQXY;

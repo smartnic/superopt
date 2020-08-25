@@ -961,6 +961,7 @@ void test3() {
                   inst(XADD64, 10, -8, 1),
                   inst(XADD32, 10, -8, 1),
                   inst(LDABSH, 1),
+                  inst(LDINDH, 1),
                   inst(JA, 1),
                   inst(JEQXC, 3, 1, 2),
                   inst(JEQXY, 3, 1, 2),
@@ -1023,6 +1024,7 @@ void test3() {
              "{219, 10, 1, -8, 0},"\
              "{195, 10, 1, -8, 0},"\
              "{40, 0, 0, 0, 1},"\
+             "{72, 0, 1, 0, 0},"\
              "{5, 0, 0, 1, 0},"\
              "{21, 3, 0, 2, 1},"\
              "{29, 3, 1, 2, 0},"\
@@ -1263,7 +1265,49 @@ void test8() {
   expected = input;
   expected.reg = (input.pkt[1] << 8) | input.pkt[0];
   interpret(output, p1, 2, ps, input);
-  print_test_res(output == expected, "LDABSH");
+  print_test_res(output == expected, "LDABSH 1");
+
+  // test pkt and skb use the same memory
+  inst p2[8] = {inst(LDABSH, 0),  // r0 = *(u16*)skb[0]
+                inst(MOV64XY, 2, 0),
+                inst(LDXH, 0, 1, 0), // r0 = *(u16*)pkt[0]
+                inst(JEQXY, 0, 2, 2), // if r0 == r2, r0 = 1, else r0 = 0
+                inst(MOV64XC, 0, 0),
+                inst(EXIT),
+                inst(MOV64XC, 0, 1),
+                inst(EXIT),
+               };
+  input.set_pkt_random_val();
+  expected = input;
+  expected.reg = 1;
+  interpret(output, p2, 8, ps, input);
+  print_test_res(output == expected, "LDABSH 2");
+
+  inst p3[3] = {inst(MOV64XC, 2, 0),
+                inst(LDINDH, 2),
+                inst(EXIT),
+               };
+  input.set_pkt_random_val();
+  expected = input;
+  expected.reg = (input.pkt[1] << 8) | input.pkt[0];
+  interpret(output, p3, 3, ps, input);
+  print_test_res(output == expected, "LDINDH 1");
+
+  inst p4[9] = {inst(MOV64XC, 2, 0),
+                inst(LDINDH, 2),
+                inst(MOV64XY, 2, 0),
+                inst(LDABSH, 0),
+                inst(JEQXY, 0, 2, 2), // if r0 == r2, r0 = 1, else r0 = 0
+                inst(MOV64XC, 0, 0),
+                inst(EXIT),
+                inst(MOV64XC, 0, 1),
+                inst(EXIT),
+               };
+  input.set_pkt_random_val();
+  expected = input;
+  expected.reg = 1;
+  interpret(output, p4, 9, ps, input);
+  print_test_res(output == expected, "LDINDH 2");
 }
 
 int main(int argc, char *argv[]) {
