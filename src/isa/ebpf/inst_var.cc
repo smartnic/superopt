@@ -825,7 +825,7 @@ void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_
   int stack_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_stack);
   mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id, to_expr(STACK_SIZE), Z3_true); // r10 is the stack pointer
   int pgm_input_type = mem_t::get_pgm_input_type();
-  if (pgm_input_type == PGM_INPUT_pkt) {
+  if ((pgm_input_type == PGM_INPUT_pkt) || (pgm_input_type == PGM_INPUT_skb)) {
     int pkt_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_pkt);
     mem_var.add_ptr(get_init_reg_var(1), pkt_mem_table_id, ZERO_ADDR_OFF_EXPR, Z3_true); // r1 is the pkt pointer
   }

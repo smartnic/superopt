@@ -294,7 +294,7 @@ z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
 }
 
 // out == *(u8*)skb[off], out: bv8
-z3::expr predicate_ldabs_byte(z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0) {
+z3::expr predicate_ldskb_byte(z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0) {
   z3::expr f = Z3_true;
   if (mem_t::_layout._pkt_sz == 0) return f; // mean no constraints
   z3::expr cond = sv.mem_var.get_block_path_cond(block);
@@ -310,10 +310,10 @@ z3::expr predicate_ldabs_byte(z3::expr off, smt_var& sv, z3::expr out, unsigned 
 }
 
 // out == *(u8*)skb[off], out: bv64
-z3::expr predicate_ldabsh(z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
+z3::expr predicate_ldskbh(z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
   return ((out.extract(63, 16) == to_expr(0, 48)) &&
-          predicate_ldabs_byte(off, sv, out.extract(7, 0), block) &&
-          predicate_ldabs_byte(off + 1, sv, out.extract(15, 8), block));
+          predicate_ldskb_byte(off, sv, out.extract(7, 0), block) &&
+          predicate_ldskb_byte(off + 1, sv, out.extract(15, 8), block));
 }
 
 // return the FOL formula that x[idx] is the latest write in x

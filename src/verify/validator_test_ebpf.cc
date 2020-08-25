@@ -893,8 +893,12 @@ void test7() {
   inst p1[2] = {inst(LDABSH, 0),
                 inst(EXIT),
                };
+  inst p1_2[2] = {inst(LDXH, 0, 1, 0),
+                  inst(EXIT),
+                 };
   validator vld(p1, 2);
   print_test_res(vld.is_equal_to(p1, 2, p1, 2) == 1, "1.1");
+  print_test_res(vld.is_equal_to(p1, 2, p1_2, 2) == 1, "1.2");
 }
 
 int main() {

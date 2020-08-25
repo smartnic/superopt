@@ -1762,10 +1762,10 @@ void test14() {
   z3::expr f_mem_layout_constrain = sv.mem_layout_constrain();
   z3::expr off1 = v("off1");
   z3::expr off1_val_1 = new_out(), off1_val_2 = new_out();
-  z3::expr smt = f_mem_layout_constrain && predicate_ldabsh(off1, sv, off1_val_1);
-  smt = smt && predicate_ldabsh(off1, sv, off1_val_2);
+  z3::expr smt = f_mem_layout_constrain && predicate_ldskbh(off1, sv, off1_val_1);
+  smt = smt && predicate_ldskbh(off1, sv, off1_val_2);
   smt = z3::implies(smt, off1_val_1 == off1_val_2);
-  print_test_res(is_valid(smt), "predicate_ldabsh");
+  print_test_res(is_valid(smt), "predicate_ldskbh");
 
   cout << "2. test set the same input" << endl;
   mem_t::_layout.clear();
@@ -1779,15 +1779,15 @@ void test14() {
   f_mem_layout_constrain = sv.mem_layout_constrain();
   off1 = v("off1");
   off1_val_1 = new_out(), off1_val_2 = new_out();
-  z3::expr f_pgm = f_mem_layout_constrain && predicate_ldabsh(off1, sv1, off1_val_1);
-  f_pgm = f_pgm && predicate_ldabsh(off1, sv2, off1_val_2);
+  z3::expr f_pgm = f_mem_layout_constrain && predicate_ldskbh(off1, sv1, off1_val_1);
+  f_pgm = f_pgm && predicate_ldskbh(off1, sv2, off1_val_2);
   z3::expr f_same_input = smt_pkt_set_same_input(sv1, sv2);
   smt = z3::implies(f_pgm && f_same_input, off1_val_1 == off1_val_2);
   print_test_res(is_valid(smt), "1");
   z3::expr off2 = v("off2");
   z3::expr off2_val_1 = new_out(), off2_val_2 = new_out();
-  f_pgm = f_pgm && predicate_ldabsh(off2, sv1, off2_val_1);
-  f_pgm = f_pgm && predicate_ldabsh(off2, sv2, off2_val_2);
+  f_pgm = f_pgm && predicate_ldskbh(off2, sv1, off2_val_1);
+  f_pgm = f_pgm && predicate_ldskbh(off2, sv2, off2_val_2);
   f_same_input = smt_pkt_set_same_input(sv1, sv2);
   smt = z3::implies(f_pgm && f_same_input,
                     (off1_val_1 == off1_val_2) && (off2_val_1 == off2_val_2));
@@ -1808,8 +1808,8 @@ void test14() {
   off2 = v(2);
   z3::expr off1_val = new_out(), off2_val = new_out();
   f_pgm = f_mem_layout_constrain;
-  f_pgm = f_pgm && predicate_ldabsh(off1, sv1, off1_val);
-  f_pgm = f_pgm && predicate_ldabsh(off2, sv2, off2_val);
+  f_pgm = f_pgm && predicate_ldskbh(off1, sv1, off1_val);
+  f_pgm = f_pgm && predicate_ldskbh(off2, sv2, off2_val);
   f_same_input = smt_pkt_set_same_input(sv1, sv2);
   smt = z3::implies(f_pgm && f_same_input, off1_val == off2_val);
   z3::model mdl(smt_c);
