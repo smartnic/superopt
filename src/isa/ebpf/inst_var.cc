@@ -222,11 +222,11 @@ unsigned int mem_t::map_type(int map_id) {
 
 unsigned int mem_t::prog_array_map_max_entries() {
   int map_id = -1;
-  for (int i = 0; i < _layout._maps_attr.size(); i++) {
+  for (int i = 0; i < maps_number(); i++) {
     if (map_type(i) != MAP_TYPE_prog_array) continue;
     map_id = i;
   }
-  if (map_id != -1) return 0; // means no prog_array map
+  if (map_id == -1) return 0; // means no prog_array map
   return map_max_entries(map_id);
 }
 
