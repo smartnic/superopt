@@ -459,7 +459,7 @@ static const int opcode_type[NUM_INSTR] = {
   [IDX_JEQ32XY]  = OP_COND_JMP,
   [IDX_JNE32XC]  = OP_COND_JMP,
   [IDX_JNE32XY]  = OP_COND_JMP,
-  [IDX_CALL]     = OP_OTHERS,
+  [IDX_CALL]     = OP_CALL,
   [IDX_EXIT]     = OP_RET,
 };
 
@@ -645,6 +645,7 @@ class inst: public inst_base {
   z3::expr smt_inst(smt_var& sv, unsigned int block = 0) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;
   static z3::expr smt_set_pre(z3::expr input, smt_var& sv);
+  bool is_cfg_basic_block_end() const;
 
   string get_bytecode_str() const;
 };

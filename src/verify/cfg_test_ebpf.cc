@@ -35,6 +35,15 @@ inst instructions3[6] = {inst(STXB, 10, -1, 1),
                          inst(EXIT),
                         };
 
+// test tail call
+inst instructions4[6] = {inst(MOV64XY, 1, 1),
+                         inst(LDMAPID, 2, 0),
+                         inst(MOV64XC, 3, 1),
+                         inst(CALL, BPF_FUNC_tail_call),
+                         inst(MOV64XC, 0, 0xff),
+                         inst(EXIT),
+                        };
+
 void test1() {
   string expected;
   graph g1(instructions1, 8);
@@ -48,6 +57,10 @@ void test1() {
   graph g3(instructions3, 6);
   expected = "nodes:0,1 2,3 4,5 edges: 0:;1,2, 1:0,;2, 2:1,0,;";
   print_test_res(g3.graph_to_str() == expected, "program 3");
+
+  graph g4(instructions4, 6);
+  expected = "nodes:0,3 edges: 0:;";
+  print_test_res(g4.graph_to_str() == expected, "program 4");
 }
 
 int main() {

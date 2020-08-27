@@ -27,6 +27,7 @@ enum OPCODE_TYPES {
   OP_OTHERS,
   OP_ST,
   OP_LD,
+  OP_CALL,
 };
 
 // Return opcode types for the end instruction of a program
@@ -77,6 +78,7 @@ class inst_base {
   // return SMT for the given OP_COND_JMP type instruction, other types return false
   z3::expr smt_inst_jmp(smt_var& sv) const {RAISE_EXCEPTION("inst::smt_inst_jmp");}
   static z3::expr smt_set_pre(z3::expr input, smt_var& sv) {RAISE_EXCEPTION("inst::smt_set_pre");}
+  bool is_cfg_basic_block_end() const {RAISE_EXCEPTION("inst::is_cfg_basic_block_end");}
 };
 
 struct instHash {

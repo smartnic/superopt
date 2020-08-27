@@ -140,6 +140,14 @@ void inst::set_as_nop_inst() {
   _args[2] = 0;
 }
 
+bool inst::is_cfg_basic_block_end() const {
+  int op_type = get_opcode_type();
+  if ((op_type == OP_RET) || (op_type == OP_UNCOND_JMP)) {
+    return true;
+  }
+  return false;
+}
+
 #undef IMM2
 #define CURSRC sv.get_cur_reg_var(SRCREG(*this))
 #define CURDST sv.get_cur_reg_var(DSTREG(*this))

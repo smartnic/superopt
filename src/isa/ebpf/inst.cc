@@ -692,6 +692,17 @@ z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
   return f;
 }
 
+bool inst::is_cfg_basic_block_end() const {
+  int op_type = get_opcode_type();
+  if ((op_type == OP_RET) || (op_type == OP_UNCOND_JMP)) {
+    return true;
+  }
+  if ((op_type == OP_CALL) && (_imm == BPF_FUNC_tail_call)) {
+    return true;
+  }
+  return false;
+}
+
 string inst::get_bytecode_str() const {
   string str = ("{"
                 + to_string(_opcode) + ", " + to_string(_dst_reg) + ", "

@@ -155,6 +155,8 @@ class inst: public inst_base {
   z3::expr smt_inst(smt_var& sv, unsigned int block = 0) const;
   z3::expr smt_inst_jmp(smt_var& sv) const;
   static z3::expr smt_set_pre(z3::expr input, smt_var& sv);
+
+  bool is_cfg_basic_block_end() const;
 };
 
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);
