@@ -19,13 +19,15 @@ enum ISA_TYPES {
 };
 
 // Opcode types for instructions
-#define OP_NOP 0
-#define OP_RET 1
-#define OP_UNCOND_JMP 2
-#define OP_COND_JMP 3
-#define OP_OTHERS 4
-#define OP_ST 5
-#define OP_LD 6
+enum OPCODE_TYPES {
+  OP_NOP = 0,
+  OP_RET,
+  OP_UNCOND_JMP,
+  OP_COND_JMP,
+  OP_OTHERS,
+  OP_ST,
+  OP_LD,
+};
 
 // Return opcode types for the end instruction of a program
 #define RET_C 0   // return immediate number
