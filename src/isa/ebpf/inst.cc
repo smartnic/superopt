@@ -59,27 +59,32 @@ void inst::set_imm(int op_value) {
   if ((_opcode == LE) || (_opcode == BE)) {
     int value_map[3] = {16, 32, 64};
     _imm = value_map[op_value];
+    return;
+  }
+  if (_opcode == CALL) {
+    assert(op_value < SP_BPF_FUNC_MAX_ID);
+    _imm = sp_func_2_bpf_func[op_value];
+    return;
+  }
+  unordered_set<int32_t> opcodes_set = {ADD64XC, OR64XC, AND64XC, MOV64XC, ADD32XC, OR32XC,
+                                        AND32XC, MOV32XC, LDMAPID, STB, STH, STW, STDW, LDABSH,
+                                        JEQXC, JGTXC, JNEXC, JSGTXC, JEQ32XC, JNE32XC,
+                                       };
+  auto found = opcodes_set.find(_opcode);
+  if (found == opcodes_set.end()) {
+    _imm = op_value;
+    return;
+  }
+  if (op_value < MIN_IMM) {
+    int idx = op_value - MIN_IMM + _sample_neg_imms.size();
+    assert(idx < _sample_neg_imms.size());
+    _imm = _sample_neg_imms[idx];
+  } else if (op_value > MAX_IMM) {
+    int idx = op_value - MAX_IMM - 1;
+    assert(idx < _sample_pos_imms.size());
+    _imm = _sample_pos_imms[idx];
   } else {
-    unordered_set<int32_t> opcodes_set = {ADD64XC, OR64XC, AND64XC, MOV64XC, ADD32XC, OR32XC,
-                                          AND32XC, MOV32XC, LDMAPID, STB, STH, STW, STDW, LDABSH,
-                                          JEQXC, JGTXC, JNEXC, JSGTXC, JEQ32XC, JNE32XC,
-                                         };
-    auto found = opcodes_set.find(_opcode);
-    if (found == opcodes_set.end()) {
-      _imm = op_value;
-      return;
-    }
-    if (op_value < MIN_IMM) {
-      int idx = op_value - MIN_IMM + _sample_neg_imms.size();
-      assert(idx < _sample_neg_imms.size());
-      _imm = _sample_neg_imms[idx];
-    } else if (op_value > MAX_IMM) {
-      int idx = op_value - MAX_IMM - 1;
-      assert(idx < _sample_pos_imms.size());
-      _imm = _sample_pos_imms[idx];
-    } else {
-      _imm = op_value;
-    }
+    _imm = op_value;
   }
 }
 
@@ -183,7 +188,7 @@ int32_t inst::get_min_imm() const {
     case LE:
     case BE: return 0;
     case LDMAPID: return 0;
-    case CALL: return 1;
+    case CALL: return 0;
     default: cout << "Error: no imm in instruction: ";
       print();
       return 0;

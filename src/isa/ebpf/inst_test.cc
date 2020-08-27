@@ -153,8 +153,8 @@ inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                            inst(ADD64XC, 3, -2),
-                           inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[0x11] = L8(input)
-                           inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                           inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[0x11] = L8(input)
+                           inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
                            inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
                            inst(LDXB, 0, 0, 0),
                            inst(EXIT),
@@ -168,9 +168,9 @@ inst instructions22[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                            inst(ADD64XC, 3, -2),
-                           inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[r1] = 0x11
-                           inst(CALL, BPF_FUNC_map_delete), // delete map0[k]
-                           inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                           inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[r1] = 0x11
+                           inst(CALL, BPF_FUNC_map_delete_elem), // delete map0[k]
+                           inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
                            inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
                            inst(LDXB, 0, 0, 0),
                            inst(EXIT),
@@ -181,7 +181,7 @@ inst instructions23[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                           inst(LDMAPID, 1, 0), // r1 = map_id (0)
                           inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                           inst(ADD64XC, 2, -1),
-                          inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                          inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
                           inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
                           inst(LDXB, 0, 0, 0),
                           inst(EXIT),
@@ -1352,6 +1352,20 @@ void test9() {
   print_test_res(is_equal, "tail call 1.3");
 }
 
+void test10() {
+  cout << "Test 10: set sample imm" << endl;
+  inst insn = inst(CALL, BPF_FUNC_map_lookup_elem);
+
+  insn.set_imm(SP_BPF_FUNC_map_update_elem);
+  print_test_res(insn._imm == BPF_FUNC_map_update_elem, "set imm for map_update_elem");
+
+  for (int sp_fun_id = 0; sp_fun_id < SP_BPF_FUNC_MAX_ID; sp_fun_id++) {
+    insn.set_imm(sp_fun_id);
+    int bpf_func_id = sp_func_2_bpf_func[sp_fun_id];
+    print_test_res(insn._imm == bpf_func_id, "set imm for sp_fun_id " + to_string(sp_fun_id));
+  }
+}
+
 int main(int argc, char *argv[]) {
   test1();
   test2();
@@ -1362,6 +1376,7 @@ int main(int argc, char *argv[]) {
   test7();
   test8();
   test9();
+  test10();
 
   return 0;
 }

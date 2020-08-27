@@ -16,9 +16,9 @@ uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t
                                  uint64_t r4, uint64_t r5, simu_real& sr, prog_state& ps) {
   bool chk_safety = true;
   switch (func_id) {
-    case BPF_FUNC_map_lookup: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_lookup_helper(r1, r2, ps, sr, chk_safety);
-    case BPF_FUNC_map_update: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_map_update_helper(r1, r2, r3, ps, sr, chk_safety);
-    case BPF_FUNC_map_delete: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_delete_helper(r1, r2, ps, sr, chk_safety);
+    case BPF_FUNC_map_lookup_elem: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_lookup_helper(r1, r2, ps, sr, chk_safety);
+    case BPF_FUNC_map_update_elem: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_map_update_helper(r1, r2, r3, ps, sr, chk_safety);
+    case BPF_FUNC_map_delete_elem: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_delete_helper(r1, r2, ps, sr, chk_safety);
     case BPF_FUNC_tail_call: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_tail_call_helper(r1, r2, r3, ps);
     default: cout << "Error: unknown function id " << func_id << endl; return -1;
   }
@@ -1072,11 +1072,11 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::expr r3,
                                    z3::expr r4, z3::expr r5, z3::expr r0,
                                    smt_var &sv, unsigned int block) {
-  if (func_id == BPF_FUNC_map_lookup) {
+  if (func_id == BPF_FUNC_map_lookup_elem) {
     return predicate_map_lookup_helper(r1, r2, r0, sv, block);
-  } else if (func_id == BPF_FUNC_map_update) {
+  } else if (func_id == BPF_FUNC_map_update_elem) {
     return predicate_map_update_helper(r1, r2, r3, r0, sv, block);
-  } else if (func_id == BPF_FUNC_map_delete) {
+  } else if (func_id == BPF_FUNC_map_delete_elem) {
     return predicate_map_delete_helper(r1, r2, r0, sv, block);
   } else {
     cout << "Error: unknown function id " << func_id << endl; return string_to_expr("true");

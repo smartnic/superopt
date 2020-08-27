@@ -466,7 +466,7 @@ static constexpr int32_t MAX_IMM_SH64 = 63;
 // 3 types of OP_IMM_ENDIAN: 16, 32, 64
 // type counts from 0
 static constexpr int32_t MAX_TYPES_IMM_ENDIAN = 2;
-static constexpr int32_t MAX_CALL_IMM = BPF_MAX_FUNC_ID - 1;
+static constexpr int32_t MAX_CALL_IMM = SP_BPF_FUNC_MAX_ID - 1;
 // Operand types for instructions
 enum OPERANDS {
   OP_UNUSED = 0,
@@ -578,7 +578,6 @@ static const int optable[NUM_INSTR] = {
 
 class inst: public inst_base {
  private:
-  void set_imm(int op_value);
   void set_off(int op_value);
   int32_t get_max_imm() const;
   int32_t get_min_imm() const;
@@ -605,6 +604,7 @@ class inst: public inst_base {
     _off = off;
   }
   inst(int opcode = NOP, int32_t arg1 = 0, int32_t arg2 = 0, int32_t arg3 = 0);
+  void set_imm(int op_value);
   void to_abs_bv(vector<op_t>& abs_vec) const;
   int get_operand(int op_index) const;
   void set_operand(int op_index, op_t op_value);

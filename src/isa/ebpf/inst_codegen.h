@@ -9,6 +9,7 @@
 #include "../../../src/utils.h"
 #include "../../../src/isa/inst_var.h"
 #include "inst_var.h"
+#include "bpf.h"
 
 using namespace std;
 
@@ -16,14 +17,23 @@ using namespace std;
    APIs exposed to the externals,
    Should ensure all parameters do NOT have side effects.
 */
-/* Function ID, BPF function id starts from 1 */
-enum BPF_FUNC_IDS {
-  BPF_FUNC_map_lookup = 1,
-  BPF_FUNC_map_update,
-  BPF_FUNC_map_delete,
-  BPF_FUNC_tail_call,
-  BPF_MAX_FUNC_ID,
+/* supported function ID, BPF function id starts from 1 */
+enum SP_BPF_FUNC_IDS {
+  SP_BPF_FUNC_map_lookup_elem = 0,
+  SP_BPF_FUNC_map_update_elem,
+  SP_BPF_FUNC_map_delete_elem,
+  SP_BPF_FUNC_tail_call,
+  SP_BPF_FUNC_MAX_ID,
 };
+
+#define MAPPER(func_name) [SP_BPF_FUNC_##func_name] = BPF_FUNC_##func_name,
+static const int sp_func_2_bpf_func[SP_BPF_FUNC_MAX_ID] = {
+  MAPPER(map_lookup_elem)
+  MAPPER(map_update_elem)
+  MAPPER(map_delete_elem)
+  MAPPER(tail_call)
+};
+#undef MAPPER
 
 #define MAP_UPD_RET 0
 #define MAP_DEL_RET_IF_KEY_INEXIST (int64_t)0xfffffffe
