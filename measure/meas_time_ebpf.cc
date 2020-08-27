@@ -495,7 +495,7 @@ void time_z3_solver_map_pgm_one_case(int n_op, int n_maps, int type) {
   inst* pgm = (inst*)malloc(len * sizeof(inst));
   int func_id = 0;
   if (type < 4) func_id = type;
-  else if (type == 4) func_id = BPF_FUNC_map_lookup;
+  else if (type == 4) func_id = BPF_FUNC_map_lookup_elem;
   bool lookup_ld = false;
   if (type == 4) lookup_ld = true;
   for (int i = 0; i < n_op; i++) {

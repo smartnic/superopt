@@ -72,14 +72,14 @@ inst bm2[N2] = {inst(STXB, 10, -2, 1),    // *(r10-2) = L8(input)
                 inst(LDMAPID, 1, 0),      // r1 = map0
                 inst(MOV64XY, 2, 10),     // r2 = r10 - 1
                 inst(ADD64XC, 2, -1),
-                inst(CALL, BPF_FUNC_map_lookup), // r0 = &map0[0x01]
+                inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = &map0[0x01]
                 inst(JEQXC, 0, 0, 7),   // if r0 == 0, exit else map0[0x01] = L8(input)
                 inst(LDMAPID, 1, 0),    // r1 = map0
                 inst(MOV64XY, 2, 10),   // r2 = r10 - 1
                 inst(ADD64XC, 2, -1),
                 inst(MOV64XY, 3, 10),   // r3 = r10 - 2
                 inst(ADD64XC, 3, -2),
-                inst(CALL, BPF_FUNC_map_update), // r0 = addr_v1
+                inst(CALL, BPF_FUNC_map_update_elem), // r0 = addr_v1
                 inst(MOV64XC, 0, 0),
                 inst(EXIT),
                };
@@ -89,7 +89,7 @@ inst bm_opti20[N2] = {inst(STXB, 10, -2, 1),    // *(r10-2) = L8(input)
                       inst(LDMAPID, 1, 0),      // r1 = map0
                       inst(MOV64XY, 2, 10),     // r2 = r10 - 1
                       inst(ADD64XC, 2, -1),
-                      inst(CALL, BPF_FUNC_map_lookup), // r0 = &map0[0x01]
+                      inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = &map0[0x01]
                       inst(JEQXC, 0, 0, 7),   // if r0 == 0, exit
                       inst(LDXB, 1, 10, -2),  // r1 = L8(input)
                       inst(STXB, 0, 0, 1),    // *r0 = r1

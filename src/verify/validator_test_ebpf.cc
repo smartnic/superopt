@@ -243,8 +243,8 @@ void test3() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
-                 inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[r1] = 0x11
-                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                 inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[r1] = 0x11
+                 inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
                  inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
                  inst(LDXB, 0, 0, 0),
                  inst(EXIT),
@@ -258,7 +258,7 @@ void test3() {
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                   inst(ADD64XC, 3, -2),
-                  inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[r1] = 0x11
+                  inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[r1] = 0x11
                   inst(LDXB, 0, 10, -2),
                   inst(EXIT),
                  };
@@ -275,9 +275,9 @@ void test3() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
-                 inst(CALL, BPF_FUNC_map_update), // map0[k] = v, i.e., map0[r1] = 0x11
-                 inst(CALL, BPF_FUNC_map_delete), // delete map0[k]
-                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                 inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[r1] = 0x11
+                 inst(CALL, BPF_FUNC_map_delete_elem), // delete map0[k]
+                 inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
                  inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
                  inst(LDXB, 0, 0, 0),
                  inst(EXIT),
@@ -290,8 +290,8 @@ void test3() {
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                   inst(ADD64XC, 3, -2),
-                  inst(CALL, BPF_FUNC_map_delete), // delete map0[k]
-                  inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                  inst(CALL, BPF_FUNC_map_delete_elem), // delete map0[k]
+                  inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
                   inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
                   inst(LDXB, 0, 0, 0),
                   inst(EXIT),
@@ -305,7 +305,7 @@ void test3() {
                 inst(LDMAPID, 1, 0), // r1 = map_id (0)
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                 inst(ADD64XC, 2, -1),
-                inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v = lookup k map0
+                inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
                 inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
                 inst(LDXB, 0, 0, 0),
                 inst(EXIT),
@@ -321,8 +321,8 @@ void test3() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
-                 inst(CALL, BPF_FUNC_map_update),
-                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
+                 inst(CALL, BPF_FUNC_map_update_elem),
+                 inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v1
                  inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = map0[k1]
                  inst(LDXB, 0, 0, 0),  // r0 = map0[k1]
                  inst(EXIT),
@@ -332,7 +332,7 @@ void test3() {
                  inst(LDMAPID, 1, 0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
-                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
+                 inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v1
                  inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = map0[k1]
                  inst(LDXB, 0, 0, 0),  // r0 = map0[k1]
                  inst(EXIT),
@@ -349,8 +349,8 @@ void test3() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
-                 inst(CALL, BPF_FUNC_map_delete),
-                 inst(CALL, BPF_FUNC_map_update),
+                 inst(CALL, BPF_FUNC_map_delete_elem),
+                 inst(CALL, BPF_FUNC_map_update_elem),
                  inst(MOV64XC, 0, 0),
                  inst(EXIT),
                 };
@@ -363,7 +363,7 @@ void test3() {
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                   inst(ADD64XC, 3, -2),
-                  inst(CALL, BPF_FUNC_map_update),
+                  inst(CALL, BPF_FUNC_map_update_elem),
                   inst(MOV64XC, 0, 0),
                   inst(EXIT),
                  };
@@ -377,7 +377,7 @@ void test3() {
                  inst(LDMAPID, 1, map0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2 = (r10-1)
                  inst(ADD64XC, 2, -1),
-                 inst(CALL, BPF_FUNC_map_lookup), // r0 = &v = lookup k1 map0
+                 inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = &v = lookup k1 map0
                  inst(JEQXC, 0, 0, 4), // if r0 == 0, exit
                  inst(LDXB, 1, 0, 0), // r1 = v
                  inst(ADD64XC, 1, 1), // r1 += 1
@@ -391,7 +391,7 @@ void test3() {
                   inst(LDMAPID, 1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2 = (r10-1)
                   inst(ADD64XC, 2, -1),
-                  inst(CALL, BPF_FUNC_map_lookup), // r0 = &v = lookup k1 map0
+                  inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = &v = lookup k1 map0
                   inst(JEQXC, 0, 0, 8), // if r0 == 0, exit
                   inst(LDXB, 1, 0, 0), // r1 = v
                   inst(ADD64XC, 1, 1), // r1 += 1
@@ -399,7 +399,7 @@ void test3() {
                   inst(LDMAPID, 1, map0), // r1 = map0
                   inst(MOV64XY, 3, 10), // r3 = r10-2
                   inst(ADD64XC, 3, -2),
-                  inst(CALL, BPF_FUNC_map_update),
+                  inst(CALL, BPF_FUNC_map_update_elem),
                   inst(MOV64XC, 0, 0),
                   inst(EXIT),
                  };
@@ -419,15 +419,15 @@ void test3() {
                  inst(MOV64XY, 3, 10), // r3 = r10-1
                  inst(ADD64XC, 3, -1),
                  inst(LDMAPID, 1, map0), // r1 = map0
-                 inst(CALL, BPF_FUNC_map_update), // map0[1] = 1
+                 inst(CALL, BPF_FUNC_map_update_elem), // map0[1] = 1
                  inst(MOV64XY, 3, 10), // r3 = r10-2
                  inst(ADD64XC, 3, -2),
                  inst(LDMAPID, 1, map2), // r1 = map2
-                 inst(CALL, BPF_FUNC_map_update), // map2[1] = 2
+                 inst(CALL, BPF_FUNC_map_update_elem), // map2[1] = 2
                  inst(LDMAPID, 1, map0), // r1 = map0, // 13
                  inst(JGTXY, 10, 9, 1),
                  inst(LDMAPID, 1, map2), // r1 = map2
-                 inst(CALL, BPF_FUNC_map_lookup),
+                 inst(CALL, BPF_FUNC_map_lookup_elem),
                  inst(JEQXC, 0, 0, 1),
                  inst(LDXB, 0, 0, 0),
                  inst(EXIT),
@@ -441,11 +441,11 @@ void test3() {
                   inst(MOV64XY, 3, 10), // r3 = r10-1
                   inst(ADD64XC, 3, -1),
                   inst(LDMAPID, 1, map0), // r1 = map0
-                  inst(CALL, BPF_FUNC_map_update), // map0[1] = 1
+                  inst(CALL, BPF_FUNC_map_update_elem), // map0[1] = 1
                   inst(MOV64XY, 3, 10), // r3 = r10-2
                   inst(ADD64XC, 3, -2),
                   inst(LDMAPID, 1, map2), // r1 = map2
-                  inst(CALL, BPF_FUNC_map_update), // map2[1] = 2
+                  inst(CALL, BPF_FUNC_map_update_elem), // map2[1] = 2
                   inst(MOV64XC, 0, 1),
                   inst(JGTXY, 10, 9, 1),
                   inst(MOV64XC, 0, 2),
@@ -463,11 +463,11 @@ void test3() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
-                 inst(CALL, BPF_FUNC_map_update),
+                 inst(CALL, BPF_FUNC_map_update_elem),
                  inst(JEQXC, 10, 0xfff, 2),
                  inst(STB, 10, -2, 1),
-                 inst(CALL, BPF_FUNC_map_update),
-                 inst(CALL, BPF_FUNC_map_lookup),
+                 inst(CALL, BPF_FUNC_map_update_elem),
+                 inst(CALL, BPF_FUNC_map_lookup_elem),
                  inst(JEQXC, 0, 0, 1),
                  inst(LDXB, 0, 0, 0),
                  inst(EXIT),
@@ -480,10 +480,10 @@ void test3() {
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                   inst(ADD64XC, 3, -2),
-                  inst(CALL, BPF_FUNC_map_update),
+                  inst(CALL, BPF_FUNC_map_update_elem),
                   inst(JNEXC, 10, 0xfff, 2),
                   inst(STB, 10, -2, 0),
-                  inst(CALL, BPF_FUNC_map_update),
+                  inst(CALL, BPF_FUNC_map_update_elem),
                   inst(MOV64XC, 0, 0),
                   inst(JEQXC, 10, 0xfff, 1),
                   inst(MOV64XC, 0, 1),
@@ -498,7 +498,7 @@ void test3() {
                 inst(MOV64XY, 2, 10),
                 inst(ADD64XC, 2, -2),
                 inst(LDMAPID, map1),
-                inst(CALL, BPF_FUNC_map_lookup),
+                inst(CALL, BPF_FUNC_map_lookup_elem),
                 inst(JEQXC, 0, 0, 1),
                 inst(STB, 0, 0, 1), // set map1[1][0] = 0, not modify map1[1][1...3]
                 inst(MOV64XC, 0, 1), // set the return value as 1
@@ -550,7 +550,7 @@ void test4() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
-                 inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
+                 inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v1
                  inst(JEQXC, 0, 0, 3), // if r0 == 0, exit else r0 = map0[k1]
                  inst(LDXB, 0, 0, 0),  // r0 = map0[k1]
                  inst(JEQXC, 0, v1, 1), //if r0 == v1 exit else r0 = 0
@@ -566,7 +566,7 @@ void test4() {
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                   inst(ADD64XC, 3, -2),
-                  inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
+                  inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v1
                   inst(MOV64XC, 0, 0), // set the return value r0 = 0
                   inst(EXIT),
                  };
@@ -605,9 +605,9 @@ void test4() {
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                   inst(ADD64XC, 3, -2),
-                  inst(CALL, BPF_FUNC_map_lookup),
+                  inst(CALL, BPF_FUNC_map_lookup_elem),
                   inst(JEQXC, 0, 0, 1),
-                  inst(CALL, BPF_FUNC_map_update),
+                  inst(CALL, BPF_FUNC_map_update_elem),
                   inst(MOV64XC, 0, 0),
                   inst(EXIT),
                  };
@@ -626,7 +626,7 @@ void test4() {
                 inst(LDMAPID, 1, map1), // r1 = map1
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 2
                 inst(ADD64XC, 2, -2),
-                inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
+                inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v1
                 inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = map1[k1]
                 inst(LDXB, 0, 0, 0),
                 inst(EXIT),
@@ -641,7 +641,7 @@ void test4() {
                   inst(LDMAPID, 1, map1), // r1 = map1
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 2
                   inst(ADD64XC, 2, -2),
-                  inst(CALL, BPF_FUNC_map_lookup), // r0 = addr_v1
+                  inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v1
                   inst(JEQXC, 0, 0, 3), // if r0 == 0, exit else r0 = map1[k1]
                   inst(LDXB, 0, 0, 0),
                   inst(JEQXC, 0, v1, 1), //if r0 == v1 exit else r0 = 0
@@ -657,7 +657,7 @@ void test4() {
                 inst(LDMAPID, 1, map0), // r1 = map0
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                 inst(ADD64XC, 2, -1),
-                inst(CALL, BPF_FUNC_map_delete),
+                inst(CALL, BPF_FUNC_map_delete_elem),
                 inst(EXIT),
                };
   // r0 = 0xfffffffe
@@ -672,7 +672,7 @@ void test4() {
                 inst(LDMAPID, 1, map0), // r1 = map0
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                 inst(ADD64XC, 2, -1),
-                inst(CALL, BPF_FUNC_map_lookup),
+                inst(CALL, BPF_FUNC_map_lookup_elem),
                 inst(JEQXC, 0, 0, 1),
                 inst(MOV64XC, 0, 1),
                 inst(EXIT),
