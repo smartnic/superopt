@@ -1352,20 +1352,6 @@ void test9() {
   print_test_res(is_equal, "tail call 1.3");
 }
 
-void test10() {
-  cout << "Test 10: set sample imm" << endl;
-  inst insn = inst(CALL, BPF_FUNC_map_lookup_elem);
-
-  insn.set_imm(SP_BPF_FUNC_map_update_elem);
-  print_test_res(insn._imm == BPF_FUNC_map_update_elem, "set imm for map_update_elem");
-
-  for (int sp_fun_id = 0; sp_fun_id < SP_BPF_FUNC_MAX_ID; sp_fun_id++) {
-    insn.set_imm(sp_fun_id);
-    int bpf_func_id = sp_func_2_bpf_func[sp_fun_id];
-    print_test_res(insn._imm == bpf_func_id, "set imm for sp_fun_id " + to_string(sp_fun_id));
-  }
-}
-
 int main(int argc, char *argv[]) {
   test1();
   test2();
@@ -1376,7 +1362,6 @@ int main(int argc, char *argv[]) {
   test7();
   test8();
   test9();
-  test10();
 
   return 0;
 }

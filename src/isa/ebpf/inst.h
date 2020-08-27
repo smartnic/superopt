@@ -95,6 +95,16 @@ enum OPCODE_IDX {
   NUM_INSTR, // Number of opcode types
 };
 
+/* supported BPF functions */
+static const int sp_bpf_func[] = {
+  BPF_FUNC_map_lookup_elem,
+  BPF_FUNC_map_update_elem,
+  BPF_FUNC_map_delete_elem,
+  BPF_FUNC_tail_call,
+};
+
+static constexpr int SP_BPF_FUNC_MAX_ID = (sizeof(sp_bpf_func) / sizeof(int));
+
 #define OPCODE_BPF_ALU64_IMM(OP) BPF_ALU64 | BPF_OP(OP) | BPF_K
 #define OPCODE_BPF_ALU64_REG(OP) BPF_ALU64 | BPF_OP(OP) | BPF_X
 #define OPCODE_BPF_ALU32_IMM(OP) BPF_ALU | BPF_OP(OP) | BPF_K

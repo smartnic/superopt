@@ -63,7 +63,7 @@ void inst::set_imm(int op_value) {
   }
   if (_opcode == CALL) {
     assert(op_value < SP_BPF_FUNC_MAX_ID);
-    _imm = sp_func_2_bpf_func[op_value];
+    _imm = sp_bpf_func[op_value];
     return;
   }
   unordered_set<int32_t> opcodes_set = {ADD64XC, OR64XC, AND64XC, MOV64XC, ADD32XC, OR32XC,
