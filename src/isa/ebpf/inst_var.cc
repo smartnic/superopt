@@ -212,6 +212,24 @@ unsigned int mem_t::map_max_entries(int map_id) {
   return _layout._maps_attr[map_id].max_entries;
 }
 
+unsigned int mem_t::map_type(int map_id) {
+  if (map_id >= maps_number()) {
+    string err_msg = "map_id > #maps";
+    throw (err_msg);
+  }
+  return _layout._maps_attr[map_id].map_type;
+}
+
+unsigned int mem_t::prog_array_map_max_entries() {
+  int map_id = -1;
+  for (int i = 0; i < _layout._maps_attr.size(); i++) {
+    if (map_type(i) != MAP_TYPE_prog_array) continue;
+    map_id = i;
+  }
+  if (map_id != -1) return 0; // means no prog_array map
+  return map_max_entries(map_id);
+}
+
 void mem_t::init_by_layout() {
   if (_mem != nullptr) {
     delete []_mem;
@@ -1023,6 +1041,8 @@ inout_t::inout_t(const inout_t& rhs) {
   reg = rhs.reg;
   maps = rhs.maps;
   memcpy(pkt, rhs.pkt, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
+  tail_call_para = rhs.tail_call_para;
+  pgm_exit_type = rhs.pgm_exit_type;
 }
 
 inout_t::~inout_t() {
@@ -1062,6 +1082,8 @@ void inout_t::init() {
   reg = 0;
   int n_maps = mem_t::maps_number();
   maps.resize(n_maps);
+  tail_call_para = -1;
+  pgm_exit_type = PGM_EXIT_TYPE_default;
 }
 
 void inout_t::operator=(const inout_t &rhs) {
@@ -1069,10 +1091,12 @@ void inout_t::operator=(const inout_t &rhs) {
   reg = rhs.reg;
   maps = rhs.maps;
   memcpy(pkt, rhs.pkt, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
+  pgm_exit_type = rhs.pgm_exit_type;
+  tail_call_para = rhs.tail_call_para;
 }
 
 bool inout_t::operator==(const inout_t &rhs) const {
-  bool res = (reg == rhs.reg) && (maps.size() == rhs.maps.size());
+  bool res = (maps.size() == rhs.maps.size());
   if (! res) return false;
   for (int i = 0; i < maps.size(); i++) {
     // each map should be the same
@@ -1091,6 +1115,18 @@ bool inout_t::operator==(const inout_t &rhs) const {
       }
     }
   }
+
+  if (pgm_exit_type != rhs.pgm_exit_type) return false;
+  // now two outputs have the same program exit type
+  int output_type = pgm_exit_type;
+  if (output_type == PGM_EXIT_TYPE_default) {
+    if (reg != rhs.reg) return false;
+  } else if (output_type == MAP_TYPE_prog_array) {
+    if (tail_call_para != rhs.tail_call_para) return false;
+  } else {
+    assert(false); // program has bug
+  }
+
   return true;
 }
 
@@ -1109,6 +1145,8 @@ ostream& operator<<(ostream& out, const inout_t& x) {
   }
   out << " " << "pkt_ptrs:"
       << hex << x.input_simu_pkt_ptrs[0] << "," << x.input_simu_pkt_ptrs[1] << dec;
+  out << " " << "pgm_exit_type: " << x.pgm_exit_type;
+  out << " " << "tail_call_para: " << x.tail_call_para;
   return out;
 }
 
@@ -1118,6 +1156,7 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   ps._regs[10] = input.input_simu_r10;
   // cp input register
   ps._regs[1] = input.reg;
+  ps._input_reg_val = input.reg;
   // cp input map
   ps._mem.clear();
   for (int i = 0; i < input.maps.size(); i++) {
@@ -1137,6 +1176,9 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
     ps._mem._pkt_ptrs[0] = input.input_simu_pkt_ptrs[0];
     ps._mem._pkt_ptrs[1] = input.input_simu_pkt_ptrs[1];
   }
+  // set the exit type as the default type
+  ps._pgm_exit_type = PGM_EXIT_TYPE_default;
+  ps._tail_call_para = -1;
 }
 
 void update_output_by_ps(inout_t& output, const prog_state& ps) {
@@ -1162,6 +1204,9 @@ void update_output_by_ps(inout_t& output, const prog_state& ps) {
   // cp pkt
   unsigned int pkt_sz = mem_t::_layout._pkt_sz;
   memcpy(output.pkt, ps._mem._pkt, sizeof(uint8_t)*pkt_sz);
+
+  output.pgm_exit_type = ps._pgm_exit_type;
+  output.tail_call_para = ps._tail_call_para;
 }
 
 // parameter r10 is the simulated r10, stack_bottom is the real r10
@@ -1247,10 +1292,6 @@ int get_cmp_lists_one_map(vector<int64_t>& val_list1, vector<int64_t>& val_list2
 // val_list: [reg, #different keys, map0[k0], map0[k1], ...., map1[k0'], ...., pkt]
 void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
                    inout_t& output1, inout_t& output2) {
-  val_list1.resize(2);
-  val_list2.resize(2);
-  val_list1[0] = output1.reg;
-  val_list2[0] = output2.reg;
   int diff_count1 = 0;
   int diff_count2 = 0;
   for (int i = 0; i < mem_t::maps_number(); i++) {
@@ -1260,11 +1301,33 @@ void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
     diff_count2 += get_cmp_lists_one_map(val_list2, val_list1, val_sz,
                                          output2.maps[i], output1.maps[i], false);
   }
-  val_list1[1] = diff_count1 + diff_count2;
-  val_list2[1] = 0;
+  val_list1.push_back(diff_count1 + diff_count2);
+  val_list2.push_back(0);
   // add pkt into lists
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list1.push_back(output1.pkt[i]);
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list2.push_back(output2.pkt[i]);
+
+  int prog_exit_type_max_diff = mem_t::prog_array_map_max_entries();
+  if (output1.pgm_exit_type != output2.pgm_exit_type) {
+    val_list1.push_back(prog_exit_type_max_diff);
+    val_list2.push_back(0);
+    return;
+  }
+  // now two outputs have the same program exit type
+  int output_type = output1.pgm_exit_type;
+  if (output_type == PGM_EXIT_TYPE_default) {
+    val_list1.push_back(output1.reg);
+    val_list2.push_back(output2.reg);
+  } else if (output_type == MAP_TYPE_prog_array) {
+    // MAP_TYPE_prog_array does not need to check registers
+    // reference: github.com/torvalds/linux/blob/cb95712138ec5e480db5160b41172bbc6f6494cc/include/uapi/linux/bpf.h#L874
+    // The same stack frame is used (but values on stack and in registers for the
+    // caller are not accessible to the callee).
+    val_list1.push_back(output1.tail_call_para);
+    val_list2.push_back(output2.tail_call_para);
+  } else {
+    assert(false); // program has bug
+  }
 }
 
 void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max) {

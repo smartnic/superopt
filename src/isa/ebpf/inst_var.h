@@ -18,12 +18,21 @@ using namespace std;
 #define ZERO_ADDR_OFF_EXPR to_expr((int64_t)0)
 static constexpr int NUM_REGS = 11;
 
+enum MAP_TYPE {
+  MAP_TYPE_default = 0,
+  MAP_TYPE_prog_array, // MAP_TYPE_prog_array == **BPF_MAP_TYPE_PROG_ARRAY**
+};
+
 struct map_attr { // map attribute
   unsigned int key_sz;
   unsigned int val_sz;
   unsigned int max_entries;
-  map_attr(unsigned int k_sz, unsigned int v_sz, unsigned int n_entries = 0) {
-    key_sz = k_sz; val_sz = v_sz; max_entries = n_entries;
+  unsigned int map_type;
+  map_attr(unsigned int k_sz, unsigned int v_sz, unsigned int n_entries = 0,
+           unsigned int m_type = MAP_TYPE_default) {
+    key_sz = k_sz; val_sz = v_sz;
+    max_entries = n_entries;
+    map_type = MAP_TYPE_prog_array;
   }
 };
 ostream& operator<<(ostream& out, const map_attr& m_attr);
@@ -91,6 +100,8 @@ class mem_t {
   static unsigned int map_key_sz(int map_id);
   static unsigned int map_val_sz(int map_id);
   static unsigned int map_max_entries(int map_id);
+  static unsigned int map_type(int map_id);
+  static unsigned int prog_array_map_max_entries();
   // 1. compute "_mem_size" and according to "_layout";
   // 2. allocate memory for "_mem", "_pkt"
   // 3. init _maps
@@ -313,6 +324,11 @@ class smt_var_bl {
   z3::expr gen_smt_after_smt_block(smt_var& sv, z3::expr& pc);
 };
 
+enum PGM_EXIT_TYPE {
+  PGM_EXIT_TYPE_default = 0,
+  PGM_EXIT_TYPE_tail_call, // program exits because of a tail call
+};
+
 class prog_state: public prog_state_base {
  public:
   mem_t _mem;
@@ -320,6 +336,11 @@ class prog_state: public prog_state_base {
   // is readable or not.
   vector<bool> _reg_readable;
   vector<bool> _stack_readable;
+  uint64_t _input_reg_val;
+  // _tail_call_para: the third parameter of tail call function.
+  // if program exits by a tail call, _tail_call_para is a in the output check
+  uint64_t _tail_call_para;
+  int _pgm_exit_type;
   prog_state();
   void init_safety_chk();
   void reg_safety_chk(int reg_write, vector<int> reg_read_list = {});
@@ -341,6 +362,8 @@ class inout_t: public inout_t_base {
   // kv map: k hex_string, v: vector<uint8_t>
   vector<unordered_map<string, vector<uint8_t>>> maps;
   uint8_t* pkt = nullptr;
+  uint64_t tail_call_para;
+  int pgm_exit_type;
   inout_t();
   inout_t(const inout_t& rhs); // deep copy for vector push back
   ~inout_t();

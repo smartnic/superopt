@@ -1009,6 +1009,10 @@ INSN_CALL:
   // safety check of helper functions is inside compute_helper_function(),
   // since different functions have different parameters
   R0 = compute_helper_function(IMM, R1, R2, R3, R4, R5, SR, ps);
+  if (IMM == BPF_FUNC_tail_call) { // exit regardless of the return value r0
+    ps._pgm_exit_type = PGM_EXIT_TYPE_tail_call;
+    goto out;
+  }
   CONT;
 
 INSN_EXIT:

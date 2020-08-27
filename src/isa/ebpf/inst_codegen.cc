@@ -10,6 +10,7 @@ z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::
 z3::expr addr_in_addrs_map_mem(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
 z3::expr key_not_found_after_idx(z3::expr key, int idx, smt_map_wt& m_wt);
 z3::expr key_not_in_map_wt(z3::expr k, smt_map_wt& m_wt, smt_var& sv, bool same_pgms = false, unsigned int block = 0);
+uint64_t compute_tail_call_helper(uint64_t ctx_ptr, uint64_t map_id, uint64_t index, prog_state& ps);
 
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
                                  uint64_t r4, uint64_t r5, simu_real& sr, prog_state& ps) {
@@ -18,6 +19,7 @@ uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t
     case BPF_FUNC_map_lookup: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_lookup_helper(r1, r2, ps, sr, chk_safety);
     case BPF_FUNC_map_update: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_map_update_helper(r1, r2, r3, ps, sr, chk_safety);
     case BPF_FUNC_map_delete: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_delete_helper(r1, r2, ps, sr, chk_safety);
+    case BPF_FUNC_tail_call: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_tail_call_helper(r1, r2, r3, ps);
     default: cout << "Error: unknown function id " << func_id << endl; return -1;
   }
 }
@@ -86,6 +88,28 @@ uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, prog_state& ps
   mp.add_available_idx(it->second);
   mp._k2idx.erase(it);
   return MAP_DEL_RET_IF_KEY_EXIST;
+}
+
+uint64_t compute_tail_call_helper(uint64_t ctx_ptr, uint64_t map_id, uint64_t index, prog_state& ps) {
+  // 1. ctx_ptr should be input r1, else throw error
+  if (ctx_ptr != ps._input_reg_val) {
+    string err_msg = "ERROR: tail call parameter 1 wrong ctx_ptr";
+  }
+  // 2. map_id should be prog_array map id, else throw error
+  int map_type = mem_t::map_type(map_id);
+  if (map_type != MAP_TYPE_prog_array) {
+    string err_msg = "ERROR: tail call parameter 2 map type is not MAP_TYPE_prog_array";
+    throw (err_msg);
+  }
+  // 3. index should be in [0, prog_array map's max entries), else throw error
+  unsigned int map_max_entries = mem_t::map_max_entries(map_id);
+  if (map_id >= map_max_entries) {
+    string err_msg = "ERROR: tail call parameter 3 index is outside [0, " + to_string(map_max_entries) + ")";
+    throw (err_msg);
+  }
+
+  ps._tail_call_para = index;
+  return 0; // 0 means successful
 }
 
 z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned int block) {

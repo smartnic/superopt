@@ -1310,6 +1310,48 @@ void test8() {
   print_test_res(output == expected, "LDINDH 2");
 }
 
+void test9() {
+  cout << "Test 9: full interpretation check of tail call" << endl;
+  mem_t::_layout.clear();
+  mem_t::add_map(map_attr(8, 8, 3, MAP_TYPE_prog_array)); // add an prog_array map
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(16); // pkt sz: 512 bytes
+  prog_state ps;
+  ps.init();
+  inout_t input, output1, output2, expected;
+  input.init();
+  output1.init();
+  output2.init();
+  expected.init();
+  input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
+  inst p1[6] = {inst(MOV64XY, 1, 1),
+                inst(LDMAPID, 2, 0),
+                inst(MOV64XC, 3, 1), // Jump to map[1] program
+                inst(CALL, BPF_FUNC_tail_call), // in the current implementation, this is an exit insn
+                inst(MOV64XC, 0, 0xff),
+                inst(EXIT),
+               };
+  interpret(output1, p1, 6, ps, input);
+  expected.tail_call_para = 1;
+  expected.pgm_exit_type = PGM_EXIT_TYPE_tail_call;
+  print_test_res(output1 == expected, "tail call 1.1");
+  inst p1_1[5] = {inst(MOV64XY, 1, 1),
+                  inst(LDMAPID, 2, 0),
+                  inst(MOV64XC, 3, 1), // Jump to map[1] program
+                  inst(CALL, BPF_FUNC_tail_call), // in the current implementation, this is an exit insn
+                  inst(EXIT),
+                 };
+  interpret(output2, p1_1, 5, ps, input);
+  print_test_res(output2 == expected, "tail call 1.2");
+  vector<int64_t> val_list1, val_list2;
+  get_cmp_lists(val_list1, val_list2, output1, output2);
+  bool is_equal = true;
+  for (int i = 0; i < val_list1.size(); i++) {
+    is_equal &= (val_list1[i] == val_list2[i]);
+  }
+  print_test_res(is_equal, "tail call 1.3");
+}
+
 int main(int argc, char *argv[]) {
   test1();
   test2();
@@ -1319,6 +1361,7 @@ int main(int argc, char *argv[]) {
   test6();
   test7();
   test8();
+  test9();
 
   return 0;
 }

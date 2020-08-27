@@ -21,6 +21,7 @@ enum BPF_FUNC_IDS {
   BPF_FUNC_map_lookup = 1,
   BPF_FUNC_map_update,
   BPF_FUNC_map_delete,
+  BPF_FUNC_tail_call,
   BPF_MAX_FUNC_ID,
 };
 
