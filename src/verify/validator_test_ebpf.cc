@@ -263,8 +263,8 @@ void test3() {
                   inst(EXIT),
                  };
   validator vld(p1, 13);
-  print_test_res(vld.is_equal_to(p1, 13, p1, 13), "map helper function 1.1");
-  print_test_res(vld.is_equal_to(p1, 13, p11, 11), "map helper function 1.2");
+  print_test_res(vld.is_equal_to(p1, 13, p1, 13) == 1, "map helper function 1.1");
+  print_test_res(vld.is_equal_to(p1, 13, p11, 11) == 1, "map helper function 1.2");
 
   // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
   inst p2[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
@@ -901,6 +901,93 @@ void test7() {
   print_test_res(vld.is_equal_to(p1, 2, p1_2, 2) == 1, "1.2");
 }
 
+void test8() {
+  std::cout << "test 8: test tail call helper" << endl;
+  std::cout << "1. test equivalence check" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::add_map(map_attr(8, 8, 3)); // k_sz: 1 bytes; v_sz: 1 byte; max_entirs: 3
+  mem_t::add_map(map_attr(8, 8, 16));
+  mem_t::set_pkt_sz(16);
+  inst p1[6] = {inst(MOV64XC, 0, 0),
+                inst(MOV64XY, 1, 1),
+                inst(LDMAPID, 2, 0),
+                inst(MOV64XC, 3, 1),
+                inst(CALL, BPF_FUNC_tail_call),
+                inst(EXIT),
+               };
+  inst p1_1[6] = {inst(MOV64XC, 0, 1), // r0 = 1
+                  inst(MOV64XY, 1, 1),
+                  inst(LDMAPID, 2, 0),
+                  inst(MOV64XC, 3, 1),
+                  inst(CALL, BPF_FUNC_tail_call),
+                  inst(EXIT),
+                 };
+  inst p1_2[5] = {inst(MOV64XC, 0, 0),
+                  inst(MOV64XY, 1, 1),
+                  inst(LDMAPID, 2, 0),
+                  inst(MOV64XC, 3, 1),
+                  inst(EXIT),
+                 };
+  inst p1_3[6] = {inst(MOV64XC, 0, 0),
+                  inst(MOV64XY, 1, 1),
+                  inst(LDMAPID, 2, 0),
+                  inst(MOV64XC, 3, 2), // r3 = 2
+                  inst(CALL, BPF_FUNC_tail_call),
+                  inst(EXIT),
+                 };
+  inst p1_4[6] = {inst(MOV64XC, 0, 0),
+                  inst(MOV64XY, 1, 0), // r1 = r0 = 1
+                  inst(LDMAPID, 2, 0),
+                  inst(MOV64XC, 3, 1),
+                  inst(CALL, BPF_FUNC_tail_call),
+                  inst(EXIT),
+                 };
+  inst p1_5[6] = {inst(MOV64XC, 0, 0),
+                  inst(MOV64XY, 1, 1),
+                  inst(LDMAPID, 2, 1), // r2 = map1
+                  inst(MOV64XC, 3, 1),
+                  inst(CALL, BPF_FUNC_tail_call),
+                  inst(EXIT),
+                 };
+  inst p1_6[8] = {inst(MOV64XC, 0, 0),
+                  inst(MOV64XY, 1, 1),
+                  inst(LDMAPID, 2, 0),
+                  inst(MOV64XC, 3, 1),
+                  inst(JEQXC, 10, 514, 1),
+                  inst(CALL, BPF_FUNC_tail_call),
+                  inst(CALL, BPF_FUNC_tail_call),
+                  inst(EXIT),
+                 };
+  inst p1_7[7] = {inst(MOV64XC, 0, 0),
+                  inst(MOV64XY, 1, 1),
+                  inst(LDMAPID, 2, 0),
+                  inst(MOV64XC, 3, 1),
+                  inst(JEQXC, 10, 514, 1),
+                  inst(CALL, BPF_FUNC_tail_call),
+                  inst(EXIT),
+                 };
+  inst p1_8[8] = {inst(MOV64XC, 0, 1),
+                  inst(MOV64XY, 1, 1),
+                  inst(LDMAPID, 2, 0),
+                  inst(MOV64XC, 3, 0),
+                  inst(JEQXC, 10, 514, 1),
+                  inst(MOV64XC, 3, 1),
+                  inst(CALL, BPF_FUNC_tail_call),
+                  inst(EXIT),
+                 };
+  validator vld(p1, 6);
+  print_test_res(vld.is_equal_to(p1, 6, p1, 6) == 1, "1.1");
+  print_test_res(vld.is_equal_to(p1, 6, p1_1, 6) == 1, "1.2");
+  print_test_res(vld.is_equal_to(p1, 6, p1_2, 5) == 0, "1.3");
+  print_test_res(vld.is_equal_to(p1, 6, p1_3, 6) == 0, "1.4");
+  print_test_res(vld.is_equal_to(p1, 6, p1_4, 6) == 0, "1.5");
+  print_test_res(vld.is_equal_to(p1, 6, p1_5, 6) == 0, "1.6");
+  print_test_res(vld.is_equal_to(p1, 6, p1_6, 8) == 1, "1.7");
+  print_test_res(vld.is_equal_to(p1, 6, p1_7, 7) == 0, "1.8");
+  print_test_res(vld.is_equal_to(p1, 6, p1_8, 8) == 0, "1.9");
+}
+
 int main() {
   try {
     test1();
@@ -910,6 +997,7 @@ int main() {
     test5();
     test6();
     test7();
+    test8();
   } catch (const string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

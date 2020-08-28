@@ -89,9 +89,7 @@ void validator::smt_pre(expr& pre, expr e) {
 
 void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2,
                          smt_var& post_sv_synth) {
-  pst = (string_to_expr("output" + to_string(prog_id1)) == \
-         string_to_expr("output" + to_string(prog_id2))) &&
-        smt_pgm_mem_eq_chk(_post_sv_orig, post_sv_synth);
+  pst = smt_pgm_eq_chk(_post_sv_orig, post_sv_synth);
 }
 
 // calculate and store pre_orig, ps_orign
@@ -145,7 +143,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
 
   if (is_equal == 0) {
     // cout << is_equal << endl;
-    cout << mdl << endl;
+    // cout << mdl << endl;
     gen_counterex(orig, length_orig, mdl, post_sv_synth);
   }
   return is_equal;

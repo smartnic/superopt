@@ -753,6 +753,25 @@ z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
   return smt_map_eq_chk(sv1, sv2) && smt_pkt_eq_chk(sv1, sv2);
 }
 
+z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2) {
+  z3::expr f = smt_pgm_mem_eq_chk(sv1, sv2);
+
+  smt_output& out1 = sv1.smt_out, out2 = sv2.smt_out;
+  z3::expr same_ret_val = (out1.ret_val == out2.ret_val);
+  if ( (! out1.pgm_has_tail_call) && (! out2.pgm_has_tail_call) ) {
+    f = f && same_ret_val;
+  } else {
+    z3::expr same_exit_type = (out1.pgm_exit_type == out2.pgm_exit_type);
+    z3::expr same_tail_call_paras = (out1.tail_call_args[0] == out2.tail_call_args[0]) &&
+                                    (out1.tail_call_args[1] == out2.tail_call_args[1]) &&
+                                    (out1.tail_call_args[2] == out2.tail_call_args[2]);
+    f = f && same_exit_type &&
+        z3::implies(out1.pgm_exit_type == PGM_EXIT_TYPE_default, same_ret_val) &&
+        z3::implies(out1.pgm_exit_type == PGM_EXIT_TYPE_tail_call, same_tail_call_paras);
+  }
+  return f;
+}
+
 // add the constraints on the input equivalence setting
 // the same content in the same memory address in mem_p1 URT == mem_p2 URT
 // todo: need to add the legal offset range check?

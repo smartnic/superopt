@@ -128,6 +128,8 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2);
 
 z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2);
+// return the FOL formula that check whether two programs have the same output
+z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2);
 // return the FOL formula that check whether two programs have the same output memories
 z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2);
 void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv1, smt_var& sv2);

@@ -266,6 +266,26 @@ struct map_id_pc {
   map_id_pc(int id, z3::expr pc) {map_id = id; path_cond = pc;}
 };
 
+class smt_output {
+ public:
+  bool pgm_has_tail_call = false;
+  // for now, only two program exit types are supported, so 1 bit is enough
+  z3::expr pgm_exit_type = to_expr("pgm_exit_type", 1);
+  // return register value
+  z3::expr ret_val = to_expr("ret_val");
+  vector<z3::expr> tail_call_args = {to_expr("tc_arg0"),
+                                     to_expr("tc_arg1"),
+                                     to_expr("tc_arg2"),
+                                    };
+  void set_pgm_id(unsigned int prog_id) {
+    string id = to_string(prog_id);
+    ret_val = to_expr("ret_val_" + id);
+    pgm_exit_type = to_expr("pgm_exit_type_" + id, 1);
+    for (int i = 0; i < tail_call_args.size(); i++)
+      tail_call_args[i] = to_expr("tc_arg" + to_string(i) + "_" + id);
+  }
+};
+
 // SMT Variable format
 // register: r_[prog_id]_[node_id]_[reg_id]_[version_id]
 // map key: k_[prog_id]_[node_id]_[version_id]
@@ -281,6 +301,7 @@ class smt_var: public smt_var_base {
   unordered_map<unsigned int, vector<map_id_pc>> expr_map_id;
  public:
   smt_mem mem_var;
+  smt_output smt_out;
   smt_var();
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
   // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs

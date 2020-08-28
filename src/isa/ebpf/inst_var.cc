@@ -637,6 +637,7 @@ smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_re
   addr_v_cur_id = 0;
   map_helper_func_ret_cur_id = 0;
   var_cur_id = 0;
+  smt_out.set_pgm_id(prog_id);
 }
 
 smt_var::~smt_var() {
@@ -796,6 +797,7 @@ void smt_var::set_new_node_id(unsigned int node_id, const vector<unsigned int>& 
         get_map_id(ids, pcs, reg_expr);
         for (int k = 0; k < ids.size(); k++) {
           int id = ids[k];
+          assert(id < map_id_pcs.size());
           // merge path condition for the same map id
           map_id_pcs[id] = map_id_pcs[id] || (pcs[k] && node_in_pc_list[j]);
           if (! map_ids[id]) map_ids[id] = true;
@@ -839,6 +841,7 @@ void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_
   mem_var.init_by_layout(n_blocks);
   int root = 0;
   if (node_id != root) return;
+  smt_out.set_pgm_id(prog_id);
   // todo: move the init of root node into inst::smt_set_pre?
   int stack_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_stack);
   mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id, to_expr(STACK_SIZE), Z3_true); // r10 is the stack pointer

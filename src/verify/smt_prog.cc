@@ -47,9 +47,14 @@ void smt_prog::smt_block(expr& smt_b, inst* program, int start, int end, smt_var
   expr p = string_to_expr("true");
   for (size_t i = start; i <= end; i++) {
     int op_type = program[i].get_opcode_type();
-    if ((op_type == OP_OTHERS) || (op_type == OP_LD) || (op_type == OP_ST)) {
+    if ((op_type == OP_OTHERS) || (op_type == OP_LD) ||
+        (op_type == OP_ST) || (op_type == OP_CALL)) {
       p = p && program[i].smt_inst(sv, cur_bid);
     }
+  }
+  // generate program output expression if the block is an end block
+  if (g.nodes_out[cur_bid].size() == 0) {
+    p = p && program[end].smt_inst_end(sv);
   }
   smt_b = p.simplify();
 }
@@ -297,10 +302,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   for (size_t i = 1; i < f_block.size(); i++) {
     f_prog = f_prog && f_block[i];
   }
-  // program output FOL formula; rename all output register values to the same name
-  expr f_p_output = string_to_expr("true");
-  process_output(f_p_output, inst_lst, prog_id);
-  pl = (f_prog && f_p_output).simplify();
+  pl = f_prog.simplify();
   return pl;
 }
 /* class smt_prog end */

@@ -498,8 +498,12 @@ z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
   // If opcode is valid, then define curDst, curSrc, imm and newDst
   int op_type = get_opcode_type();
-  if ((op_type != OP_OTHERS) && (op_type != OP_LD) && (op_type != OP_ST))
-    return string_to_expr("false");
+  if ((op_type != OP_OTHERS) && (op_type != OP_LD) &&
+      (op_type != OP_ST) && (op_type != OP_CALL))
+    return Z3_true;
+  if ((op_type == OP_CALL) && (_imm == BPF_FUNC_tail_call)) {
+    return Z3_true;
+  }
   // Get curDst, curSrc, imm and newDst at the begining to avoid using switch case to
   // get some of these values for different opcodes. Should get curDst and curSrc before
   // updating curDst (curSrc may be the same reg as curDst)
@@ -605,6 +609,23 @@ z3::expr inst::smt_inst_jmp(smt_var& sv) const {
     case JNE32XY: return (CURDST_L32 != CURSRC_L32);
     default: return string_to_expr("false");
   }
+}
+
+z3::expr inst::smt_inst_end(smt_var& sv) const {
+  // there are two cases for a program end instruction: the default exit or tail call exit
+  z3::expr f = Z3_true;
+  if ((_opcode == CALL) && (_imm == BPF_FUNC_tail_call)) {
+    sv.smt_out.pgm_has_tail_call = true;
+    f = (sv.smt_out.pgm_exit_type == PGM_EXIT_TYPE_tail_call);
+    f = f &&
+        (sv.smt_out.tail_call_args[0] == R1) &&
+        (sv.smt_out.tail_call_args[1] == R2) &&
+        (sv.smt_out.tail_call_args[2] == R3);
+  } else {
+    f = (sv.smt_out.pgm_exit_type == PGM_EXIT_TYPE_default);
+    f = f && (sv.smt_out.ret_val == sv.get_cur_reg_var(0));
+  }
+  return f;
 }
 
 int opcode_2_idx(int opcode) {
