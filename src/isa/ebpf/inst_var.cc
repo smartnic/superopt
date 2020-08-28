@@ -1070,10 +1070,11 @@ bool inout_t::k_in_map(int map_id, string k) {
 }
 
 void inout_t::set_pkt_random_val() {
-  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
-    uint8_t val = 0xff * unidist_ebpf_inst_var(gen_ebpf_inst_var);
-    pkt[i] = val;
-  }
+  // todo: a temporary way to remove the pkt random setting
+  // for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+  //   uint8_t val = 0xff * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+  //   pkt[i] = val;
+  // }
 }
 
 void inout_t::clear() {
