@@ -657,6 +657,46 @@ inst bm20[N20] = {inst(180, 0, 2, 0, 0),
                   inst(180, 0, 0, 0, 0),
                   inst(149, 0, 0, 0, 0),
                  };
+// sockex3_kern.o, section socket/0:
+inst bm21[N21] = {inst(191, 1, 6, 0, 0),
+                 inst(40, 0, 0, 0, 12),
+                 inst(183, 0, 1, 0, 14),
+                 inst(99, 1, 6, 48, 0),
+                 inst(103, 0, 0, 0, 32),
+                 inst(119, 0, 0, 0, 32),
+                 inst(101, 0, 0, 9, 34886),
+                 inst(21, 0, 0, 23, 2048),
+                 inst(21, 0, 0, 12, 33024),
+                 inst(21, 0, 0, 1, 34525),
+                 inst(5, 0, 0, 25, 0),
+                 inst(191, 6, 1, 0, 0),
+                 inst(24, 0, 2, 0, 0),
+                 inst(0, 0, 0, 0),
+                 inst(183, 0, 3, 0, 4),
+                 inst(5, 0, 0, 19, 0),
+                 inst(191, 0, 1, 0, 0),
+                 inst(7, 0, 1, 0, -34887),
+                 inst(183, 0, 2, 0, 2),
+                 inst(45, 1, 2, 6, 0),
+                 inst(85, 0, 0, 15, 34984),
+                 inst(191, 6, 1, 0, 0),
+                 inst(24, 0, 2, 0, 0),
+                 inst(0, 0, 0, 0),
+                 inst(183, 0, 3, 0, 1),
+                 inst(5, 0, 0, 9, 0),
+                 inst(191, 6, 1, 0, 0),
+                 inst(24, 0, 2, 0, 0),
+                 inst(0, 0, 0, 0),
+                 inst(183, 0, 3, 0, 2),
+                 inst(5, 0, 0, 4, 0),
+                 inst(191, 6, 1, 0, 0),
+                 inst(24, 0, 2, 0, 0),
+                 inst(0, 0, 0, 0),
+                 inst(183, 0, 3, 0, 3),
+                 inst(133, 0, 0, 0, 12),
+                 inst(183, 0, 0, 0, 0),
+                 inst(149, 0, 0, 0, 0),
+                };
 // Struct needs to be defined because the loader writes to
 // the .ins file using bpf_insn which has a different size
 // than insn
@@ -950,6 +990,13 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::set_pkt_sz(68);
       mem_t::add_map(map_attr(64, 128, N20));
       *bm = bm20;
+      break;
+    case 21:
+      inst::max_prog_len = N21;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(68);
+      mem_t::add_map(map_attr(32, 32, 8));
+      *bm = bm21;
       break;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
