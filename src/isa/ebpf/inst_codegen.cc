@@ -320,13 +320,15 @@ z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
 // out == *(u8*)skb[off], out: bv8
 z3::expr predicate_ldskb_byte(z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0) {
   z3::expr f = Z3_true;
-  if (mem_t::_layout._pkt_sz == 0) return f; // mean no constraints
+  int pkt_sz = mem_t::_layout._pkt_sz;
+  if (pkt_sz == 0) return f; // mean no constraints
+  f = f && ugt(pkt_sz, off);
   z3::expr cond = sv.mem_var.get_block_path_cond(block);
   // todo: check the off range
   int table_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
   // skb stable has no wt, so only need to search off in the urt
   smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
-  f = urt_element_constrain(off, out, urt);
+  f = f && urt_element_constrain(off, out, urt);
   z3::expr is_valid = sv.update_is_valid();
   f = f && (is_valid == cond);
   urt.add(block, is_valid, off, out);
@@ -1219,7 +1221,8 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv, int 
 // 1. get mem_addr_val list according to the pkt mem urt;
 // 2. traverse mem_addr_val list, if the addr is in input memory address range, update "input"
 void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
-  if (mem_t::_layout._pkt_sz > 0) {
+  int pkt_sz = mem_t::_layout._pkt_sz;
+  if (pkt_sz > 0) {
     int pkt_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
     assert(pkt_mem_id != -1);
     vector<pair< uint64_t, uint8_t>> mem_addr_val;
@@ -1231,6 +1234,7 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
     for (int i = 0; i < mem_addr_val.size(); i++) {
       uint64_t off = mem_addr_val[i].first;
       uint8_t val = mem_addr_val[i].second;
+      assert(off < pkt_sz);
       input.pkt[off] = val;
     }
   }
