@@ -44,6 +44,7 @@ enum pgm_input_type {
   PGM_INPUT_skb,
 };
 
+// todo: modify class name -> this data structure is used to store program configurations
 class mem_layout {
  public:
   int _pgm_input_type = PGM_INPUT_constant;
@@ -51,6 +52,7 @@ class mem_layout {
   vector<map_attr> _maps_attr;
   vector<unsigned int> _maps_start;
   unsigned int _pkt_sz = 0; // means no pkt, unit: byte
+  unsigned int _n_randoms_u32 = 0; // number of random values(BPF_FUNC_get_prandom_u32) in the original program
   void clear() {_maps_attr.clear(); _maps_start.clear(); _pkt_sz = 0;}
   friend ostream& operator<<(ostream& out, const mem_layout& layout);
 };
@@ -362,6 +364,9 @@ class prog_state: public prog_state_base {
   // if program exits by a tail call, _tail_call_para is a in the output check
   uint64_t _tail_call_para;
   int _pgm_exit_type;
+  // pseudo random values for BPF_FUNC_get_prandom_u32, prog_state get these values form get from input
+  vector<uint32_t> _randoms_u32;
+  unsigned int _cur_randoms_u32_idx = 0;
   prog_state();
   void init_safety_chk();
   void reg_safety_chk(int reg_write, vector<int> reg_read_list = {});
@@ -370,6 +375,7 @@ class prog_state: public prog_state_base {
   void init();
   void print() const;
   void clear();
+  uint32_t get_next_random_u32();
 };
 
 // A class representing input/output type for input-output examples. now there is maps for
@@ -385,6 +391,8 @@ class inout_t: public inout_t_base {
   uint8_t* pkt = nullptr;
   uint64_t tail_call_para;
   int pgm_exit_type;
+  // pseudo random values for BPF_FUNC_get_prandom_u32, prog_state get these values form get from input
+  vector<uint32_t> randoms_u32;
   inout_t();
   inout_t(const inout_t& rhs); // deep copy for vector push back
   ~inout_t();

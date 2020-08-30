@@ -279,11 +279,21 @@ inst instructions33[4] = {inst(AND64XC, 1, 0x011),
                           inst(EXIT),
                          };
 
+// test BPF_FUNC_get_prandom_u32
+// r0 = rand_u32() + rand_u32()
+inst instructions34[5] = {inst(CALL, BPF_FUNC_get_prandom_u32),
+                          inst(MOV64XY, 1, 0),
+                          inst(CALL, BPF_FUNC_get_prandom_u32),
+                          inst(ADD64XY, 0, 1),
+                          inst(EXIT),
+                         };
+
 void test1() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::set_pkt_sz(512); // pkt sz: 512 bytes
+  mem_t::_layout._n_randoms_u32 = 2;
   prog_state ps;
   ps.init();
   inout_t input, output, expected;
@@ -527,6 +537,14 @@ void test1() {
   expected.reg = 0x10;
   interpret(output, instructions33, 10, ps, input); // r0 = r1 & 0x10
   print_test_res(output == expected, "interpret and64xc, and64xy");
+
+  input.clear();
+  expected.clear();
+  input.randoms_u32[0] = 0x11111111;
+  input.randoms_u32[1] = 0xffffffff;
+  expected.reg = (uint64_t)input.randoms_u32[0] + (uint64_t)input.randoms_u32[1];
+  interpret(output, instructions34, 5, ps, input);
+  print_test_res(output == expected, "interpret BPF_FUNC_get_prandom_u32");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output, bool flag = false) {

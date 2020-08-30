@@ -11,6 +11,7 @@ z3::expr addr_in_addrs_map_mem(z3::expr& a, vector<z3::expr>& is_valid_list, vec
 z3::expr key_not_found_after_idx(z3::expr key, int idx, smt_map_wt& m_wt);
 z3::expr key_not_in_map_wt(z3::expr k, smt_map_wt& m_wt, smt_var& sv, bool same_pgms = false, unsigned int block = 0);
 uint64_t compute_tail_call_helper(uint64_t ctx_ptr, uint64_t map_id, uint64_t index, prog_state& ps);
+uint64_t compute_get_prandom_u32_helper(prog_state& ps);
 
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
                                  uint64_t r4, uint64_t r5, simu_real& sr, prog_state& ps) {
@@ -20,6 +21,7 @@ uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t
     case BPF_FUNC_map_update_elem: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_map_update_helper(r1, r2, r3, ps, sr, chk_safety);
     case BPF_FUNC_map_delete_elem: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_delete_helper(r1, r2, ps, sr, chk_safety);
     case BPF_FUNC_tail_call: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_tail_call_helper(r1, r2, r3, ps);
+    case BPF_FUNC_get_prandom_u32: ps.reg_safety_chk(0, vector<int> {}); return compute_get_prandom_u32_helper(ps);
     default: cout << "Error: unknown function id " << func_id << endl; return -1;
   }
 }
@@ -110,6 +112,10 @@ uint64_t compute_tail_call_helper(uint64_t ctx_ptr, uint64_t map_id, uint64_t in
 
   ps._tail_call_para = index;
   return 0; // 0 means successful
+}
+
+uint64_t compute_get_prandom_u32_helper(prog_state& ps) {
+  return (uint64_t)ps.get_next_random_u32();
 }
 
 z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned int block) {

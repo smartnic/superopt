@@ -939,6 +939,7 @@ void prog_state::init_safety_chk() {
   _reg_readable[1] = true; // r1 and r10 are in the program input
   _reg_readable[10] = true;
   _stack_readable.resize(STACK_SIZE, false);
+  _randoms_u32.resize(mem_t::_layout._n_randoms_u32);
 }
 
 void prog_state::reg_safety_chk(int reg_write, vector<int> reg_read_list) {
@@ -1027,6 +1028,15 @@ void prog_state::clear() {
   _mem.clear();
   _reg_readable.clear();
   _stack_readable.clear();
+  _randoms_u32.clear();
+  _cur_randoms_u32_idx = 0;
+}
+
+uint32_t prog_state::get_next_random_u32() {
+  assert(_cur_randoms_u32_idx < _randoms_u32.size());
+  uint32_t rand = _randoms_u32[_cur_randoms_u32_idx];
+  _cur_randoms_u32_idx++;
+  return rand;
 }
 
 inout_t::inout_t() {
@@ -1088,6 +1098,8 @@ void inout_t::init() {
   maps.resize(n_maps);
   tail_call_para = -1;
   pgm_exit_type = PGM_EXIT_TYPE_default;
+  int n_randoms = mem_t::_layout._n_randoms_u32;
+  randoms_u32.resize(mem_t::_layout._n_randoms_u32);
 }
 
 void inout_t::operator=(const inout_t &rhs) {
@@ -1097,6 +1109,9 @@ void inout_t::operator=(const inout_t &rhs) {
   memcpy(pkt, rhs.pkt, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
   pgm_exit_type = rhs.pgm_exit_type;
   tail_call_para = rhs.tail_call_para;
+  for (int i = 0; i < randoms_u32.size(); i++) {
+    randoms_u32[i] = rhs.randoms_u32[i];
+  }
 }
 
 bool inout_t::operator==(const inout_t &rhs) const {
@@ -1151,6 +1166,10 @@ ostream& operator<<(ostream& out, const inout_t& x) {
       << hex << x.input_simu_pkt_ptrs[0] << "," << x.input_simu_pkt_ptrs[1] << dec;
   out << " " << "pgm_exit_type: " << x.pgm_exit_type;
   out << " " << "tail_call_para: " << x.tail_call_para;
+  out << " " << "randoms_u32: ";
+  for (int i = 0; i < x.randoms_u32.size(); i++) {
+    out << hex << x.randoms_u32[i] << dec << " ";
+  }
   return out;
 }
 
@@ -1183,6 +1202,10 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   // set the exit type as the default type
   ps._pgm_exit_type = PGM_EXIT_TYPE_default;
   ps._tail_call_para = -1;
+  // update u32 randoms values for BPF_FUNC_get_prandom_u32()
+  for (int i = 0; i < ps._randoms_u32.size(); i++) {
+    ps._randoms_u32[i] = input.randoms_u32[i];
+  }
 }
 
 void update_output_by_ps(inout_t& output, const prog_state& ps) {
@@ -1363,6 +1386,13 @@ void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max)
       uint64_t pkt_min = inputs[i].input_simu_r10 + mem_size_without_stack;
       uint64_t pkt_max = max_uint64;
       inputs[i].reg = pkt_min + (uint64_t)((pkt_max - pkt_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var));
+    }
+  }
+  // generate random values
+  uint64_t max_uint32 = 0xffffffff;
+  for (int i = 0; i < inputs.size(); i++) {
+    for (int j = 0; j < inputs[i].randoms_u32.size(); j++) {
+      inputs[i].randoms_u32[j] = (uint64_t)(max_uint32 + 1) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
     }
   }
 }
