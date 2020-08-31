@@ -1275,9 +1275,20 @@ void counterex_2_input_simu_pkt_ptrs(inout_t& input, z3::model& mdl, smt_var& sv
   }
 }
 
+void counterex_2_input_randoms_u32(inout_t& input, z3::model& mdl, smt_var& sv) {
+  input.set_randoms_u32();
+  for (int i = 0; i < smt_var::randoms_u32.size(); i++) {
+    z3::expr z3_rand_u32 = mdl.eval(smt_var::randoms_u32[i]);
+    if (! z3_rand_u32.is_numeral()) continue;
+    uint32_t rand_u32 = z3_rand_u32.get_numeral_uint64();
+    input.randoms_u32[i] = rand_u32;
+  }
+}
+
 void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model& mdl, smt_var& sv) {
   counterex_2_input_simu_r10(input, mdl, sv);
   counterex_2_input_simu_pkt_ptrs(input, mdl, sv);
+  counterex_2_input_randoms_u32(input, mdl, sv);
   counterex_urt_2_input_mem(input, mdl, sv);
   for (int i = 0; i < mem_t::maps_number(); i++) {
     int mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_map, i);

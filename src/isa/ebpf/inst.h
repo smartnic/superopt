@@ -615,6 +615,7 @@ class inst: public inst_base {
   }
   inst(int opcode = NOP, int32_t arg1 = 0, int32_t arg2 = 0, int32_t arg3 = 0);
   void set_imm(int op_value);
+  bool sample_unmodifiable() const;
   void to_abs_bv(vector<op_t>& abs_vec) const;
   int get_operand(int op_index) const;
   void set_operand(int op_index, op_t op_value);

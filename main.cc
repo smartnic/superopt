@@ -410,7 +410,6 @@ int main(int argc, char* argv[]) {
     inputs[i].init();
   }
   gen_random_input(inputs, -50, 50);
-  cout << "input generation end" << endl;
   run_mh_sampler(in_para, bm_optis_orig);
   vector<prog*> best_pgms;
   get_best_pgms_from_candidates(best_pgms);

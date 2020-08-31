@@ -406,6 +406,7 @@ class inout_t: public inout_t_base {
   bool k_in_map(int map_id, string k);
   // set pkt with random values
   void set_pkt_random_val();
+  void set_randoms_u32();
   void clear();
   void init();
   void operator=(const inout_t &rhs);

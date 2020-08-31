@@ -76,6 +76,7 @@ void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_ch
   assert(sel_inst_index < inst::max_prog_len);
   // First make a fresh copy of the program.
   inst* sel_inst = &synth->inst_list[sel_inst_index];
+  if (sel_inst->sample_unmodifiable()) return;
   int old_opvalue = sel_inst->get_operand(op_to_change);
   int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, op_to_change, old_opvalue);
   sel_inst->set_operand(op_to_change, new_opvalue);
@@ -105,6 +106,7 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   assert(sel_inst_index < inst::max_prog_len);
   // TODO: is it wise to sample with exception?
   inst* sel_inst = &orig->inst_list[sel_inst_index];
+  if (sel_inst->sample_unmodifiable()) return;
   int old_opcode = sel_inst->get_opcode();
   // exceptions set is used to avoid jumps in the last line of the program
   unordered_set<int> exceptions;

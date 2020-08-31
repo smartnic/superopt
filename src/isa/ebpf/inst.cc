@@ -54,6 +54,11 @@ int inst::get_operand(int op_index) const {
   }
 }
 
+bool inst::sample_unmodifiable() const {
+  if ((_opcode == CALL) && (_imm == BPF_FUNC_get_prandom_u32)) return true;
+  return false;
+}
+
 void inst::set_imm(int op_value) {
   // if it is the second operand of LE or BE, the op_value is the type index
   if ((_opcode == LE) || (_opcode == BE)) {

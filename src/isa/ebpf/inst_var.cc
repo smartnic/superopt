@@ -1048,7 +1048,7 @@ void prog_state::clear() {
   _mem.clear();
   _reg_readable.clear();
   _stack_readable.clear();
-  _randoms_u32.clear();
+  for (int i = 0; i < _randoms_u32.size(); i++) _randoms_u32[i] = 0;
   _cur_randoms_u32_idx = 0;
 }
 
@@ -1107,6 +1107,14 @@ void inout_t::set_pkt_random_val() {
   //   uint8_t val = 0xff * unidist_ebpf_inst_var(gen_ebpf_inst_var);
   //   pkt[i] = val;
   // }
+}
+
+void inout_t::set_randoms_u32() {
+// generate random values
+  uint64_t max_uint32 = 0xffffffff;
+  for (int i = 0; i < randoms_u32.size(); i++) {
+    randoms_u32[i] = (uint64_t)(max_uint32 + 1) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+  }
 }
 
 void inout_t::clear() {
@@ -1228,6 +1236,7 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   for (int i = 0; i < ps._randoms_u32.size(); i++) {
     ps._randoms_u32[i] = input.randoms_u32[i];
   }
+  ps._cur_randoms_u32_idx = 0;
 }
 
 void update_output_by_ps(inout_t& output, const prog_state& ps) {
@@ -1391,6 +1400,7 @@ void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max)
   // 2. Generate pkt, set pkt with random values
   for (int i = 0; i < inputs.size(); i++) {
     inputs[i].set_pkt_random_val();
+    inputs[i].set_randoms_u32();
   }
   // 3. Generate input register r1
   if (mem_t::_layout._pkt_sz == 0) { // case 1: r1 is not used as pkt address
@@ -1408,13 +1418,6 @@ void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max)
       uint64_t pkt_min = inputs[i].input_simu_r10 + mem_size_without_stack;
       uint64_t pkt_max = max_uint64;
       inputs[i].reg = pkt_min + (uint64_t)((pkt_max - pkt_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var));
-    }
-  }
-  // generate random values
-  uint64_t max_uint32 = 0xffffffff;
-  for (int i = 0; i < inputs.size(); i++) {
-    for (int j = 0; j < inputs[i].randoms_u32.size(); j++) {
-      inputs[i].randoms_u32[j] = (uint64_t)(max_uint32 + 1) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
     }
   }
 }
