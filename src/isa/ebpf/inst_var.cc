@@ -1078,6 +1078,9 @@ inout_t::inout_t(const inout_t& rhs) {
   tail_call_para = rhs.tail_call_para;
   pgm_exit_type = rhs.pgm_exit_type;
   randoms_u32.resize(mem_t::_layout._n_randoms_u32);
+  for (int i = 0; i < randoms_u32.size(); i++) {
+    randoms_u32[i] = rhs.randoms_u32[i];
+  }
 }
 
 inout_t::~inout_t() {
