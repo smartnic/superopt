@@ -53,6 +53,7 @@ class mem_layout {
   vector<unsigned int> _maps_start;
   unsigned int _pkt_sz = 0; // means no pkt, unit: byte
   unsigned int _n_randoms_u32 = 0; // number of random values(BPF_FUNC_get_prandom_u32) in the original program
+  bool _enable_pkt_random_val = true;
   void clear() {_maps_attr.clear(); _maps_start.clear(); _pkt_sz = 0;}
   friend ostream& operator<<(ostream& out, const mem_layout& layout);
 };

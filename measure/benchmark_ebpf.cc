@@ -1083,5 +1083,11 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
     }
   }
   mem_t::_layout._n_randoms_u32 = n_randoms_u32;
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    if ((*bm)[i]._opcode == LDINDH) {
+      mem_t::_layout._enable_pkt_random_val = false;
+      break;
+    }
+  }
   smt_var::init_static_variables();
 }
