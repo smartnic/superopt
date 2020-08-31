@@ -100,11 +100,12 @@ inst bm_opti20[N2] = {inst(STXB, 10, -2, 1),    // *(r10-2) = L8(input)
                       inst(),
                       inst(),
                      };
+// bpf_sock.o section: rcv-sock4
 inst bm3[N3] = {inst(191, 1, 6, 0, 0),
                 inst(183, 0, 1, 0, 0),
                 inst(97, 6, 2, 36, 0),
                 inst(86, 0, 2, 4, 6),
-                inst(MOV32XY, 0, 10), // call 7 modified as w0 = r10
+                inst(CALL, BPF_FUNC_get_prandom_u32),
                 inst(188, 0, 1, 0, 0),
                 inst(103, 0, 1, 0, 32),
                 inst(119, 0, 1, 0, 32),
@@ -1074,4 +1075,13 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   for (int i = 0; i < inst::_sample_pos_offs.size(); i++)
     cout << inst::_sample_pos_offs[i] << " ";
   cout << endl;
+  // update number of BPF_FUNC_get_prandom_u32
+  unsigned int n_randoms_u32 = 0;
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    if (((*bm)[i]._opcode == CALL) && ((*bm)[i]._imm == BPF_FUNC_get_prandom_u32)) {
+      n_randoms_u32++;
+    }
+  }
+  mem_t::_layout._n_randoms_u32 = n_randoms_u32;
+  smt_var::init_static_variables();
 }

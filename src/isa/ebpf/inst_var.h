@@ -297,13 +297,15 @@ class smt_var: public smt_var_base {
  private:
   unsigned int mem_addr_id, is_vaild_id, key_cur_id,
            val_cur_id, addr_v_cur_id, map_helper_func_ret_cur_id,
-           var_cur_id;
+           var_cur_id, rand_u32_cur_id;
   // key: expr id; value: a list of <map_id, path_cond of map_id>
   // program global variable
   unordered_map<unsigned int, vector<map_id_pc>> expr_map_id;
  public:
   smt_mem mem_var;
   smt_output smt_out;
+  // symbolic values of BPF_FUNC_get_prandom_u32, each element is 32-bit
+  static vector<z3::expr> randoms_u32;
   smt_var();
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
   // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs
@@ -334,6 +336,8 @@ class smt_var: public smt_var_base {
                        const vector<vector<z3::expr>>& nodes_in_regs);
   void init(unsigned int n_blocks = 1) {mem_var.init_by_layout(n_blocks);}
   void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks = 1);
+  static void init_static_variables();
+  z3::expr get_next_random_u32();
   void clear();
 };
 

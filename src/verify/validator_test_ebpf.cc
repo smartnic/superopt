@@ -988,8 +988,27 @@ void test8() {
   print_test_res(vld.is_equal_to(p1, 6, p1_8, 8) == 0, "1.9");
 }
 
+void test9() {
+  std::cout << "test 8: test BPF_FUNC_get_prandom_u32 helper" << endl;
+  std::cout << "1. test equivalence check" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_constant);
+  mem_t::_layout._n_randoms_u32 = 2;
+  smt_var::init_static_variables();
+  inst p1[5] = {inst(CALL, BPF_FUNC_get_prandom_u32),
+                inst(MOV64XY, 1, 0),
+                inst(CALL, BPF_FUNC_get_prandom_u32),
+                inst(ADD64XY, 0, 1),
+                inst(EXIT),
+               };
+  validator vld(p1, 5);
+  print_test_res(vld.is_equal_to(p1, 5, p1, 5) == 1, "1.1");
+}
+
 int main() {
   try {
+    test9();
+    return 0;
     test1();
     test2();
     test3();

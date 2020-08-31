@@ -4,6 +4,7 @@
 using namespace std;
 
 mem_layout mem_t::_layout;
+vector<z3::expr> smt_var::randoms_u32;
 
 default_random_engine gen_ebpf_inst_var;
 uniform_real_distribution<double> unidist_ebpf_inst_var(0.0, 1.0);
@@ -625,6 +626,7 @@ smt_var::smt_var()
   addr_v_cur_id = 0;
   map_helper_func_ret_cur_id = 0;
   var_cur_id = 0;
+  rand_u32_cur_id = 0;
 }
 
 smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_regs)
@@ -637,6 +639,7 @@ smt_var::smt_var(unsigned int prog_id, unsigned int node_id, unsigned int num_re
   addr_v_cur_id = 0;
   map_helper_func_ret_cur_id = 0;
   var_cur_id = 0;
+  rand_u32_cur_id = 0;
   smt_out.set_pgm_id(prog_id);
 }
 
@@ -869,6 +872,21 @@ void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_
   }
 }
 
+void smt_var::init_static_variables() {
+  randoms_u32.clear();
+  for (int i = 0; i < mem_t::_layout._n_randoms_u32; i++) {
+    string name = "rand_u32_" + to_string(i);
+    randoms_u32.push_back(to_expr(name, 32));
+  }
+}
+
+z3::expr smt_var::get_next_random_u32() {
+  assert(rand_u32_cur_id < randoms_u32.size());
+  z3::expr rand_u32 = randoms_u32[rand_u32_cur_id];
+  rand_u32_cur_id++;
+  return rand_u32;
+}
+
 void smt_var::clear() {
   smt_var_base::clear();
   for (size_t i = 0; i < reg_var.size(); i++) {
@@ -880,10 +898,12 @@ void smt_var::clear() {
     addr_v_cur_id = 0;
     map_helper_func_ret_cur_id = 0;
     var_cur_id = 0;
+    rand_u32_cur_id = 0;
   }
   mem_var.clear();
   expr_map_id.clear();
 }
+
 /* class smt_var end */
 
 smt_var_bl::smt_var_bl() {
@@ -939,7 +959,6 @@ void prog_state::init_safety_chk() {
   _reg_readable[1] = true; // r1 and r10 are in the program input
   _reg_readable[10] = true;
   _stack_readable.resize(STACK_SIZE, false);
-  _randoms_u32.resize(mem_t::_layout._n_randoms_u32);
 }
 
 void prog_state::reg_safety_chk(int reg_write, vector<int> reg_read_list) {
@@ -955,6 +974,7 @@ void prog_state::reg_safety_chk(int reg_write, vector<int> reg_read_list) {
 void prog_state::init() {
   _mem.init_by_layout();
   init_safety_chk();
+  _randoms_u32.resize(mem_t::_layout._n_randoms_u32);
 }
 
 // memory_access_chk is used to avoid segmentation fault: If memory access not in the legal range, throw error
@@ -1045,6 +1065,7 @@ inout_t::inout_t() {
   input_simu_r10 = r10_min + (r10_max - r10_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
   pkt = new uint8_t[mem_t::_layout._pkt_sz];
   memset(pkt, 0, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
+  randoms_u32.resize(mem_t::_layout._n_randoms_u32);
 }
 
 // deep copy for vector push back
@@ -1056,6 +1077,7 @@ inout_t::inout_t(const inout_t& rhs) {
   memcpy(pkt, rhs.pkt, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
   tail_call_para = rhs.tail_call_para;
   pgm_exit_type = rhs.pgm_exit_type;
+  randoms_u32.resize(mem_t::_layout._n_randoms_u32);
 }
 
 inout_t::~inout_t() {

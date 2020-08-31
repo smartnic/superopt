@@ -13,6 +13,8 @@ z3::expr key_not_in_map_wt(z3::expr k, smt_map_wt& m_wt, smt_var& sv, bool same_
 uint64_t compute_tail_call_helper(uint64_t ctx_ptr, uint64_t map_id, uint64_t index, prog_state& ps);
 uint64_t compute_get_prandom_u32_helper(prog_state& ps);
 
+z3::expr predicate_get_prandom_u32_helper(z3::expr out, smt_var &sv);
+
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
                                  uint64_t r4, uint64_t r5, simu_real& sr, prog_state& ps) {
   bool chk_safety = true;
@@ -1105,9 +1107,18 @@ z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::ex
     return predicate_map_update_helper(r1, r2, r3, r0, sv, block);
   } else if (func_id == BPF_FUNC_map_delete_elem) {
     return predicate_map_delete_helper(r1, r2, r0, sv, block);
+  } else if (func_id == BPF_FUNC_get_prandom_u32) {
+    return predicate_get_prandom_u32_helper(r0, sv);
   } else {
     cout << "Error: unknown function id " << func_id << endl; return string_to_expr("true");
   }
+}
+
+// out is the return value (random_u32)
+z3::expr predicate_get_prandom_u32_helper(z3::expr out, smt_var &sv) {
+  // higher 32-bit of out is 0, lower 32-bit of out is a symbolic value
+  z3::expr f = (out == z3::concat(to_expr((int32_t)0, 32), sv.get_next_random_u32()));
+  return f;
 }
 
 // should make sure that the input "z3_bv8" is a z3 bv8 but not a formula
