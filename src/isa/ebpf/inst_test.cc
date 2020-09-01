@@ -1400,8 +1400,6 @@ void test9() {
 
 int main(int argc, char *argv[]) {
   try {
-    test8();
-    return 0;
     test1();
     test2();
     test3();
@@ -1409,6 +1407,7 @@ int main(int argc, char *argv[]) {
     test5();
     test6();
     test7();
+    test8();
     test9();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;

@@ -1007,8 +1007,6 @@ void test9() {
 
 int main() {
   try {
-    test9();
-    return 0;
     test1();
     test2();
     test3();
@@ -1017,6 +1015,7 @@ int main() {
     test6();
     test7();
     test8();
+    test9();
   } catch (const string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
