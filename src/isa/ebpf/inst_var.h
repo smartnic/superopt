@@ -16,6 +16,9 @@ using namespace std;
 #define NULL_ADDR 0
 #define NULL_ADDR_EXPR to_expr(NULL_ADDR)
 #define ZERO_ADDR_OFF_EXPR to_expr((int64_t)0)
+// skb data start and end offset get from __sk_buff
+#define SKB_data_s_off 76
+#define SKB_data_e_off 80
 static constexpr int NUM_REGS = 11;
 
 enum MAP_TYPE {
@@ -52,9 +55,10 @@ class mem_layout {
   vector<map_attr> _maps_attr;
   vector<unsigned int> _maps_start;
   unsigned int _pkt_sz = 0; // means no pkt, unit: byte
+  unsigned int _skb_max_sz = 0;
   unsigned int _n_randoms_u32 = 0; // number of random values(BPF_FUNC_get_prandom_u32) in the original program
   bool _enable_pkt_random_val = true;
-  void clear() {_maps_attr.clear(); _maps_start.clear(); _pkt_sz = 0;}
+  void clear() {_maps_attr.clear(); _maps_start.clear(); _pkt_sz = 0; _skb_max_sz = 0;}
   friend ostream& operator<<(ostream& out, const mem_layout& layout);
 };
 
@@ -87,16 +91,20 @@ class mem_t {
   // should ensure memory is contiguous, because of the assumption in memory_access_check
   uint8_t *_mem = nullptr;
   uint8_t *_pkt = nullptr;
+  uint8_t *_skb = nullptr; // skb data
   vector<map_t> _maps;
   static mem_layout _layout;
   uint64_t _simu_mem_s = 0;
   uint64_t _simu_pkt_s = 0; // used when pgm input type is PGM_INPUT_pkt
   uint64_t _simu_pkt_ptrs_s = 0; // used when pgm input type is PGM_INPUT_pkt_ptrs
   uint32_t _pkt_ptrs[2] = {0, 0}; // 0: pkt_start_ptr, 1: pkt_end_ptr; these are simulated pkt addresses (32-bit)
+  uint32_t _simu_skb_s = 0;
+  uint32_t _simu_skb_e = 0;
   mem_t();
   ~mem_t();
   static void add_map(map_attr m_attr);
   static void set_pkt_sz(unsigned int sz) {_layout._pkt_sz = sz;}
+  static void set_skb_max_sz(unsigned int sz) {_layout._skb_max_sz = sz;}
   static void set_pgm_input_type(int type) {_layout._pgm_input_type = type;}
   static int get_pgm_input_type() {return _layout._pgm_input_type;}
   static unsigned int maps_number() {return _layout._maps_attr.size();}
@@ -122,12 +130,18 @@ class mem_t {
   uint8_t* get_pkt_start_addr() const;
   uint8_t* get_pkt_end_addr() const;
   uint8_t* get_pkt_addr_by_offset(int off) const;
+  uint8_t* get_skb_start_addr() const;
+  uint8_t* get_skb_end_addr() const;
+  uint8_t* get_skb_addr_by_offset(int off) const;
+  uint32_t get_skb_sz() const;
   uint32_t* get_pkt_ptrs_start_addr();
   uint32_t* get_pkt_ptrs_end_addr();
   uint64_t get_simu_mem_start_addr();
   uint64_t get_simu_mem_end_addr();
   uint64_t get_simu_pkt_start_addr();
   uint64_t get_simu_pkt_end_addr();
+  uint32_t get_simu_skb_start_addr();
+  uint32_t get_simu_skb_end_addr();
   uint64_t get_simu_pkt_ptrs_start_addr();
   uint64_t get_simu_pkt_ptrs_end_addr();
   mem_t& operator=(const mem_t &rhs);
@@ -394,6 +408,7 @@ class inout_t: public inout_t_base {
   // kv map: k hex_string, v: vector<uint8_t>
   vector<unordered_map<string, vector<uint8_t>>> maps;
   uint8_t* pkt = nullptr;
+  uint8_t* skb = nullptr;
   uint64_t tail_call_para;
   int pgm_exit_type;
   // pseudo random values for BPF_FUNC_get_prandom_u32, prog_state get these values form get from input

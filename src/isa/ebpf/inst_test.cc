@@ -1266,7 +1266,8 @@ void test7() {
 void test8() {
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
-  mem_t::set_pkt_sz(16); // pkt sz: 512 bytes
+  mem_t::set_pkt_sz(96); // larger than 84
+  mem_t::set_skb_max_sz(16);
   prog_state ps;
   ps.init();
   inout_t input, output, expected;
@@ -1274,58 +1275,85 @@ void test8() {
   output.init();
   expected.init();
   input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
+  *(uint32_t*)&input.pkt[SKB_data_s_off] = (uint64_t)ps._mem.get_skb_start_addr();
+  *(uint32_t*)&input.pkt[SKB_data_e_off] = (uint64_t)ps._mem.get_skb_end_addr();
   cout << "Test 1: skb full interpretation check" << endl;
-  // test skb load, ldabsh
-  inst p1[2] = {inst(LDABSH, 0),
+  // test skb data and data end
+  inst p1[3] = {inst(LDXW, 2, 1, SKB_data_s_off),  // r2 = skb_data_s
+                inst(LDXB, 0, 2, 0),
                 inst(EXIT),
                };
-  input.set_pkt_random_val();
+  input.skb[0] = 0x12;
+  interpret(output, p1, 3, ps, input);
   expected = input;
-  expected.reg = (input.pkt[1] << 8) | input.pkt[0];
-  interpret(output, p1, 2, ps, input);
-  print_test_res(output == expected, "LDABSH 1");
+  expected.reg = input.skb[0];
+  print_test_res(output == expected, "test skb data start/end 1");
 
-  // test pkt and skb use the same memory
-  inst p2[8] = {inst(LDABSH, 0),  // r0 = *(u16*)skb[0]
-                inst(MOV64XY, 2, 0),
-                inst(LDXH, 0, 1, 0), // r0 = *(u16*)pkt[0]
-                inst(JEQXY, 0, 2, 2), // if r0 == r2, r0 = 1, else r0 = 0
-                inst(MOV64XC, 0, 0),
+  int skb_len = (uint64_t)ps._mem.get_skb_end_addr() - (uint64_t)ps._mem.get_skb_start_addr();
+  inst p2[8] = {inst(LDXW, 2, 1, SKB_data_s_off),  // r2 = skb_data_s
+                inst(LDXW, 3, 1, SKB_data_e_off),  // r3 = skb_data_e
+                inst(ADD64XC, 2, skb_len),
+                inst(JEQXY, 2, 3, 2),
+                inst(MOV64XC, 0, 0x11),
                 inst(EXIT),
-                inst(MOV64XC, 0, 1),
+                inst(MOV64XC, 0, 0xff),
                 inst(EXIT),
                };
-  input.set_pkt_random_val();
-  expected = input;
-  expected.reg = 1;
+  expected.reg = 0xff;
   interpret(output, p2, 8, ps, input);
-  print_test_res(output == expected, "LDABSH 2");
+  print_test_res(output == expected, "test skb data start/end 2");
 
-  inst p3[3] = {inst(MOV64XC, 2, 0),
-                inst(LDINDH, 2),
-                inst(EXIT),
-               };
-  input.set_pkt_random_val();
-  expected = input;
-  expected.reg = (input.pkt[1] << 8) | input.pkt[0];
-  interpret(output, p3, 3, ps, input);
-  print_test_res(output == expected, "LDINDH 1");
+  // // test skb load, ldabsh
+  // inst p1[2] = {inst(LDABSH, 0),
+  //               inst(EXIT),
+  //              };
+  // input.set_pkt_random_val();
+  // expected = input;
+  // expected.reg = (input.pkt[1] << 8) | input.pkt[0];
+  // interpret(output, p1, 2, ps, input);
+  // print_test_res(output == expected, "LDABSH 1");
 
-  inst p4[9] = {inst(MOV64XC, 2, 0),
-                inst(LDINDH, 2),
-                inst(MOV64XY, 2, 0),
-                inst(LDABSH, 0),
-                inst(JEQXY, 0, 2, 2), // if r0 == r2, r0 = 1, else r0 = 0
-                inst(MOV64XC, 0, 0),
-                inst(EXIT),
-                inst(MOV64XC, 0, 1),
-                inst(EXIT),
-               };
-  input.set_pkt_random_val();
-  expected = input;
-  expected.reg = 1;
-  interpret(output, p4, 9, ps, input);
-  print_test_res(output == expected, "LDINDH 2");
+  // // test pkt and skb use the same memory
+  // inst p2[8] = {inst(LDABSH, 0),  // r0 = *(u16*)skb[0]
+  //               inst(MOV64XY, 2, 0),
+  //               inst(LDXH, 0, 1, 0), // r0 = *(u16*)pkt[0]
+  //               inst(JEQXY, 0, 2, 2), // if r0 == r2, r0 = 1, else r0 = 0
+  //               inst(MOV64XC, 0, 0),
+  //               inst(EXIT),
+  //               inst(MOV64XC, 0, 1),
+  //               inst(EXIT),
+  //              };
+  // input.set_pkt_random_val();
+  // expected = input;
+  // expected.reg = 1;
+  // interpret(output, p2, 8, ps, input);
+  // print_test_res(output == expected, "LDABSH 2");
+
+  // inst p3[3] = {inst(MOV64XC, 2, 0),
+  //               inst(LDINDH, 2),
+  //               inst(EXIT),
+  //              };
+  // input.set_pkt_random_val();
+  // expected = input;
+  // expected.reg = (input.pkt[1] << 8) | input.pkt[0];
+  // interpret(output, p3, 3, ps, input);
+  // print_test_res(output == expected, "LDINDH 1");
+
+  // inst p4[9] = {inst(MOV64XC, 2, 0),
+  //               inst(LDINDH, 2),
+  //               inst(MOV64XY, 2, 0),
+  //               inst(LDABSH, 0),
+  //               inst(JEQXY, 0, 2, 2), // if r0 == r2, r0 = 1, else r0 = 0
+  //               inst(MOV64XC, 0, 0),
+  //               inst(EXIT),
+  //               inst(MOV64XC, 0, 1),
+  //               inst(EXIT),
+  //              };
+  // input.set_pkt_random_val();
+  // expected = input;
+  // expected.reg = 1;
+  // interpret(output, p4, 9, ps, input);
+  // print_test_res(output == expected, "LDINDH 2");
 }
 
 void test9() {
@@ -1371,15 +1399,20 @@ void test9() {
 }
 
 int main(int argc, char *argv[]) {
-  test1();
-  test2();
-  test3();
-  test4();
-  test5();
-  test6();
-  test7();
-  test8();
-  test9();
+  try {
+    test8();
+    return 0;
+    test1();
+    test2();
+    test3();
+    test4();
+    test5();
+    test6();
+    test7();
+    test9();
+  } catch (string err_msg) {
+    cout << "NOT SUCCESS: " << err_msg << endl;
+  }
 
   return 0;
 }
