@@ -889,7 +889,8 @@ void test7() {
   std::cout << "1. test equivalence check" << endl;
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
-  mem_t::set_pkt_sz(16);
+  mem_t::set_skb_max_sz(16);
+  mem_t::set_pkt_sz(96);
   inst p1[2] = {inst(LDABSH, 0),
                 inst(EXIT),
                };
@@ -899,6 +900,32 @@ void test7() {
   validator vld(p1, 2);
   print_test_res(vld.is_equal_to(p1, 2, p1, 2) == 1, "1.1");
   print_test_res(vld.is_equal_to(p1, 2, p1_2, 2) == 1, "1.2");
+
+  inst p2[3] = {inst(LDXW, 2, 1, SKB_data_s_off),  // r2 = skb_data_s
+                inst(LDXB, 0, 2, 0),   // r0 = skb[0]
+                inst(EXIT),
+               };
+  inst p2_1[3] = {inst(LDXW, 2, 1, SKB_data_s_off),  // r2 = skb_data_s
+                  inst(LDXB, 0, 2, 1), // r0 = skb[1]
+                  inst(EXIT),
+                 };
+  vld.set_orig(p2, 3);
+  print_test_res(vld.is_equal_to(p2, 3, p2, 3) == 1, "2.1");
+  print_test_res(vld.is_equal_to(p2, 3, p2_1, 3) == 0, "2.2");
+
+  inst p3[4] = {inst(LDXW, 2, 1, SKB_data_s_off),  // r2 = skb_data_s
+                inst(STB, 2, 0, 0xff), // skb[0] = 0xff
+                inst(LDXB, 0, 2, 0),   // r0 = skb[0]
+                inst(EXIT),
+               };
+  inst p3_1[4] = {inst(LDXW, 2, 1, SKB_data_s_off),  // r2 = skb_data_s
+                  inst(STB, 2, 0, 0xff), // skb[0] = 0xff
+                  inst(MOV64XC, 0, 0xff),   // r0 = 0xff
+                  inst(EXIT),
+                 };
+  vld.set_orig(p3, 4);
+  print_test_res(vld.is_equal_to(p3, 4, p3, 4) == 1, "3.1");
+  print_test_res(vld.is_equal_to(p3, 4, p3_1, 4) == 1, "3.2");
 }
 
 void test8() {

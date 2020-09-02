@@ -127,7 +127,8 @@ z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned 
 }
 
 z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
-  if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     int pkt_ptrs_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs);
     vector<int> ids;
     vector<mem_ptr_info> info_list;
@@ -140,6 +141,24 @@ z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, 
       z3::expr pc = info_list[i].path_cond && sv.mem_var.get_block_path_cond(block);
       int pkt_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
       sv.mem_var.add_ptr(out, pkt_mem_table, addr_off, pc && pc_addr_off);
+    }
+  } else if (pgm_input_type == PGM_INPUT_skb) {
+    int pkt_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
+    vector<int> ids;
+    vector<mem_ptr_info> info_list;
+    sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
+    for (int i = 0; i < ids.size(); i++) {
+      if (ids[i] != pkt_mem_table) continue;
+      z3::expr addr_off = info_list[i].off + off;
+      z3::expr pc_addr_off_s = (addr_off == to_expr(SKB_data_s_off, 64));
+      z3::expr pc = info_list[i].path_cond && sv.mem_var.get_block_path_cond(block);
+      int skb_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_skb);
+      z3::expr skb_off = NULL_ADDR_EXPR;
+      sv.mem_var.add_ptr(out, skb_mem_table, skb_off, pc && pc_addr_off_s);
+      // todo: add skb_data_end as a pointer
+      // z3::expr pc_addr_off_e = (addr_off == to_expr(SKB_data_e_off, 64));
+      // skb_off = sv.mem_var._skb_end - sv.mem_var._skb_start;
+      // sv.mem_var.add_ptr(out, skb_mem_table, skb_off, pc && pc_addr_off_e);
     }
   }
   return ((out.extract(63, 32) == to_expr(0, 32)) &&
@@ -166,7 +185,8 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
     f = f && (is_valid == cond);
     bool is_addr_off_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
                              (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
-                             (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs));
+                             (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs)) ||
+                             (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_skb));
     if (is_addr_off_table) { // addr in the entry is offset
       z3::expr addr_off = off + info_list[i].off;
       // cout << "is_addr_off_table  addr_off: " << addr_off.simplify() << endl;
@@ -229,7 +249,8 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
   z3::expr a = addr + off;
   bool is_addr_off_table = (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
                            (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
-                           (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs));
+                           (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs)) ||
+                           (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_skb));
   if (is_addr_off_table) {
     a = ptr_info.off + off;
   }
@@ -412,10 +433,10 @@ z3::expr pkt_addr_in_one_wt(smt_var& sv1, smt_var& sv2) {
 
 // 1. pkt address in both mem_p1 wt and mem_p2 wt => same value (latest write)
 // 2. pkt address in one of wts => value (latest write) == input
-z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
-  if (mem_t::_layout._pkt_sz == 0) return Z3_true;
-  int id1 = sv1.mem_var.get_mem_table_id(MEM_TABLE_pkt);
-  int id2 = sv2.mem_var.get_mem_table_id(MEM_TABLE_pkt);
+z3::expr smt_array_mem_eq_chk(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_table_type) {
+  if (mem_sz == 0) return Z3_true;
+  int id1 = sv1.mem_var.get_mem_table_id(mem_table_type);
+  int id2 = sv2.mem_var.get_mem_table_id(mem_table_type);
   // cout << "smt_pkt_eq_chk: " << "id1:" << id1 << "id2:" << id2 << endl;
   assert(id1 != -1);
   assert(id2 != -1);
@@ -760,7 +781,10 @@ z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2) {
 }
 
 z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
-  return smt_map_eq_chk(sv1, sv2) && smt_pkt_eq_chk(sv1, sv2);
+  z3::expr f = smt_map_eq_chk(sv1, sv2);
+  f = f && smt_array_mem_eq_chk(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);
+  f = f && smt_array_mem_eq_chk(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_skb);
+  return f;
 }
 
 z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2) {
@@ -813,13 +837,10 @@ z3::expr smt_array_mem_set_same_input(smt_var& sv1, smt_var& sv2, int mem_sz, in
   return f;
 }
 
-z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
-  return smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);
-}
-
 z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2) {
   z3::expr f = smt_map_set_same_input(sv1, sv2);
-  f = f && smt_pkt_set_same_input(sv1, sv2);
+  f = f && smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);  // pkt
+  f = f && smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_skb); // skb
   return f;
 }
 

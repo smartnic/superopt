@@ -710,7 +710,7 @@ z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
       sv.mem_layout_constrain();
   // add the relationship of r1 and address according to the program inpu type
   int pgm_input_type = mem_t::get_pgm_input_type();
-  if (pgm_input_type == PGM_INPUT_pkt) {
+  if ((pgm_input_type == PGM_INPUT_pkt) || (pgm_input_type == PGM_INPUT_skb)) {
     f = f && (sv.get_cur_reg_var(1) == sv.get_pkt_start_addr());
   } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     f = f && (sv.get_cur_reg_var(1) == sv.get_pkt_start_ptr_addr());

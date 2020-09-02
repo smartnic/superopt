@@ -547,6 +547,7 @@ void smt_mem::init_by_layout(unsigned int n_blocks) {
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) n_mem_tables++;
   if (mem_t::_layout._pkt_sz > 0) n_mem_tables++;
+  if (mem_t::_layout._skb_max_sz > 0) n_mem_tables++;
   _mem_tables.resize(n_mem_tables);
 
   int i = 0;
@@ -558,6 +559,10 @@ void smt_mem::init_by_layout(unsigned int n_blocks) {
   }
   if (mem_t::_layout._pkt_sz > 0) {
     _mem_tables[i]._type = MEM_TABLE_pkt;
+    i++;
+  }
+  if (mem_t::_layout._skb_max_sz > 0) {
+    _mem_tables[i]._type = MEM_TABLE_skb;
     i++;
   }
   for (int map_id = 0; i < _mem_tables.size(); i++, map_id++) {
@@ -825,6 +830,18 @@ z3::expr smt_var::mem_layout_constrain() const {
                  ugt(pkt_start_ptr_addr, mem_off) && ugt(pkt_start_ptr_addr - mem_off, mem_start) && // pkt_start_ptr_addr > mem_end
                  uge(max_uint64 - pkt_ptrs_off, pkt_start_ptr_addr); // max_uint64 > pkt_end_ptr_addr
     return f;
+  } else if (pgm_input_type == PGM_INPUT_skb) {
+    z3::expr skb_start = mem_var._skb_start;
+    z3::expr skb_end = mem_var._skb_end;
+    z3::expr skb_off = mem_var._skb_end - mem_var._skb_start;
+    z3::expr skb_max_off = to_expr((uint64_t)mem_t::_layout._skb_max_sz - 1);
+    z3::expr f = (skb_start.extract(63, 32) == NULL_ADDR_EXPR.extract(63, 32)) && // skb start address is 32-bit
+                 (skb_start.extract(31, 0) != NULL_ADDR_EXPR.extract(31, 0)) &&  // skb start address is not NULL
+                 (skb_end.extract(63, 32) == NULL_ADDR_EXPR.extract(63, 32)) &&
+                 uge(skb_end, skb_start) && uge(skb_max_off, skb_off) &&
+                 ugt(pkt_start, skb_end) &&
+                 ugt(mem_start, pkt_off) && ugt(mem_start - pkt_off, pkt_start) &&
+                 uge(max_uint64 - mem_off, mem_start);
   }
   return Z3_true;
 }
@@ -926,6 +943,19 @@ void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_
     for (int i = 0; i < 4; i++) { // the last 4 bytes are the address of pkt end
       mem_var.add_in_mem_table_urt(mem_table_id, root, Z3_true, to_expr((int64_t)(i + 4)),
                                    pkt_end.extract(8 * i + 7, 8 * i));
+    }
+  }
+  if (pgm_input_type == PGM_INPUT_skb) { // add skb data start/end into pkt table
+    int mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_pkt);
+    z3::expr skb_start = mem_var._skb_start;
+    z3::expr skb_end = mem_var._skb_end;
+    for (int i = 0; i < 4; i++) {
+      mem_var.add_in_mem_table_urt(mem_table_id, root, Z3_true, to_expr(SKB_data_s_off + (int64_t)i),
+                                   skb_start.extract(8 * i + 7, 8 * i));
+    }
+    for (int i = 0; i < 4; i++) {
+      mem_var.add_in_mem_table_urt(mem_table_id, root, Z3_true, to_expr(SKB_data_e_off + (int64_t)(i + 4)),
+                                   skb_end.extract(8 * i + 7, 8 * i));
     }
   }
 }
@@ -1185,6 +1215,26 @@ void inout_t::set_pkt_random_val() {
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
     uint8_t val = (0xff + 1) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
     pkt[i] = val;
+  }
+  if (mem_t::get_pgm_input_type() == PGM_INPUT_skb) {
+    uint64_t max_uint32 = 0xffffffff;
+    uint32_t skb_min_start = 1;
+    uint32_t skb_max_start = max_uint32 - mem_t::_layout._skb_max_sz;
+    uint32_t skb_rand_start = skb_min_start +
+                              (skb_max_start - skb_min_start) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+
+    uint32_t skb_max_end = skb_rand_start + mem_t::_layout._skb_max_sz;
+    uint32_t skb_rand_end = skb_max_end * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+
+    *(uint32_t*)&pkt[SKB_data_s_off] = skb_rand_start;
+    *(uint32_t*)&pkt[SKB_data_e_off] = skb_rand_end;
+  }
+}
+
+void inout_t::set_skb_random_val() {
+  for (int i = 0; i < mem_t::_layout._skb_max_sz; i++) {
+    uint8_t val = (0xff + 1) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+    skb[i] = val;
   }
 }
 
@@ -1499,6 +1549,7 @@ void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max)
   // 2. Generate pkt, set pkt with random values
   for (int i = 0; i < inputs.size(); i++) {
     inputs[i].set_pkt_random_val();
+    inputs[i].set_skb_random_val();
     inputs[i].set_randoms_u32();
   }
   // 3. Generate input register r1

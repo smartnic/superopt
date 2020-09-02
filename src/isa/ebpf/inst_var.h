@@ -201,6 +201,7 @@ enum mem_table_type {
   MEM_TABLE_pkt_ptrs,
   MEM_TABLE_pkt,
   MEM_TABLE_map,
+  MEM_TABLE_skb,
 };
 
 class mem_ptr_info {
@@ -251,6 +252,8 @@ class smt_mem {
   z3::expr _pkt_start = string_to_expr("pkt_start");
   z3::expr _pkt_off = string_to_expr("pkt_off"); // pkt_off = pkt_sz - 1
   z3::expr _pkt_start_ptr_addr = string_to_expr("pkt_start_ptr_addr");
+  z3::expr _skb_start = string_to_expr("skb_start");
+  z3::expr _skb_end = string_to_expr("skb_end");
   vector<mem_table> _mem_tables; // stack, pkt, map related memory
   vector<map_wt> _map_tables; // vector idx: map id
   vector<z3::expr> _addrs_map_v_next;
@@ -422,6 +425,7 @@ class inout_t: public inout_t_base {
   bool k_in_map(int map_id, string k);
   // set pkt with random values
   void set_pkt_random_val();
+  void set_skb_random_val();
   void set_randoms_u32();
   void clear();
   void init();
