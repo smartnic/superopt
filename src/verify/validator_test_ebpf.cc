@@ -704,7 +704,8 @@ void test4() {
   // set memory layout: stack | map1 | map2
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
-  mem_t::set_pkt_sz(16);
+  mem_t::set_pkt_sz(96);
+  mem_t::set_skb_max_sz(16);
   inst p2_1[2] = {inst(LDABSH, 0),
                   inst(EXIT),
                  };

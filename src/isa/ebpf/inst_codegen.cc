@@ -780,9 +780,13 @@ z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2) {
   return f;
 }
 
+z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
+  return smt_array_mem_eq_chk(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);
+}
+
 z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
   z3::expr f = smt_map_eq_chk(sv1, sv2);
-  f = f && smt_array_mem_eq_chk(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);
+  f = f && smt_pkt_eq_chk(sv1, sv2);
   f = f && smt_array_mem_eq_chk(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_skb);
   return f;
 }
@@ -837,9 +841,13 @@ z3::expr smt_array_mem_set_same_input(smt_var& sv1, smt_var& sv2, int mem_sz, in
   return f;
 }
 
+z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
+  return smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);
+}
+
 z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2) {
   z3::expr f = smt_map_set_same_input(sv1, sv2);
-  f = f && smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);  // pkt
+  f = f && smt_pkt_set_same_input(sv1, sv2);  // pkt
   f = f && smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_skb); // skb
   return f;
 }

@@ -148,6 +148,14 @@ bool inst::is_cfg_basic_block_end() const {
   return false;
 }
 
+bool inst::is_pgm_end() const {
+  int op_type = get_opcode_type();
+  if (op_type == OP_RET) {
+    return true;
+  }
+  return false;
+}
+
 #undef IMM2
 #define CURSRC sv.get_cur_reg_var(SRCREG(*this))
 #define CURDST sv.get_cur_reg_var(DSTREG(*this))
@@ -193,6 +201,17 @@ z3::expr inst::smt_inst_jmp(smt_var& sv) const {
     case JMPLT: return (CURDST < CURSRC);
     case JMPLE: return (CURDST <= CURSRC);
     default: return string_to_expr("false");
+  }
+}
+
+z3::expr inst::smt_inst_end(smt_var& sv) const {
+  switch (inst_output_opcode_type()) {
+    case RET_X:
+      return (sv.ret_val == sv.get_cur_reg_var(inst_output()));
+    case RET_C:
+      return (sv.ret_val == inst_output());
+    default:
+      return Z3_false;
   }
 }
 

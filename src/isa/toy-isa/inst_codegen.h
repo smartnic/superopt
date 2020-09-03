@@ -106,12 +106,11 @@ PREDICATE_BINARY(max, MAX_EXPR)
 
 // Functions for validator en
 /* Macros for validator end  */
-
-inline z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2) {
-  return Z3_true;
+inline z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2) {
+    return (sv1.ret_val == sv2.ret_val);
 }
 
-inline z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
+inline z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2) {
   return Z3_true;
 }
 

@@ -795,6 +795,17 @@ bool inst::is_cfg_basic_block_end() const {
   return false;
 }
 
+bool inst::is_pgm_end() const {
+  int op_type = get_opcode_type();
+  if (op_type == OP_RET) {
+    return true;
+  }
+  if ((op_type == OP_CALL) && (_imm == BPF_FUNC_tail_call)) {
+    return true;
+  }
+  return false;
+}
+
 string inst::get_bytecode_str() const {
   string str = ("{"
                 + to_string(_opcode) + ", " + to_string(_dst_reg) + ", "

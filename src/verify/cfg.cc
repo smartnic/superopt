@@ -125,7 +125,7 @@ void graph::gen_all_edges_graph(vector<vector<unsigned int> >& gnodes_out, vecto
   for (size_t i = 0; i < gnodes.size(); i++) {
     size_t end_inst_id = gnodes[i]._end;
     vector <unsigned int> next_inst_ids;
-    if (inst_lst[end_inst_id].is_cfg_basic_block_end()) continue;
+    if (inst_lst[end_inst_id].is_pgm_end()) continue;
     int inst_type = inst_lst[end_inst_id].get_opcode_type();
     if (inst_type == OP_OTHERS || inst_type == OP_NOP ||
         inst_type == OP_ST || inst_type == OP_LD || inst_type == OP_CALL) {

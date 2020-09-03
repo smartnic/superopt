@@ -1755,7 +1755,8 @@ void test14() {
   cout << "1. test ldabs" << endl;
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
-  mem_t::set_pkt_sz(16); // pkt size: 16 bytes
+  mem_t::set_pkt_sz(96);
+  mem_t::set_skb_max_sz(16);
   unsigned int prog_id = 0, node_id = 0, num_regs = 11;
   smt_var sv;
   sv.init(prog_id, node_id, num_regs);
@@ -1770,7 +1771,8 @@ void test14() {
   cout << "2. test set the same input" << endl;
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
-  mem_t::set_pkt_sz(16); // pkt size: 16 bytes
+  mem_t::set_pkt_sz(96); // pkt size: 16 bytes
+  mem_t::set_skb_max_sz(16);
   unsigned int prog_id1 = 0, prog_id2 = 1;
   node_id = 0, num_regs = 11;
   smt_var sv1, sv2;
@@ -1796,7 +1798,8 @@ void test14() {
   cout << "3. test counterex" << endl;
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_skb);
-  mem_t::set_pkt_sz(16); // pkt size: 16 bytes
+  mem_t::set_pkt_sz(96); // pkt size: 16 bytes
+  mem_t::set_skb_max_sz(16);
   prog_id1 = 0, prog_id2 = 1;
   node_id = 0, num_regs = 11;
   sv1.clear();
@@ -1820,7 +1823,7 @@ void test14() {
   input_expected.init();
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2);
-  bool res = (input.pkt[0] != input.pkt[2]) || (input.pkt[1] != input.pkt[3]);
+  bool res = (input.skb[0] != input.skb[2]) || (input.skb[1] != input.skb[3]);
   print_test_res(res, "1");
 }
 
@@ -1839,7 +1842,7 @@ int main() {
     test11();
     test12();
     test13();
-    test14();
+    // test14(); // skb opcode needs to be modified
   } catch (const string err_msg) {
     cout << err_msg << endl;
   }

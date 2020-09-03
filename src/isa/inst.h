@@ -47,6 +47,7 @@ class inst_base {
   int get_opcode_by_idx(int idx) const;
   void set_opcode(int op_value);
   double get_runtime() const {return 1;}
+  bool sample_unmodifiable() const {return false;}
 
   /* Functions class inst should support */
   // inst& operator=(const inst &rhs)

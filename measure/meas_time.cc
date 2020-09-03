@@ -150,7 +150,7 @@ int main() {
   time_validator_set_orig();
   time_validator_is_equal_to();
   time_validator_is_smt_valid();
-  time_validator_get_orig_output();
+  // time_validator_get_orig_output();
   time_interpret();
   time_cost_init();
   time_cost_error_cost();
