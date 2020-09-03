@@ -181,6 +181,14 @@ int prog::num_real_instructions() const {
   return count;
 }
 
+double prog::instructions_runtime() const {
+  double runtime = 0;
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    runtime += inst_list[i].get_runtime();
+  }
+  return runtime;
+}
+
 void prog::interpret(inout_t& output, prog_state &ps, const inout_t& input) const {
   return ::interpret(output, inst_list, inst::max_prog_len, ps, input);
 }

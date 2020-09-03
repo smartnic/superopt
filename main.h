@@ -17,6 +17,7 @@ struct input_paras {
   int st_ex;
   int st_eq;
   int st_avg;
+  int st_perf;
   int st_when_to_restart;
   int st_when_to_restart_niter;
   int st_start_prog;

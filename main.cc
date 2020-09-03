@@ -75,6 +75,7 @@ string gen_file_name_suffix_from_input(const input_paras &in_para) {
                   "_" + to_string(in_para.st_ex) +
                   to_string(in_para.st_eq) +
                   to_string(in_para.st_avg) +
+                  to_string(in_para.st_perf) +
                   "_" + str_w_e +
                   "_" + str_w_p +
                   "_" + to_string(in_para.st_when_to_restart) +
@@ -102,10 +103,14 @@ void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
   mh._cost.init(&orig, inst::max_prog_len, inputs,
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
-                in_para.st_avg);
+                in_para.st_avg, in_para.st_perf);
   n_is_equal_to = 0;
   n_solve = 0;
-  mh.mcmc_iter(in_para.niter, orig, prog_dic);
+  try {
+    mh.mcmc_iter(in_para.niter, orig, prog_dic);
+  } catch (string err_msg) {
+    cout << err_msg << endl;
+  }
   cout << "n_is_equal_to: " << n_is_equal_to << ", n_solve: " << n_solve << endl;
   if (in_para.meas_mode) {
     string suffix = gen_file_name_suffix_from_input(in_para);
@@ -150,6 +155,12 @@ string para_st_eq_desc() {
 string para_st_avg_desc() {
   string s = "strategy of whether average total error cost from examples. " \
              "`arg`: 0(navg), 1(avg)";
+  return s;
+}
+
+string para_st_perf_desc() {
+  string s = "strategy of whether performance cost for examples. " \
+             "`arg`: 0(program length), 1(program runtime)";
   return s;
 }
 
@@ -248,6 +259,7 @@ void usage() {
        << setw(W) << "--st_ex arg" << ": " +  para_st_ex_desc() << endl
        << setw(W) << "--st_eq arg" << ": " +  para_st_eq_desc() << endl
        << setw(W) << "--st_avg arg" << ": " + para_st_avg_desc() << endl
+       << setw(W) << "--st_perf arg" << ": " + para_st_perf_desc() << endl
        << endl << para_restart_desc() << endl
        << setw(W) << "--st_when_to_restart arg" << ": " + para_st_when_to_restart_desc() << endl
        << setw(W) << "--st_when_to_restart_niter arg" << ": "  + para_st_when_to_restart_niter_desc() << endl
@@ -292,16 +304,17 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"st_ex", required_argument, nullptr, 7},
     {"st_eq", required_argument, nullptr, 8},
     {"st_avg", required_argument, nullptr, 9},
-    {"st_when_to_restart", required_argument, nullptr, 10},
-    {"st_when_to_restart_niter", required_argument, nullptr, 11},
-    {"st_start_prog", required_argument, nullptr, 12},
-    {"restart_w_e_list", required_argument, nullptr, 13},
-    {"restart_w_p_list", required_argument, nullptr, 14},
-    {"reset_win_niter", required_argument, nullptr, 15},
-    {"win_s_list", required_argument, nullptr, 16},
-    {"win_e_list", required_argument, nullptr, 17},
-    {"p_inst_operand", required_argument, nullptr, 18},
-    {"p_inst", required_argument, nullptr, 19},
+    {"st_perf", required_argument, nullptr, 10},
+    {"st_when_to_restart", required_argument, nullptr, 11},
+    {"st_when_to_restart_niter", required_argument, nullptr, 12},
+    {"st_start_prog", required_argument, nullptr, 13},
+    {"restart_w_e_list", required_argument, nullptr, 14},
+    {"restart_w_p_list", required_argument, nullptr, 15},
+    {"reset_win_niter", required_argument, nullptr, 16},
+    {"win_s_list", required_argument, nullptr, 17},
+    {"win_e_list", required_argument, nullptr, 18},
+    {"p_inst_operand", required_argument, nullptr, 19},
+    {"p_inst", required_argument, nullptr, 20},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -321,16 +334,17 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 7: in_para.st_ex = stoi(optarg); break;
       case 8: in_para.st_eq = stoi(optarg); break;
       case 9: in_para.st_avg = stoi(optarg); break;
-      case 10: in_para.st_when_to_restart = stoi(optarg); break;
-      case 11: in_para.st_when_to_restart_niter = stoi(optarg); break;
-      case 12: in_para.st_start_prog = stoi(optarg); break;
-      case 13: set_w_list(in_para.restart_w_e_list, optarg); break;
-      case 14: set_w_list(in_para.restart_w_p_list, optarg); break;
-      case 15: in_para.reset_win_niter = stoi(optarg); break;
-      case 16: set_win_list(in_para.win_s_list, optarg); break;
-      case 17: set_win_list(in_para.win_e_list, optarg); break;
-      case 18: in_para.p_inst_operand = stod(optarg); break;
-      case 19: in_para.p_inst = stod(optarg); break;
+      case 10: in_para.st_perf = stoi(optarg); break;
+      case 11: in_para.st_when_to_restart = stoi(optarg); break;
+      case 12: in_para.st_when_to_restart_niter = stoi(optarg); break;
+      case 13: in_para.st_start_prog = stoi(optarg); break;
+      case 14: set_w_list(in_para.restart_w_e_list, optarg); break;
+      case 15: set_w_list(in_para.restart_w_p_list, optarg); break;
+      case 16: in_para.reset_win_niter = stoi(optarg); break;
+      case 17: set_win_list(in_para.win_s_list, optarg); break;
+      case 18: set_win_list(in_para.win_e_list, optarg); break;
+      case 19: in_para.p_inst_operand = stod(optarg); break;
+      case 20: in_para.p_inst = stod(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -375,6 +389,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.st_ex = ERROR_COST_STRATEGY_ABS;
   in_para.st_eq = ERROR_COST_STRATEGY_EQ1;
   in_para.st_avg = ERROR_COST_STRATEGY_NAVG;
+  in_para.st_perf = PERF_COST_STRATEGY_LEN;
   in_para.st_when_to_restart = MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART;
   in_para.st_when_to_restart_niter = 0;
   in_para.st_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ORIG;

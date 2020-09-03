@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cassert>
 #include <string.h>
 #include "inst.h"
@@ -9,6 +10,7 @@ vector<int32_t> inst::_sample_neg_imms;
 vector<int32_t> inst::_sample_pos_imms;
 vector<int32_t> inst::_sample_neg_offs;
 vector<int32_t> inst::_sample_pos_offs;
+unordered_map<string, double> inst::_runtime;
 
 inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
   int32_t arg[3] = {arg1, arg2, arg3};
@@ -227,74 +229,90 @@ void inst::set_operand(int op_index, op_t op_value) {
   }
 }
 
-string inst::opcode_to_str(int opcode) const {
+
+#define MAPPER(func) case BPF_FUNC_##func: return string("BPF_FUNC_") + #func;
+string inst::func_to_str(int func_id) {
+  switch (func_id) {
+      MAPPER(map_lookup_elem)
+      MAPPER(map_update_elem)
+      MAPPER(map_delete_elem)
+      MAPPER(tail_call)
+      MAPPER(get_prandom_u32)
+    default: return "unknown function id";
+  }
+}
+#undef MAPPER
+
+#define MAPPER(OP) case OP: return #OP;
+string inst::opcode_to_str(int opcode) {
   switch (opcode) {
-    case NOP: return "nop";
-    case ADD64XC: return "addxc";
-    case ADD64XY: return "addxy";
-    case OR64XC: return "orxc";
-    case OR64XY: return "orxy";
-    case AND64XC: return "andxc";
-    case AND64XY: return "andxy";
-    case LSH64XC: return "lshxc";
-    case LSH64XY: return "lshxy";
-    case RSH64XC: return "rshxc";
-    case RSH64XY: return "rshxy";
-    case MOV64XC: return "movxc";
-    case MOV64XY: return "movxy";
-    case ARSH64XC: return "arshxc";
-    case ARSH64XY: return "arshxy";
-    case ADD32XC: return "add32xc";
-    case ADD32XY: return "add32xy";
-    case OR32XC: return "or32xc";
-    case OR32XY: return "or32xy";
-    case AND32XC: return "and32xc";
-    case AND32XY: return "and32xy";
-    case LSH32XC: return "lsh32xc";
-    case LSH32XY: return "lsh32xy";
-    case RSH32XC: return "rsh32xc";
-    case RSH32XY: return "rsh32xy";
-    case MOV32XC: return "mov32xc";
-    case MOV32XY: return "mov32xy";
-    case ARSH32XC: return "arsh32xc";
-    case ARSH32XY: return "arsh32xy";
-    case LE: return "le";
-    case BE: return "be";
-    case LDMAPID: return "ldmapid";
-    case LDXB: return "ldxb";
-    case STXB: return "stxb";
-    case LDXH: return "ldxh";
-    case STXH: return "stxh";
-    case LDXW: return "ldxw";
-    case STXW: return "stxw";
-    case STB: return "stb";
-    case STH: return "sth";
-    case STW: return "stw";
-    case STDW: return "stdw";
-    case LDXDW: return "ldxdw";
-    case STXDW: return "stxdw";
-    case XADD64: return "lock xadd64";
-    case XADD32: return "lock xadd32";
-    case LDABSH: return "ldabsh";
-    case LDINDH: return "ldindh";
-    case JA: return "ja";
-    case JEQXC: return "jeqxc";
-    case JEQXY: return "jeqxy";
-    case JGTXC: return "jgtxc";
-    case JGTXY: return "jgtxy";
-    case JNEXC: return "jnexc";
-    case JNEXY: return "jnexy";
-    case JSGTXC: return "jsgtxc";
-    case JSGTXY: return "jsgtxy";
-    case JEQ32XC: return "jeq32xc";
-    case JEQ32XY: return "jeq32xy";
-    case JNE32XC: return "jne32xc";
-    case JNE32XY: return "jne32xy";
-    case CALL: return "call";
-    case EXIT: return "exit";
+      MAPPER(NOP)
+      MAPPER(ADD64XC)
+      MAPPER(ADD64XY)
+      MAPPER(OR64XC)
+      MAPPER(OR64XY)
+      MAPPER(AND64XC)
+      MAPPER(AND64XY)
+      MAPPER(LSH64XC)
+      MAPPER(LSH64XY)
+      MAPPER(RSH64XC)
+      MAPPER(RSH64XY)
+      MAPPER(MOV64XC)
+      MAPPER(MOV64XY)
+      MAPPER(ARSH64XC)
+      MAPPER(ARSH64XY)
+      MAPPER(ADD32XC)
+      MAPPER(ADD32XY)
+      MAPPER(OR32XC)
+      MAPPER(OR32XY)
+      MAPPER(AND32XC)
+      MAPPER(AND32XY)
+      MAPPER(LSH32XC)
+      MAPPER(LSH32XY)
+      MAPPER(RSH32XC)
+      MAPPER(RSH32XY)
+      MAPPER(MOV32XC)
+      MAPPER(MOV32XY)
+      MAPPER(ARSH32XC)
+      MAPPER(ARSH32XY)
+      MAPPER(LE)
+      MAPPER(BE)
+      MAPPER(LDMAPID)
+      MAPPER(LDXB)
+      MAPPER(STXB)
+      MAPPER(LDXH)
+      MAPPER(STXH)
+      MAPPER(LDXW)
+      MAPPER(STXW)
+      MAPPER(STB)
+      MAPPER(STH)
+      MAPPER(STW)
+      MAPPER(STDW)
+      MAPPER(LDXDW)
+      MAPPER(STXDW)
+      MAPPER(XADD64)
+      MAPPER(XADD32)
+      MAPPER(LDABSH)
+      MAPPER(LDINDH)
+      MAPPER(JA)
+      MAPPER(JEQXC)
+      MAPPER(JEQXY)
+      MAPPER(JGTXC)
+      MAPPER(JGTXY)
+      MAPPER(JNEXC)
+      MAPPER(JNEXY)
+      MAPPER(JSGTXC)
+      MAPPER(JSGTXY)
+      MAPPER(JEQ32XC)
+      MAPPER(JEQ32XY)
+      MAPPER(JNE32XC)
+      MAPPER(JNE32XY)
+      MAPPER(CALL)
+      MAPPER(EXIT)
     default: return "unknown opcode";
   }
 }
+#undef MAPPER
 
 void inst::print() const {
   cout << opcode_to_str(_opcode);
@@ -370,7 +388,55 @@ void inst::add_sample_off(const vector<int16_t>& nums) {
   }
 }
 
-inst& inst::operator=(const inst &rhs) {
+// read runtime from inst_runtime.txt
+void inst::init_runtime() {
+  ifstream file("./src/isa/ebpf/inst_runtime.txt");
+  string line;
+  double default_runtime = 1; // set the default runtime as 1 ns
+  for (int i = 0; i < NUM_INSTR; i++) {
+    int op = idx_2_opcode[i];
+    if (op == CALL) continue;
+    _runtime[opcode_to_str(op)] = default_runtime;
+  }
+  for (int i = 0; i < SP_BPF_FUNC_MAX_ID; i++) {
+    int func_id = sp_bpf_func[i];
+    _runtime[func_to_str(func_id)] = default_runtime;
+  }
+  // set special opcodes
+  _runtime["NOP"] = 0;
+  _runtime["EXIT"] = 0;
+  if (! file) {
+    string err_msg = "Error: cannot open ./src/isa/ebpf/inst_runtime.txt";
+    throw (err_msg);
+  }
+  while (getline(file, line)) {
+    vector<string> vec;
+    string delimiter = " ";
+    split_string(line, vec, delimiter);
+    if (vec.size() != 2) continue;
+    auto found = _runtime.find(vec[0]);
+    if (found != _runtime.end()) {
+      found->second = stod(vec[1]);
+    }
+  }
+}
+
+double inst::get_runtime() const {
+  string str;
+  if (_opcode != CALL) {
+    str = opcode_to_str(_opcode);
+  } else {
+    str = func_to_str(_imm); // _imm is the function id
+  }
+  auto found = _runtime.find(str);
+  if (found == _runtime.end()) {
+    string err_msg = string("Error: cannot get runtime of ") + str;
+    throw (err_msg);
+  }
+  return found->second;
+}
+
+inst& inst::operator=(const inst & rhs) {
   _opcode = rhs._opcode;
   _dst_reg = rhs._dst_reg;
   _src_reg = rhs._src_reg;
@@ -497,7 +563,7 @@ void inst::set_as_nop_inst() {
 #define R4 sv.get_cur_reg_var(4)
 #define R5 sv.get_cur_reg_var(5)
 
-z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
+z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
   // cout << endl << "...... block id: " << block << endl;;
   // print();
   // check whether opcode is valid. If invalid, curDst cannot be updated to get newDst
@@ -592,7 +658,7 @@ z3::expr inst::smt_inst(smt_var& sv, unsigned int block) const {
   }
 }
 
-z3::expr inst::smt_inst_jmp(smt_var& sv) const {
+z3::expr inst::smt_inst_jmp(smt_var & sv) const {
   // If opcode is valid, then define curDst, curSrc, imm
   if (get_opcode_type() != OP_COND_JMP) return string_to_expr("false");
   z3::expr curDst = sv.get_cur_reg_var(_dst_reg);
@@ -616,7 +682,7 @@ z3::expr inst::smt_inst_jmp(smt_var& sv) const {
   }
 }
 
-z3::expr inst::smt_inst_end(smt_var& sv) const {
+z3::expr inst::smt_inst_end(smt_var & sv) const {
   // there are two cases for a program end instruction: the default exit or tail call exit
   z3::expr f = Z3_true;
   if ((_opcode == CALL) && (_imm == BPF_FUNC_tail_call)) {
@@ -703,7 +769,7 @@ int opcode_2_idx(int opcode) {
 }
 
 // TODO: set the stack memory as 0
-z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
+z3::expr inst::smt_set_pre(z3::expr input, smt_var & sv) {
   z3::expr f = string_to_expr("true");
   f = (sv.get_cur_reg_var(1) == input) &&
       (sv.get_cur_reg_var(10) == sv.get_stack_bottom_addr()) &&
@@ -739,7 +805,7 @@ string inst::get_bytecode_str() const {
   return str;
 }
 
-void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input) {
+void interpret(inout_t& output, inst * program, int length, prog_state & ps, const inout_t& input) {
 #undef IMM
 #undef OFF
 #undef MEM

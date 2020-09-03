@@ -1090,4 +1090,5 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
     }
   }
   smt_var::init_static_variables();
+  inst::init_runtime();
 }

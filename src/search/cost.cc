@@ -16,7 +16,8 @@ cost::~cost() {}
 
 void cost::init(prog* orig, int len, const vector<inout_t> &input,
                 double w_e, double w_p,
-                int strategy_ex, int strategy_eq, int strategy_avg) {
+                int strategy_ex, int strategy_eq, int strategy_avg,
+                int strategy_perf) {
   set_orig(orig, len);
   _examples.clear();
   prog_state ps;
@@ -43,6 +44,7 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
   _strategy_ex = strategy_ex;
   _strategy_eq = strategy_eq;
   _strategy_avg = strategy_avg;
+  _strategy_perf = strategy_perf;
   _meas_new_counterex_gened = false;
 }
 
@@ -234,8 +236,16 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
 
 double cost::perf_cost(prog* synth, int len) {
   if (synth->_perf_cost != -1) return synth->_perf_cost;
-  int total_cost =  inst::max_prog_len - _num_real_orig +
-                    synth->num_real_instructions();
+  double total_cost;
+  if (_strategy_perf == PERF_COST_STRATEGY_LEN) {
+    total_cost =  inst::max_prog_len - _num_real_orig +
+                  synth->num_real_instructions();
+  } else if (_strategy_perf == PERF_COST_STRATEGY_RUNTIME) {
+    total_cost = synth->instructions_runtime();
+  } else {
+    string err_msg = "ERROR: no performance cost strategy matches.";
+    throw (err_msg);
+  }
   synth->set_perf_cost(total_cost);
   return total_cost;
 }

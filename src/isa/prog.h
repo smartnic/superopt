@@ -31,6 +31,7 @@ class prog {
   void update_map_if_implicit_ret_r0_needed(unordered_map<int, int> &map_before_after) const;
   void canonicalize();
   int num_real_instructions() const;
+  double instructions_runtime() const;
   void interpret(inout_t& output, prog_state &ps, const inout_t& input) const;
 };
 
