@@ -388,9 +388,9 @@ void inst::add_sample_off(const vector<int16_t>& nums) {
   }
 }
 
-// read runtime from inst_runtime.txt
+// read runtime from inst.runtime
 void inst::init_runtime() {
-  ifstream file("./src/isa/ebpf/inst_runtime.txt");
+  ifstream file("./src/isa/ebpf/inst.runtime");
   string line;
   double default_runtime = 1; // set the default runtime as 1 ns
   for (int i = 0; i < NUM_INSTR; i++) {
@@ -406,7 +406,7 @@ void inst::init_runtime() {
   _runtime["NOP"] = 0;
   _runtime["EXIT"] = 0;
   if (! file) {
-    string err_msg = "Error: cannot open ./src/isa/ebpf/inst_runtime.txt";
+    string err_msg = "Error: cannot open ./src/isa/ebpf/inst.runtime";
     throw (err_msg);
   }
   while (getline(file, line)) {
