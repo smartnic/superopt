@@ -269,6 +269,25 @@ void insert_into_prog_freq_dic(const prog &next,
   }
 }
 
+// return best program in input programs
+// if there is no program with zero error cost, return nullptr.
+// else return best program: smallest performance cost + zero error cost
+prog* get_best_pgm_from_pgm_dic(unordered_map<int, vector<prog*> >& pgm_dic) {
+  prog* best = nullptr;
+  double min_perf_cost = numeric_limits<double>::max();
+  // get the minimum performance cost with zero error cost
+  for (auto& element : pgm_dic) {
+    vector<prog*>& pl = element.second; // list of progs with the same hash
+    for (auto p : pl) {
+      if (p->_error_cost != 0) continue;
+      if (min_perf_cost <= p->_perf_cost) continue;
+      min_perf_cost = p->_perf_cost;
+      best = p;
+    }
+  }
+  return best;
+}
+
 void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_e, double w_p) {
   cout << "restart at iteration " << iter_num << endl;
   cout << "  restart w_e, w_p: " << w_e << ", " << w_p << endl;
@@ -287,9 +306,19 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
     if (_next_win.whether_to_reset(i)) {
       pair<int, int> win = _next_win.update_and_get_next_win();
       cout << "set window at iteration " << i << endl;
-      cout << "start from program:" << endl;
-      curr->print();
       _next_proposal.set_win(win.first, win.second);
+      // get the best program in the current window and
+      // set this program as the start program for the new window
+      prog* best = get_best_pgm_from_pgm_dic(prog_freq);
+      if (best != nullptr) {
+        if (curr != best) {
+          delete curr;
+          curr = new prog(*best);
+        }
+      }
+      cout << "start from program (error and performance costs: "
+           << curr->_error_cost << " " << curr-> _perf_cost << "):" << endl;
+      curr->print();
     }
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {
