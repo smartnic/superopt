@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include "validator.h"
+#include "z3client.h"
 
 using namespace z3;
 
@@ -59,6 +60,7 @@ int validator::is_smt_valid(expr& smt, model& mdl) {
   tactic t = tactic(smt_c, "bv");
   solver s = t.mk_solver();
   s.add(!smt);
+  write_to_z3server(s.to_smt2());
   switch (s.check()) {
     case unsat: return 1;
     case sat: {
