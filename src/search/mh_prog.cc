@@ -287,6 +287,8 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
     if (_next_win.whether_to_reset(i)) {
       pair<int, int> win = _next_win.update_and_get_next_win();
       cout << "set window at iteration " << i << endl;
+      cout << "start from program:" << endl;
+      curr->print();
       _next_proposal.set_win(win.first, win.second);
     }
     // check whether need restart, if need, update `start`

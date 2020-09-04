@@ -436,6 +436,7 @@ int main(int argc, char* argv[]) {
   cout << "Best program(s): " << endl;
   for (auto p : best_pgms) {
     p->print();
+    cout << "cost: " << p->_error_cost << " " <<  p->_perf_cost << endl;
   }
   for (auto p : best_pgms) {
     delete p;
