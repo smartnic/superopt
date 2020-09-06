@@ -11,8 +11,8 @@ using namespace std;
 
 #define FORMULA_SHM_KEY 224
 #define RESULTS_SHM_KEY 46
-#define FORMULA_SIZE_BYTES 65536
-#define RESULT_SIZE_BYTES 4096
+#define FORMULA_SIZE_BYTES 65535
+#define RESULT_SIZE_BYTES 65535
 
 #define PORT 8001
 
@@ -44,12 +44,19 @@ string write_problem_to_z3server(string formula) {
   cout << "Writing formula " <<  formula << endl;
   nchars = std::min(FORMULA_SIZE_BYTES, (int)formula.length());
   strncpy(form_buffer, formula.c_str(), nchars);
-  send(sock, form_buffer, nchars, 0);
+  form_buffer[nchars] = '\0';
+  send(sock, form_buffer, nchars + 1, 0);
+
   /* Read back solver results. */
   total_read = 0;
   do {
-    nread = read(sock, res_buffer, RESULT_SIZE_BYTES - total_read);
+    nread = read(sock, res_buffer + total_read, RESULT_SIZE_BYTES - total_read);
     total_read += nread;
-  } while (res_buffer[total_read] != '\0');
+  } while (res_buffer[total_read - 1] != '\0' &&
+           total_read <= RESULT_SIZE_BYTES);
+  if (total_read >= RESULT_SIZE_BYTES)
+    cout << "Exhausted result read buffer\n";
+  close(sock);
+
   return string(res_buffer);
 }
