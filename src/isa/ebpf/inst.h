@@ -100,10 +100,21 @@ static const int sp_bpf_func[] = {
   BPF_FUNC_map_lookup_elem,
   BPF_FUNC_map_update_elem,
   BPF_FUNC_map_delete_elem,
+  BPF_FUNC_get_prandom_u32,
   BPF_FUNC_tail_call,
 };
 
 static constexpr int SP_BPF_FUNC_MAX_ID = (sizeof(sp_bpf_func) / sizeof(int));
+
+/* BPF functions for sample */
+static const int sample_bpf_func[] = {
+  BPF_FUNC_map_lookup_elem,
+  BPF_FUNC_map_update_elem,
+  BPF_FUNC_map_delete_elem,
+  BPF_FUNC_tail_call,
+};
+
+static constexpr int SAMPLE_BPF_FUNC_MAX_ID = (sizeof(sample_bpf_func) / sizeof(int));
 
 #define OPCODE_BPF_ALU64_IMM(OP) BPF_ALU64 | BPF_OP(OP) | BPF_K
 #define OPCODE_BPF_ALU64_REG(OP) BPF_ALU64 | BPF_OP(OP) | BPF_X
@@ -476,7 +487,7 @@ static constexpr int32_t MAX_IMM_SH64 = 63;
 // 3 types of OP_IMM_ENDIAN: 16, 32, 64
 // type counts from 0
 static constexpr int32_t MAX_TYPES_IMM_ENDIAN = 2;
-static constexpr int32_t MAX_CALL_IMM = SP_BPF_FUNC_MAX_ID - 1;
+static constexpr int32_t MAX_CALL_IMM = SAMPLE_BPF_FUNC_MAX_ID - 1;
 // Operand types for instructions
 enum OPERANDS {
   OP_UNUSED = 0,
