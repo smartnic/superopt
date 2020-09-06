@@ -230,6 +230,20 @@ void inst::set_operand(int op_index, op_t op_value) {
   }
 }
 
+string inst::swap_byte_to_str(int opcode, int imm) {
+  if ((opcode != LE) && (opcode != BE)) {
+    return "unknown swap byte opcode";
+  }
+  if ((imm != 16) && (imm != 32) && (imm != 64)) {
+    return "unknown swap byte immediate number";
+  }
+  string str = "LE";
+  if (opcode == BE) {
+    str = "BE";
+  }
+  str = str + to_string(imm);
+  return str;
+}
 
 #define MAPPER(func) case BPF_FUNC_##func: return string("BPF_FUNC_") + #func;
 string inst::func_to_str(int func_id) {
@@ -403,6 +417,13 @@ void inst::init_runtime() {
     int func_id = sp_bpf_func[i];
     _runtime[func_to_str(func_id)] = default_runtime;
   }
+  int opcodes[2] = {LE, BE};
+  int imms[3] = {16, 32, 64};
+  for (int i = 0; i < 2; i++) {
+    for (int j = 0; j < 3; j++) {
+      _runtime[swap_byte_to_str(opcodes[i], imms[j])] = default_runtime;
+    }
+  }
   // set special opcodes
   _runtime["NOP"] = 0;
   _runtime["EXIT"] = 0;
@@ -420,14 +441,20 @@ void inst::init_runtime() {
       found->second = stod(vec[1]);
     }
   }
+
+  for (auto it : _runtime) {
+    cout << it.first << ":" << it.second << endl;
+  }
 }
 
 double inst::get_runtime() const {
   string str;
-  if (_opcode != CALL) {
-    str = opcode_to_str(_opcode);
-  } else {
+  if ((_opcode == LE) && (_opcode == BE)) {
+    str = swap_byte_to_str(_opcode, _imm);
+  } else if (_opcode == CALL) {
     str = func_to_str(_imm); // _imm is the function id
+  } else {
+    str = opcode_to_str(_opcode);
   }
   auto found = _runtime.find(str);
   if (found == _runtime.end()) {
