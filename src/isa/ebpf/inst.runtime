@@ -84,8 +84,8 @@ BPF_FUNC_map_delete_elem 44.3
 MOV32XC 0.2
 ARSH32XC 0.8
 ARSH32XY 3.6
-get_prandom_u32 20.1
-tail_call 2.3
+BPF_FUNC_get_prandom_u32 20.1
+BPF_FUNC_tail_call 2.3
 XADD32 17.8
 BE16 0.5
 BE32 0.5

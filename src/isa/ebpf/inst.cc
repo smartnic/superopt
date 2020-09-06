@@ -69,8 +69,8 @@ void inst::set_imm(int op_value) {
     return;
   }
   if (_opcode == CALL) {
-    assert(op_value < SP_BPF_FUNC_MAX_ID);
-    _imm = sp_bpf_func[op_value];
+    assert(op_value < SAMPLE_BPF_FUNC_MAX_ID);
+    _imm = sample_bpf_func[op_value];
     return;
   }
   // opcodes_set constains opcodes whose sample imm range = the default imm range + imms from source program
@@ -441,15 +441,11 @@ void inst::init_runtime() {
       found->second = stod(vec[1]);
     }
   }
-
-  for (auto it : _runtime) {
-    cout << it.first << ":" << it.second << endl;
-  }
 }
 
 double inst::get_runtime() const {
   string str;
-  if ((_opcode == LE) && (_opcode == BE)) {
+  if ((_opcode == LE) || (_opcode == BE)) {
     str = swap_byte_to_str(_opcode, _imm);
   } else if (_opcode == CALL) {
     str = func_to_str(_imm); // _imm is the function id
