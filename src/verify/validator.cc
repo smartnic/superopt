@@ -60,7 +60,8 @@ int validator::is_smt_valid(expr& smt, model& mdl) {
   tactic t = tactic(smt_c, "bv");
   solver s = t.mk_solver();
   s.add(!smt);
-  write_to_z3server(s.to_smt2());
+  string res = write_problem_to_z3server(s.to_smt2());
+  cout << "Result from z3 client: " << res << endl;
   switch (s.check()) {
     case unsat: return 1;
     case sat: {
