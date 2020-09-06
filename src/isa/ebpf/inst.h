@@ -625,6 +625,7 @@ class inst: public inst_base {
   bool operator==(const inst &x) const;
   static string func_to_str(int func_id);
   static string opcode_to_str(int);
+  static string swap_byte_to_str(int opcode, int imm);
   void print() const;
   vector<int> get_canonical_reg_list() const;
   static vector<int> get_isa_canonical_reg_list();
