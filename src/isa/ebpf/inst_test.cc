@@ -1398,7 +1398,7 @@ void test9() {
   print_test_res(is_equal, "tail call 1.3");
 }
 
-bool safety_check_of_ptr_to_ctx(inst* p, int len) {
+bool safety_check_is_illegal(inst* p, int len) {
   bool is_illegal = true;
   try {
     mem_t::_layout.clear();
@@ -1422,20 +1422,20 @@ void test10() {
   inst p1[2] = {inst(STB, 1, 0, 0xff),
                 inst(EXIT),
                };
-  bool is_illegal = safety_check_of_ptr_to_ctx(p1, 2);
+  bool is_illegal = safety_check_is_illegal(p1, 2);
   print_test_res(is_illegal, "1");
   inst p2[3] = {inst(MOV64XY, 0, 1),
                 inst(STB, 0, 0, 0xff),
                 inst(EXIT),
                };
-  is_illegal = safety_check_of_ptr_to_ctx(p2, 3);
+  is_illegal = safety_check_is_illegal(p2, 3);
   print_test_res(is_illegal, "2");
   inst p3[4] = {inst(MOV64XY, 0, 1),
                 inst(ADD64XC, 0, 6),
                 inst(STB, 0, 0, 0xff),
                 inst(EXIT),
                };
-  is_illegal = safety_check_of_ptr_to_ctx(p3, 4);
+  is_illegal = safety_check_is_illegal(p3, 4);
   print_test_res(is_illegal, "3");
   inst p4[5] = {inst(MOV64XY, 0, 1),
                 inst(ADD64XC, 0, 6),
@@ -1443,8 +1443,41 @@ void test10() {
                 inst(STXB, 0, 0, 3),
                 inst(EXIT),
                };
-  is_illegal = safety_check_of_ptr_to_ctx(p4, 5);
+  is_illegal = safety_check_is_illegal(p4, 5);
   print_test_res(!is_illegal, "4");
+
+  cout << "2. stack memory access should be aligned" << endl;
+  inst p2_1[3] = {inst(STXB, 10, -1, 1),
+                  inst(LDXB, 1, 10, -1),
+                  inst(EXIT),
+                 };
+  is_illegal = safety_check_is_illegal(p2_1, 3);
+  print_test_res(!is_illegal, "2.1");
+
+  inst p2_2[2] = {inst(STXH, 10, -3, 1),
+                  inst(EXIT),
+                 };
+  is_illegal = safety_check_is_illegal(p2_2, 2);
+  print_test_res(is_illegal, "2.2");
+
+  inst p2_3[2] = {inst(STXW, 10, -5, 1),
+                  inst(EXIT),
+                 };
+  is_illegal = safety_check_is_illegal(p2_3, 2);
+  print_test_res(is_illegal, "2.3");
+
+  inst p2_4[2] = {inst(STXDW, 10, -7, 1),
+                  inst(EXIT),
+                 };
+  is_illegal = safety_check_is_illegal(p2_4, 2);
+  print_test_res(is_illegal, "2.4");
+
+  inst p2_5[3] = {inst(STDW, 10, -16, 0), // pass read before write check
+                  inst(LDXW, 1, 10, -15),
+                  inst(EXIT),
+                 };
+  is_illegal = safety_check_is_illegal(p2_5, 3);
+  print_test_res(is_illegal, "2.5");
 }
 
 int main(int argc, char *argv[]) {

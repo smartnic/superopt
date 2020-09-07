@@ -1135,6 +1135,13 @@ void prog_state::memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes,
   } else {
     for (int i = 0; i < num_bytes; i++) _stack_readable[idx_s + i] = true;
   }
+  // stack address should be aligned
+  uint64_t stack_bottom = (uint64_t)_mem.get_stack_bottom_addr();
+  uint64_t remainder = (stack_bottom - addr) % num_bytes;
+  if (remainder != 0) {
+    string err_msg = "stack access is not aligned";
+    throw (err_msg);
+  }
 }
 
 int prog_state::get_reg_type(int reg) const {
