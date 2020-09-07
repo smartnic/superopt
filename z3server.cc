@@ -19,7 +19,8 @@ z3::context c;
 int read_problem_from_z3client();
 
 string run_solver(char* formula) {
-  z3::solver s(c);
+  z3::tactic t = z3::tactic(c, "bv");
+  z3::solver s = t.mk_solver();
   string res;
   s.from_string(formula);
   cout << "Checking... result:\n";

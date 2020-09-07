@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string>
 #include <cstring>
+#include "z3client.h"
 
 using namespace std;
 
@@ -16,6 +17,8 @@ using namespace std;
 
 #define PORT 8001
 
+z3::context c;
+
 string write_problem_to_z3server(string formula) {
   int sock = 0, nread, nchars, total_read;
   struct sockaddr_in serv_addr;
@@ -24,20 +27,20 @@ string write_problem_to_z3server(string formula) {
 
   if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     perror("z3client: socket creation failed");
-    return NULL;
+    return "";
   }
 
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_port = htons(PORT);
   if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
     perror("z3client: Invalid localhost network address");
-    return NULL;
+    return "";
   }
 
   if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr))
       < 0) {
     perror("z3client: connect() to z3server failed");
-    return NULL;
+    return "";
   }
 
   /* Send the formula to the server */
@@ -57,6 +60,27 @@ string write_problem_to_z3server(string formula) {
   if (total_read >= RESULT_SIZE_BYTES)
     cout << "Exhausted result read buffer\n";
   close(sock);
+
+  /* Initial attempt: If the formula is sat, construct a model */
+  z3::solver s(c);
+  z3::model mdl(c);
+  if (strncmp(res_buffer, "uns", 3) != 0 &&
+      strncmp(res_buffer, "unk", 3) != 0 &&
+      strncmp(res_buffer, "(", 1) == 0) {
+    s.from_string(res_buffer);
+    switch(s.check()) {
+      case z3::sat: {
+        mdl = s.get_model();
+        /* Unfortunately, this model doesn't correctly evaluate any of
+           the variables you would want it to evaluate. I'm still
+           investigating why I can't get this working. */
+        break;
+      }
+      default: {
+        cout << "Unexpected error; was expecting formula to be sat.";
+      }
+    }
+  }
 
   return string(res_buffer);
 }
