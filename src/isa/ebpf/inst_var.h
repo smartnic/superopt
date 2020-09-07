@@ -374,6 +374,12 @@ enum PGM_EXIT_TYPE {
   PGM_EXIT_TYPE_tail_call, // program exits because of a tail call
 };
 
+enum REG_TYPE {
+  SCALAR_VALUE = 0,
+  PTR_TO_CTX,
+  MAX_REG_TRYPE,
+};
+
 class prog_state: public prog_state_base {
  public:
   mem_t _mem;
@@ -381,6 +387,8 @@ class prog_state: public prog_state_base {
   // is readable or not.
   vector<bool> _reg_readable;
   vector<bool> _stack_readable;
+  // register type vector is used to track each register's type for safety check
+  vector<int> _reg_type;
   uint64_t _input_reg_val;
   // _tail_call_para: the third parameter of tail call function.
   // if program exits by a tail call, _tail_call_para is a in the output check
@@ -394,6 +402,8 @@ class prog_state: public prog_state_base {
   void reg_safety_chk(int reg_write, vector<int> reg_read_list = {});
   void memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes, bool chk_safety, bool is_read);
   void memory_access_chk(uint64_t addr, uint64_t num_bytes);
+  int get_reg_type(int reg) const;
+  void set_reg_type(int reg, int type);
   void init();
   void print() const;
   void clear();

@@ -1047,6 +1047,8 @@ void prog_state::init_safety_chk() {
   _reg_readable[1] = true; // r1 and r10 are in the program input
   _reg_readable[10] = true;
   _stack_readable.resize(STACK_SIZE, false);
+  _reg_type.resize(NUM_REGS, SCALAR_VALUE);
+  _reg_type[1] = PTR_TO_CTX; // r1 is input value
 }
 
 void prog_state::reg_safety_chk(int reg_write, vector<int> reg_read_list) {
@@ -1135,6 +1137,19 @@ void prog_state::memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes,
   }
 }
 
+int prog_state::get_reg_type(int reg) const {
+  bool legal = (reg >= 0) && (reg < NUM_REGS);
+  assert(legal);
+  return _reg_type[reg];
+}
+
+void prog_state::set_reg_type(int reg, int type) {
+  bool legal = (reg >= 0) && (reg < NUM_REGS) &&
+               (type >= SCALAR_VALUE) && (type < MAX_REG_TRYPE);
+  assert(legal);
+  _reg_type[reg] = type;
+}
+
 void prog_state::print() const {
   prog_state_base::print();
   cout << "Memory:" << endl;
@@ -1146,6 +1161,7 @@ void prog_state::clear() {
   _mem.clear();
   _reg_readable.clear();
   _stack_readable.clear();
+  _reg_type.clear();
   for (int i = 0; i < _randoms_u32.size(); i++) _randoms_u32[i] = 0;
   _cur_randoms_u32_idx = 0;
 }

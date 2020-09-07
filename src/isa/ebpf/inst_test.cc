@@ -1398,6 +1398,55 @@ void test9() {
   print_test_res(is_equal, "tail call 1.3");
 }
 
+bool safety_check_of_ptr_to_ctx(inst* p, int len) {
+  bool is_illegal = true;
+  try {
+    mem_t::_layout.clear();
+    mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    mem_t::set_pkt_sz(16); // pkt sz: 512 bytes
+    prog_state ps;
+    ps.init();
+    inout_t input, output;
+    input.init();
+    output.init();
+    interpret(output, p, len, ps, input);
+  } catch (string err_msg) {
+    return is_illegal;
+  }
+  return (! is_illegal);
+}
+
+void test10() {
+  cout << "Test 10: safety check" << endl;
+  cout << "1: safety check of BPF_ST storing in PTR_TO_CTX register" << endl;
+  inst p1[2] = {inst(STB, 1, 0, 0xff),
+                inst(EXIT),
+               };
+  bool is_illegal = safety_check_of_ptr_to_ctx(p1, 2);
+  print_test_res(is_illegal, "1");
+  inst p2[3] = {inst(MOV64XY, 0, 1),
+                inst(STB, 0, 0, 0xff),
+                inst(EXIT),
+               };
+  is_illegal = safety_check_of_ptr_to_ctx(p2, 3);
+  print_test_res(is_illegal, "2");
+  inst p3[4] = {inst(MOV64XY, 0, 1),
+                inst(ADD64XC, 0, 6),
+                inst(STB, 0, 0, 0xff),
+                inst(EXIT),
+               };
+  is_illegal = safety_check_of_ptr_to_ctx(p3, 4);
+  print_test_res(is_illegal, "3");
+  inst p4[5] = {inst(MOV64XY, 0, 1),
+                inst(ADD64XC, 0, 6),
+                inst(MOV64XC, 3, 0xff),
+                inst(STXB, 0, 0, 3),
+                inst(EXIT),
+               };
+  is_illegal = safety_check_of_ptr_to_ctx(p4, 5);
+  print_test_res(!is_illegal, "4");
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
@@ -1409,6 +1458,7 @@ int main(int argc, char *argv[]) {
     test7();
     test8();
     test9();
+    test10();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

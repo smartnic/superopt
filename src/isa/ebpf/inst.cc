@@ -974,11 +974,13 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
 #define CONT {                                                     \
       insn++;                                                      \
       if (insn < program + length) {                               \
+        safety_chk(*insn, ps);                                     \
         goto *jumptable[opcode_2_idx(insn->_opcode)];              \
       } else goto out;                                             \
   }
 
 select_insn:
+  safety_chk(*insn, ps);
   goto *jumptable[opcode_2_idx(insn->_opcode)];
 
 INSN_NOP:
@@ -1169,4 +1171,22 @@ error_label:
 out:
   update_output_by_ps(output, ps);
   return;
+}
+
+// 1. BPF_ST is illegal if src_reg type is PTR_TO_CTX
+void safety_chk(inst& insn, prog_state& ps) {
+  int op_class = BPF_CLASS(insn._opcode);
+  if (op_class == BPF_ST) {
+    int dst_reg_type = ps.get_reg_type(insn._dst_reg);
+    if (dst_reg_type == PTR_TO_CTX) {
+      string err_msg = "BPF_ST stores into PTR_TO_CTX reg is not allowed";
+      throw err_msg;
+    }
+  }
+  // update register type
+  if (insn._opcode == MOV64XY) {
+    ps.set_reg_type(insn._dst_reg, ps.get_reg_type(insn._src_reg));
+  } else if (insn._opcode != ADD64XC) { // ADD64XC won't change dst_reg type
+    ps.set_reg_type(insn._dst_reg, SCALAR_VALUE);
+  }
 }
