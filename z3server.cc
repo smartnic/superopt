@@ -21,6 +21,7 @@ int read_problem_from_z3client();
 string run_solver(char* formula) {
   z3::tactic t = z3::tactic(c, "bv");
   z3::solver s = t.mk_solver();
+  Z3_set_ast_print_mode(s.ctx(), Z3_PRINT_SMTLIB2_COMPLIANT);
   string res;
   s.from_string(formula);
   cout << "Checking... result:\n";
@@ -30,7 +31,10 @@ string run_solver(char* formula) {
       return "unsat";
     }
     case z3::sat: {
-      res = Z3_model_to_string(c, s.get_model());
+      ostringstream strm;
+      z3::model mdl = s.get_model();
+      strm << mdl;
+      res = strm.str();
       cout << res;
       return res;
     }
