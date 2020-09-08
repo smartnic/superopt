@@ -483,7 +483,7 @@ int32_t inst::get_max_operand_val(int op_index, int inst_index) const {
   int operand_type = OPTYPE(_opcode, op_index);
   switch (operand_type) {
     case OP_UNUSED: return 0;
-    case OP_DST_REG: return NUM_REGS - 1;
+    case OP_DST_REG: return NUM_REGS - 2; // r10 can not be modified, so r10 cannot be dst register
     case OP_SRC_REG: return NUM_REGS - 1;
     case OP_OFF: return get_max_off(inst_index);
     case OP_IMM: return get_max_imm();
