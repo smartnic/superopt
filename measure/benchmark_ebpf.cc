@@ -618,7 +618,7 @@ inst bm19[N19] = {inst(183, 0, 2, 0, 1),
                   inst(183, 0, 0, 0, 0),
                   inst(149, 0, 0, 0, 0),
                  };
-// cilium: bpf_network, section: from-network
+// cilium: bpf_network, section: from-network, flag: -O2
 inst bm20[N20] = {inst(180, 0, 2, 0, 0),
                   inst(99, 2, 1, 64, 0),
                   inst(183, 0, 2, 0, 0),
@@ -739,6 +739,51 @@ inst bm22[N22] = {inst(191, 1, 6, 0, 0),
                   inst(183, 0, 3, 0, 3),
                   inst(133, 0, 0, 0, 12),
                   inst(183, 0, 0, 0, 0),
+                  inst(149, 0, 0, 0, 0),
+                 };
+// cilium: bpf_network, section: from-network, flag: -O1
+inst bm23[N23] = {inst(180, 0, 2, 0, 0),
+                  inst(99, 2, 1, 64, 0),
+                  inst(183, 0, 2, 0, 0),
+                  inst(99, 2, 1, 60, 0),
+                  inst(99, 2, 1, 56, 0),
+                  inst(99, 2, 1, 52, 0),
+                  inst(99, 2, 1, 48, 0),
+                  inst(97, 1, 6, 0, 0),
+                  inst(123, 2, 10, -8, 0),
+                  inst(123, 2, 10, -16, 0),
+                  inst(123, 2, 10, -24, 0),
+                  inst(180, 0, 1, 0, 3),
+                  inst(115, 1, 10, -24, 0),
+                  inst(113, 10, 1, -23, 0),
+                  inst(84, 0, 1, 0, 252),
+                  inst(68, 0, 1, 0, 1),
+                  inst(115, 1, 10, -23, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -24),
+                  inst(24, 0, 1, 0, 0),
+                  inst(),
+                  inst(133, 0, 0, 0, 1),
+                  inst(21, 0, 0, 7, 0),
+                  inst(121, 0, 1, 0, 0),
+                  inst(7, 0, 1, 0, 1),
+                  inst(123, 1, 0, 0, 0),
+                  inst(121, 0, 1, 8, 0),
+                  inst(15, 6, 1, 0, 0),
+                  inst(123, 1, 0, 8, 0),
+                  inst(5, 0, 0, 11, 0),
+                  inst(183, 0, 1, 0, 1),
+                  inst(123, 1, 10, -16, 0),
+                  inst(123, 6, 10, -8, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -24),
+                  inst(191, 10, 3, 0, 0),
+                  inst(7, 0, 3, 0, -16),
+                  inst(24, 0, 1, 0, 0),
+                  inst(),
+                  inst(180, 0, 4, 0, 0),
+                  inst(133, 0, 0, 0, 2),
+                  inst(180, 0, 0, 0, 0),
                   inst(149, 0, 0, 0, 0),
                  };
 // Struct needs to be defined because the loader writes to
@@ -1048,6 +1093,13 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::set_pkt_sz(68);
       mem_t::add_map(map_attr(32, 32, 8));
       *bm = bm22;
+      break;
+    case 23:
+      inst::max_prog_len = N23;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(68);
+      mem_t::add_map(map_attr(64, 128, N20));
+      *bm = bm23;
       break;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
