@@ -44,7 +44,6 @@ string write_problem_to_z3server(string formula) {
   }
 
   /* Send the formula to the server */
-  cout << "Writing formula " <<  formula << endl;
   nchars = std::min(FORMULA_SIZE_BYTES, (int)formula.length());
   strncpy(form_buffer, formula.c_str(), nchars);
   form_buffer[nchars] = '\0';

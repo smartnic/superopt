@@ -24,10 +24,8 @@ string run_solver(char* formula) {
   Z3_set_ast_print_mode(s.ctx(), Z3_PRINT_SMTLIB2_COMPLIANT);
   string res;
   s.from_string(formula);
-  cout << "Checking... result:\n";
   switch (s.check()) {
     case z3::unsat: {
-      cout <<  "unsat\n";
       return "unsat";
     }
     case z3::sat: {
@@ -35,11 +33,9 @@ string run_solver(char* formula) {
       z3::model mdl = s.get_model();
       strm << mdl;
       res = strm.str();
-      cout << res;
       return res;
     }
     case z3::unknown: {
-      cout << "unknown\n";
       return "unknown";
     }
   }
@@ -100,7 +96,6 @@ int read_problem_from_z3client() {
 
     /* Send result. */
     send(acc_socket, res_buffer, nchars + 1, 0);
-    cout << "Result sent from server -> client: " << res_buffer << "\n";
     close(acc_socket);
   }
   return 0;
