@@ -61,26 +61,5 @@ string write_problem_to_z3server(string formula) {
     cout << "Exhausted result read buffer\n";
   close(sock);
 
-  /* Initial attempt: If the formula is sat, construct a model */
-  z3::solver s(c);
-  z3::model mdl(c);
-  if (strncmp(res_buffer, "uns", 3) != 0 &&
-      strncmp(res_buffer, "unk", 3) != 0 &&
-      strncmp(res_buffer, "(", 1) == 0) {
-    s.from_string(res_buffer);
-    switch(s.check()) {
-      case z3::sat: {
-        mdl = s.get_model();
-        /* Unfortunately, this model doesn't correctly evaluate any of
-           the variables you would want it to evaluate. I'm still
-           investigating why I can't get this working. */
-        break;
-      }
-      default: {
-        cout << "Unexpected error; was expecting formula to be sat.";
-      }
-    }
-  }
-
   return string(res_buffer);
 }

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <cstring>
 #include "validator.h"
 #include "z3client.h"
 
@@ -61,16 +62,23 @@ int validator::is_smt_valid(expr& smt, model& mdl) {
   solver s = t.mk_solver();
   s.add(!smt);
   string res = write_problem_to_z3server(s.to_smt2());
-  if (res != "") {
-    cout << "Result from z3 client: " << res << endl;
-  }
-  switch (s.check()) {
-    case unsat: return 1;
-    case sat: {
-      mdl = s.get_model();
-      return 0;
-    }
-    case unknown: return -1;
+  if (res.compare("unsat") == 0)
+    return 1;
+  else if (res.compare("unknown") == 0)
+    return -1;
+  else if (res.compare(0, 1, "(") == 0) {
+    /* We've received a serialized version of a Z3 model. Extract a
+     * model object from this. */
+    solver s1(smt_c);
+    s1.from_string(res.c_str());
+    auto is_sat = s1.check();
+    assert (is_sat == z3::sat);
+    mdl = s1.get_model();
+    return 0;
+  } else {
+    cout << "z3 solver client received unexpected output: '"
+         << res << "'\n";
+    return -1;
   }
 }
 
