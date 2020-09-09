@@ -43,6 +43,7 @@ string run_solver(char* formula) {
 
 int read_problem_from_z3client() {
   int server_fd, acc_socket, nread, total_read, nchars;
+  int opt = 1;
   struct sockaddr_in address;
   int addrlen = sizeof(address);
   char buffer[FORMULA_SIZE_BYTES+1] = {0};
@@ -53,6 +54,13 @@ int read_problem_from_z3client() {
     perror("z3server: socket creation failed");
     exit(EXIT_FAILURE);
   }
+
+  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEPORT,
+                 (char*)&opt, sizeof(opt)) < 0) {
+    perror("z3server: setsockopt to reuse addr/port failed");
+    exit(EXIT_FAILURE);
+  }
+
   address.sin_family = AF_INET; 
   address.sin_addr.s_addr = INADDR_ANY;
   address.sin_port = htons(PORT);
