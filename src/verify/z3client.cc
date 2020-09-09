@@ -49,7 +49,7 @@ string write_problem_to_z3server(string formula) {
   int sock = 0, nread, nchars, total_read;
   struct sockaddr_in serv_addr;
 
-  cout << "z3client: Received a formula to solve\n";
+  // cout << "z3client: Received a formula to solve\n";
 
   /* check if server process exists currently; if not, spawn it. */
   bool no_child_now = child_pid <= 0;

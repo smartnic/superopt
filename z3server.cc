@@ -97,7 +97,7 @@ int read_problem_from_z3client() {
              total_read < FORMULA_SIZE_BYTES);
     if (total_read >= FORMULA_SIZE_BYTES)
       cout << "Exhausted formula read buffer\n";
-    cout << "Formula from client:\n" << buffer << endl;
+    // cout << "Formula from client:\n" << buffer << endl;
 
     /* Run the solver. */
     result = run_solver(buffer);
