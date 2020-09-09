@@ -85,14 +85,14 @@ string write_problem_to_z3server(string formula) {
   }
 
   /* Send the formula to the server */
-  cout << "z3client: Sending formula to server...\n";
+  // cout << "z3client: Sending formula to server...\n";
   nchars = std::min(FORMULA_SIZE_BYTES, (int)formula.length());
   strncpy(form_buffer, formula.c_str(), nchars);
   form_buffer[nchars] = '\0';
   send(sock, form_buffer, nchars + 1, 0);
 
   /* Read back solver results. */
-  cout << "z3client: Waiting for solver results from server...\n";
+  // cout << "z3client: Waiting for solver results from server...\n";
   total_read = 0;
   do {
     nread = read(sock, res_buffer + total_read, RESULT_SIZE_BYTES - total_read);

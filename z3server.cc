@@ -28,7 +28,7 @@ string run_solver(char* formula) {
   Z3_set_ast_print_mode(s.ctx(), Z3_PRINT_SMTLIB2_COMPLIANT);
   string res;
   s.from_string(formula);
-  cout << "Running the solver..." << endl;
+  // cout << "Running the solver..." << endl;
   switch (s.check()) {
     case z3::unsat: {
       return "unsat";
@@ -87,7 +87,7 @@ int read_problem_from_z3client() {
       exit(EXIT_FAILURE);
     }
 
-    cout << "Received a new connection. Reading formula...\n";
+    // cout << "Received a new connection. Reading formula...\n";
     /* Read the full formula into buffer. */
     total_read = 0;
     do {
