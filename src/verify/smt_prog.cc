@@ -43,12 +43,17 @@ smt_prog::smt_prog() {}
 smt_prog::~smt_prog() {}
 
 // assume Block has no branch and is an ordered sequence of instructions
-void smt_prog::smt_block(expr& smt_b, inst* program, int start, int end, smt_var& sv, size_t cur_bid) {
+void smt_prog::smt_block(expr& smt_b, expr& smt_sc,
+                         inst* program, int start, int end, smt_var& sv, size_t cur_bid) {
   expr p = string_to_expr("true");
+  smt_sc = Z3_true;
   for (size_t i = start; i <= end; i++) {
     int op_type = program[i].get_opcode_type();
     if ((op_type == OP_OTHERS) || (op_type == OP_LD) ||
         (op_type == OP_ST) || (op_type == OP_CALL)) {
+      // call smt_inst_safety_chk() first, this function does not update the register expression version
+      // while smt_inst() will update
+      smt_sc = smt_sc && program[i].smt_inst_safety_chk(sv);
       p = p && program[i].smt_inst(sv, cur_bid);
     }
   }
@@ -106,14 +111,15 @@ void smt_prog::topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vecto
 }
 
 // may need to modify
-void smt_prog::gen_block_prog_logic(expr& e, expr& f_mem, smt_var& sv, size_t cur_bid, inst* inst_lst) {
+void smt_prog::gen_block_prog_logic(expr& e, expr& f_mem, expr& f_sc,
+                                    smt_var& sv, size_t cur_bid, inst* inst_lst) {
   // b_pc: basic block path condition,
   // don't care about the default value, gen_block_c_in will reset b_pc
   expr b_pc = Z3_false;
   gen_block_c_in(b_pc, cur_bid);
   smt_var_bl sv_bl;
   sv_bl.store_state_before_smt_block(sv);
-  smt_block(e, inst_lst, g.nodes[cur_bid]._start, g.nodes[cur_bid]._end, sv, cur_bid);
+  smt_block(e, f_sc, inst_lst, g.nodes[cur_bid]._start, g.nodes[cur_bid]._end, sv, cur_bid);
   f_mem = sv_bl.gen_smt_after_smt_block(sv, b_pc);
   bl[cur_bid] = e; // store
 }
@@ -196,37 +202,6 @@ void smt_prog::get_init_val(expr& f_iv, smt_var& sv, size_t in_bid, unsigned int
   f_iv = e;
 }
 
-// TODO: needed to be generalized
-// for each return value v, smt: v == output[prog_id]
-expr smt_prog::smt_end_block_inst(size_t cur_bid, inst& inst_end, unsigned int prog_id) {
-  switch (inst_end.inst_output_opcode_type()) {
-    case RET_X:
-      return (string_to_expr("output" + to_string(prog_id)) == post_reg_val[cur_bid][inst_end.inst_output()]);
-    case RET_C:
-      return (string_to_expr("output" + to_string(prog_id)) == inst_end.inst_output());
-    default:
-      return string_to_expr("false");
-  }
-}
-
-// Set f_p_output to capture the output of the program (from return instructions/default register)
-// in the variable output[prog_id]
-void smt_prog::process_output(expr& f_p_output, inst* inst_lst, unsigned int prog_id) {
-  expr e = string_to_expr("true");
-  // search all basic blocks for the basic blocks without outgoing edges
-  for (size_t i = 0; i < g.nodes.size(); i++) {
-    if (g.nodes_out[i].size() != 0) continue;
-    // process END instruction
-    expr c_in = string_to_expr("true");
-    gen_block_c_in(c_in, i);
-    expr e1 = smt_end_block_inst(i, inst_lst[g.nodes[i]._end], prog_id);
-    expr e2 = implies(c_in.simplify(), e1);
-    e = e && e2;
-    post[i] = e2; // store
-  }
-  f_p_output = e;
-}
-
 void smt_prog::init_pgm_dag(unsigned int root_node) {
   sv.pgm_dag.init(g.nodes.size(), root_node);
   for (int i = 0; i < g.nodes.size(); i++) {
@@ -262,6 +237,7 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   // f_block[b](in_path) = implies(path_con[b](in_path), f_iv[b](in_b) && f_bl[b](in_path))
   vector<expr> f_block;
   f_block.resize(g.nodes.size(), string_to_expr("true"));
+  p_sc = Z3_true;
   sv.init(prog_id, blocks[0], num_regs, g.nodes.size());
   // process each basic block in order
   for (size_t i = 0; i < blocks.size(); i++) {
@@ -274,7 +250,11 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
     // f_mem: the constrains on whether variables in memory tables are valid or not
     // because of basic block path condition
     expr f_mem = Z3_true;
-    gen_block_prog_logic(f_bl, f_mem, sv, b, inst_lst);
+    // f_sc: constraints of safty check
+    expr f_sc = Z3_true;
+    // f_block_pc: constraints of block's path condition
+    expr f_block_pc = Z3_true;
+    gen_block_prog_logic(f_bl, f_mem, f_sc, sv, b, inst_lst);
     f_block[b] = f_block[b] && f_mem;
     if (b == 0) {
       // basic block 0 does not have pre path condition
@@ -288,8 +268,10 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
         reg_iv[b][j] = f_iv; // store
         // f_block[b] = f_block[b] && f_mem && implies(path_con[b][j], f_iv && f_bl);
         f_block[b] = f_block[b] && implies(path_con[b][j], f_iv && f_bl);
+        f_block_pc = f_block_pc || path_con[b][j];
       }
     }
+    p_sc = p_sc && implies(f_block_pc, f_sc);
     // store post iv for current basic block b
     store_post_reg_val(sv, b, num_regs);
     // update post path condtions "path_con" created by current basic block b

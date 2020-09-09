@@ -1037,6 +1037,25 @@ void test9() {
   print_test_res(vld.is_equal_to(p1, 5, p1, 5) == 1, "1.1");
 }
 
+void test10() {
+  std::cout << "test 10: test safety check" << endl;
+  std::cout << "1. stack aligned check" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(16);
+  smt_var::init_static_variables();
+  inst p1[2] = {inst(STDW, 10, -15, 1),
+                inst(EXIT),
+               };
+  validator vld(p1, 2);
+  print_test_res(vld.is_equal_to(p1, 2, p1, 2) == ILLEGAL_CEX, "1.1");
+  inst p2[2] = {inst(STDW, 10, -16, 1),
+                inst(EXIT),
+               };
+  vld.set_orig(p2, 2);
+  print_test_res(vld.is_equal_to(p2, 2, p2, 2) != ILLEGAL_CEX, "1.2");  
+}
+
 int main() {
   try {
     test1();
@@ -1048,6 +1067,7 @@ int main() {
     test7();
     test8();
     test9();
+    test10();
   } catch (const string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

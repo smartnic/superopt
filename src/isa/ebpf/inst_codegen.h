@@ -441,3 +441,8 @@ string ld_n_bytes_from_addr(const uint8_t *v, const size_t s);
 
 void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
                        vector<pair<uint64_t, uint8_t>>& mem_addr_val);
+
+// safety check related APIs
+z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv);
+z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv);
+z3::expr safety_chk_st(z3::expr addr, z3::expr off, int size, smt_var& sv);
