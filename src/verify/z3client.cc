@@ -16,8 +16,8 @@ using namespace std;
 
 #define FORMULA_SHM_KEY 224
 #define RESULTS_SHM_KEY 46
-#define FORMULA_SIZE_BYTES 65535
-#define RESULT_SIZE_BYTES 65535
+#define FORMULA_SIZE_BYTES (1 << 22)
+#define RESULT_SIZE_BYTES (1 << 22)
 #define SOLVER_RESPAWN_THRESOLD 1000
 
 #define PORT 8001
@@ -26,6 +26,9 @@ z3::context c;
 pid_t child_pid = -1;
 pid_t pid;
 int nsolve = 0;
+
+char form_buffer[FORMULA_SIZE_BYTES+1] = {0};
+char res_buffer[RESULT_SIZE_BYTES+1] = {0};
 
 int spawn_server() {
   pid = fork();
@@ -45,8 +48,6 @@ int spawn_server() {
 string write_problem_to_z3server(string formula) {
   int sock = 0, nread, nchars, total_read;
   struct sockaddr_in serv_addr;
-  char form_buffer[FORMULA_SIZE_BYTES+1] = {0};
-  char res_buffer[RESULT_SIZE_BYTES+1] = {0};
 
   cout << "z3client: Received a formula to solve\n";
 
