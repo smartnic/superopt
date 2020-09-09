@@ -1478,6 +1478,14 @@ void test10() {
                  };
   is_illegal = safety_check_is_illegal(p2_5, 3);
   print_test_res(is_illegal, "2.5");
+
+  inst p2_6[4] = {inst(MOV64XC, 0, 0),
+                  inst(STXDW, 1, 0, 0),
+                  inst(STDW, 1, 0, 0),
+                  inst(EXIT),
+                 };
+  is_illegal = safety_check_is_illegal(p2_6, 4);
+  print_test_res(is_illegal, "2.6");
 }
 
 int main(int argc, char *argv[]) {
