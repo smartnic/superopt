@@ -1186,7 +1186,11 @@ void safety_chk(inst& insn, prog_state& ps) {
   // update register type
   if (insn._opcode == MOV64XY) {
     ps.set_reg_type(insn._dst_reg, ps.get_reg_type(insn._src_reg));
-  } else if (insn._opcode != ADD64XC) { // ADD64XC won't change dst_reg type
+  } else if ((insn._opcode != ADD64XC) && // ADD64XC won't change dst_reg type
+             (op_class != BPF_STX) &&
+             (op_class != BPF_ST) &&
+             (op_class != BPF_JMP) &&
+             (op_class != BPF_JMP32)) {
     ps.set_reg_type(insn._dst_reg, SCALAR_VALUE);
   }
 }
