@@ -19,8 +19,8 @@ using namespace std;
 z3::context c;
 int read_problem_from_z3client();
 
-char buffer[FORMULA_SIZE_BYTES+1] = {0};
-char res_buffer[RESULT_SIZE_BYTES+1]  = {0};
+char buffer[FORMULA_SIZE_BYTES + 1] = {0};
+char res_buffer[RESULT_SIZE_BYTES + 1]  = {0};
 
 string run_solver(char* formula) {
   z3::tactic t = z3::tactic(c, "bv");
@@ -64,12 +64,12 @@ int read_problem_from_z3client() {
     exit(EXIT_FAILURE);
   }
 
-  address.sin_family = AF_INET; 
+  address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
   address.sin_port = htons(PORT);
 
   if (::bind(server_fd, (struct sockaddr *)&address,
-           sizeof(address)) < 0) {
+             sizeof(address)) < 0) {
     perror("z3server: socket bind to local address/port failed");
     exit(EXIT_FAILURE);
   }
@@ -81,7 +81,7 @@ int read_problem_from_z3client() {
 
   /* Main server + solver loop */
   while ((acc_socket = accept(server_fd, (struct sockaddr *)&address,
-                           (socklen_t*)&addrlen)) ) {
+                              (socklen_t*)&addrlen)) ) {
     if (acc_socket < 0) {
       perror("z3server: failed to accept incoming connection");
       exit(EXIT_FAILURE);
