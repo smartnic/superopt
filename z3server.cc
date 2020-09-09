@@ -4,12 +4,13 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/socket.h>
+#include <string.h>
 #include "z3++.h"
 
 #define FORMULA_SHM_KEY 224
 #define RESULTS_SHM_KEY 46
 #define FORMULA_SIZE_BYTES 65535
-#define RESULT_SIZE_BYTES  65535
+#define RESULT_SIZE_BYTES 65535
 
 #define PORT 8001
 
@@ -24,6 +25,7 @@ string run_solver(char* formula) {
   Z3_set_ast_print_mode(s.ctx(), Z3_PRINT_SMTLIB2_COMPLIANT);
   string res;
   s.from_string(formula);
+  cout << "Running the solver..." << endl;
   switch (s.check()) {
     case z3::unsat: {
       return "unsat";
@@ -91,7 +93,7 @@ int read_problem_from_z3client() {
       nread = read(acc_socket, buffer + total_read, FORMULA_SIZE_BYTES - total_read);
       total_read += nread;
     } while (buffer[total_read - 1] != '\0' &&
-             total_read <= FORMULA_SIZE_BYTES);
+             total_read < FORMULA_SIZE_BYTES);
     if (total_read >= FORMULA_SIZE_BYTES)
       cout << "Exhausted formula read buffer\n";
     cout << "Formula from client:\n" << buffer << endl;
