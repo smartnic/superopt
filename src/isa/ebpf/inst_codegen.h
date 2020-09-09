@@ -94,10 +94,10 @@ inline z3::expr predicate_rsh32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
 // (write addr+off, sz, in, m); type: in, addr, off: bv64;
-inline z3::expr predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
-inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
-inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
-inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
+inline z3::expr predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false);
+inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false);
+inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false);
+inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false);
 // out == (read addr+off, sz, m); type: addr, off, out: bv64;
 inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
@@ -389,25 +389,30 @@ COMPUTE_XADD(32, uint32_t)
 COMPUTE_XADD(64, uint64_t)
 
 // implemented in inst_codegen.cc, where addr is a reg experssion
-z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv, unsigned int block = 0, z3::expr cond = Z3_true);
+z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
+                           unsigned int block = 0, z3::expr cond = Z3_true, bool bpf_st = false);
 
-inline z3::expr predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv, unsigned int block) {
-  return predicate_st_byte(in.extract(7, 0), addr, off, sv, block);
+inline z3::expr predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
+                              unsigned int block, bool bpf_st) {
+  return predicate_st_byte(in.extract(7, 0), addr, off, sv, block, Z3_true, bpf_st);
 }
 
-inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv, unsigned int block) {
-  return (predicate_st8(in.extract(7, 0), addr, off, sv, block) &&
-          predicate_st8(in.extract(15, 8), addr, off + to_expr(1, 64), sv, block));
+inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
+                               unsigned int block, bool bpf_st) {
+  return (predicate_st8(in.extract(7, 0), addr, off, sv, block, bpf_st) &&
+          predicate_st8(in.extract(15, 8), addr, off + to_expr(1, 64), sv, block, bpf_st));
 }
 
-inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv, unsigned int block) {
-  return (predicate_st16(in.extract(15, 0), addr, off, sv, block) &&
-          predicate_st16(in.extract(31, 16), addr, off + to_expr(2, 64), sv, block));
+inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
+                               unsigned int block, bool bpf_st) {
+  return (predicate_st16(in.extract(15, 0), addr, off, sv, block, bpf_st) &&
+          predicate_st16(in.extract(31, 16), addr, off + to_expr(2, 64), sv, block, bpf_st));
 }
 
-inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv, unsigned int block) {
-  return (predicate_st32(in.extract(31, 0), addr, off, sv, block) &&
-          predicate_st32(in.extract(63, 32), addr, off + to_expr(4, 64), sv, block));
+inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
+                               unsigned int block, bool bpf_st) {
+  return (predicate_st32(in.extract(31, 0), addr, off, sv, block, bpf_st) &&
+          predicate_st32(in.extract(63, 32), addr, off + to_expr(4, 64), sv, block, bpf_st));
 }
 
 // implemented in inst_codegen.cc

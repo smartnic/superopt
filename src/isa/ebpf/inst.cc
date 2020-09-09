@@ -665,14 +665,14 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, block);
     case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, block);
     case LDXDW: return predicate_ld64(CURSRC, OFF, sv, NEWDST, block);
-    case STXB: return predicate_st8(CURSRC, CURDST, OFF, sv, block);
-    case STXH: return predicate_st16(CURSRC, CURDST, OFF, sv, block);
-    case STXW: return predicate_st32(CURSRC, CURDST, OFF, sv, block);
-    case STXDW: return predicate_st64(CURSRC, CURDST, OFF, sv, block);
-    case STB: return predicate_st8(IMM, CURDST, OFF, sv, block);
-    case STH: return predicate_st16(IMM, CURDST, OFF, sv, block);
-    case STW: return predicate_st32(IMM, CURDST, OFF, sv, block);
-    case STDW: return predicate_st64(IMM, CURDST, OFF, sv, block);
+    case STXB: return predicate_st8(CURSRC, CURDST, OFF, sv, block, false); // bpf_st = false
+    case STXH: return predicate_st16(CURSRC, CURDST, OFF, sv, block, false);
+    case STXW: return predicate_st32(CURSRC, CURDST, OFF, sv, block, false);
+    case STXDW: return predicate_st64(CURSRC, CURDST, OFF, sv, block, false);
+    case STB: return predicate_st8(IMM, CURDST, OFF, sv, block, true); // bpf_st = true
+    case STH: return predicate_st16(IMM, CURDST, OFF, sv, block, true);
+    case STW: return predicate_st32(IMM, CURDST, OFF, sv, block, true);
+    case STDW: return predicate_st64(IMM, CURDST, OFF, sv, block, true);
     case XADD64: return predicate_xadd64(CURSRC, CURDST, OFF, sv, block);
     case XADD32: return predicate_xadd32(CURSRC, CURDST, OFF, sv, block);
     case LDABSH: return predicate_ldskbh(IMM, sv, R0, block);

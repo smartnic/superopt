@@ -168,7 +168,8 @@ z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, 
           predicate_ld_byte(addr, off + 3, sv, out.extract(31, 24), block));
 }
 
-z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block, z3::expr cond) {
+z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
+                           unsigned int block, z3::expr cond, bool bpf_st) {
   z3::expr path_cond = sv.mem_var.get_block_path_cond(block) && cond;
   z3::expr f = Z3_true;
   vector<int> ids;
@@ -183,6 +184,20 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
     z3::expr is_valid = sv.update_is_valid();
     z3::expr cond = path_cond && info_list[i].path_cond;
     f = f && (is_valid == cond);
+    // safety check of BPF_ST storing in the input memory is not allowed
+    if (bpf_st) {
+      bool is_input_mem_table = false;
+      int input_mem_table = MEM_TABLE_pkt;
+      if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
+        is_input_mem_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs));
+      } else {
+        is_input_mem_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt));
+      }
+      if (is_input_mem_table) {
+        string err_msg = "BPF_ST stores into PTR_TO_CTX reg is not allowed";
+        throw (err_msg);
+      }
+    }
     bool is_addr_off_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
                              (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
                              (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs)) ||
@@ -333,7 +348,8 @@ z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
   z3::expr f = predicate_ld64(addr, off, sv, v64_1, block);
   z3::expr v64_2 = sv.new_var(64);
   f = f && (v64_2 == (v64_1 + in));
-  f = f && predicate_st64(v64_2, addr, off, sv, block);
+  bool bpf_st = false; // xadd64 opcode is not BPF_ST
+  f = f && predicate_st64(v64_2, addr, off, sv, block, bpf_st);
   return f;
 }
 
@@ -342,7 +358,8 @@ z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
   z3::expr f = predicate_ld32(addr, off, sv, v64_1, block);
   z3::expr v64_2 = sv.new_var(64);
   f = f && (v64_2 == (v64_1 + in));
-  f = f && predicate_st32(v64_2, addr, off, sv, block);
+  bool bpf_st = false; // xadd32 opcode is not BPF_ST
+  f = f && predicate_st32(v64_2, addr, off, sv, block, bpf_st);
   return f;
 }
 
