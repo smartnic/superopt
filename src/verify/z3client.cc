@@ -27,8 +27,8 @@ pid_t child_pid = -1;
 pid_t pid;
 int nsolve = 0;
 
-char form_buffer[FORMULA_SIZE_BYTES+1] = {0};
-char res_buffer[RESULT_SIZE_BYTES+1] = {0};
+char form_buffer[FORMULA_SIZE_BYTES + 1] = {0};
+char res_buffer[RESULT_SIZE_BYTES + 1] = {0};
 
 int spawn_server() {
   pid = fork();
@@ -54,7 +54,7 @@ string write_problem_to_z3server(string formula) {
   /* check if server process exists currently; if not, spawn it. */
   bool no_child_now = child_pid <= 0;
   bool time_to_respawn = (! no_child_now) &&
-      nsolve > 0 && nsolve % SOLVER_RESPAWN_THRESOLD == 0;
+                         nsolve > 0 && nsolve % SOLVER_RESPAWN_THRESOLD == 0;
   if (no_child_now || time_to_respawn) {
     if (time_to_respawn) /* kill the existing server. */
       kill(child_pid, SIGKILL);
@@ -73,7 +73,7 @@ string write_problem_to_z3server(string formula) {
 
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_port = htons(PORT);
-  if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+  if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
     perror("z3client: Invalid localhost network address");
     return "";
   }
