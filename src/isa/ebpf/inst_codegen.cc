@@ -1352,3 +1352,59 @@ void counterex_2_input_mem(inout_t& input, z3::model& mdl,
   // update sv1[sv1_id] finally, the same update before will be overwritten
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
 }
+
+// safety check related functions
+z3::expr stack_safety_chk(z3::expr addr_off, int size, smt_var& sv) {
+  // check if addr is a stack pointer, if so, addr_off should be aligned
+  // srem: signed remainder operator for bitvectors
+  z3::expr f = (z3::srem(addr_off, size) == 0);
+  return f;
+}
+
+z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv) {
+  z3::expr f = Z3_true;
+  vector<int> ids;
+  vector<mem_ptr_info> info_list;
+  sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
+  if (ids.size() == 0) {string s = "error!!!"; throw (s); return Z3_true;} // todo: addr is not a pointer
+  for (int i = 0; i < ids.size(); i++) {
+    if (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
+      z3::expr addr_off = off + info_list[i].off;
+      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
+      f = f && z3::implies(info_list[i].path_cond, stack_chk);
+    }
+  }
+  return f;
+}
+
+z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv) {
+  z3::expr f = Z3_true;
+  vector<int> ids;
+  vector<mem_ptr_info> info_list;
+  sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
+  if (ids.size() == 0) {string s = "error!!!"; throw (s); return Z3_true;} // todo: addr is not a pointer
+  for (int i = 0; i < ids.size(); i++) {
+    if (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
+      z3::expr addr_off = off + info_list[i].off;
+      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
+      f = f && z3::implies(info_list[i].path_cond, stack_chk);
+    }
+  }
+  return f;
+}
+
+z3::expr safety_chk_st(z3::expr addr, z3::expr off, int size, smt_var& sv) {
+  z3::expr f = Z3_true;
+  vector<int> ids;
+  vector<mem_ptr_info> info_list;
+  sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
+  if (ids.size() == 0) {string s = "error!!!"; throw (s); return Z3_true;} // todo: addr is not a pointer
+  for (int i = 0; i < ids.size(); i++) {
+    if (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
+      z3::expr addr_off = off + info_list[i].off;
+      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
+      f = f && z3::implies(info_list[i].path_cond, stack_chk);
+    }
+  }
+  return f;
+}

@@ -10,6 +10,8 @@ using namespace z3;
 extern int n_solve;
 extern int n_is_equal_to;
 
+#define ILLEGAL_CEX -2  // program is illegal and has a counterexample
+
 /* Validator algorithm document: https://github.com/ngsrinivas/superopt/tree/master/doc */
 
 /* Class validator supports two functions now: equivalence check and output computation.

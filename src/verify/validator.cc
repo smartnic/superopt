@@ -141,6 +141,13 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     // cerr << err_msg << endl;
     return -1;
   }
+  expr smt_safety_chk = implies(pre_synth && pl_synth, ps_synth.p_sc);
+  model mdl_sc(smt_c);
+  int is_safe = is_smt_valid(smt_safety_chk, mdl_sc);
+  if (is_safe == 0) {
+    // gen_counterex(orig, length_orig, mdl_sc, post_sv_synth);
+    return ILLEGAL_CEX;
+  }
   n_solve++;
   smt_var post_sv_synth = ps_synth.sv;
   expr pre_mem_same_mem = smt_pgm_set_same_input(_post_sv_orig, post_sv_synth);
