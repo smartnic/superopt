@@ -765,9 +765,10 @@ void test5() { // test pkt
   vld.set_orig(p4, 6);
   print_test_res(vld.is_equal_to(p4, 6, p4, 6) == 1, "7");
 
-  inst p5[10] = {inst(MOV64XC, 0, 0),
+  inst p5[11] = {inst(MOV64XC, 0, 0),
                  inst(STB, 10, -1, 1),
-                 inst(STB, 1, 1, 2),
+                 inst(MOV64XC, 5, 2),
+                 inst(STXB, 1, 1, 5),
                  inst(MOV64XY, 2, 10),
                  inst(ADD64XC, 2, -1),
                  inst(JGTXY, 10, 0, 2),
@@ -776,29 +777,32 @@ void test5() { // test pkt
                  inst(LDXB, 0, 2, 0),
                  inst(EXIT),
                 };
-  inst p6[6] = {inst(MOV64XC, 0, 0),
-                inst(STB, 1, 1, 2),
+  inst p6[7] = {inst(MOV64XC, 0, 0),
+                inst(MOV64XC, 5, 2),
+                inst(STXB, 1, 1, 5),
                 inst(MOV64XC, 0, 1),
                 inst(JGTXY, 10, 0, 1),
                 inst(MOV64XC, 1, 2),
                 inst(EXIT),
                };
-  vld.set_orig(p5, 10);
-  print_test_res(vld.is_equal_to(p5, 10, p5, 10) == 1, "8");
-  print_test_res(vld.is_equal_to(p5, 10, p6, 6) == 1, "9");
+  vld.set_orig(p5, 11);
+  print_test_res(vld.is_equal_to(p5, 11, p5, 11) == 1, "8");
+  print_test_res(vld.is_equal_to(p5, 11, p6, 7) == 1, "9");
 
   // test address track of addxy
-  inst p7[4] = {inst(MOV64XC, 0, 0),
+  inst p7[5] = {inst(MOV64XC, 0, 0),
                 inst(ADD64XC, 1, 1),
-                inst(STB, 1, 0, 0xff),
+                inst(MOV64XC, 5, 0xff),
+                inst(STXB, 1, 0, 5),
                 inst(EXIT),
                };
-  inst p8[3] = {inst(MOV64XC, 0, 0),
-                inst(STB, 1, 1, 0xff),
+  inst p8[4] = {inst(MOV64XC, 0, 0),
+                inst(MOV64XC, 5, 0xff),
+                inst(STXB, 1, 1, 5),
                 inst(EXIT),
                };
-  vld.set_orig(p7, 3);
-  print_test_res(vld.is_equal_to(p7, 4, p8, 3) == 1, "9");
+  vld.set_orig(p7, 5);
+  print_test_res(vld.is_equal_to(p7, 5, p8, 4) == 1, "9");
 }
 
 void test6() {
