@@ -9,8 +9,8 @@
 
 #define FORMULA_SHM_KEY 224
 #define RESULTS_SHM_KEY 46
-#define FORMULA_SIZE_BYTES 65535
-#define RESULT_SIZE_BYTES 65535
+#define FORMULA_SIZE_BYTES (1 << 22)
+#define RESULT_SIZE_BYTES (1 << 22)
 
 #define PORT 8001
 
@@ -18,6 +18,9 @@ using namespace std;
 
 z3::context c;
 int read_problem_from_z3client();
+
+char buffer[FORMULA_SIZE_BYTES+1] = {0};
+char res_buffer[RESULT_SIZE_BYTES+1]  = {0};
 
 string run_solver(char* formula) {
   z3::tactic t = z3::tactic(c, "bv");
@@ -48,8 +51,6 @@ int read_problem_from_z3client() {
   int opt = 1;
   struct sockaddr_in address;
   int addrlen = sizeof(address);
-  char buffer[FORMULA_SIZE_BYTES+1] = {0};
-  char res_buffer[RESULT_SIZE_BYTES+1]  = {0};
   string result;
 
   if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
