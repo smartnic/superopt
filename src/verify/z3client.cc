@@ -48,6 +48,8 @@ string write_problem_to_z3server(string formula) {
   char form_buffer[FORMULA_SIZE_BYTES+1] = {0};
   char res_buffer[RESULT_SIZE_BYTES+1] = {0};
 
+  cout << "z3client: Received a formula to solve\n";
+
   /* check if server process exists currently; if not, spawn it. */
   bool no_child_now = child_pid <= 0;
   bool time_to_respawn = (! no_child_now) &&
@@ -82,18 +84,20 @@ string write_problem_to_z3server(string formula) {
   }
 
   /* Send the formula to the server */
+  cout << "z3client: Sending formula to server...\n";
   nchars = std::min(FORMULA_SIZE_BYTES, (int)formula.length());
   strncpy(form_buffer, formula.c_str(), nchars);
   form_buffer[nchars] = '\0';
   send(sock, form_buffer, nchars + 1, 0);
 
   /* Read back solver results. */
+  cout << "z3client: Waiting for solver results from server...\n";
   total_read = 0;
   do {
     nread = read(sock, res_buffer + total_read, RESULT_SIZE_BYTES - total_read);
     total_read += nread;
   } while (res_buffer[total_read - 1] != '\0' &&
-           total_read <= RESULT_SIZE_BYTES);
+           total_read < RESULT_SIZE_BYTES);
   if (total_read >= RESULT_SIZE_BYTES)
     cout << "Exhausted result read buffer\n";
   close(sock);
