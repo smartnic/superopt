@@ -1115,7 +1115,7 @@ void prog_state::memory_access_chk(uint64_t addr, uint64_t num_bytes) {
 // memory_access_and_safety_chk is used to
 // 1. avoid segmentation fault: If memory access not in the legal range, throw error
 // 2. stack read before write check
-void prog_state::memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes, bool chk_safety, bool is_read) {
+void prog_state::memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes, bool chk_safety, bool is_read, bool stack_aligned_chk) {
   memory_access_chk(addr, num_bytes);
   if (! chk_safety) return;
   // stack read before write check
@@ -1135,12 +1135,14 @@ void prog_state::memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes,
   } else {
     for (int i = 0; i < num_bytes; i++) _stack_readable[idx_s + i] = true;
   }
-  // stack address should be aligned
-  uint64_t stack_bottom = (uint64_t)_mem.get_stack_bottom_addr();
-  uint64_t remainder = (stack_bottom - addr) % num_bytes;
-  if (remainder != 0) {
-    string err_msg = "stack access is not aligned";
-    throw (err_msg);
+  if (stack_aligned_chk) {
+    // stack address should be aligned
+    uint64_t stack_bottom = (uint64_t)_mem.get_stack_bottom_addr();
+    uint64_t remainder = (stack_bottom - addr) % num_bytes;
+    if (remainder != 0) {
+      string err_msg = "stack access is not aligned";
+      throw (err_msg);
+    }
   }
 }
 

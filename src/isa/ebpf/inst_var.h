@@ -400,7 +400,7 @@ class prog_state: public prog_state_base {
   prog_state();
   void init_safety_chk();
   void reg_safety_chk(int reg_write, vector<int> reg_read_list = {});
-  void memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes, bool chk_safety, bool is_read);
+  void memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes, bool chk_safety, bool is_read, bool stack_aligned_chk = true);
   void memory_access_chk(uint64_t addr, uint64_t num_bytes);
   int get_reg_type(int reg) const;
   void set_reg_type(int reg, int type);
