@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <cstring>
+#include <random>
 #include "validator.h"
 #include "z3client.h"
 
@@ -9,6 +10,9 @@ using namespace z3;
 
 int n_solve;
 int n_is_equal_to;
+
+default_random_engine gen_vld;
+uniform_real_distribution<double> unidist_vld(0.0, 1.0);
 
 /* class validator start */
 validator::validator() {
@@ -37,7 +41,12 @@ void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv
   // func counterex_2_input_mem will clear input
   // TODO: update input.reg in counterex_2_input_mem(.)
   counterex_2_input_mem(_last_counterex.input, m, _post_sv_orig, post_sv_synth);
-  _last_counterex.input.reg = (reg_t)m.eval(input_orig).get_numeral_uint64();
+  expr input_orig_val = m.eval(input_orig);
+  if (input_orig_val.is_numeral()) {
+    _last_counterex.input.reg = (reg_t)input_orig_val.get_numeral_uint64();
+  } else {  // mean Z3 does not care about this value
+    _last_counterex.input.reg = (reg_t)unidist_vld(gen_vld) * 0xffffffffffffffff;
+  }
   // get output from interpreter
   prog_state ps;
   ps.init();
