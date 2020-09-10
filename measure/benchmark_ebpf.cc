@@ -945,6 +945,47 @@ void read_insns(inst** bm, const char* insn_file) {
   cout << "inst:max_prog_len set as " << insn_vec.size() << endl;
 }
 
+void setup(inst** bm) {
+  // init sample immediate numbers and offsets
+  vector<int32_t> imms;
+  vector<int16_t> offs;
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    imms.push_back((*bm)[i]._imm);
+    offs.push_back((*bm)[i]._off);
+  }
+  inst::add_sample_imm(imms);
+  inst::add_sample_off(offs);
+  cout << "sample_neg_imms: ";
+  for (int i = 0; i < inst::_sample_neg_imms.size(); i++)
+    cout << inst::_sample_neg_imms[i] << " ";
+  cout << endl << "sample_pos_imms: ";
+  for (int i = 0; i < inst::_sample_pos_imms.size(); i++)
+    cout << inst::_sample_pos_imms[i] << " ";
+  cout << endl << "sample_neg_offs: ";
+  for (int i = 0; i < inst::_sample_neg_offs.size(); i++)
+    cout << inst::_sample_neg_offs[i] << " ";
+  cout << endl << "sample_pos_offs: ";
+  for (int i = 0; i < inst::_sample_pos_offs.size(); i++)
+    cout << inst::_sample_pos_offs[i] << " ";
+  cout << endl;
+  // update number of BPF_FUNC_get_prandom_u32
+  unsigned int n_randoms_u32 = 0;
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    if (((*bm)[i]._opcode == CALL) && ((*bm)[i]._imm == BPF_FUNC_get_prandom_u32)) {
+      n_randoms_u32++;
+    }
+  }
+  mem_t::_layout._n_randoms_u32 = n_randoms_u32;
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    if ((*bm)[i]._opcode == LDINDH) {
+      mem_t::_layout._enable_pkt_random_val = false;
+      break;
+    }
+  }
+  smt_var::init_static_variables();
+  inst::init_runtime();
+}
+
 void init_benchmark_from_file(inst** bm, const char* insn_file,
                               const char* map_file, const char* desc_file) {
   // call insns first to set the max_pgm_len;
@@ -954,6 +995,7 @@ void init_benchmark_from_file(inst** bm, const char* insn_file,
   read_maps(map_file);
   // set program input type, packet size
   read_desc(desc_file);
+  setup(bm);
 }
 
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
@@ -1126,42 +1168,5 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
       return;
   }
-  // init sample immediate numbers and offsets
-  vector<int32_t> imms;
-  vector<int16_t> offs;
-  for (int i = 0; i < inst::max_prog_len; i++) {
-    imms.push_back((*bm)[i]._imm);
-    offs.push_back((*bm)[i]._off);
-  }
-  inst::add_sample_imm(imms);
-  inst::add_sample_off(offs);
-  cout << "sample_neg_imms: ";
-  for (int i = 0; i < inst::_sample_neg_imms.size(); i++)
-    cout << inst::_sample_neg_imms[i] << " ";
-  cout << endl << "sample_pos_imms: ";
-  for (int i = 0; i < inst::_sample_pos_imms.size(); i++)
-    cout << inst::_sample_pos_imms[i] << " ";
-  cout << endl << "sample_neg_offs: ";
-  for (int i = 0; i < inst::_sample_neg_offs.size(); i++)
-    cout << inst::_sample_neg_offs[i] << " ";
-  cout << endl << "sample_pos_offs: ";
-  for (int i = 0; i < inst::_sample_pos_offs.size(); i++)
-    cout << inst::_sample_pos_offs[i] << " ";
-  cout << endl;
-  // update number of BPF_FUNC_get_prandom_u32
-  unsigned int n_randoms_u32 = 0;
-  for (int i = 0; i < inst::max_prog_len; i++) {
-    if (((*bm)[i]._opcode == CALL) && ((*bm)[i]._imm == BPF_FUNC_get_prandom_u32)) {
-      n_randoms_u32++;
-    }
-  }
-  mem_t::_layout._n_randoms_u32 = n_randoms_u32;
-  for (int i = 0; i < inst::max_prog_len; i++) {
-    if ((*bm)[i]._opcode == LDINDH) {
-      mem_t::_layout._enable_pkt_random_val = false;
-      break;
-    }
-  }
-  smt_var::init_static_variables();
-  inst::init_runtime();
+  setup(bm);
 }
