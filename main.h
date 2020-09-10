@@ -9,6 +9,7 @@ struct input_paras {
   int bm;
   bool bm_from_file;
   string bytecode;
+  string map;
   string desc;
   double w_e;
   double w_p;
