@@ -886,14 +886,32 @@ void read_desc(const char* desc_file) {
       int n = extract_max_pkt_sz(str);
       cout << "maximum packet size set as " << n << " bytes" << endl;
       mem_t::set_pkt_sz(n);
-    } else {
-      map_attr mp = extract_attrs_from_map(str);
-      cout << "add map " << "k_sz: " << mp.key_sz / NUM_BYTE_BITS << " bytes, "
-           << "v_sz: " << mp.val_sz / NUM_BYTE_BITS << " bytes, "
-           << "max_num: " << mp.max_entries << endl;
-      mem_t::add_map(mp);
     }
     count++;
+  }
+  fclose(fp);
+}
+
+void read_maps(const char* map_file) {
+
+  FILE* fp;
+
+  fp = fopen(map_file, "r");
+  char* line = NULL;
+  size_t len = 0;
+
+  if (fp == NULL) {
+    std::cerr << "Error: BPF map file could not be opened" << std::endl;
+    exit(1);
+  }
+
+  while (getline (&line, &len, fp) != -1) {
+    string str(line);
+    map_attr mp = extract_attrs_from_map(str);
+    cout << "add map " << "k_sz: " << mp.key_sz / NUM_BYTE_BITS << " bytes, "
+         << "v_sz: " << mp.val_sz / NUM_BYTE_BITS << " bytes, "
+         << "max_num: " << mp.max_entries << endl;
+    mem_t::add_map(mp);
   }
   fclose(fp);
 }
@@ -927,11 +945,14 @@ void read_insns(inst** bm, const char* insn_file) {
   cout << "inst:max_prog_len set as " << insn_vec.size() << endl;
 }
 
-void init_benchmark_from_file(inst** bm, const char* insn_file, const char* desc_file) {
+void init_benchmark_from_file(inst** bm, const char* insn_file,
+                              const char* map_file, const char* desc_file) {
   // call insns first to set the max_pgm_len;
   // init benchmark, set max_pgm_len
   read_insns(bm, insn_file);
-  // set program input type, packet size, map attributes
+  // read and set map attributes
+  read_maps(map_file);
+  // set program input type, packet size
   read_desc(desc_file);
 }
 
