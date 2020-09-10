@@ -50,7 +50,8 @@ uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, prog_state& ps
   uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr);
   // safety check to avoid segmentation fault
   bool is_mem_read = true;
-  ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read);
+  bool stack_aligned_chk = false;
+  ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read, stack_aligned_chk);
   // get key from memory
   string k = ld_n_bytes_from_addr((uint8_t*)real_addr_k, k_sz);
   map_t& mp = ps._mem._maps[map_id];
@@ -68,7 +69,8 @@ uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
   uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr);
   bool is_mem_read = true;
-  ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read);
+  bool stack_aligned_chk = false;
+  ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read, stack_aligned_chk);
   // get key and value from memory
   string k = ld_n_bytes_from_addr((uint8_t*)real_addr_k, k_sz);
   uint64_t real_addr_v = get_real_addr_by_simu(addr_v, ps._mem, sr);
@@ -82,7 +84,8 @@ uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, prog_state& ps
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
   uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr);
   bool is_mem_read = true;
-  ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read);
+  bool stack_aligned_chk = false;
+  ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read, stack_aligned_chk);
   string k = ld_n_bytes_from_addr((uint8_t*)real_addr_k, k_sz);
   map_t& mp = ps._mem._maps[map_id];
   auto it = mp._k2idx.find(k);
