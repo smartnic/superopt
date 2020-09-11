@@ -301,6 +301,7 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
   curr = new prog(orig);
   curr->reset_vals();
   // curr->canonicalize();
+  auto start = NOW;
   for (int i = 0; i < niter; i++) {
     cout << "iter: " << i << endl;
     if (_next_win.whether_to_reset(i)) {
@@ -345,6 +346,8 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
       _meas_data.insert_program(i, *curr);
     }
     curr = next;
+    auto end = NOW;
+    cout << "iter_timestamp: " << DUR(start, end) << endl;
   }
   delete curr;
 }
