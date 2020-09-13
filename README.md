@@ -15,7 +15,7 @@ sudo make install
 * Install `superopt`. Keep superopt folder and z3 folder in the same directory level
 ```
 cd ../../
-git clone https://github.com/ngsrinivas/superopt.git
+git clone https://github.com/smartnic/superopt.git
 cd superopt
 make main.out
 ```
