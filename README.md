@@ -6,7 +6,7 @@ Superopt
 ```
 git clone https://github.com/Z3Prover/z3.git
 cd z3
-git checkout 4643fdaa4e909d99e5888e4a6574d066c7516482
+git checkout 1c7d27bdf31ca038f7beee28c41aa7dbba1407dd
 python scripts/mk_make.py
 cd build
 make
