@@ -1303,6 +1303,7 @@ bool inout_t::operator==(const inout_t &rhs) const {
   bool res = (maps.size() == rhs.maps.size());
   if (! res) return false;
   for (int i = 0; i < maps.size(); i++) {
+    if (maps[i].size() != rhs.maps[i].size()) return false;
     // each map should be the same
     for (auto it = maps[i].begin(); it != maps[i].end(); it++) {
       // for each key in map, key should be found in rhs.map and
