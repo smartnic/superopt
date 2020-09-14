@@ -42,4 +42,4 @@ extern inst bm_opti26[N];
 extern inst bm_opti27[N];
 
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id);
-inline void init_benchmark_from_file(inst** bm, const char* insn_file, const char* desc_file) {}
+inline void init_benchmark_from_file(inst** bm, const char* insn_file, const char* map_file, const char* desc_file) {}

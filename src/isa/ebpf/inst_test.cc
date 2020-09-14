@@ -428,6 +428,7 @@ void test1() {
   print_test_res(output == expected, "interpret map helper function 1.2");
 
   input.reg = 0x56;
+  expected.clear();
   expected.reg = 0;
   interpret(output, instructions22, 14, ps, input);
   print_test_res(output == expected, "interpret map helper function 2.1");
@@ -454,6 +455,7 @@ void test1() {
   input.input_simu_r10 = 1024; // set as a random value (> 512)
   output.clear();
   // r0 = 0, no kv in map0
+  expected.clear();
   expected.reg = 0;
   // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
   interpret(output, instructions22, 14, ps, input);
@@ -479,9 +481,12 @@ void test1() {
   print_test_res(output == expected, "interpret map input 3");
 
   // w0 = (w1 & 0xffff) | 0xff0000
+  input.clear();
+  output.clear();
   input.reg = 0xffff0f0f;
   expected.reg = 0xff0f0f;
   interpret(output, instructions24, 4, ps, input);
+  expected.clear();
   print_test_res(output == expected, "interpret or32xc & and32xc");
   // w0 = (w1 & 0xffff) | 0xff0000
   input.reg = 0xff010f0f;
