@@ -483,10 +483,10 @@ void test1() {
   // w0 = (w1 & 0xffff) | 0xff0000
   input.clear();
   output.clear();
+  expected.clear();
   input.reg = 0xffff0f0f;
   expected.reg = 0xff0f0f;
   interpret(output, instructions24, 4, ps, input);
-  expected.clear();
   print_test_res(output == expected, "interpret or32xc & and32xc");
   // w0 = (w1 & 0xffff) | 0xff0000
   input.reg = 0xff010f0f;
