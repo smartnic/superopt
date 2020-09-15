@@ -45,7 +45,7 @@ void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv
   if (input_orig_val.is_numeral()) {
     _last_counterex.input.reg = (reg_t)input_orig_val.get_numeral_uint64();
   } else {  // mean Z3 does not care about this value
-    _last_counterex.input.reg = (reg_t)unidist_vld(gen_vld) * 0xffffffffffffffff;
+    _last_counterex.input.reg = (double)unidist_vld(gen_vld) * 0xffffffffffffffff;
   }
   // get output from interpreter
   prog_state ps;

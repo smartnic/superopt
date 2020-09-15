@@ -697,7 +697,7 @@ void test4() {
                  inst(MOV64XC, 0, 0xff),
                  inst(EXIT),
                 };
-  chk_counterex_by_vld_to_interpreter(p5, 3, p51, 7, "1", vld, ps);
+  chk_counterex_by_vld_to_interpreter(p5, 3, p51, 6, "1", vld, ps);
 
   // test skb
   std::cout << "3. test skb" << std::endl;
@@ -1053,7 +1053,7 @@ void test10() {
                 inst(EXIT),
                };
   vld.set_orig(p2, 2);
-  print_test_res(vld.is_equal_to(p2, 2, p2, 2) != ILLEGAL_CEX, "1.2");  
+  print_test_res(vld.is_equal_to(p2, 2, p2, 2) != ILLEGAL_CEX, "1.2");
 }
 
 int main() {
