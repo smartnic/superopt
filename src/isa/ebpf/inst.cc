@@ -1219,3 +1219,132 @@ void safety_chk(inst& insn, prog_state& ps) {
     ps.set_reg_type(insn._dst_reg, SCALAR_VALUE);
   }
 }
+
+void inst::regs_to_read(vector<int>& regs) const {
+  regs.clear();
+  switch (_opcode) {
+    case NOP:      return;
+    case ADD64XC:  regs = {_dst_reg}; return;
+    case ADD64XY:  regs = {_dst_reg, _src_reg}; return;
+    case OR64XC:   regs = {_dst_reg}; return;
+    case OR64XY:   regs = {_dst_reg, _src_reg}; return;
+    case AND64XC:  regs = {_dst_reg}; return;
+    case AND64XY:  regs = {_dst_reg, _src_reg}; return;
+    case LSH64XC:  regs = {_dst_reg}; return;
+    case LSH64XY:  regs = {_dst_reg, _src_reg}; return;
+    case RSH64XC:  regs = {_dst_reg}; return;
+    case RSH64XY:  regs = {_dst_reg, _src_reg}; return;
+    case MOV64XC:  return;
+    case MOV64XY:  regs = {_src_reg}; return;
+    case ARSH64XC: regs = {_dst_reg}; return;
+    case ARSH64XY: regs = {_dst_reg, _src_reg}; return;
+    case ADD32XC:  regs = {_dst_reg}; return;
+    case ADD32XY:  regs = {_dst_reg, _src_reg}; return;
+    case OR32XC:   regs = {_dst_reg}; return;
+    case OR32XY:   regs = {_dst_reg, _src_reg}; return;
+    case AND32XC:  regs = {_dst_reg}; return;
+    case AND32XY:  regs = {_dst_reg, _src_reg}; return;
+    case LSH32XC:  regs = {_dst_reg}; return;
+    case LSH32XY:  regs = {_dst_reg, _src_reg}; return;
+    case RSH32XC:  regs = {_dst_reg}; return;
+    case RSH32XY:  regs = {_dst_reg, _src_reg}; return;
+    case MOV32XC:  return;
+    case MOV32XY:  regs = {_src_reg}; return;
+    case ARSH32XC: regs = {_dst_reg}; return;
+    case ARSH32XY: regs = {_dst_reg, _src_reg}; return;
+    case LE:       regs = {_dst_reg}; return;
+    case BE:       regs = {_dst_reg}; return;
+    case LDMAPID:  return;
+    case LDXB:     regs = {_src_reg}; return;
+    case STXB:     regs = {_dst_reg, _src_reg}; return;
+    case LDXH:     regs = {_src_reg}; return;
+    case STXH:     regs = {_dst_reg, _src_reg}; return;
+    case LDXW:     regs = {_src_reg}; return;
+    case STXW:     regs = {_dst_reg, _src_reg}; return;
+    case LDXDW:    regs = {_src_reg}; return;
+    case STXDW:    regs = {_dst_reg, _src_reg}; return;
+    case STB:      regs = {_dst_reg}; return;
+    case STH:      regs = {_dst_reg}; return;
+    case STW:      regs = {_dst_reg}; return;
+    case STDW:     regs = {_dst_reg}; return;
+    case XADD64:   regs = {_dst_reg, _src_reg}; return;
+    case XADD32:   regs = {_dst_reg, _src_reg}; return;
+    case LDABSH:   return;
+    case LDINDH:   regs = {_src_reg}; return;
+    case JA:       return;
+    case JEQXC:    regs = {_dst_reg}; return;
+    case JEQXY:    regs = {_dst_reg, _src_reg}; return;
+    case JGTXC:    return;
+    case JGTXY:    regs = {_dst_reg, _src_reg}; return;
+    case JNEXC:    regs = {_dst_reg}; return;
+    case JNEXY:    regs = {_dst_reg, _src_reg}; return;
+    case JSGTXC:   regs = {_dst_reg}; return;
+    case JSGTXY:   regs = {_dst_reg, _src_reg}; return;
+    case JEQ32XC:  regs = {_dst_reg}; return;
+    case JEQ32XY:  regs = {_dst_reg, _src_reg}; return;
+    case JNE32XC:  regs = {_dst_reg}; return;
+    case JNE32XY:  regs = {_dst_reg, _src_reg}; return;
+    case CALL:
+      switch (_imm) {
+        case BPF_FUNC_map_lookup_elem: regs = {1, 2}; return;
+        case BPF_FUNC_map_update_elem: regs = {1, 2, 3}; return;
+        case BPF_FUNC_map_delete_elem: regs = {1, 2}; return;
+        case BPF_FUNC_tail_call: regs = {1, 2, 3}; return;
+        case BPF_FUNC_get_prandom_u32: return;
+        default: cout << "Error: unknown function id " << _imm << endl; return;
+      }
+    case EXIT: return;
+    default: cout << "unknown opcode" << endl;
+  }
+}
+
+void inst::regs_to_write(vector<int>& regs) const {
+  regs.clear();
+  if (_opcode == CALL) {
+    regs.push_back(0); // dst_reg is reg 0
+  }
+  int op_class = BPF_CLASS(_opcode);
+  vector<int> reg_write_op_classes = {BPF_LD, BPF_LDX, BPF_ALU, BPF_ALU64};
+  for (int i = 0; i < reg_write_op_classes.size(); i++) {
+    if (op_class == reg_write_op_classes[i]) {
+      regs.push_back(_dst_reg);
+      return;
+    }
+  }
+}
+
+// live_regs: a set of live registers before executing each instruction
+void liveness_analysis(vector<unordered_set<int>>& live_regs, inst* program, int len) {
+  live_regs.resize(len + 1);
+  unordered_set<int> initial_live_regs = {0}; // register 0 is in the output
+  live_regs[len] = initial_live_regs;
+  int start = len - 1;
+  int end = 0; // liveness analysis is from the program end to the program start
+  for (int i = start; i >= end; i--) {
+    cout << i << ": ";
+    program[i].print();
+    vector<int> regs_to_read, regs_to_write;
+    program[i].regs_to_read(regs_to_read);
+    program[i].regs_to_write(regs_to_write);
+    unordered_set<int> regs(live_regs[i + 1]);
+    cout << "regs: ";
+    for (const int& x : regs) cout << x << " ";
+    cout << endl;
+    cout << "regs_to_write: ";
+    for (int i = 0; i < regs_to_write.size(); i++) cout << regs_to_write[i] << " ";
+    cout << endl;
+    cout << "regs_to_read: ";
+    for (int i = 0; i < regs_to_read.size(); i++) cout << regs_to_read[i] << " ";
+    cout << endl;
+    // remove regs_to_write in currrent live regs
+    for (int i = 0; i < regs_to_write.size(); i++) {
+      regs.erase(regs_to_write[i]);
+    }
+    // add regs_to_read in current live regs
+    for (int i = 0; i < regs_to_read.size(); i++) {
+      regs.insert(regs_to_read[i]);
+    }
+    live_regs[i] = regs;
+  }
+  live_regs.pop_back(); // pop the last vector element
+}

@@ -668,7 +668,10 @@ class inst: public inst_base {
   bool is_pgm_end() const;
 
   string get_bytecode_str() const;
+  void regs_to_read(vector<int>& regs) const;
+  void regs_to_write(vector<int>& regs) const;
 };
 
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);
 void safety_chk(inst& insn, prog_state& ps);
+void liveness_analysis(vector<unordered_set<int>>& live_regs, inst* program, int len);
