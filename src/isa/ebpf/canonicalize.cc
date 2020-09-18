@@ -41,14 +41,14 @@ void canonicalize_prog_without_branch(unordered_set<int>& live_regs,
 void canonicalize(inst* program, int len) {
   // get cfg of the program
   graph g(program, len);
-  // cout << g << endl;
   vector<unsigned int> blocks;
   topo_sort_for_graph(blocks, g);
   reverse(blocks.begin(), blocks.end());  // backward
-  //
   vector<unordered_set<int>> block_live_regs(blocks.size());
+
   // init the initial live regs (register 0) for end blocks
   unordered_set<int> end_block_initial_live_regs = {0};
+
   // canonicalize basic block one by one backward
   for (int i = 0; i < blocks.size(); i++) {
     // 1. get the initial live regs

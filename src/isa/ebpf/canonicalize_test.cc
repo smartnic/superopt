@@ -2,11 +2,6 @@
 #include "../../../src/utils.h"
 #include "canonicalize.h"
 
-void print_live_regs(unordered_set<int> live_regs) {
-  for (const int& x : live_regs) cout << x << " ";
-  cout << endl;
-}
-
 void canonicalize_check(inst* prog, int len, inst* expected_prog, string test_name) {
   canonicalize(prog, len);
   bool is_equal = true;
