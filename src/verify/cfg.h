@@ -46,3 +46,5 @@ class graph {
   string graph_to_str() const;
   friend ostream& operator<<(ostream& out, const graph& g);
 };
+
+void topo_sort_for_graph(vector<unsigned int>& nodes, const graph& g);
