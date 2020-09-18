@@ -3,25 +3,15 @@
 #include "../../../src/verify/cfg.h"
 #include "canonicalize.h"
 
-void liveness_analysis(unordered_set<int>& live_regs,
-                       inst* program, int start, int end,
-                       const unordered_set<int>& initial_live_regs) {
+void canonicalize_prog_without_branch(unordered_set<int>& live_regs,
+                                      inst* program, int start, int end,
+                                      const unordered_set<int>& initial_live_regs) {
   live_regs = initial_live_regs;
   // liveness analysis is from the program end to the program start
   for (int i = end; i >= start; i--) {
-    cout << i << ": ";
-    program[i].print();
     vector<int> regs_to_read;
     program[i].regs_to_read(regs_to_read);
     int reg_to_write = program[i].reg_to_write();
-    cout << "live regs: ";
-    for (const int& x : live_regs) cout << x << " ";
-    cout << endl;
-    cout << "reg_to_write: " << reg_to_write << endl;
-    cout << endl;
-    cout << "regs_to_read: ";
-    for (int i = 0; i < regs_to_read.size(); i++) cout << regs_to_read[i] << " ";
-    cout << endl;
     // check whether the current insn is dead code, i.e., regs_to_write is not live
     bool is_dead_code = false;
     // if insn is memory write, the insn is not dead code
@@ -77,11 +67,8 @@ void canonicalize(inst* program, int len) {
     }
 
     // 2. canonicalize the current block and get the final live regs
-    liveness_analysis(block_live_regs[b],
-                      program, g.nodes[b]._start, g.nodes[b]._end,
-                      initial_live_regs);
-    cout << "final live regs " << i << ": " << b << " ";
-    for (auto reg : block_live_regs[b]) cout << reg << " ";
-    cout << endl;
+    canonicalize_prog_without_branch(block_live_regs[b],
+                                     program, g.nodes[b]._start, g.nodes[b]._end,
+                                     initial_live_regs);
   }
 }
