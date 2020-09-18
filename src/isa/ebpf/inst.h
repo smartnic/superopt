@@ -674,5 +674,3 @@ class inst: public inst_base {
 
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);
 void safety_chk(inst& insn, prog_state& ps);
-void liveness_analysis(unordered_set<int>& live_regs, inst* program, int start, int end,
-                       const unordered_set<int>& initial_live_regs);
