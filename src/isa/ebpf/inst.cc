@@ -863,6 +863,99 @@ string inst::get_bytecode_str() const {
   return str;
 }
 
+void inst::regs_to_read(vector<int>& regs) const {
+  regs.clear();
+  switch (_opcode) {
+    case NOP:      return;
+    case ADD64XC:  regs = {_dst_reg}; return;
+    case ADD64XY:  regs = {_dst_reg, _src_reg}; return;
+    case OR64XC:   regs = {_dst_reg}; return;
+    case OR64XY:   regs = {_dst_reg, _src_reg}; return;
+    case AND64XC:  regs = {_dst_reg}; return;
+    case AND64XY:  regs = {_dst_reg, _src_reg}; return;
+    case LSH64XC:  regs = {_dst_reg}; return;
+    case LSH64XY:  regs = {_dst_reg, _src_reg}; return;
+    case RSH64XC:  regs = {_dst_reg}; return;
+    case RSH64XY:  regs = {_dst_reg, _src_reg}; return;
+    case MOV64XC:  return;
+    case MOV64XY:  regs = {_src_reg}; return;
+    case ARSH64XC: regs = {_dst_reg}; return;
+    case ARSH64XY: regs = {_dst_reg, _src_reg}; return;
+    case ADD32XC:  regs = {_dst_reg}; return;
+    case ADD32XY:  regs = {_dst_reg, _src_reg}; return;
+    case OR32XC:   regs = {_dst_reg}; return;
+    case OR32XY:   regs = {_dst_reg, _src_reg}; return;
+    case AND32XC:  regs = {_dst_reg}; return;
+    case AND32XY:  regs = {_dst_reg, _src_reg}; return;
+    case LSH32XC:  regs = {_dst_reg}; return;
+    case LSH32XY:  regs = {_dst_reg, _src_reg}; return;
+    case RSH32XC:  regs = {_dst_reg}; return;
+    case RSH32XY:  regs = {_dst_reg, _src_reg}; return;
+    case MOV32XC:  return;
+    case MOV32XY:  regs = {_src_reg}; return;
+    case ARSH32XC: regs = {_dst_reg}; return;
+    case ARSH32XY: regs = {_dst_reg, _src_reg}; return;
+    case LE:       regs = {_dst_reg}; return;
+    case BE:       regs = {_dst_reg}; return;
+    case LDMAPID:  return;
+    case LDXB:     regs = {_src_reg}; return;
+    case STXB:     regs = {_dst_reg, _src_reg}; return;
+    case LDXH:     regs = {_src_reg}; return;
+    case STXH:     regs = {_dst_reg, _src_reg}; return;
+    case LDXW:     regs = {_src_reg}; return;
+    case STXW:     regs = {_dst_reg, _src_reg}; return;
+    case LDXDW:    regs = {_src_reg}; return;
+    case STXDW:    regs = {_dst_reg, _src_reg}; return;
+    case STB:      regs = {_dst_reg}; return;
+    case STH:      regs = {_dst_reg}; return;
+    case STW:      regs = {_dst_reg}; return;
+    case STDW:     regs = {_dst_reg}; return;
+    case XADD64:   regs = {_dst_reg, _src_reg}; return;
+    case XADD32:   regs = {_dst_reg, _src_reg}; return;
+    case LDABSH:   return;
+    case LDINDH:   regs = {_src_reg}; return;
+    case JA:       return;
+    case JEQXC:    regs = {_dst_reg}; return;
+    case JEQXY:    regs = {_dst_reg, _src_reg}; return;
+    case JGTXC:    return;
+    case JGTXY:    regs = {_dst_reg, _src_reg}; return;
+    case JNEXC:    regs = {_dst_reg}; return;
+    case JNEXY:    regs = {_dst_reg, _src_reg}; return;
+    case JSGTXC:   regs = {_dst_reg}; return;
+    case JSGTXY:   regs = {_dst_reg, _src_reg}; return;
+    case JEQ32XC:  regs = {_dst_reg}; return;
+    case JEQ32XY:  regs = {_dst_reg, _src_reg}; return;
+    case JNE32XC:  regs = {_dst_reg}; return;
+    case JNE32XY:  regs = {_dst_reg, _src_reg}; return;
+    case CALL:
+      switch (_imm) {
+        case BPF_FUNC_map_lookup_elem: regs = {1, 2}; return;
+        case BPF_FUNC_map_update_elem: regs = {1, 2, 3}; return;
+        case BPF_FUNC_map_delete_elem: regs = {1, 2}; return;
+        case BPF_FUNC_tail_call: regs = {1, 2, 3}; return;
+        case BPF_FUNC_get_prandom_u32: return;
+        default: cout << "Error: unknown function id " << _imm << endl; return;
+      }
+    case EXIT: return;
+    default: cout << "unknown opcode" << endl;
+  }
+}
+
+// return -1 if no reg to write, else return reg
+int inst::reg_to_write() const {
+  if (_opcode == CALL) {
+    return 0; // dst_reg is reg 0
+  }
+  int op_class = BPF_CLASS(_opcode);
+  vector<int> reg_write_op_classes = {BPF_LD, BPF_LDX, BPF_ALU, BPF_ALU64};
+  for (int i = 0; i < reg_write_op_classes.size(); i++) {
+    if (op_class == reg_write_op_classes[i]) {
+      return _dst_reg;
+    }
+  }
+  return -1;
+}
+
 void interpret(inout_t& output, inst * program, int length, prog_state & ps, const inout_t& input) {
 #undef IMM
 #undef OFF
@@ -1218,99 +1311,6 @@ void safety_chk(inst& insn, prog_state& ps) {
              (op_class != BPF_JMP32)) {
     ps.set_reg_type(insn._dst_reg, SCALAR_VALUE);
   }
-}
-
-void inst::regs_to_read(vector<int>& regs) const {
-  regs.clear();
-  switch (_opcode) {
-    case NOP:      return;
-    case ADD64XC:  regs = {_dst_reg}; return;
-    case ADD64XY:  regs = {_dst_reg, _src_reg}; return;
-    case OR64XC:   regs = {_dst_reg}; return;
-    case OR64XY:   regs = {_dst_reg, _src_reg}; return;
-    case AND64XC:  regs = {_dst_reg}; return;
-    case AND64XY:  regs = {_dst_reg, _src_reg}; return;
-    case LSH64XC:  regs = {_dst_reg}; return;
-    case LSH64XY:  regs = {_dst_reg, _src_reg}; return;
-    case RSH64XC:  regs = {_dst_reg}; return;
-    case RSH64XY:  regs = {_dst_reg, _src_reg}; return;
-    case MOV64XC:  return;
-    case MOV64XY:  regs = {_src_reg}; return;
-    case ARSH64XC: regs = {_dst_reg}; return;
-    case ARSH64XY: regs = {_dst_reg, _src_reg}; return;
-    case ADD32XC:  regs = {_dst_reg}; return;
-    case ADD32XY:  regs = {_dst_reg, _src_reg}; return;
-    case OR32XC:   regs = {_dst_reg}; return;
-    case OR32XY:   regs = {_dst_reg, _src_reg}; return;
-    case AND32XC:  regs = {_dst_reg}; return;
-    case AND32XY:  regs = {_dst_reg, _src_reg}; return;
-    case LSH32XC:  regs = {_dst_reg}; return;
-    case LSH32XY:  regs = {_dst_reg, _src_reg}; return;
-    case RSH32XC:  regs = {_dst_reg}; return;
-    case RSH32XY:  regs = {_dst_reg, _src_reg}; return;
-    case MOV32XC:  return;
-    case MOV32XY:  regs = {_src_reg}; return;
-    case ARSH32XC: regs = {_dst_reg}; return;
-    case ARSH32XY: regs = {_dst_reg, _src_reg}; return;
-    case LE:       regs = {_dst_reg}; return;
-    case BE:       regs = {_dst_reg}; return;
-    case LDMAPID:  return;
-    case LDXB:     regs = {_src_reg}; return;
-    case STXB:     regs = {_dst_reg, _src_reg}; return;
-    case LDXH:     regs = {_src_reg}; return;
-    case STXH:     regs = {_dst_reg, _src_reg}; return;
-    case LDXW:     regs = {_src_reg}; return;
-    case STXW:     regs = {_dst_reg, _src_reg}; return;
-    case LDXDW:    regs = {_src_reg}; return;
-    case STXDW:    regs = {_dst_reg, _src_reg}; return;
-    case STB:      regs = {_dst_reg}; return;
-    case STH:      regs = {_dst_reg}; return;
-    case STW:      regs = {_dst_reg}; return;
-    case STDW:     regs = {_dst_reg}; return;
-    case XADD64:   regs = {_dst_reg, _src_reg}; return;
-    case XADD32:   regs = {_dst_reg, _src_reg}; return;
-    case LDABSH:   return;
-    case LDINDH:   regs = {_src_reg}; return;
-    case JA:       return;
-    case JEQXC:    regs = {_dst_reg}; return;
-    case JEQXY:    regs = {_dst_reg, _src_reg}; return;
-    case JGTXC:    return;
-    case JGTXY:    regs = {_dst_reg, _src_reg}; return;
-    case JNEXC:    regs = {_dst_reg}; return;
-    case JNEXY:    regs = {_dst_reg, _src_reg}; return;
-    case JSGTXC:   regs = {_dst_reg}; return;
-    case JSGTXY:   regs = {_dst_reg, _src_reg}; return;
-    case JEQ32XC:  regs = {_dst_reg}; return;
-    case JEQ32XY:  regs = {_dst_reg, _src_reg}; return;
-    case JNE32XC:  regs = {_dst_reg}; return;
-    case JNE32XY:  regs = {_dst_reg, _src_reg}; return;
-    case CALL:
-      switch (_imm) {
-        case BPF_FUNC_map_lookup_elem: regs = {1, 2}; return;
-        case BPF_FUNC_map_update_elem: regs = {1, 2, 3}; return;
-        case BPF_FUNC_map_delete_elem: regs = {1, 2}; return;
-        case BPF_FUNC_tail_call: regs = {1, 2, 3}; return;
-        case BPF_FUNC_get_prandom_u32: return;
-        default: cout << "Error: unknown function id " << _imm << endl; return;
-      }
-    case EXIT: return;
-    default: cout << "unknown opcode" << endl;
-  }
-}
-
-// return -1 if no reg to write, else return reg
-int inst::reg_to_write() const {
-  if (_opcode == CALL) {
-    return 0; // dst_reg is reg 0
-  }
-  int op_class = BPF_CLASS(_opcode);
-  vector<int> reg_write_op_classes = {BPF_LD, BPF_LDX, BPF_ALU, BPF_ALU64};
-  for (int i = 0; i < reg_write_op_classes.size(); i++) {
-    if (op_class == reg_write_op_classes[i]) {
-      return _dst_reg;
-    }
-  }
-  return -1;
 }
 
 // live_regs: a set of live registers before executing each instruction
