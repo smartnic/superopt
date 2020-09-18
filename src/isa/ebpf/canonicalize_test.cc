@@ -92,6 +92,18 @@ void test1() {
                           };
   canonicalize_check(p5, sizeof(p5) / sizeof(inst), expected_prog5, "5");
 
+  inst p6[] = {inst(LDXB, 1, 1, 0),
+               inst(STXB, 10, -1, 1),
+               inst(MOV64XY, 2, 10),
+               inst(EXIT),
+              };
+  inst expected_prog6[] = {inst(LDXB, 1, 1, 0),
+                           inst(STXB, 10, -1, 1),
+                           inst(),
+                           inst(EXIT),
+                          };
+  canonicalize_check(p6, sizeof(p6) / sizeof(inst), expected_prog6, "6");
+
   cout << "Program with branches" << endl;
   inst p2_1[] = {inst(JEQXY, 1, 2, 2),
                  inst(ADD64XC, 3, 1),
