@@ -1508,6 +1508,8 @@ void liveness_analysis_check(inst* prog, int len) {
   cout << "-----------------" << endl;
   print_live_regs(live_regs);
   cout << "-----------------" << endl;
+  for (int i = 0; i < len; i++) prog[i].print();
+  cout << "-----------------" << endl;
 }
 
 void test11() {

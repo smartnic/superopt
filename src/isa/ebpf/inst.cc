@@ -1298,19 +1298,19 @@ void inst::regs_to_read(vector<int>& regs) const {
   }
 }
 
-void inst::regs_to_write(vector<int>& regs) const {
-  regs.clear();
+// return -1 if no reg to write, else return reg
+int inst::reg_to_write() const {
   if (_opcode == CALL) {
-    regs.push_back(0); // dst_reg is reg 0
+    return 0; // dst_reg is reg 0
   }
   int op_class = BPF_CLASS(_opcode);
   vector<int> reg_write_op_classes = {BPF_LD, BPF_LDX, BPF_ALU, BPF_ALU64};
   for (int i = 0; i < reg_write_op_classes.size(); i++) {
     if (op_class == reg_write_op_classes[i]) {
-      regs.push_back(_dst_reg);
-      return;
+      return _dst_reg;
     }
   }
+  return -1;
 }
 
 // live_regs: a set of live registers before executing each instruction
@@ -1323,26 +1323,34 @@ void liveness_analysis(vector<unordered_set<int>>& live_regs, inst* program, int
   for (int i = start; i >= end; i--) {
     cout << i << ": ";
     program[i].print();
-    vector<int> regs_to_read, regs_to_write;
+    vector<int> regs_to_read;
     program[i].regs_to_read(regs_to_read);
-    program[i].regs_to_write(regs_to_write);
+    int reg_to_write = program[i].reg_to_write();
     unordered_set<int> regs(live_regs[i + 1]);
     cout << "regs: ";
     for (const int& x : regs) cout << x << " ";
     cout << endl;
-    cout << "regs_to_write: ";
-    for (int i = 0; i < regs_to_write.size(); i++) cout << regs_to_write[i] << " ";
+    cout << "reg_to_write: " << reg_to_write << endl;
     cout << endl;
     cout << "regs_to_read: ";
     for (int i = 0; i < regs_to_read.size(); i++) cout << regs_to_read[i] << " ";
     cout << endl;
-    // remove regs_to_write in currrent live regs
-    for (int i = 0; i < regs_to_write.size(); i++) {
-      regs.erase(regs_to_write[i]);
+    // check whether the current insn is dead code, i.e., regs_to_write is not live
+    bool is_dead_code = false;
+    if (reg_to_write != -1) {
+      if (regs.find(reg_to_write) == regs.end()) {
+        is_dead_code = true;
+      }
     }
-    // add regs_to_read in current live regs
-    for (int i = 0; i < regs_to_read.size(); i++) {
-      regs.insert(regs_to_read[i]);
+    if (! is_dead_code) { // if not the dead code, update the live regs
+      // remove reg_to_write in currrent live regs
+      if (reg_to_write != -1) regs.erase(reg_to_write);
+      // add regs_to_read in current live regs
+      for (int i = 0; i < regs_to_read.size(); i++) {
+        regs.insert(regs_to_read[i]);
+      }
+    } else { // if the dead code, set the current insn as NOP
+      program[i].set_as_nop_inst();
     }
     live_regs[i] = regs;
   }
