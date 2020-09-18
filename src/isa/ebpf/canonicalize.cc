@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include "../../../src/verify/cfg.h"
 #include "canonicalize.h"
 
 void liveness_analysis(unordered_set<int>& live_regs,
@@ -7,7 +8,7 @@ void liveness_analysis(unordered_set<int>& live_regs,
                        const unordered_set<int>& initial_live_regs) {
   live_regs = initial_live_regs;
   // liveness analysis is from the program end to the program start
-  for (int i = end - 1; i >= start; i--) {
+  for (int i = end; i >= start; i--) {
     cout << i << ": ";
     program[i].print();
     vector<int> regs_to_read;
@@ -38,5 +39,44 @@ void liveness_analysis(unordered_set<int>& live_regs,
     } else { // if the dead code, set the current insn as NOP
       program[i].set_as_nop_inst();
     }
+  }
+}
+
+// 1. set dead code as NOP
+void canonicalize(inst* program, int len) {
+  // get cfg of the program
+  graph g(program, len);
+  // cout << g << endl;
+  vector<unsigned int> blocks;
+  topo_sort_for_graph(blocks, g);
+  reverse(blocks.begin(), blocks.end());  // backward
+  //
+  vector<unordered_set<int>> block_live_regs(blocks.size());
+  // init the initial live regs (register 0) for end blocks
+  unordered_set<int> end_block_initial_live_regs = {0};
+  // canonicalize basic block one by one backward
+  for (int i = 0; i < blocks.size(); i++) {
+    // 1. get the initial live regs
+    unsigned int b = blocks[i];
+    unordered_set<int> initial_live_regs;
+    if (g.nodes_out[b].size() == 0) { // end block
+      initial_live_regs = end_block_initial_live_regs;
+    } else {
+      // merge the live regs from all outgoing blocks (union operation)
+      for (int j = 0; j < g.nodes_out[b].size(); j++) {
+        unsigned int block_out = g.nodes_out[b][j];
+        for (auto reg : block_live_regs[block_out]) {
+          initial_live_regs.insert(reg);
+        }
+      }
+    }
+
+    // 2. canonicalize the current block and get the final live regs
+    liveness_analysis(block_live_regs[b],
+                      program, g.nodes[b]._start, g.nodes[b]._end,
+                      initial_live_regs);
+    cout << "final live regs " << i << ": " << b << " ";
+    for (auto reg : block_live_regs[b]) cout << reg << " ";
+    cout << endl;
   }
 }
