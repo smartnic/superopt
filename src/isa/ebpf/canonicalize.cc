@@ -24,7 +24,12 @@ void liveness_analysis(unordered_set<int>& live_regs,
     cout << endl;
     // check whether the current insn is dead code, i.e., regs_to_write is not live
     bool is_dead_code = false;
-    if (reg_to_write != -1) {
+    // if insn is memory write, the insn is not dead code
+    // because live memory has not been implemented
+    bool is_mem_write = false;
+    int op_class = BPF_CLASS(program[i]._opcode);
+    if ((op_class == BPF_ST) || (op_class == BPF_STX)) is_mem_write = true;
+    if ((! is_mem_write) && (reg_to_write != -1)) {
       if (live_regs.find(reg_to_write) == live_regs.end()) {
         is_dead_code = true;
       }
