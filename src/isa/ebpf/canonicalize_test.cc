@@ -8,15 +8,7 @@ void print_live_regs(unordered_set<int> live_regs) {
 }
 
 void canonicalize_check(inst* prog, int len, inst* expected_prog, string test_name) {
-  cout << "-------- before ---------" << endl;
-  for (int i = 0; i < len; i++) {
-    prog[i].print();
-  }
   canonicalize(prog, len);
-  cout << "-------- after ---------" << endl;
-  for (int i = 0; i < len; i++) {
-    prog[i].print();
-  }
   bool is_equal = true;
   for (int i = 0; i < len; i++) {
     is_equal = (prog[i] == expected_prog[i]);

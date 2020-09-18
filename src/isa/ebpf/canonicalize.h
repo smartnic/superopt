@@ -6,6 +6,3 @@
 using namespace std;
 
 void canonicalize(inst* program, int len);
-
-void liveness_analysis(unordered_set<int>& live_regs, inst* program, int start, int end,
-                       const unordered_set<int>& initial_live_regs);
