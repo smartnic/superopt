@@ -669,7 +669,7 @@ class inst: public inst_base {
 
   string get_bytecode_str() const;
   void regs_to_read(vector<int>& regs) const;
-  void regs_to_write(vector<int>& regs) const;
+  int reg_to_write() const;
 };
 
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);
