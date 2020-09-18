@@ -1493,21 +1493,18 @@ void test10() {
   print_test_res(is_illegal, "2.6");
 }
 
-void print_live_regs(vector<unordered_set<int>> live_regs) {
-  for (int i = 0; i < live_regs.size(); i++) {
-    cout << i << ": ";
-    for (const int& x : live_regs[i])
-      cout << x << " ";
-    cout << endl;
-  }
+void print_live_regs(unordered_set<int> live_regs) {
+  for (const int& x : live_regs) cout << x << " ";
+  cout << endl;
 }
 
 void liveness_analysis_check(inst* prog, int len) {
-  vector<unordered_set<int>> live_regs;
-  liveness_analysis(live_regs, prog, len);
+  unordered_set<int> live_regs;
+  unordered_set<int> initial_live_regs = {0}; // 0 is the output register
+  liveness_analysis(live_regs, prog, 0, len - 1, initial_live_regs);
   cout << "-----------------" << endl;
+  cout << "live regs: ";
   print_live_regs(live_regs);
-  cout << "-----------------" << endl;
   for (int i = 0; i < len; i++) prog[i].print();
   cout << "-----------------" << endl;
 }

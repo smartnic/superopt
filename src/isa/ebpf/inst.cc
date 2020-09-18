@@ -1313,22 +1313,19 @@ void safety_chk(inst& insn, prog_state& ps) {
   }
 }
 
-// live_regs: a set of live registers before executing each instruction
-void liveness_analysis(vector<unordered_set<int>>& live_regs, inst* program, int len) {
-  live_regs.resize(len + 1);
-  unordered_set<int> initial_live_regs = {0}; // register 0 is in the output
-  live_regs[len] = initial_live_regs;
-  int start = len - 1;
-  int end = 0; // liveness analysis is from the program end to the program start
-  for (int i = start; i >= end; i--) {
+void liveness_analysis(unordered_set<int>& live_regs,
+                       inst* program, int start, int end,
+                       const unordered_set<int>& initial_live_regs) {
+  live_regs = initial_live_regs;
+  // liveness analysis is from the program end to the program start
+  for (int i = end - 1; i >= start; i--) {
     cout << i << ": ";
     program[i].print();
     vector<int> regs_to_read;
     program[i].regs_to_read(regs_to_read);
     int reg_to_write = program[i].reg_to_write();
-    unordered_set<int> regs(live_regs[i + 1]);
-    cout << "regs: ";
-    for (const int& x : regs) cout << x << " ";
+    cout << "live regs: ";
+    for (const int& x : live_regs) cout << x << " ";
     cout << endl;
     cout << "reg_to_write: " << reg_to_write << endl;
     cout << endl;
@@ -1338,21 +1335,19 @@ void liveness_analysis(vector<unordered_set<int>>& live_regs, inst* program, int
     // check whether the current insn is dead code, i.e., regs_to_write is not live
     bool is_dead_code = false;
     if (reg_to_write != -1) {
-      if (regs.find(reg_to_write) == regs.end()) {
+      if (live_regs.find(reg_to_write) == live_regs.end()) {
         is_dead_code = true;
       }
     }
     if (! is_dead_code) { // if not the dead code, update the live regs
       // remove reg_to_write in currrent live regs
-      if (reg_to_write != -1) regs.erase(reg_to_write);
+      if (reg_to_write != -1) live_regs.erase(reg_to_write);
       // add regs_to_read in current live regs
       for (int i = 0; i < regs_to_read.size(); i++) {
-        regs.insert(regs_to_read[i]);
+        live_regs.insert(regs_to_read[i]);
       }
     } else { // if the dead code, set the current insn as NOP
       program[i].set_as_nop_inst();
     }
-    live_regs[i] = regs;
   }
-  live_regs.pop_back(); // pop the last vector element
 }
