@@ -98,18 +98,6 @@ void smt_prog::init(unsigned int num_regs) {
   post.resize(block_num, string_to_expr("true"));
 }
 
-// topological sorting by DFS
-void smt_prog::topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vector<bool>& finished) {
-  if (finished[cur_bid]) {
-    return;
-  }
-  for (size_t i = 0; i < g.nodes_out[cur_bid].size(); i++) {
-    topo_sort_dfs(g.nodes_out[cur_bid][i], blocks, finished);
-  }
-  finished[cur_bid] = true;
-  blocks.push_back(cur_bid);
-}
-
 // may need to modify
 void smt_prog::gen_block_prog_logic(expr& e, expr& f_mem, expr& f_sc,
                                     smt_var& sv, size_t cur_bid, inst* inst_lst) {
@@ -225,12 +213,10 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length) {
   // init class variables
   const unsigned int num_regs = NUM_REGS;
   init(num_regs);
+
   // blocks stores the block IDs in order after topological sorting
   vector<unsigned int> blocks;
-  vector<bool> finished(g.nodes.size(), false);
-  // cfg here is without loop, loop detect: function dfs in class graph
-  topo_sort_dfs(0, blocks, finished);
-  std::reverse(blocks.begin(), blocks.end());
+  topo_sort_for_graph(blocks, g);
   init_pgm_dag(blocks[0]);
   // basic block FOL formula;
   // f_block[b] = f_block[b](in_path_1) ^ f_block[b](in_path_2) ^ ...

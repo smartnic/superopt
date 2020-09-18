@@ -291,3 +291,24 @@ ostream& operator<<(ostream& out, const graph& g) {
   }
   return out;
 }
+
+// topological sorting by DFS
+void topo_sort_dfs(size_t cur_bid, vector<unsigned int>& nodes, vector<bool>& finished, const graph& g) {
+  if (finished[cur_bid]) {
+    return;
+  }
+  for (size_t i = 0; i < g.nodes_out[cur_bid].size(); i++) {
+    topo_sort_dfs(g.nodes_out[cur_bid][i], nodes, finished, g);
+  }
+  finished[cur_bid] = true;
+  nodes.push_back(cur_bid);
+}
+
+void topo_sort_for_graph(vector<unsigned int>& nodes, const graph& g) {
+  // nodes stores the block IDs in order after topological sorting
+  nodes.clear();
+  vector<bool> finished(g.nodes.size(), false);
+  // cfg here is without loop, loop detect: function dfs in class graph
+  topo_sort_dfs(0, nodes, finished, g);
+  std::reverse(nodes.begin(), nodes.end());
+}

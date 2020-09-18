@@ -23,7 +23,7 @@ class smt_prog {
   // return the SMT for the given program without branch and loop
   void smt_block(expr& smt_b, expr& smt_sc, inst* program, int start, int end, smt_var& sv, size_t cur_bid);
   void init(unsigned int num_regs);
-  void topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vector<bool>& finished);
+  // void topo_sort_dfs(size_t cur_bid, vector<unsigned int>& blocks, vector<bool>& finished);
   void gen_block_prog_logic(expr& e, expr& f_mem, expr& f_sc, smt_var& sv, size_t cur_bid, inst* inst_lst);
   void store_post_reg_val(smt_var& sv, size_t cur_bid, unsigned int num_regs);
   void add_path_cond(expr p_con, size_t cur_bid, size_t next_bId);
