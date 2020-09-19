@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <algorithm>
 #include "../../../src/verify/cfg.h"
 #include "canonicalize.h"
 
