@@ -4,6 +4,7 @@
 #include "../../src/utils.h"
 #include "../../src/inout.h"
 #include "../../src/isa/inst_header.h"
+#include "../../src/isa/prog.h"
 #include "smt_prog.h"
 
 using namespace z3;
@@ -42,6 +43,8 @@ extern int n_is_equal_to;
 
 class validator {
  private:
+  bool is_in_prog_eq_cache(prog& pgm);
+  void insert_into_prog_eq_cache(prog& pgm);
  public:
   // pre_: input formula of program: setting register 0 in basic block 0 as input[prog_id]
   // or the input variable of FOL formula as input[prog_id]
@@ -50,6 +53,8 @@ class validator {
   smt_var _post_sv_orig;
   // last counterexample
   inout _last_counterex;
+  // the cache of programs that are equal to the original program
+  unordered_map<int, vector<prog*> > _prog_eq_cache;
   // mem_t _last_counterex_mem;
   /* store variables start */
   // ps_: program logic formula, including basic program logic
@@ -61,6 +66,8 @@ class validator {
   // f = pre^pre2^p1^p2 -> post
   expr _store_f = string_to_expr("true");
   /* store variables end */
+  // a counter of calling is_smt_valid for solving equivalence check
+  unsigned int _count_solve_eq = 0;
   validator();
   validator(inst* orig, int length);
   validator(expr fx, expr input, expr output);

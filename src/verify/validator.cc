@@ -128,6 +128,14 @@ void validator::set_orig(inst* orig, int length) {
   }
   _post_sv_orig = ps_orig.sv;
   _store_ps_orig = ps_orig; // store
+
+  // reset _prog_eq_cache, since original program is reset
+  _prog_eq_cache.clear();
+  _count_solve_eq = 0;
+
+  prog orig_prog(orig);
+  canonicalize(orig_prog.inst_list, length);
+  insert_into_prog_eq_cache(orig_prog);
 }
 
 // calculate and store pre_orig, ps_orign
@@ -135,6 +143,28 @@ void validator::set_orig(expr fx, expr input, expr output) {
   smt_pre(_pre_orig, input);
   _pl_orig = fx && (string_to_expr("output" + to_string(VLD_PROG_ID_ORIG)) == output);
   // no storing store_ps_orig here
+}
+
+bool validator::is_in_prog_eq_cache(prog& pgm) {
+  int ph = progHash()(pgm);
+  if (_prog_eq_cache.find(ph) != _prog_eq_cache.end()) {
+    vector<prog*> chain = _prog_eq_cache[ph];
+    for (auto p : chain) {
+      if (*p == pgm) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void validator::insert_into_prog_eq_cache(prog& pgm) {
+  if (is_in_prog_eq_cache(pgm)) return;
+
+  int ph = progHash()(pgm);
+  _prog_eq_cache[ph] = std::vector<prog*>();
+  prog* pgm_copy = new prog(pgm);
+  _prog_eq_cache[ph].push_back(pgm_copy);
 }
 
 int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_syn) {
@@ -157,6 +187,12 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     // gen_counterex(orig, length_orig, mdl_sc, post_sv_synth);
     return ILLEGAL_CEX;
   }
+  // check whether the synth is in the eq_prog_cache. If so, this synth is equal to the original
+  prog synth_prog(synth);
+  canonicalize(synth_prog.inst_list, length_syn);
+  if (is_in_prog_eq_cache(synth_prog)) {
+    return 1;
+  }
   n_solve++;
   smt_var post_sv_synth = ps_synth.sv;
   expr pre_mem_same_mem = smt_pgm_set_same_input(_post_sv_orig, post_sv_synth);
@@ -167,6 +203,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   _store_post = post;
   _store_f = smt;
   model mdl(smt_c);
+  _count_solve_eq++;
   auto t1 = NOW;
   int is_equal = is_smt_valid(smt, mdl);
   auto t2 = NOW;
@@ -176,6 +213,9 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     // cout << is_equal << endl;
     // cout << mdl << endl;
     gen_counterex(orig, length_orig, mdl, post_sv_synth);
+  } else if (is_equal == 1) {
+    // insert the synth into eq_prog_cache if new
+    insert_into_prog_eq_cache(synth_prog);
   }
   return is_equal;
 }
