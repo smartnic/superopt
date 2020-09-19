@@ -53,6 +53,7 @@ class validator {
   inout _last_counterex;
   // the cache of programs that are equal to the original program
   unordered_map<int, vector<prog*> > _prog_eq_cache;
+  bool _enable_prog_eq_cache = true;
   // mem_t _last_counterex_mem;
   /* store variables start */
   // ps_: program logic formula, including basic program logic
@@ -65,9 +66,9 @@ class validator {
   expr _store_f = string_to_expr("true");
   /* store variables end */
   /* counter variables */
-  // _count_is_equal_to = _count_throw_err + _count_solve_safety + _count_solve_eq
   unsigned int _count_is_equal_to = 0;
   unsigned int _count_throw_err = 0;
+  unsigned int _count_prog_eq_cache = 0;
   unsigned int _count_solve_safety = 0;
   // a counter of calling is_smt_valid for solving equivalence check
   unsigned int _count_solve_eq = 0;

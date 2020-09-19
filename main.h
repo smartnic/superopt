@@ -29,4 +29,5 @@ struct input_paras {
   vector<int> win_e_list;
   double p_inst_operand;
   double p_inst;
+  bool disable_prog_eq_cache;
 };

@@ -47,7 +47,8 @@ class cost {
   void init(prog* orig, int len, const vector<inout_t> &input,
             double w_e = 0.5, double w_p = 0.5,
             int strategy_ex = 0, int strategy_eq = 0,
-            int strategy_avg = 0, int strategy_perf = 0);
+            int strategy_avg = 0, int strategy_perf = 0,
+            bool enable_prog_eq_cache = true);
   void set_orig(prog* orig, int len);
   double error_cost(prog* orig, int len1, prog* synth, int len2);
   double perf_cost(prog* synth, int len);

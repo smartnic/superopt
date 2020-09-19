@@ -17,7 +17,7 @@ cost::~cost() {}
 void cost::init(prog* orig, int len, const vector<inout_t> &input,
                 double w_e, double w_p,
                 int strategy_ex, int strategy_eq, int strategy_avg,
-                int strategy_perf) {
+                int strategy_perf, bool enable_prog_eq_cache) {
   set_orig(orig, len);
   _examples.clear();
   prog_state ps;
@@ -46,6 +46,7 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
   _strategy_avg = strategy_avg;
   _strategy_perf = strategy_perf;
   _meas_new_counterex_gened = false;
+  _vld._enable_prog_eq_cache = enable_prog_eq_cache;
 }
 
 void cost::set_orig(prog* orig, int len) {
