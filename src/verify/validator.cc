@@ -8,9 +8,6 @@
 
 using namespace z3;
 
-int n_solve;
-int n_is_equal_to;
-
 default_random_engine gen_vld;
 uniform_real_distribution<double> unidist_vld(0.0, 1.0);
 
@@ -131,6 +128,9 @@ void validator::set_orig(inst* orig, int length) {
 
   // reset _prog_eq_cache, since original program is reset
   _prog_eq_cache.clear();
+  _count_is_equal_to = 0;
+  _count_throw_err = 0;
+  _count_solve_safety = 0;
   _count_solve_eq = 0;
 
   prog orig_prog(orig);
@@ -168,7 +168,7 @@ void validator::insert_into_prog_eq_cache(prog& pgm) {
 }
 
 int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_syn) {
-  n_is_equal_to++;
+  _count_is_equal_to++;
   expr pre_synth = string_to_expr("true");
   smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg());
   smt_prog ps_synth;
@@ -178,11 +178,16 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
     // cerr << err_msg << endl;
+    _count_throw_err++;
     return -1;
   }
   expr smt_safety_chk = implies(pre_synth && pl_synth, ps_synth.p_sc);
   model mdl_sc(smt_c);
+  _count_solve_safety++;
+  auto t1 = NOW;
   int is_safe = is_smt_valid(smt_safety_chk, mdl_sc);
+  auto t2 = NOW;
+  cout << "vld solve safety: " << DUR(t1, t2) << " us" << " " << is_safe << endl;
   if (is_safe == 0) {
     // gen_counterex(orig, length_orig, mdl_sc, post_sv_synth);
     return ILLEGAL_CEX;
@@ -193,7 +198,6 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   if (is_in_prog_eq_cache(synth_prog)) {
     return 1;
   }
-  n_solve++;
   smt_var post_sv_synth = ps_synth.sv;
   expr pre_mem_same_mem = smt_pgm_set_same_input(_post_sv_orig, post_sv_synth);
   expr post = string_to_expr("true");
@@ -204,10 +208,10 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   _store_f = smt;
   model mdl(smt_c);
   _count_solve_eq++;
-  auto t1 = NOW;
+  t1 = NOW;
   int is_equal = is_smt_valid(smt, mdl);
-  auto t2 = NOW;
-  cout << "validator is_smt_valid: " << DUR(t1, t2) << " us" << " " << is_equal << endl;
+  t2 = NOW;
+  cout << "validator solve eq: " << DUR(t1, t2) << " us" << " " << is_equal << endl;
 
   if (is_equal == 0) {
     // cout << is_equal << endl;
@@ -233,4 +237,13 @@ reg_t validator::get_orig_output(reg_t input, unsigned int num_regs, unsigned in
   reg_t output = m.eval(output_expr).get_numeral_uint64();
   return output;
 }
+
+void validator::print_counters() const {
+  std::cout << "validator counters: "
+            << "is_equal_to: " << _count_is_equal_to << ", "
+            << "throw_err: " << _count_throw_err << ", "
+            << "solve_safety: " << _count_solve_safety << ", "
+            << "solve_eq: " << _count_solve_eq << endl;
+}
+
 /* class validator end */

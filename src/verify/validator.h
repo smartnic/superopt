@@ -8,8 +8,6 @@
 #include "smt_prog.h"
 
 using namespace z3;
-extern int n_solve;
-extern int n_is_equal_to;
 
 #define ILLEGAL_CEX -2  // program is illegal and has a counterexample
 
@@ -66,8 +64,14 @@ class validator {
   // f = pre^pre2^p1^p2 -> post
   expr _store_f = string_to_expr("true");
   /* store variables end */
+  /* counter variables */
+  // _count_is_equal_to = _count_throw_err + _count_solve_safety + _count_solve_eq
+  unsigned int _count_is_equal_to = 0;
+  unsigned int _count_throw_err = 0;
+  unsigned int _count_solve_safety = 0;
   // a counter of calling is_smt_valid for solving equivalence check
   unsigned int _count_solve_eq = 0;
+  /* counter variables end */
   validator();
   validator(inst* orig, int length);
   validator(expr fx, expr input, expr output);
@@ -91,4 +95,5 @@ class validator {
   // setting outputs of two programs are equal
   void smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2, smt_var& post_sv_synth);
 
+  void print_counters() const;
 };
