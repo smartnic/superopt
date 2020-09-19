@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include "cfg.h"
 
 using namespace std;
