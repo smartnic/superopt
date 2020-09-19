@@ -181,6 +181,14 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     _count_throw_err++;
     return -1;
   }
+  // check whether the synth is in the eq_prog_cache. If so, this synth is equal to the original
+  prog synth_prog(synth);
+  canonicalize(synth_prog.inst_list, length_syn);
+  if (is_in_prog_eq_cache(synth_prog)) {
+    cout << "vld synth eq from prog_eq_cache" << endl;
+    return 1;
+  }
+
   expr smt_safety_chk = implies(pre_synth && pl_synth, ps_synth.p_sc);
   model mdl_sc(smt_c);
   _count_solve_safety++;
@@ -191,12 +199,6 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   if (is_safe == 0) {
     // gen_counterex(orig, length_orig, mdl_sc, post_sv_synth);
     return ILLEGAL_CEX;
-  }
-  // check whether the synth is in the eq_prog_cache. If so, this synth is equal to the original
-  prog synth_prog(synth);
-  canonicalize(synth_prog.inst_list, length_syn);
-  if (is_in_prog_eq_cache(synth_prog)) {
-    return 1;
   }
   smt_var post_sv_synth = ps_synth.sv;
   expr pre_mem_same_mem = smt_pgm_set_same_input(_post_sv_orig, post_sv_synth);
