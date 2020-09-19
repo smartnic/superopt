@@ -130,6 +130,7 @@ void validator::set_orig(inst* orig, int length) {
   _prog_eq_cache.clear();
   _count_is_equal_to = 0;
   _count_throw_err = 0;
+  _count_prog_eq_cache = 0;
   _count_solve_safety = 0;
   _count_solve_eq = 0;
 
@@ -183,10 +184,13 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   }
   // check whether the synth is in the eq_prog_cache. If so, this synth is equal to the original
   prog synth_prog(synth);
-  canonicalize(synth_prog.inst_list, length_syn);
-  if (is_in_prog_eq_cache(synth_prog)) {
-    cout << "vld synth eq from prog_eq_cache" << endl;
-    return 1;
+  if (_enable_prog_eq_cache) {
+    canonicalize(synth_prog.inst_list, length_syn);
+    if (is_in_prog_eq_cache(synth_prog)) {
+      _count_prog_eq_cache++;
+      cout << "vld synth eq from prog_eq_cache" << endl;
+      return 1;
+    }
   }
 
   expr smt_safety_chk = implies(pre_synth && pl_synth, ps_synth.p_sc);
@@ -219,7 +223,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     // cout << is_equal << endl;
     // cout << mdl << endl;
     gen_counterex(orig, length_orig, mdl, post_sv_synth);
-  } else if (is_equal == 1) {
+  } else if ((is_equal == 1) && _enable_prog_eq_cache) {
     // insert the synth into eq_prog_cache if new
     insert_into_prog_eq_cache(synth_prog);
   }
@@ -244,6 +248,7 @@ void validator::print_counters() const {
   std::cout << "validator counters: "
             << "is_equal_to: " << _count_is_equal_to << ", "
             << "throw_err: " << _count_throw_err << ", "
+            << "prog_eq_cache: " << _count_prog_eq_cache << ", "
             << "solve_safety: " << _count_solve_safety << ", "
             << "solve_eq: " << _count_solve_eq << endl;
 }

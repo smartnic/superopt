@@ -30,4 +30,5 @@ struct input_paras {
   double p_inst_operand;
   double p_inst;
   int server_port;
+  bool disable_prog_eq_cache;
 };
