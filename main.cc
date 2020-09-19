@@ -105,14 +105,12 @@ void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
                 in_para.st_avg, in_para.st_perf);
-  n_is_equal_to = 0;
-  n_solve = 0;
   try {
     mh.mcmc_iter(in_para.niter, orig, prog_dic);
   } catch (string err_msg) {
     cout << err_msg << endl;
   }
-  cout << "n_is_equal_to: " << n_is_equal_to << ", n_solve: " << n_solve << endl;
+  mh._cost._vld.print_counters();
   if (in_para.meas_mode) {
     string suffix = gen_file_name_suffix_from_input(in_para);
     vector<prog> bm_optimals;
