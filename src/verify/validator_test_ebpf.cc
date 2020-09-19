@@ -147,7 +147,7 @@ void test1() {
                             inst(EXIT),
                            };
   vld.set_orig(instructions15, 2);
-  print_test_res(vld.is_equal_to(instructions15, 2, instructions15, 2) == 0, "instructions15 != instructions15");
+  print_test_res(vld.is_equal_to(instructions15, 2, instructions15, 2) == 1, "instructions15 == instructions15");
   print_test_res(vld.is_equal_to(instructions15, 2, instructions16, 3) == 0, "instructions15 != instructions16");
 }
 
@@ -1056,7 +1056,41 @@ void test10() {
   print_test_res(vld.is_equal_to(p2, 2, p2, 2) != ILLEGAL_CEX, "1.2");
 }
 
+void test11() {
+  cout << "test 11: test program equal cache" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(16);
+  smt_var::init_static_variables();
+  inst p1[4] = {inst(MOV64XC, 2, 0xff),
+                inst(STXB, 1, 0, 2),
+                inst(MOV64XC, 0, 0), // set the return register
+                inst(EXIT),
+               };
+  validator vld(p1, 4);
+  vld.is_equal_to(p1, 4, p1, 4);
+  vld.is_equal_to(p1, 4, p1, 4);
+  vld.is_equal_to(p1, 4, p1, 4);
+  print_test_res(vld._count_solve_eq == 0, "1");
+
+  inst p2[3] = {inst(MOV64XC, 0, 0xff),
+                inst(MOV64XC, 0, 0),
+                inst(EXIT),
+               };
+  inst p2_1[3] = {inst(NOP),
+                  inst(MOV64XC, 0, 0),
+                  inst(EXIT),
+                 };
+  vld.set_orig(p2, 3);
+  vld.is_equal_to(p2, 3, p2_1, 3);
+  vld.is_equal_to(p2, 3, p2, 3);
+  print_test_res(vld._count_solve_eq == 1, "2");
+}
+
 int main() {
+  // set for prog_eq_cache, if the prog len in the unit tests > 20,
+  // please update inst::max_prog_len here
+  inst::max_prog_len = 25;
   try {
     test1();
     test2();
@@ -1068,6 +1102,7 @@ int main() {
     test8();
     test9();
     test10();
+    test11();
   } catch (const string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
