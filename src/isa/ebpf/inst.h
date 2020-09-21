@@ -647,6 +647,7 @@ class inst: public inst_base {
   int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
   int32_t get_min_operand_val(int op_index, int inst_index = 0) const;
   int get_jmp_dis() const;
+  void set_jmp_dis(int off);
   void insert_jmp_opcodes(unordered_set<int>& jmp_set) const;
   int inst_output_opcode_type() const;
   int inst_output() const;

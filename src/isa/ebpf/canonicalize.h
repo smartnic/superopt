@@ -6,3 +6,5 @@
 using namespace std;
 
 void canonicalize(inst* program, int len);
+
+void remove_nops(inst* program, int len);

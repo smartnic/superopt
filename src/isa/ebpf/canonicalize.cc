@@ -38,6 +38,45 @@ void canonicalize_prog_without_branch(unordered_set<int>& live_regs,
   }
 }
 
+void remove_nops(inst* program, int len) {
+  // steps: 1. modify jmp distances 2. remove nops
+  // 1. modify jmp distances
+  for (int i = 0; i < len; i++) {
+    // search jmp instructions
+    int op_type = program[i].get_opcode_type();
+    if ((op_type != OP_UNCOND_JMP) && (op_type != OP_COND_JMP)) continue;
+    // calculate new jmp distance and set it as jmp insn's jmp distance
+    int jmp_dis = program[i].get_jmp_dis();
+    int insn_start = min(i, jmp_dis + i) + 1;
+    int insn_end = max(i, jmp_dis + i);
+    int nop_counter = 0;
+    for (int j = insn_start; j <= insn_end; j++) {
+      if (program[j].get_opcode_type() == OP_NOP) {
+        nop_counter++;
+      }
+    }
+    int new_jmp_dis = 0;
+    if (jmp_dis > 0) new_jmp_dis = jmp_dis - nop_counter;
+    else new_jmp_dis = jmp_dis + nop_counter;
+    program[i].set_jmp_dis(new_jmp_dis);
+  }
+
+  // 2. remove nops
+  // move nops to the program end, i.e., nops follow by real instructions
+  // program = concat(real instructions, nops)
+  int next_new_insn = 0;
+  for (int i = 0; i < len; i++) {
+    if (program[i].get_opcode_type() == OP_NOP) continue;
+    if (i != next_new_insn) {
+      program[next_new_insn] = program[i];
+    }
+    next_new_insn++;
+  }
+  for (int i = next_new_insn; i < len; i++) {
+    program[i].set_as_nop_inst();
+  }
+}
+
 // 1. set dead code as NOP
 void canonicalize(inst* program, int len) {
   // get cfg of the program
