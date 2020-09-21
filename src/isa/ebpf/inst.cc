@@ -516,6 +516,14 @@ int inst::get_jmp_dis() const {
   }
 }
 
+void inst::set_jmp_dis(int off) {
+  switch (get_opcode_type()) {
+    case (OP_UNCOND_JMP): _off = off; return;
+    case (OP_COND_JMP): _off = off; return;
+    default: cout << "Error: opcode is not jmp" << endl; return;
+  }
+}
+
 void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
   jmp_set.insert(JA);
   jmp_set.insert(JEQXC);

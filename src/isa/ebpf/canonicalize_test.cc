@@ -127,9 +127,76 @@ void test1() {
   canonicalize_check(p2_2, sizeof(p2_2) / sizeof(inst), expected_prog2_2, "2.2");
 }
 
+void remove_nops_check(inst* prog, int len, inst* expected_prog, string test_name) {
+  remove_nops(prog, len);
+  bool is_equal = true;
+  for (int i = 0; i < len; i++) {
+    is_equal = (prog[i] == expected_prog[i]);
+  }
+  print_test_res(is_equal, test_name);
+}
+
+void test2() {
+  cout << "Test 1: program remove nops test" << endl;
+  inst p1[] = {inst(JA, 1),
+               inst(NOP),
+               inst(EXIT),
+              };
+  inst p1_expected[] = {inst(JA, 0),
+                        inst(EXIT),
+                        inst(NOP),
+                       };
+  remove_nops_check(p1, sizeof(p1) / sizeof(inst), p1_expected, "1");
+
+  inst p2[] = {inst(JA, 1),
+               inst(MOV64XC, 1, 0),
+               inst(NOP),
+               inst(EXIT),
+               inst(JA, 2),
+               inst(NOP),
+               inst(NOP),
+               inst(EXIT),
+              };
+  inst p2_expected[] = {inst(JA, 0),
+                        inst(MOV64XC, 1, 0),
+                        inst(EXIT),
+                        inst(NOP),
+                        inst(JA, 0),
+                        inst(EXIT),
+                        inst(NOP),
+                        inst(NOP),
+                       };
+  remove_nops_check(p2, sizeof(p2) / sizeof(inst), p2_expected, "2");
+
+  inst p3[] = {inst(MOV64XC, 1, 0),
+               inst(JEQXC, 1, 2, 3),
+               inst(NOP),
+               inst(MOV64XC, 1, 0),
+               inst(NOP),
+               inst(JA, 1),
+               inst(NOP),
+               inst(EXIT),
+               inst(NOP),
+               inst(JA, -4),
+              };
+  inst p3_expected[] = {inst(MOV64XC, 1, 0),
+                        inst(JEQXC, 1, 2, 1),
+                        inst(MOV64XC, 1, 0),
+                        inst(JA, 1),
+                        inst(EXIT),
+                        inst(JA, -2),
+                        inst(),
+                        inst(),
+                        inst(),
+                        inst(),
+                       };
+  remove_nops_check(p3, sizeof(p3) / sizeof(inst), p3_expected, "3");
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
+    test2();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
