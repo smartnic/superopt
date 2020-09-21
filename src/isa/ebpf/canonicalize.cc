@@ -111,4 +111,7 @@ void canonicalize(inst* program, int len) {
                                      program, g.nodes[b]._start, g.nodes[b]._end,
                                      initial_live_regs);
   }
+
+  // remove nops
+  remove_nops(program, len);
 }

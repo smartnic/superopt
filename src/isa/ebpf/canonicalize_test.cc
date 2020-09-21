@@ -72,10 +72,10 @@ void test1() {
                inst(MOV64XY, 2, 10),
                inst(EXIT),
               };
-  inst expected_prog5[] = {inst(),
+  inst expected_prog5[] = {inst(EXIT),
                            inst(),
                            inst(),
-                           inst(EXIT),
+                           inst(),
                           };
   canonicalize_check(p5, sizeof(p5) / sizeof(inst), expected_prog5, "5");
 
@@ -86,8 +86,8 @@ void test1() {
               };
   inst expected_prog6[] = {inst(LDXB, 1, 1, 0),
                            inst(STXB, 10, -1, 1),
-                           inst(),
                            inst(EXIT),
+                           inst(),
                           };
   canonicalize_check(p6, sizeof(p6) / sizeof(inst), expected_prog6, "6");
 
@@ -98,11 +98,11 @@ void test1() {
                  inst(ADD64XC, 4, 1),
                  inst(EXIT),
                 };
-  inst expected_prog2_1[] = {inst(JEQXY, 1, 2, 2),
-                             inst(),
+  inst expected_prog2_1[] = {inst(JEQXY, 1, 2, 1),
+                             inst(EXIT),
                              inst(EXIT),
                              inst(),
-                             inst(EXIT),
+                             inst(),
                             };
   canonicalize_check(p2_1, sizeof(p2_1) / sizeof(inst), expected_prog2_1, "2.1");
 
@@ -121,8 +121,8 @@ void test1() {
                              inst(ADD64XC, 1, 1),
                              inst(MOV64XY, 0, 3),
                              inst(EXIT),
-                             inst(),
                              inst(EXIT),
+                             inst(),
                             };
   canonicalize_check(p2_2, sizeof(p2_2) / sizeof(inst), expected_prog2_2, "2.2");
 }
