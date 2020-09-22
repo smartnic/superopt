@@ -477,13 +477,24 @@ bool inst::operator==(const inst &x) const {
           (_imm == x._imm));
 }
 
+int32_t inst::get_max_sample_dst_reg() const {
+  // 1. memory write: r1 ~ r10
+  // 2. register write: r1 ~ r9
+  // 3. todo: check jmp
+  int op_class = BPF_CLASS(_opcode);
+  if ((op_class == BPF_ST) || (op_class == BPF_STX)) {
+    return NUM_REGS - 1;
+  }
+  return NUM_REGS - 2;
+}
+
 // For jmp opcode, it can only jump forward
 // TODO: modify the name
 int32_t inst::get_max_operand_val(int op_index, int inst_index) const {
   int operand_type = OPTYPE(_opcode, op_index);
   switch (operand_type) {
     case OP_UNUSED: return 0;
-    case OP_DST_REG: return NUM_REGS - 2; // r10 can not be modified, so r10 cannot be dst register
+    case OP_DST_REG: return get_max_sample_dst_reg();
     case OP_SRC_REG: return NUM_REGS - 1;
     case OP_OFF: return get_max_off(inst_index);
     case OP_IMM: return get_max_imm();
