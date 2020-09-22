@@ -604,6 +604,7 @@ class inst: public inst_base {
   int32_t get_min_imm() const;
   int16_t get_max_off(int inst_index) const;
   int16_t get_min_off() const;
+  int32_t get_max_sample_dst_reg() const;
   static void sorted_vec_insert(int32_t num, vector<int32_t>& sorted_vec);
  public:
   // original program's additional immediate numbers which are not in [MIN_IMM, MAX_IMM]
