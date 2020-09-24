@@ -159,12 +159,13 @@ void validator::set_orig(expr fx, expr input, expr output) {
   // no storing store_ps_orig here
 }
 
-bool validator::is_in_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache) {
+bool validator::is_in_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache, bool print) {
   int ph = progHash()(pgm);
   if (prog_cache.find(ph) != prog_cache.end()) {
     vector<prog*> chain = prog_cache[ph];
     for (auto p : chain) {
       if (*p == pgm) {
+        if (print) p->print();
         return true;
       }
     }
@@ -221,7 +222,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   }
 
   if (_enable_prog_uneq_cache) {
-    if (is_in_prog_cache(synth_prog, _prog_uneq_cache)) {
+    if (is_in_prog_cache(synth_prog, _prog_uneq_cache, true)) {
       cout << "ERROR: found the same unequal program again" << endl;
     }
   }
@@ -232,6 +233,8 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   if (sc != 1) {
     if ((sc == ILLEGAL_CEX) && _enable_prog_uneq_cache) {
       insert_into_prog_cache(synth_prog, _prog_uneq_cache);
+      cout << "unequal program insert" << endl;
+      synth_prog.print();
     }
     return sc;
   }
@@ -261,6 +264,8 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
 
   if ((is_equal != 1) && _enable_prog_uneq_cache) {
     insert_into_prog_cache(synth_prog, _prog_uneq_cache);
+    cout << "unequal program insert" << endl;
+    synth_prog.print();
   }
   return is_equal;
 }

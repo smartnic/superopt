@@ -44,7 +44,7 @@ enum COUNTEREX_TYPE {
 
 class validator {
  private:
-  bool is_in_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache);
+  bool is_in_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache, bool print = false);
   void insert_into_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache);
  public:
   // pre_: input formula of program: setting register 0 in basic block 0 as input[prog_id]
