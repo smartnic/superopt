@@ -221,7 +221,6 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   }
 
   if (_enable_prog_uneq_cache) {
-    canonicalize(synth_prog.inst_list, length_syn);
     if (is_in_prog_cache(synth_prog, _prog_uneq_cache)) {
       cout << "ERROR: found the same unequal program again" << endl;
       return UNEQ_NOCEX;
