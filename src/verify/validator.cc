@@ -131,8 +131,9 @@ void validator::set_orig(inst* orig, int length) {
   _post_sv_orig = ps_orig.sv;
   _store_ps_orig = ps_orig; // store
 
-  // reset _prog_eq_cache, since original program is reset
+  // reset _prog_eq_cache, _prog_uneq_cache, since original program is reset
   _prog_eq_cache.clear();
+  _prog_uneq_cache.clear();
   _count_is_equal_to = 0;
   _count_throw_err = 0;
   _count_prog_eq_cache = 0;
@@ -148,7 +149,7 @@ void validator::set_orig(inst* orig, int length) {
   // if the original program is safe, insert it in the prog_eq cache
   prog orig_prog(orig);
   canonicalize(orig_prog.inst_list, length);
-  insert_into_prog_eq_cache(orig_prog);
+  insert_into_prog_cache(orig_prog, _prog_eq_cache);
 }
 
 // calculate and store pre_orig, ps_orign
@@ -158,10 +159,10 @@ void validator::set_orig(expr fx, expr input, expr output) {
   // no storing store_ps_orig here
 }
 
-bool validator::is_in_prog_eq_cache(prog& pgm) {
+bool validator::is_in_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache) {
   int ph = progHash()(pgm);
-  if (_prog_eq_cache.find(ph) != _prog_eq_cache.end()) {
-    vector<prog*> chain = _prog_eq_cache[ph];
+  if (prog_cache.find(ph) != prog_cache.end()) {
+    vector<prog*> chain = prog_cache[ph];
     for (auto p : chain) {
       if (*p == pgm) {
         return true;
@@ -171,13 +172,13 @@ bool validator::is_in_prog_eq_cache(prog& pgm) {
   return false;
 }
 
-void validator::insert_into_prog_eq_cache(prog& pgm) {
-  if (is_in_prog_eq_cache(pgm)) return;
+void validator::insert_into_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache) {
+  if (is_in_prog_cache(pgm, prog_cache)) return;
 
   int ph = progHash()(pgm);
-  _prog_eq_cache[ph] = std::vector<prog*>();
+  prog_cache[ph] = std::vector<prog*>();
   prog* pgm_copy = new prog(pgm);
-  _prog_eq_cache[ph].push_back(pgm_copy);
+  prog_cache[ph].push_back(pgm_copy);
 }
 
 int validator::safety_check(inst* orig, int len, expr& pre, expr& pl, expr& p_sc, smt_var& sv) {
@@ -212,10 +213,18 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   prog synth_prog(synth);
   if (_enable_prog_eq_cache) {
     canonicalize(synth_prog.inst_list, length_syn);
-    if (is_in_prog_eq_cache(synth_prog)) {
+    if (is_in_prog_cache(synth_prog, _prog_eq_cache)) {
       _count_prog_eq_cache++;
       cout << "vld synth eq from prog_eq_cache" << endl;
       return 1;
+    }
+  }
+
+  if (_enable_prog_uneq_cache) {
+    canonicalize(synth_prog.inst_list, length_syn);
+    if (is_in_prog_cache(synth_prog, _prog_uneq_cache)) {
+      cout << "ERROR: found the same unequal program again" << endl;
+      return UNEQ_NOCEX;
     }
   }
 
@@ -223,6 +232,9 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
 
   int sc = safety_check(orig, length_orig, pre_synth, pl_synth, ps_synth.p_sc, post_sv_synth);
   if (sc != 1) {
+    if ((sc == ILLEGAL_CEX) && _enable_prog_uneq_cache) {
+      insert_into_prog_cache(synth_prog, _prog_uneq_cache);
+    }
     return sc;
   }
 
@@ -246,7 +258,11 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     gen_counterex(orig, length_orig, mdl, post_sv_synth, COUNTEREX_eq_check);
   } else if ((is_equal == 1) && _enable_prog_eq_cache) {
     // insert the synth into eq_prog_cache if new
-    insert_into_prog_eq_cache(synth_prog);
+    insert_into_prog_cache(synth_prog, _prog_eq_cache);
+  }
+
+  if ((is_equal != 1) && _enable_prog_uneq_cache) {
+    insert_into_prog_cache(synth_prog, _prog_uneq_cache);
   }
   return is_equal;
 }

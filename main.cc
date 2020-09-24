@@ -106,7 +106,8 @@ void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
                 in_para.st_avg, in_para.st_perf,
-                (! in_para.disable_prog_eq_cache));
+                (! in_para.disable_prog_eq_cache),
+                in_para.enable_prog_uneq_cache);
   try {
     mh.mcmc_iter(in_para.niter, orig, prog_dic);
   } catch (string err_msg) {
@@ -282,7 +283,8 @@ void usage() {
        << setw(W) << "--p_inst arg" << ": " << para_p_inst_desc() << endl
        << setw(W) << "--port arg" << ": " << para_port_desc() << endl;
        << endl << "validator related arguments" << endl
-       << setw(W) << "--disable_prog_eq_cache: disable the usage of prog_eq_cache" << endl;
+       << setw(W) << "--disable_prog_eq_cache: disable the usage of prog_eq_cache" << endl
+       << setw(W) << "--enable_prog_uneq_cache: enable the usage of prog_uneq_cache" << endl;
 }
 
 void set_w_list(vector<double> &list, string s) {
@@ -328,6 +330,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"p_inst", required_argument, nullptr, 21},
     {"port", required_argument, nullptr, 22},
     {"disable_prog_eq_cache", no_argument, nullptr, 23},
+    {"enable_prog_uneq_cache", no_argument, nullptr, 24},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -361,6 +364,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 21: in_para.p_inst = stod(optarg); break;
       case 22: in_para.server_port = stoi(optarg); break;
       case 23: in_para.disable_prog_eq_cache = true; break;
+      case 24: in_para.enable_prog_uneq_cache = true; break;
       case '?': usage(); return false;
     }
   }
@@ -418,6 +422,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.p_inst = 1.0 / 3.0;
   in_para.server_port = 8002;
   in_para.disable_prog_eq_cache = false;
+  in_para.enable_prog_uneq_cache = false;
 }
 
 int main(int argc, char* argv[]) {

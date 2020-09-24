@@ -10,6 +10,7 @@
 using namespace z3;
 
 #define ILLEGAL_CEX -2  // program is illegal and has a counterexample
+#define UNEQ_NOCEX -3  // program is unequal without a counterexample
 enum COUNTEREX_TYPE {
   COUNTEREX_eq_check = 0,
   COUNTEREX_safety_check,
@@ -44,8 +45,8 @@ enum COUNTEREX_TYPE {
 
 class validator {
  private:
-  bool is_in_prog_eq_cache(prog& pgm);
-  void insert_into_prog_eq_cache(prog& pgm);
+  bool is_in_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache);
+  void insert_into_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache);
  public:
   // pre_: input formula of program: setting register 0 in basic block 0 as input[prog_id]
   // or the input variable of FOL formula as input[prog_id]
@@ -57,6 +58,8 @@ class validator {
   // the cache of programs that are equal to the original program
   unordered_map<int, vector<prog*> > _prog_eq_cache;
   bool _enable_prog_eq_cache = true;
+  unordered_map<int, vector<prog*> > _prog_uneq_cache;
+  bool _enable_prog_uneq_cache = false;
   // mem_t _last_counterex_mem;
   /* store variables start */
   // ps_: program logic formula, including basic program logic
