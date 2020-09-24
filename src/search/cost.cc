@@ -18,11 +18,11 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
                 double w_e, double w_p,
                 int strategy_ex, int strategy_eq, int strategy_avg,
                 int strategy_perf, bool enable_prog_eq_cache) {
-  set_orig(orig, len);
-  _examples.clear();
-  prog_state ps;
-  ps.init();
   try {
+    set_orig(orig, len);
+    _examples.clear();
+    prog_state ps;
+    ps.init();
     for (size_t i = 0; i < input.size(); i++) {
       ps.clear();
       inout_t output;
@@ -219,7 +219,8 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   // But it should ensure that the number of initial example set is big enough.
   // case 1: gen_counterex_flag = (is_equal == 0);
   // case 2: gen_counterex_flag = (is_equal == 0) && (num_successful_ex == (int)_examples._exs.size());
-  if ((is_equal == 0) && (num_successful_ex == (int)_examples._exs.size())) {
+  if (((is_equal == 0) || (is_equal == ILLEGAL_CEX)) &&
+      (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
     cout << _vld._last_counterex.output << endl;

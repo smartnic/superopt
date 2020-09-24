@@ -88,13 +88,13 @@ class validator {
   reg_t get_orig_output(reg_t input, unsigned int num_regs, unsigned int input_reg);
   // move from `private` to `public` for testing time
   int is_smt_valid(expr& smt, model& mdl);
-  void gen_counterex(inst* orig, int length, model& m, smt_var& post_sv_synth);
+  void gen_counterex(inst* orig, int length, model& m, smt_var& post_sv_synth, int counterex_type);
   // set register 0 in basic block 0 as input[prog_id]
   void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg);
   // set the input variable of FOL formula as input[prog_id]
   void smt_pre(expr& pre, expr e);
   // setting outputs of two programs are equal
   void smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2, smt_var& post_sv_synth);
-
+  int safety_check(inst* orig, int len, expr& pre, expr& pl, expr& p_sc, smt_var& sv);
   void print_counters() const;
 };

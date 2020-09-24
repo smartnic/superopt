@@ -1037,6 +1037,19 @@ void test9() {
   print_test_res(vld.is_equal_to(p1, 5, p1, 5) == 1, "1.1");
 }
 
+void safety_check_of_orig_program(inst* p, int len, bool is_safe_expected, string test_name) {
+  bool is_safe = true;
+  try {
+    validator vld(p, len);
+  } catch (const string err_msg) {
+    string unsafe_str = "original program is unsafe";
+    if (err_msg == unsafe_str) {
+      is_safe = false;
+    }
+  }
+  print_test_res(is_safe == is_safe_expected, test_name);
+}
+
 void test10() {
   std::cout << "test 10: test safety check" << endl;
   std::cout << "1. stack aligned check" << endl;
@@ -1047,13 +1060,11 @@ void test10() {
   inst p1[2] = {inst(STDW, 10, -15, 1),
                 inst(EXIT),
                };
-  validator vld(p1, 2);
-  print_test_res(vld.is_equal_to(p1, 2, p1, 2) == ILLEGAL_CEX, "1.1");
+  safety_check_of_orig_program(p1, 2, false, "1.1");
   inst p2[2] = {inst(STDW, 10, -16, 1),
                 inst(EXIT),
                };
-  vld.set_orig(p2, 2);
-  print_test_res(vld.is_equal_to(p2, 2, p2, 2) != ILLEGAL_CEX, "1.2");
+  safety_check_of_orig_program(p2, 2, true, "1.2");
 }
 
 void test11() {
