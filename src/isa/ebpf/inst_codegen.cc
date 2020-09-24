@@ -1356,6 +1356,13 @@ void counterex_2_input_mem(inout_t& input, z3::model& mdl,
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
 }
 
+// make sure sv1 is for the original program
+void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
+  input.clear();
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv);
+}
+
+
 // safety check related functions
 z3::expr stack_safety_chk(z3::expr addr_off, int size, smt_var& sv) {
   // check if addr is a stack pointer, if so, addr_off should be aligned
