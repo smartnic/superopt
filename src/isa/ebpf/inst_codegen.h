@@ -94,19 +94,19 @@ inline z3::expr predicate_rsh32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
 // (write addr+off, sz, in, m); type: in, addr, off: bv64;
-inline z3::expr predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false);
-inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false);
-inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false);
-inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false);
+inline z3::expr predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
+inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
+inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
+inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
 // out == (read addr+off, sz, m); type: addr, off, out: bv64;
-inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
-inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
-z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
-inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
+inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true);
+inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true);
+z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true);
+inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true);
 // *(u64*)(addr+off) += in
-z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
+z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool enable_addr_off = true);
 // *(u32*)(addr+off) += in
-z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0);
+z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool enable_addr_off = true);
 // out == *(u16*)skb[off]
 z3::expr predicate_ldskbh(z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 // out == map_id, and track the out
@@ -117,13 +117,13 @@ z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned 
 // parameter: z3::expr cond = Z3_true
 z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::expr r3,
                                    z3::expr r4, z3::expr r5, z3::expr r0, smt_var& sv,
-                                   unsigned int block = 0);
+                                   unsigned int block = 0, bool enable_addr_off = true);
 z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
-                                     smt_var& sv, unsigned int block = 0);
+                                     smt_var& sv, unsigned int block = 0, bool enable_addr_off = true);
 z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_v, z3::expr out,
-                                     smt_var& sv, unsigned int block = 0);
+                                     smt_var& sv, unsigned int block = 0, bool enable_addr_off = true);
 z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::expr out, smt_var& sv,
-                                     unsigned int block = 0);
+                                     unsigned int block = 0, bool enable_addr_off = true);
 // return the FOL formula that set two programs the same inputs (support: same input maps now)
 z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2);
 
@@ -391,49 +391,54 @@ COMPUTE_XADD(64, uint64_t)
 
 // implemented in inst_codegen.cc, where addr is a reg experssion
 z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
-                           unsigned int block = 0, z3::expr cond = Z3_true, bool bpf_st = false);
+                           unsigned int block = 0, z3::expr cond = Z3_true, bool bpf_st = false,
+                           bool enable_addr_off = true);
 
 inline z3::expr predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
-                              unsigned int block, bool bpf_st) {
-  return predicate_st_byte(in.extract(7, 0), addr, off, sv, block, Z3_true, bpf_st);
+                              unsigned int block, bool bpf_st, bool enable_addr_off) {
+  return predicate_st_byte(in.extract(7, 0), addr, off, sv, block, Z3_true, bpf_st, enable_addr_off);
 }
 
 inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
-                               unsigned int block, bool bpf_st) {
-  return (predicate_st8(in.extract(7, 0), addr, off, sv, block, bpf_st) &&
-          predicate_st8(in.extract(15, 8), addr, off + to_expr(1, 64), sv, block, bpf_st));
+                               unsigned int block, bool bpf_st, bool enable_addr_off) {
+  return (predicate_st8(in.extract(7, 0), addr, off, sv, block, bpf_st, enable_addr_off) &&
+          predicate_st8(in.extract(15, 8), addr, off + to_expr(1, 64), sv, block, bpf_st, enable_addr_off));
 }
 
 inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
-                               unsigned int block, bool bpf_st) {
-  return (predicate_st16(in.extract(15, 0), addr, off, sv, block, bpf_st) &&
-          predicate_st16(in.extract(31, 16), addr, off + to_expr(2, 64), sv, block, bpf_st));
+                               unsigned int block, bool bpf_st, bool enable_addr_off) {
+  return (predicate_st16(in.extract(15, 0), addr, off, sv, block, bpf_st, enable_addr_off) &&
+          predicate_st16(in.extract(31, 16), addr, off + to_expr(2, 64), sv, block, bpf_st, enable_addr_off));
 }
 
 inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
-                               unsigned int block, bool bpf_st) {
-  return (predicate_st32(in.extract(31, 0), addr, off, sv, block, bpf_st) &&
-          predicate_st32(in.extract(63, 32), addr, off + to_expr(4, 64), sv, block, bpf_st));
+                               unsigned int block, bool bpf_st, bool enable_addr_off) {
+  return (predicate_st32(in.extract(31, 0), addr, off, sv, block, bpf_st, enable_addr_off) &&
+          predicate_st32(in.extract(63, 32), addr, off + to_expr(4, 64), sv, block, bpf_st, enable_addr_off));
 }
 
 // implemented in inst_codegen.cc
-z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, z3::expr cond = Z3_true);
+z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
+                           unsigned int block = 0, z3::expr cond = Z3_true, bool enable_addr_off = true);
 
-inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
+inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
+                              unsigned int block, bool enable_addr_off) {
   return ((out.extract(63, 8) == to_expr(0, 56)) &&
-          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block));
+          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off));
 }
 
-inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
+inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
+                               unsigned int block, bool enable_addr_off) {
   return ((out.extract(63, 16) == to_expr(0, 48)) &&
-          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block) &&
-          predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block));
+          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off) &&
+          predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block, Z3_true, enable_addr_off));
 }
 
-inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
-  z3::expr f = predicate_ld_byte(addr, off, sv, out.extract(7, 0), block);
+inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
+                               unsigned int block, bool enable_addr_off) {
+  z3::expr f = predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off);
   for (int i = 1; i < 8; i++) {
-    f = f && predicate_ld_byte(addr, off + i, sv, out.extract(8 * i + 7, 8 * i), block);
+    f = f && predicate_ld_byte(addr, off + i, sv, out.extract(8 * i + 7, 8 * i), block, Z3_true, enable_addr_off);
   }
   return f;
 }
@@ -444,6 +449,6 @@ void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
                        vector<pair<uint64_t, uint8_t>>& mem_addr_val);
 
 // safety check related APIs
-z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv);
-z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv);
-z3::expr safety_chk_st(z3::expr addr, z3::expr off, int size, smt_var& sv);
+z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off = true);
+z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off = true);
+z3::expr safety_chk_st(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off = true);
