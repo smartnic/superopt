@@ -8,11 +8,6 @@
 
 using namespace z3;
 
-enum COUNTEREX_TYPE {
-  COUNTEREX_eq_check = 0,
-  COUNTEREX_safety_check,
-};
-
 default_random_engine gen_vld;
 uniform_real_distribution<double> unidist_vld(0.0, 1.0);
 
@@ -45,6 +40,8 @@ void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv
     counterex_2_input_mem(_last_counterex.input, m, _post_sv_orig, post_sv_synth);
   } else if (counterex_type == COUNTEREX_safety_check) {
     counterex_2_input_mem(_last_counterex.input, m, post_sv_synth);
+  } else {
+    cout << "ERROR: no counterex_type matches" << endl;
   }
   expr input_orig_val = m.eval(input_orig);
   if (input_orig_val.is_numeral()) {

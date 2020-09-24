@@ -10,7 +10,10 @@
 using namespace z3;
 
 #define ILLEGAL_CEX -2  // program is illegal and has a counterexample
-
+enum COUNTEREX_TYPE {
+  COUNTEREX_eq_check = 0,
+  COUNTEREX_safety_check,
+};
 /* Validator algorithm document: https://github.com/ngsrinivas/superopt/tree/master/doc */
 
 /* Class validator supports two functions now: equivalence check and output computation.
