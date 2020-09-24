@@ -129,7 +129,8 @@ z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned 
   return (map_id == out);
 }
 
-z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block) {
+z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block,
+                        bool enable_addr_off) {
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     int pkt_ptrs_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs);
@@ -139,6 +140,9 @@ z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, 
     for (int i = 0; i < ids.size(); i++) {
       if (ids[i] != pkt_ptrs_mem_table) continue;
       z3::expr addr_off = info_list[i].off + off;
+      if (! enable_addr_off) {
+        addr_off = addr + off - sv.get_pkt_start_addr();
+      }
       // the first 4 bytes are the address of pkt start, the last are the address of pkt end
       z3::expr pc_addr_off = (addr_off == ZERO_ADDR_OFF_EXPR) || (addr_off == to_expr((int64_t)4));
       z3::expr pc = info_list[i].path_cond && sv.mem_var.get_block_path_cond(block);
@@ -153,6 +157,9 @@ z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, 
     for (int i = 0; i < ids.size(); i++) {
       if (ids[i] != pkt_mem_table) continue;
       z3::expr addr_off = info_list[i].off + off;
+      if (! enable_addr_off) {
+        addr_off = addr + off - sv.mem_var._skb_start;
+      }
       z3::expr pc_addr_off_s = (addr_off == to_expr(SKB_data_s_off, 64));
       z3::expr pc = info_list[i].path_cond && sv.mem_var.get_block_path_cond(block);
       int skb_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_skb);
@@ -165,14 +172,15 @@ z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, 
     }
   }
   return ((out.extract(63, 32) == to_expr(0, 32)) &&
-          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block) &&
-          predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block) &&
-          predicate_ld_byte(addr, off + 2, sv, out.extract(23, 16), block) &&
-          predicate_ld_byte(addr, off + 3, sv, out.extract(31, 24), block));
+          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off) &&
+          predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block, Z3_true, enable_addr_off) &&
+          predicate_ld_byte(addr, off + 2, sv, out.extract(23, 16), block, Z3_true, enable_addr_off) &&
+          predicate_ld_byte(addr, off + 3, sv, out.extract(31, 24), block, Z3_true, enable_addr_off));
 }
 
 z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
-                           unsigned int block, z3::expr cond, bool bpf_st) {
+                           unsigned int block, z3::expr cond, bool bpf_st,
+                           bool enable_addr_off) {
   z3::expr path_cond = sv.mem_var.get_block_path_cond(block) && cond;
   z3::expr f = Z3_true;
   vector<int> ids;
@@ -201,10 +209,13 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
         throw (err_msg);
       }
     }
-    bool is_addr_off_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
-                             (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
-                             (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs)) ||
-                             (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_skb));
+    bool is_addr_off_table = false;
+    if (enable_addr_off) {
+      is_addr_off_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
+                          (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
+                          (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs)) ||
+                          (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_skb));
+    }
     if (is_addr_off_table) { // addr in the entry is offset
       z3::expr addr_off = off + info_list[i].off;
       // cout << "is_addr_off_table  addr_off: " << addr_off.simplify() << endl;
@@ -218,10 +229,11 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
 
 // this func is only called by map helper functions
 z3::expr predicate_st_n_bytes(int n, z3::expr in, z3::expr addr, smt_var& sv,
-                              unsigned int block, z3::expr cond) {
+                              unsigned int block, z3::expr cond, bool enable_addr_off) {
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < n; i++) {
-    f = f && predicate_st_byte(in.extract(8 * i + 7, 8 * i), addr, to_expr(i, 64), sv, block, cond);
+    f = f && predicate_st_byte(in.extract(8 * i + 7, 8 * i), addr, to_expr(i, 64),
+                               sv, block, cond, enable_addr_off);
   }
   return f;
 }
@@ -261,14 +273,19 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, smt_wt& urt) {
 }
 
 z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_info,
-    z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond = Z3_true) {
+    z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond = Z3_true,
+    bool enable_addr_off = true) {
   cond = ptr_info.path_cond && sv.mem_var.get_block_path_cond(block) && cond;
   smt_wt& wt = sv.mem_var._mem_tables[table_id]._wt;
   z3::expr a = addr + off;
-  bool is_addr_off_table = (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
-                           (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
-                           (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs)) ||
-                           (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_skb));
+  bool is_addr_off_table = false;
+  if (enable_addr_off) {
+    is_addr_off_table = (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
+                        (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
+                        (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs)) ||
+                        (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_skb));
+  }
+
   if (is_addr_off_table) {
     a = ptr_info.off + off;
   }
@@ -320,7 +337,8 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
   return f;
 }
 
-z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond) {
+z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond,
+                           bool enable_addr_off) {
   // cout << "predicate_ld_byte: " << endl;
   // cout << "addr: " << addr << endl;
   z3::expr f = Z3_true;
@@ -333,36 +351,37 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr ou
   // cout << "ids.size(): " << ids.size() << endl;
   if (ids.size() == 0) {string s = "error!!!"; throw (s); return Z3_true;} // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
-    f = f && predicate_ld_byte_for_one_mem_table(ids[i], info_list[i], addr, off, sv, out, block, cond);
+    f = f && predicate_ld_byte_for_one_mem_table(ids[i], info_list[i], addr, off, sv, out, block, cond, enable_addr_off);
   }
   return f;
 }
 
-z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond) {
-  z3::expr f = predicate_ld_byte(addr, to_expr(0, 64), sv, out.extract(7, 0), block, cond);
+z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond,
+                              bool enable_addr_off) {
+  z3::expr f = predicate_ld_byte(addr, to_expr(0, 64), sv, out.extract(7, 0), block, cond, enable_addr_off);
   for (int i = 1; i < n; i++) {
-    f = f && predicate_ld_byte(addr, to_expr(i, 64), sv, out.extract(8 * i + 7, 8 * i), block, cond);
+    f = f && predicate_ld_byte(addr, to_expr(i, 64), sv, out.extract(8 * i + 7, 8 * i), block, cond, enable_addr_off);
   }
   return f;
 }
 
-z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block) {
+z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block, bool enable_addr_off) {
   z3::expr v64_1 = sv.new_var(64);
-  z3::expr f = predicate_ld64(addr, off, sv, v64_1, block);
+  z3::expr f = predicate_ld64(addr, off, sv, v64_1, block, enable_addr_off);
   z3::expr v64_2 = sv.new_var(64);
   f = f && (v64_2 == (v64_1 + in));
   bool bpf_st = false; // xadd64 opcode is not BPF_ST
-  f = f && predicate_st64(v64_2, addr, off, sv, block, bpf_st);
+  f = f && predicate_st64(v64_2, addr, off, sv, block, bpf_st, enable_addr_off);
   return f;
 }
 
-z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block) {
+z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block, bool enable_addr_off) {
   z3::expr v64_1 = sv.new_var(64);
-  z3::expr f = predicate_ld32(addr, off, sv, v64_1, block);
+  z3::expr f = predicate_ld32(addr, off, sv, v64_1, block, enable_addr_off);
   z3::expr v64_2 = sv.new_var(64);
   f = f && (v64_2 == (v64_1 + in));
   bool bpf_st = false; // xadd32 opcode is not BPF_ST
-  f = f && predicate_st32(v64_2, addr, off, sv, block, bpf_st);
+  f = f && predicate_st32(v64_2, addr, off, sv, block, bpf_st, enable_addr_off);
   return f;
 }
 
@@ -932,7 +951,7 @@ z3::expr predicate_st_n_bytes_in_mem_urt(int n, int table_id, z3::expr addr, smt
 
 // "addr_map_v" is the return value
 z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
-                                     smt_var& sv, unsigned int block) {
+                                     smt_var& sv, unsigned int block, bool enable_addr_off) {
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
   // get map id according to addr_map
@@ -951,7 +970,8 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
     z3::expr k = sv.update_key(k_sz);
 
     /* add constrains on k */
-    z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block, map_id_path_conds[i]);
+    z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block,
+                                      map_id_path_conds[i], enable_addr_off);
 
     /* add constrains on addr_map_v for the following cases
        if key is in the target map, addr_map_v is the same as the corresponding
@@ -989,7 +1009,7 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 
 // "out" is the return value
 z3::expr predicate_map_update_helper_for_one_map(int map_id, z3::expr map_id_path_cond,
-    z3::expr addr_k, z3::expr addr_v, z3::expr out, smt_var& sv, unsigned int block) {
+    z3::expr addr_k, z3::expr addr_v, z3::expr out, smt_var& sv, unsigned int block, bool enable_addr_off) {
   // cout << "predicate_map_update_helper_for_one_map: " << map_id << " " << map_id_path_cond << endl;
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
@@ -1000,8 +1020,8 @@ z3::expr predicate_map_update_helper_for_one_map(int map_id, z3::expr map_id_pat
   z3::expr addr_map_v = sv.update_addr_v();
   /* add constrains on "out", "k", "v" */
   z3::expr f = (out == MAP_UPD_RET_EXPR) &&
-               predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block, map_id_path_cond) &&
-               predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, sv, v, block, map_id_path_cond);
+               predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block, map_id_path_cond, enable_addr_off) &&
+               predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, sv, v, block, map_id_path_cond, enable_addr_off);
   z3::expr next_addr_map_v = mem.get_and_update_addr_v_next(map_id);
   /* add constrains on "addr_map_v".
      if the key is in the target map WT. if the corresponding value address is NULL,
@@ -1053,14 +1073,16 @@ z3::expr predicate_map_update_helper_for_one_map(int map_id, z3::expr map_id_pat
   mem._map_tables[map_id]._wt.add(block, is_valid, k, addr_map_v);
   // add the update entry in memory WT
   mem.add_ptr_by_map_id(addr_map_v, map_id, cond); // todo: what if addr_map_v == NULL
-  f_ret = f_ret && predicate_st_n_bytes(v_sz / NUM_BYTE_BITS, v, addr_map_v, sv, block, map_id_path_cond);
+  f_ret = f_ret && predicate_st_n_bytes(v_sz / NUM_BYTE_BITS, v, addr_map_v, sv, block,
+                                        map_id_path_cond, enable_addr_off);
 
   return f_ret;
 }
 
 // "out" is the return value
 z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_v,
-                                     z3::expr out, smt_var& sv, unsigned int block) {
+                                     z3::expr out, smt_var& sv, unsigned int block,
+                                     bool enable_addr_off) {
   z3::expr f_ret = Z3_true;
   // get map id according to addr_map
   vector<int> map_ids;
@@ -1073,7 +1095,7 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   if (map_ids.size() == 0) {string s = "error!!!"; throw (s); return f_ret;} // todo: addr_map is not a pointer
   for (int i = 0; i < map_ids.size(); i++) {
     f_ret = f_ret && predicate_map_update_helper_for_one_map(map_ids[i], map_id_path_conds[i],
-            addr_k, addr_v, out, sv, block);
+            addr_k, addr_v, out, sv, block, enable_addr_off);
   }
   return f_ret;
 }
@@ -1081,13 +1103,13 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 // "out" is the return value
 // if key not in the map, out = 0xfffffffe, else out = 0
 z3::expr predicate_map_delete_helper_for_one_map(int map_id, z3::expr map_id_path_cond,
-    z3::expr addr_k, z3::expr out, smt_var& sv, unsigned int block) {
+    z3::expr addr_k, z3::expr out, smt_var& sv, unsigned int block, bool enable_addr_off) {
   z3::expr f_ret = Z3_true;
   smt_mem& mem = sv.mem_var;
   int k_sz = mem_t::map_key_sz(map_id);
   z3::expr k = sv.update_key(k_sz);
   /* add the constrains on "k" */
-  z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block, map_id_path_cond);
+  z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block, map_id_path_cond, enable_addr_off);
 
   /* add the constrains on "addr_map_v" according to "k" */
   z3::expr addr_map_v = sv.update_addr_v();
@@ -1129,7 +1151,7 @@ z3::expr predicate_map_delete_helper_for_one_map(int map_id, z3::expr map_id_pat
 }
 
 z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::expr out,
-                                     smt_var& sv, unsigned int block) {
+                                     smt_var& sv, unsigned int block, bool enable_addr_off) {
   z3::expr f_ret = Z3_true;
   // get map id according to addr_map
   vector<int> map_ids;
@@ -1142,20 +1164,20 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   if (map_ids.size() == 0) {string s = "error!!!"; throw (s); return f_ret;} // todo: addr_map is not a pointer
   for (int i = 0; i < map_ids.size(); i++) {
     f_ret = f_ret && predicate_map_delete_helper_for_one_map(map_ids[i], map_id_path_conds[i],
-            addr_k, out, sv, block);
+            addr_k, out, sv, block, enable_addr_off);
   }
   return f_ret;
 }
 
 z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::expr r3,
                                    z3::expr r4, z3::expr r5, z3::expr r0,
-                                   smt_var &sv, unsigned int block) {
+                                   smt_var &sv, unsigned int block, bool enable_addr_off) {
   if (func_id == BPF_FUNC_map_lookup_elem) {
-    return predicate_map_lookup_helper(r1, r2, r0, sv, block);
+    return predicate_map_lookup_helper(r1, r2, r0, sv, block, enable_addr_off);
   } else if (func_id == BPF_FUNC_map_update_elem) {
-    return predicate_map_update_helper(r1, r2, r3, r0, sv, block);
+    return predicate_map_update_helper(r1, r2, r3, r0, sv, block, enable_addr_off);
   } else if (func_id == BPF_FUNC_map_delete_elem) {
-    return predicate_map_delete_helper(r1, r2, r0, sv, block);
+    return predicate_map_delete_helper(r1, r2, r0, sv, block, enable_addr_off);
   } else if (func_id == BPF_FUNC_get_prandom_u32) {
     return predicate_get_prandom_u32_helper(r0, sv);
   } else {
@@ -1371,7 +1393,7 @@ z3::expr stack_safety_chk(z3::expr addr_off, int size, smt_var& sv) {
   return f;
 }
 
-z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv) {
+z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off) {
   z3::expr f = Z3_true;
   vector<int> ids;
   vector<mem_ptr_info> info_list;
@@ -1380,6 +1402,9 @@ z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv) {
   for (int i = 0; i < ids.size(); i++) {
     if (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
       z3::expr addr_off = off + info_list[i].off;
+      if (! enable_addr_off) {
+        addr_off = addr + off - sv.get_stack_bottom_addr();
+      }
       z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
       f = f && z3::implies(info_list[i].path_cond, stack_chk);
     }
@@ -1387,7 +1412,7 @@ z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv) {
   return f;
 }
 
-z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv) {
+z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off) {
   z3::expr f = Z3_true;
   vector<int> ids;
   vector<mem_ptr_info> info_list;
@@ -1396,14 +1421,16 @@ z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv) {
   for (int i = 0; i < ids.size(); i++) {
     if (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
       z3::expr addr_off = off + info_list[i].off;
-      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
+      if (! enable_addr_off) {
+        addr_off = addr + off - sv.get_stack_bottom_addr();
+      }      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
       f = f && z3::implies(info_list[i].path_cond, stack_chk);
     }
   }
   return f;
 }
 
-z3::expr safety_chk_st(z3::expr addr, z3::expr off, int size, smt_var& sv) {
+z3::expr safety_chk_st(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off) {
   z3::expr f = Z3_true;
   vector<int> ids;
   vector<mem_ptr_info> info_list;
@@ -1412,7 +1439,9 @@ z3::expr safety_chk_st(z3::expr addr, z3::expr off, int size, smt_var& sv) {
   for (int i = 0; i < ids.size(); i++) {
     if (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
       z3::expr addr_off = off + info_list[i].off;
-      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
+      if (! enable_addr_off) {
+        addr_off = addr + off - sv.get_stack_bottom_addr();
+      }      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
       f = f && z3::implies(info_list[i].path_cond, stack_chk);
     }
   }
