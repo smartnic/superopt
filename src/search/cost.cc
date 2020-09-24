@@ -123,12 +123,12 @@ double cost::get_final_error_cost(double exs_cost, int is_equal,
   switch (_strategy_eq) {
     case ERROR_COST_STRATEGY_EQ1:
       if (is_equal == 0) return ((double)(exs_cost + num_successful_ex) / avg_value);
-      else if (is_equal == -1) return ERROR_COST_MAX;
+      else if (is_equal < 0) return ERROR_COST_MAX;
       else return exs_cost;
     case ERROR_COST_STRATEGY_EQ2:
       if (is_equal == 0) return  (1 + (double)(exs_cost + ex_set_size
                                     - num_successful_ex) / avg_value);
-      else if (is_equal == -1) return ERROR_COST_MAX;
+      else if (is_equal < 0) return ERROR_COST_MAX;
       else return exs_cost;
     default:
       cout << "ERROR: no error cost equation strategy matches." << endl;

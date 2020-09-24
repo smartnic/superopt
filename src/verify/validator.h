@@ -10,7 +10,6 @@
 using namespace z3;
 
 #define ILLEGAL_CEX -2  // program is illegal and has a counterexample
-#define UNEQ_NOCEX -3  // program is unequal without a counterexample
 enum COUNTEREX_TYPE {
   COUNTEREX_eq_check = 0,
   COUNTEREX_safety_check,
