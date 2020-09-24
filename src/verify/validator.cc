@@ -257,15 +257,14 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     // cout << is_equal << endl;
     // cout << mdl << endl;
     gen_counterex(orig, length_orig, mdl, post_sv_synth, COUNTEREX_eq_check);
+    if (_enable_prog_uneq_cache) {
+      insert_into_prog_cache(synth_prog, _prog_uneq_cache);
+      cout << "unequal program insert" << endl;
+      synth_prog.print();
+    }
   } else if ((is_equal == 1) && _enable_prog_eq_cache) {
     // insert the synth into eq_prog_cache if new
     insert_into_prog_cache(synth_prog, _prog_eq_cache);
-  }
-
-  if ((is_equal != 1) && _enable_prog_uneq_cache) {
-    insert_into_prog_cache(synth_prog, _prog_uneq_cache);
-    cout << "unequal program insert" << endl;
-    synth_prog.print();
   }
   return is_equal;
 }
