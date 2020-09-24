@@ -509,9 +509,15 @@ void test3() {
 }
 
 void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
-    string test_name, validator& vld, prog_state& ps) {
-  vld.set_orig(p1, len1);
-  bool res_expected = (vld.is_equal_to(p1, len1, p2, len2) == 0); // 0: not equal
+    string test_name, int counterex_type = COUNTEREX_eq_check) {
+  prog_state ps;
+  ps.init();
+  validator vld(p1, len1);
+  int ret_val = 0;
+  if (counterex_type == COUNTEREX_eq_check) ret_val = 0; // 0: not equal
+  else if (counterex_type == COUNTEREX_safety_check) ret_val = ILLEGAL_CEX;
+  else cout << "ERROR: no counterex_type matches" << endl;
+  bool res_expected = (vld.is_equal_to(p1, len1, p2, len2) == ret_val);
   inout_t input, output0, output1;
   input.init();
   output0.init();
@@ -522,9 +528,21 @@ void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
   output0.clear();
   output1.clear();
   interpret(output0, p1, len1, ps, vld._last_counterex.input);
-  interpret(output1, p2, len2, ps, vld._last_counterex.input);
-  res_expected = res_expected && (!(output0 == output1));
-  res_expected = res_expected && (output0 == vld._last_counterex.output);
+  if (counterex_type == COUNTEREX_eq_check) {
+    interpret(output1, p2, len2, ps, vld._last_counterex.input);
+    res_expected = res_expected && (!(output0 == output1));
+    res_expected = res_expected && (output0 == vld._last_counterex.output);
+  } else if (counterex_type == COUNTEREX_safety_check) {
+    bool captured = false;
+    try {
+      interpret(output1, p2, len2, ps, vld._last_counterex.input);
+    } catch (const string err_msg) {
+      // unsafe synthesis is supposed to be captured by the counterex input
+      captured = true;
+    }
+    res_expected = res_expected && captured;
+  }
+
   print_test_res(res_expected, test_name);
 }
 
@@ -648,8 +666,8 @@ void test4() {
                   inst(MOV64XC, 0, 0),
                   inst(EXIT),
                  };
-  chk_counterex_by_vld_to_interpreter(p2, 9, p21, 2, "2.1", vld, ps);
-  chk_counterex_by_vld_to_interpreter(p2, 9, p22, 11, "2.2", vld, ps);
+  chk_counterex_by_vld_to_interpreter(p2, 9, p21, 2, "2.1");
+  chk_counterex_by_vld_to_interpreter(p2, 9, p22, 11, "2.2");
 
   // r0 = 0xfffffffe if k1 not in map0, else r0 = 0; del map0[k1]
   inst p3[7] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
@@ -664,7 +682,7 @@ void test4() {
   inst p31[2] = {inst(MOV32XC, 0, 0xfffffffe),
                  inst(EXIT),
                 };
-  chk_counterex_by_vld_to_interpreter(p3, 7, p31, 2, "3", vld, ps);
+  chk_counterex_by_vld_to_interpreter(p3, 7, p31, 2, "3");
 
   // r0 = 1 if k1 in map0, else r0 = 0
   inst p4[9] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
@@ -681,7 +699,7 @@ void test4() {
   inst p41[2] = {inst(MOV32XC, 0, 0),
                  inst(EXIT),
                 };
-  chk_counterex_by_vld_to_interpreter(p4, 9, p41, 2, "4", vld, ps);
+  chk_counterex_by_vld_to_interpreter(p4, 9, p41, 2, "4");
 
   std::cout << "2. test packet" << std::endl;
   // r0 = pkt[0]
@@ -697,7 +715,7 @@ void test4() {
                  inst(MOV64XC, 0, 0xff),
                  inst(EXIT),
                 };
-  chk_counterex_by_vld_to_interpreter(p5, 3, p51, 6, "1", vld, ps);
+  chk_counterex_by_vld_to_interpreter(p5, 3, p51, 6, "1");
 
   // test skb
   std::cout << "3. test skb" << std::endl;
@@ -712,10 +730,22 @@ void test4() {
   inst p2_2[2] = {inst(LDABSH, 1),
                   inst(EXIT),
                  };
-  prog_state ps_skb;
-  ps_skb.init();
-  validator vld_skb(p2_1, 2);
-  chk_counterex_by_vld_to_interpreter(p2_1, 2, p2_2, 2, "1", vld_skb, ps_skb);
+  chk_counterex_by_vld_to_interpreter(p2_1, 2, p2_2, 2, "1");
+
+  cout << "4. counter example from safety check" << endl;
+  inst p4_1[5] = {inst(MOV64XC, 0, 0xff),
+                  inst(JNEXC, 1, 0xff, 2),
+                  inst(STXH, 10, -2, 0),
+                  inst(LDXH, 0, 10, -2),
+                  inst(EXIT),
+                 };
+  inst p4_2[5] = {inst(MOV64XC, 0, 0xff),
+                  inst(JNEXC, 1, 0xff, 2),
+                  inst(STXH, 10, -3, 0),
+                  inst(LDXH, 0, 10, -3),
+                  inst(EXIT),
+                 };
+  chk_counterex_by_vld_to_interpreter(p4_1, 5, p4_2, 5, "4.1", COUNTEREX_safety_check);
 }
 
 void test5() { // test pkt
@@ -1065,6 +1095,10 @@ void test10() {
                 inst(EXIT),
                };
   safety_check_of_orig_program(p2, 2, true, "1.2");
+
+  cout << "2. test counter example from unsafe synthesis" << endl;
+  // validator vld();
+  // chk_counterex_by_vld_to_interpreter(p2, 9, p21, 2, "2.1", vld, ps);
 }
 
 void test11() {
