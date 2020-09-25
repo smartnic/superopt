@@ -5,6 +5,7 @@ using namespace std;
 
 mem_layout mem_t::_layout;
 vector<z3::expr> smt_var::randoms_u32;
+bool smt_var::enable_addr_off = true;
 
 default_random_engine gen_ebpf_inst_var;
 uniform_real_distribution<double> unidist_ebpf_inst_var(0.0, 1.0);
