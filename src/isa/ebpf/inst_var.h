@@ -324,6 +324,8 @@ class smt_var: public smt_var_base {
   smt_output smt_out;
   // symbolic values of BPF_FUNC_get_prandom_u32, each element is 32-bit
   static vector<z3::expr> randoms_u32;
+  // flag of whether offset-based address is enabled in memory tables
+  static bool enable_addr_off;
   smt_var();
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
   // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs

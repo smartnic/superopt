@@ -584,6 +584,47 @@ bool is_valid(z3::expr smt) {
   }
 }
 
+#define CURDST(insn) sv.get_cur_reg_var(insn._dst_reg)
+#define CURSRC(insn) sv.get_cur_reg_var(insn._src_reg)
+
+void smt_check_ldstx(int64_t st_input, int64_t ld_output, string test_name, inst* insns,
+                     z3::expr insns_pre, smt_var& sv) {
+  z3::expr smt = insns_pre;
+  smt = smt && (CURSRC(insns[0]) == to_expr((int64_t)st_input));
+  smt = smt && insns[0].smt_inst(sv);
+  smt = smt && insns[1].smt_inst(sv);
+  z3::expr output = CURDST(insns[1]);
+  print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
+}
+
+void smt_check_ldst(int64_t ld_output, string test_name, inst* insns,
+                    z3::expr insns_pre, smt_var& sv) {
+  z3::expr smt = insns_pre;
+  smt = smt && insns[0].smt_inst(sv);
+  smt = smt && insns[1].smt_inst(sv);
+  z3::expr output = CURDST(insns[1]);
+  print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
+}
+
+void smt_check_xadd(int64_t v1, int64_t v2, int64_t v3, int64_t v4, int size, int64_t ld_output,
+                    string test_name, z3::expr insns_pre, smt_var& sv) {
+  z3::expr smt = insns_pre;
+  smt = smt && inst(STW, 10, -4, v1).smt_inst(sv);
+  smt = smt && inst(STW, 10, -8, v2).smt_inst(sv);
+  smt = smt && inst(MOV64XC, 1, v3).smt_inst(sv);
+  smt = smt && inst(LSH64XC, 1, 32).smt_inst(sv);
+  smt = smt && inst(ADD64XC, 1, v4).smt_inst(sv);
+  if (size == 32) smt = smt && inst(XADD32, 10, -8, 1).smt_inst(sv);
+  else if (size == 64) smt = smt = smt && inst(XADD64, 10, -8, 1).smt_inst(sv);
+  else {cout << "NOT SUCCESS: no size match" << endl;}
+  smt = smt && inst(LDXDW, 0, 10, -8).smt_inst(sv);
+  z3::expr output = CURDST(inst(LDXDW, 0, 10, -8));
+  print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
+}
+
+#undef CURDST
+#undef CURSRC
+
 void test2() {
   cout << endl << "Test 2: instruction smt check" << endl;
 
@@ -816,53 +857,51 @@ void test2() {
 #define CURSRC(insn) sv.get_cur_reg_var(insn._src_reg)
 // Assume two instructions in the program `insns`,
 // the first one is STX and the second is LD
-#define SMT_CHECK_LDST(st_input, ld_output, test_name, insns)                \
-  smt = f_mem_layout_constrain && f_r10;                                     \
-  smt = smt && (CURSRC(insns[0]) == to_expr((int64_t)st_input));             \
-  smt = smt && insns[0].smt_inst(sv);                                        \
-  smt = smt && insns[1].smt_inst(sv);                                        \
-  output = CURDST(insns[1]);                                                 \
-  print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
+#define SMT_CHECK_LDSTX(st_input, ld_output, test_name, insns)                \
+  smt_check_ldstx(st_input, ld_output, test_name, insns, f_mem_layout_constrain && f_r10, sv); \
+  smt_var::enable_addr_off = false;\
+  smt_check_ldstx(st_input, ld_output, test_name, insns, f_mem_layout_constrain && f_r10, sv);\
+  smt_var::enable_addr_off = true;
 
   z3::expr f_r10 = (sv.get_cur_reg_var(10) == sv.get_stack_bottom_addr());
   sv.mem_var.add_ptr(sv.get_cur_reg_var(10), sv.mem_var.get_mem_table_id(MEM_TABLE_stack));
 
   inst insns1[2] = {inst(STXB, 10, -4, 1), inst(LDXB, 0, 10, -4)};
-  SMT_CHECK_LDST(10, 10, "smt LDXB & STXB 1", insns1);
-  SMT_CHECK_LDST(-2, 0xfe, "smt LDXB & STXB 2", insns1);
+  SMT_CHECK_LDSTX(10, 10, "smt LDXB & STXB 1", insns1);
+  SMT_CHECK_LDSTX(-2, 0xfe, "smt LDXB & STXB 2", insns1);
 
   inst insns2[2] = {inst(STXH, 10, -4, 1), inst(LDXH, 0, 10, -4)};
-  SMT_CHECK_LDST(10, 10, "smt LDXH & STXH 1", insns2);
-  SMT_CHECK_LDST(-2, 0xfffe, "smt LDXH & STXH 2", insns2);
+  SMT_CHECK_LDSTX(10, 10, "smt LDXH & STXH 1", insns2);
+  SMT_CHECK_LDSTX(-2, 0xfffe, "smt LDXH & STXH 2", insns2);
 
   inst insns3[2] = {inst(STXW, 10, -4, 1), inst(LDXW, 0, 10, -4)};
-  SMT_CHECK_LDST(10, 10, "smt LDXW & STXW 1", insns3);
-  SMT_CHECK_LDST(-2, 0xfffffffe, "smt LDXW & STXW 2", insns3);
+  SMT_CHECK_LDSTX(10, 10, "smt LDXW & STXW 1", insns3);
+  SMT_CHECK_LDSTX(-2, 0xfffffffe, "smt LDXW & STXW 2", insns3);
 
   inst insns4[2] = {inst(STXDW, 10, -8, 1), inst(LDXDW, 0, 10, -8)};
-  SMT_CHECK_LDST(10, 10, "smt LDXDW & STXDW 1", insns4);
-  SMT_CHECK_LDST(-2, -2, "smt LDXDW & STXDW 2", insns4);
+  SMT_CHECK_LDSTX(10, 10, "smt LDXDW & STXDW 1", insns4);
+  SMT_CHECK_LDSTX(-2, -2, "smt LDXDW & STXDW 2", insns4);
 
   inst insns5[2] = {inst(STXW, 10, -4, 1), inst(LDXB, 0, 10, -4)};
-  SMT_CHECK_LDST(0x12345678, 0x78, "smt LDXW & STXB 1", insns5);
+  SMT_CHECK_LDSTX(0x12345678, 0x78, "smt LDXW & STXB 1", insns5);
 
   inst insns6[2] = {inst(STXW, 10, -4, 1), inst(LDXB, 0, 10, -3)};
-  SMT_CHECK_LDST(0x12345678, 0x56, "smt LDXW & STXB 2", insns6);
+  SMT_CHECK_LDSTX(0x12345678, 0x56, "smt LDXW & STXB 2", insns6);
 
   inst insns7[2] = {inst(STXW, 10, -4, 1), inst(LDXB, 0, 10, -2)};
-  SMT_CHECK_LDST(0x12345678, 0x34, "smt LDXW & STXB 3", insns7);
+  SMT_CHECK_LDSTX(0x12345678, 0x34, "smt LDXW & STXB 3", insns7);
 
   inst insns8[2] = {inst(STXW, 10, -4, 1), inst(LDXB, 0, 10, -1)};
-  SMT_CHECK_LDST(0x12345678, 0x12, "smt LDXW & STXB 4", insns8);
-#undef SMT_CHECK_LDST
+  SMT_CHECK_LDSTX(0x12345678, 0x12, "smt LDXW & STXB 4", insns8);
+#undef SMT_CHECK_LDSTX
 
 // Assume two instructions in the program `insns`,
 // the first one is ST and the second is LD
 #define SMT_CHECK_LDST(ld_output, test_name, insns)                          \
-  smt = f_mem_layout_constrain && f_r10 && insns[0].smt_inst(sv);            \
-  smt = smt && insns[1].smt_inst(sv);                                        \
-  output = CURDST(insns[1]);                                                 \
-  print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
+  smt_check_ldst(ld_output, test_name, insns, f_mem_layout_constrain && f_r10, sv); \
+  smt_var::enable_addr_off = false; \
+  smt_check_ldst(ld_output, test_name, insns, f_mem_layout_constrain && f_r10, sv);\
+  smt_var::enable_addr_off = true;
 
   inst insns11[2] = {inst(STB, 10, -1, 0x12), inst(LDXB, 0, 10, -1)};
   SMT_CHECK_LDST(0x12, "smt LDXB & STB", insns11);
@@ -877,16 +916,20 @@ void test2() {
   SMT_CHECK_LDST(-1, "smt LDXDW & STDW", insns14);
 
 #define SMT_CHECK_XADD(v1, v2, v3, v4, size, ld_output, test_name)           \
-  smt = f_mem_layout_constrain && f_r10;                                     \
-  smt = smt && inst(STW, 10, -4, v1).smt_inst(sv);                           \
-  smt = smt && inst(STW, 10, -8, v2).smt_inst(sv);                           \
-  smt = smt && inst(MOV64XC, 1, v3).smt_inst(sv);                            \
-  smt = smt && inst(LSH64XC, 1, 32).smt_inst(sv);                            \
-  smt = smt && inst(ADD64XC, 1, v4).smt_inst(sv);                            \
-  smt = smt && inst(XADD##size, 10, -8, 1).smt_inst(sv);                     \
-  smt = smt && inst(LDXDW, 0, 10, -8).smt_inst(sv);                          \
-  output = CURDST(inst(LDXDW, 0, 10, -8));                                   \
-  print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
+  smt_check_xadd(v1, v2, v3, v4, size, ld_output, test_name, f_mem_layout_constrain && f_r10, sv); \
+  smt_var::enable_addr_off = false; \
+  smt_check_xadd(v1, v2, v3, v4, size, ld_output, test_name, f_mem_layout_constrain && f_r10, sv); \
+  smt_var::enable_addr_off = true;
+  // smt = f_mem_layout_constrain && f_r10;                                     \
+  // smt = smt && inst(STW, 10, -4, v1).smt_inst(sv);                           \
+  // smt = smt && inst(STW, 10, -8, v2).smt_inst(sv);                           \
+  // smt = smt && inst(MOV64XC, 1, v3).smt_inst(sv);                            \
+  // smt = smt && inst(LSH64XC, 1, 32).smt_inst(sv);                            \
+  // smt = smt && inst(ADD64XC, 1, v4).smt_inst(sv);                            \
+  // smt = smt && inst(XADD##size, 10, -8, 1).smt_inst(sv);                     \
+  // smt = smt && inst(LDXDW, 0, 10, -8).smt_inst(sv);                          \
+  // output = CURDST(inst(LDXDW, 0, 10, -8));                                   \
+  // print_test_res(eval_output(smt, output) == (int64_t)ld_output, test_name);
 
   SMT_CHECK_XADD(0x0, 0x1, 0x0, 0x2, 64, 0x3, "smt XADD64 1");
   SMT_CHECK_XADD(0x1, 0x2, 0x3, 0x4, 64, 0x400000006, "smt XADD64 2");
