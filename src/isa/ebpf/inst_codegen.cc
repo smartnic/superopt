@@ -1254,7 +1254,6 @@ void get_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
 // if v does not in mem_addr_val, generate a random value
 void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
                        vector<pair<uint64_t, uint8_t>>& mem_addr_val) {
-  bool found = true;
   for (int i = 0; i < v.size(); i++) {
     bool found_i = false;
     uint64_t addr = addr_v + i;
@@ -1266,14 +1265,8 @@ void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
       }
     }
     if (!found_i) {
-      found = false;
-      break;
+      v[i] = unidist_codegen(gen_codegen) * (double)0xff; // uint8_t: 0 - 0xff
     }
-  }
-  // if v does not in mem_addr_val, generate a random value
-  if (found) return;
-  for (int i = 0; i < v.size(); i++) {
-    v[i] = unidist_codegen(gen_codegen) * (double)0xff; // uint8_t: 0 - 0xff
   }
 }
 
@@ -1317,8 +1310,6 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
     bool pkt_null_off_chk = false; // since pkt is offset-record in the table
     get_mem_from_mdl(mem_addr_val, mdl, sv, pkt_mem_id, pkt_null_off_chk);
 
-    // set pkt with random values
-    input.set_pkt_random_val();
     for (int i = 0; i < mem_addr_val.size(); i++) {
       uint64_t off = mem_addr_val[i].first;
       uint8_t val = mem_addr_val[i].second;
@@ -1372,6 +1363,7 @@ void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model& mdl, smt_va
 void counterex_2_input_mem(inout_t& input, z3::model& mdl,
                            smt_var& sv1, smt_var& sv2) {
   input.clear();
+  input.set_pkt_random_val();
   // update input memory for executing path condition later
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2);
   // update sv1[sv1_id] finally, the same update before will be overwritten
@@ -1381,6 +1373,7 @@ void counterex_2_input_mem(inout_t& input, z3::model& mdl,
 // make sure sv1 is for the original program
 void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
   input.clear();
+  input.set_pkt_random_val();
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv);
 }
 
