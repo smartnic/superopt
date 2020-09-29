@@ -51,6 +51,9 @@ void remove_nops(inst* program, int len) {
     int insn_end = max(i, jmp_dis + i);
     int nop_counter = 0;
     for (int j = insn_start; j <= insn_end; j++) {
+      if (program[j]._opcode == LDMAPID) { // ldmapid has two insns, the second one's opcode is nop
+        j++;
+      }
       if (program[j].get_opcode_type() == OP_NOP) {
         nop_counter++;
       }
@@ -66,7 +69,15 @@ void remove_nops(inst* program, int len) {
   // program = concat(real instructions, nops)
   int next_new_insn = 0;
   for (int i = 0; i < len; i++) {
-    if (program[i].get_opcode_type() == OP_NOP) continue;
+    bool is_nop = false;
+    if (program[i].get_opcode_type() == OP_NOP) {
+      if (i > 0) {
+        if (program[i - 1]._opcode != LDMAPID) {
+          is_nop = true;
+        }
+      }
+    }
+    if (is_nop) continue;
     if (i != next_new_insn) {
       program[next_new_insn] = program[i];
     }
