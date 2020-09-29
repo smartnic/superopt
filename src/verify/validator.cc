@@ -210,7 +210,14 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     _count_throw_err++;
     return -1;
   }
-  // check whether the synth is in the eq_prog_cache. If so, this synth is equal to the original
+  // check whether the synth is in the prog_uneq_cache. If so, there is a bug in counter-example
+  prog synth_prog_uneq_cache(synth);
+  if (_enable_prog_uneq_cache) {
+    if (is_in_prog_cache(synth_prog_uneq_cache, _prog_uneq_cache, true)) {
+      cout << "ERROR: found the same unequal program again" << endl;
+    }
+  }
+  // check whether the synth is in the prog_eq_cache. If so, this synth is equal to the original
   prog synth_prog(synth);
   if (_enable_prog_eq_cache) {
     canonicalize(synth_prog.inst_list, length_syn);
@@ -221,20 +228,14 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     }
   }
 
-  if (_enable_prog_uneq_cache) {
-    if (is_in_prog_cache(synth_prog, _prog_uneq_cache, true)) {
-      cout << "ERROR: found the same unequal program again" << endl;
-    }
-  }
-
   smt_var post_sv_synth = ps_synth.sv;
 
   int sc = safety_check(orig, length_orig, pre_synth, pl_synth, ps_synth.p_sc, post_sv_synth);
   if (sc != 1) {
     if ((sc == ILLEGAL_CEX) && _enable_prog_uneq_cache) {
-      insert_into_prog_cache(synth_prog, _prog_uneq_cache);
+      insert_into_prog_cache(synth_prog_uneq_cache, _prog_uneq_cache);
       cout << "unequal program insert" << endl;
-      synth_prog.print();
+      synth_prog_uneq_cache.print();
     }
     return sc;
   }
@@ -258,9 +259,9 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     // cout << mdl << endl;
     gen_counterex(orig, length_orig, mdl, post_sv_synth, COUNTEREX_eq_check);
     if (_enable_prog_uneq_cache) {
-      insert_into_prog_cache(synth_prog, _prog_uneq_cache);
+      insert_into_prog_cache(synth_prog_uneq_cache, _prog_uneq_cache);
       cout << "unequal program insert" << endl;
-      synth_prog.print();
+      synth_prog_uneq_cache.print();
     }
   } else if ((is_equal == 1) && _enable_prog_eq_cache) {
     // insert the synth into eq_prog_cache if new
