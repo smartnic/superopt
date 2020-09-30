@@ -1110,12 +1110,14 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
 #define CONT {                                                     \
       insn++;                                                      \
       if (insn < program + length) {                               \
+        insn->print();\
         safety_chk(*insn, ps);                                     \
         goto *jumptable[opcode_2_idx(insn->_opcode)];              \
       } else goto out;                                             \
   }
 
 select_insn:
+  insn->print();
   safety_chk(*insn, ps);
   goto *jumptable[opcode_2_idx(insn->_opcode)];
 
@@ -1189,20 +1191,20 @@ INSN_NOP:
 #define LDST(SIZEOP, SIZE)                                           \
   INSN_LDX##SIZEOP:                                                  \
     ps.reg_safety_chk(DST_ID, vector<int>{SRC_ID});                  \
-    real_addr = get_real_addr_by_simu(SRC + OFF, MEM, SR);           \
-    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, true);  \
+    real_addr = get_real_addr_by_simu(SRC + OFF, MEM, SR, ps.get_reg_type(SRC_ID)); \
+    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, true, true);  \
     DST = compute_ld##SIZE(real_addr, 0);                            \
     CONT;                                                            \
   INSN_STX##SIZEOP:                                                  \
     ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});          \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);           \
-    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false); \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR, ps.get_reg_type(DST_ID)); \
+    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false, true); \
     compute_st##SIZE(SRC, real_addr, 0);                             \
     CONT;                                                            \
   INSN_ST##SIZEOP:                                                   \
     ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                  \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);           \
-    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false); \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR, ps.get_reg_type(DST_ID)); \
+    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false, true); \
     compute_st##SIZE(IMM, real_addr, 0);                             \
     CONT;
   LDST(B,  8)
@@ -1214,8 +1216,8 @@ INSN_NOP:
 #define XADD(SIZE)                                                   \
   INSN_XADD##SIZE:                                                   \
     ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});          \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR);           \
-    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false); \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR, ps.get_reg_type(DST_ID)); \
+    ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false, true); \
     compute_xadd##SIZE(SRC, real_addr, 0);                           \
     CONT;
   XADD(32)

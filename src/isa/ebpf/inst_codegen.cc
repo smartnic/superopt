@@ -47,7 +47,7 @@ uint64_t compute_map_lookup_helper(int addr_map, uint64_t addr_k, prog_state& ps
                                    simu_real& sr, bool chk_safety) {
   int map_id = addr_map;
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
-  uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr);
+  uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr, PTR_TO_STACK);
   // safety check to avoid segmentation fault
   bool is_mem_read = true;
   bool stack_aligned_chk = false;
@@ -67,13 +67,13 @@ uint64_t compute_map_update_helper(int addr_map, uint64_t addr_k, uint64_t addr_
                                    simu_real& sr, bool chk_safety) {
   int map_id = addr_map;
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
-  uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr);
+  uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr, PTR_TO_STACK);
   bool is_mem_read = true;
   bool stack_aligned_chk = false;
   ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read, stack_aligned_chk);
   // get key and value from memory
   string k = ld_n_bytes_from_addr((uint8_t*)real_addr_k, k_sz);
-  uint64_t real_addr_v = get_real_addr_by_simu(addr_v, ps._mem, sr);
+  uint64_t real_addr_v = get_real_addr_by_simu(addr_v, ps._mem, sr, PTR_TO_STACK);
   ps._mem.update_kv_in_map(map_id, k, (uint8_t*)real_addr_v);
   return MAP_UPD_RET;
 }
@@ -82,7 +82,7 @@ uint64_t compute_map_delete_helper(int addr_map, uint64_t addr_k, prog_state& ps
                                    simu_real& sr, bool chk_safety) {
   int map_id = addr_map;
   int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
-  uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr);
+  uint64_t real_addr_k = get_real_addr_by_simu(addr_k, ps._mem, sr, PTR_TO_STACK);
   bool is_mem_read = true;
   bool stack_aligned_chk = false;
   ps.memory_access_and_safety_chk(real_addr_k, k_sz, chk_safety, is_mem_read, stack_aligned_chk);
@@ -1379,10 +1379,16 @@ void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
 
 
 // safety check related functions
+// size > 0
 z3::expr stack_safety_chk(z3::expr addr_off, int size, smt_var& sv) {
   // check if addr is a stack pointer, if so, addr_off should be aligned
   // srem: signed remainder operator for bitvectors
   z3::expr f = (z3::srem(addr_off, size) == 0);
+  // [addr_off, addr_off + size - 1] should within [0, 512)
+  // sle(a, b): a s<= b; slt(a, b): a s< b
+  z3::expr addr_off_max = addr_off + size - 1;
+  f = f && sle(0, addr_off) && slt(addr_off, STACK_SIZE);
+  f = f && sle(0, addr_off_max) && slt(addr_off_max, STACK_SIZE);
   return f;
 }
 
