@@ -1049,7 +1049,8 @@ void prog_state::init_safety_chk() {
   _reg_readable[10] = true;
   _stack_readable.resize(STACK_SIZE, false);
   _reg_type.resize(NUM_REGS, SCALAR_VALUE);
-  _reg_type[1] = PTR_TO_CTX; // r1 is input value
+  set_reg_type(1, PTR_TO_CTX);
+  set_reg_type(10, PTR_TO_STACK);
 }
 
 void prog_state::reg_safety_chk(int reg_write, vector<int> reg_read_list) {
@@ -1073,7 +1074,7 @@ void prog_state::init() {
 void prog_state::memory_access_chk(uint64_t addr, uint64_t num_bytes) {
   // to avoid overflow
   uint64_t start = (uint64_t)_mem.get_mem_start_addr();
-  uint64_t end = (uint64_t)_mem.get_mem_end_addr();
+  uint64_t end = (uint64_t)_mem.get_mem_end_addr() - 1;
   uint64_t max_uint64 = 0xffffffffffffffff;
   bool legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
                (addr <= (max_uint64 - num_bytes + 1));
@@ -1083,7 +1084,7 @@ void prog_state::memory_access_chk(uint64_t addr, uint64_t num_bytes) {
     legal = false;
   } else {
     start = (uint64_t)_mem.get_pkt_start_addr();
-    end = (uint64_t)_mem.get_pkt_end_addr();
+    end = (uint64_t)_mem.get_pkt_end_addr() - 1;
     legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
             (addr <= (max_uint64 - num_bytes + 1));
   }
@@ -1092,7 +1093,7 @@ void prog_state::memory_access_chk(uint64_t addr, uint64_t num_bytes) {
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     start = (uint64_t)_mem.get_pkt_ptrs_start_addr();
-    end = (uint64_t)_mem.get_pkt_ptrs_end_addr();
+    end = (uint64_t)_mem.get_pkt_ptrs_end_addr() - 1;
     legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
             (addr <= (max_uint64 - num_bytes + 1));
   }
@@ -1102,7 +1103,7 @@ void prog_state::memory_access_chk(uint64_t addr, uint64_t num_bytes) {
     legal = false;
   } else {
     start = (uint64_t)_mem.get_skb_start_addr();
-    end = (uint64_t)_mem.get_skb_end_addr();
+    end = (uint64_t)_mem.get_skb_end_addr() - 1;
     legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
             (addr <= (max_uint64 - num_bytes + 1));
   }
@@ -1123,9 +1124,15 @@ void prog_state::memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes,
   uint64_t start = (uint64_t)_mem.get_stack_start_addr();
   uint64_t end = (uint64_t)_mem.get_stack_bottom_addr() - 1;
   uint64_t max_uint64 = 0xffffffffffffffff;
-  bool is_stack_addr = (addr >= start) && (addr + num_bytes - 1 <= end) &&
-                       (addr <= (max_uint64 - num_bytes + 1));
+  bool is_stack_addr = (addr >= start) && (addr <= end);
   if (! is_stack_addr) return;
+  bool is_legal_range = (addr + num_bytes - 1 <= end) &&
+                        (addr <= (max_uint64 - num_bytes + 1));
+  if (! is_legal_range) {
+    string err_msg = "offset > stack range";
+    throw (err_msg);
+  }
+
   int idx_s = addr - start;
   if (is_read) {
     for (int i = 0; i < num_bytes; i++) {
@@ -1155,7 +1162,7 @@ int prog_state::get_reg_type(int reg) const {
 
 void prog_state::set_reg_type(int reg, int type) {
   bool legal = (reg >= 0) && (reg < NUM_REGS) &&
-               (type >= SCALAR_VALUE) && (type < MAX_REG_TRYPE);
+               (type >= SCALAR_VALUE) && (type < MAX_REG_TYPE);
   assert(legal);
   _reg_type[reg] = type;
 }
@@ -1466,7 +1473,16 @@ uint64_t get_simu_addr_by_real(uint64_t real_addr, mem_t& mem, simu_real sr) {
   throw (err_msg);
 }
 
-uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr) {
+uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int reg_type) {
+  if (reg_type == PTR_TO_STACK) {
+    uint64_t stack_start = mem.get_simu_mem_start_addr();
+    if ((simu_addr >= stack_start) && (simu_addr < stack_start + STACK_SIZE)) {
+      return (simu_addr + sr.real_r10 - sr.simu_r10);
+    } else {
+      string err_msg = "convert simu_addr to real_addr fail";
+      throw (err_msg);
+    }
+  }
   if ((simu_addr >= mem.get_simu_mem_start_addr()) &&
       (simu_addr <= mem.get_simu_mem_end_addr())) {
     return (simu_addr + sr.real_r10 - sr.simu_r10);
