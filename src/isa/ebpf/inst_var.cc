@@ -1329,6 +1329,10 @@ bool inout_t::operator==(const inout_t &rhs) const {
     }
   }
 
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    if (pkt[i] != rhs.pkt[i]) return false;
+  }
+
   if (pgm_exit_type != rhs.pgm_exit_type) return false;
   // now two outputs have the same program exit type
   int output_type = pgm_exit_type;
