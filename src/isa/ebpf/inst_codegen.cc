@@ -678,7 +678,8 @@ z3::expr smt_one_map_eq_chk_k_in_one_map(vector<z3::expr>& k1_list, vector<z3::e
     for (int j = 0; j < map1._urt.size(); j++) {
       z3::expr k1_in = map1._urt.key[j];
       z3::expr addr_v1_in = map1._urt.addr_v[j];
-      z3::expr f_found_same_key = (k1_list[i] == k1_in) && f_k1_list[i] && f_k1_not_in_map2;
+      z3::expr iv_k1_in = map1._urt.is_valid[j];
+      z3::expr f_found_same_key = iv_k1_in && (k1_list[i] == k1_in) && f_k1_list[i] && f_k1_not_in_map2;
       z3::expr f_k_both_inexist = (addr_v1 == NULL_ADDR_EXPR) && (addr_v1_in == NULL_ADDR_EXPR);
       z3::expr v_eq = sv1.update_is_valid();
       // cout << "one_map: " << v_eq << " " << v1_list[i] << " " << v1_in_list[j] << endl;
