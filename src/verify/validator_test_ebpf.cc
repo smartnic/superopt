@@ -5,6 +5,8 @@
 
 using namespace z3;
 
+#define TEST_PGM_MAX_LEN 25
+
 void eq_check(inst* p1, int len1, inst* p2, int len2, int expected, string test_name) {
   validator vld(p1, len1);
   vld._enable_prog_eq_cache = false;
@@ -498,7 +500,7 @@ void test3() {
 }
 
 void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
-    string test_name, int counterex_type = COUNTEREX_eq_check) {
+    string test_name, int counterex_type = COUNTEREX_eq_check, bool interpret_check = true) {
   prog_state ps;
   ps.init();
   validator vld(p1, len1);
@@ -511,11 +513,13 @@ void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
   input.init();
   output0.init();
   output1.init();
-  interpret(output0, p1, len1, ps, input);
-  interpret(output1, p2, len2, ps, input);
-  res_expected = res_expected && (output0 == output1);
-  output0.clear();
-  output1.clear();
+  if (interpret_check) {
+    interpret(output0, p1, len1, ps, input);
+    interpret(output1, p2, len2, ps, input);
+    res_expected = res_expected && (output0 == output1);
+    output0.clear();
+    output1.clear();
+  }
   interpret(output0, p1, len1, ps, vld._last_counterex.input);
   if (counterex_type == COUNTEREX_eq_check) {
     interpret(output1, p2, len2, ps, vld._last_counterex.input);
@@ -583,9 +587,7 @@ void test4() {
   // check counter example is generated and the value of input memory
   bool res_expected = (vld.is_equal_to(p1, 14, p11, 11) == 0);// 0: not equal
   // do not need to check the input register
-  input_expected.reg = vld._last_counterex.input.reg;
-  input_expected.update_kv(map0, k1_str, vector<uint8_t> {(uint8_t)v1});
-  res_expected = res_expected && (vld._last_counterex.input == input_expected);
+  res_expected = res_expected && (vld._last_counterex.input.k_in_map(map0, k1_str));
   prog_state ps;
   ps.init();
   // check the outputs of p1 and p11 with/without input memory
@@ -1115,10 +1117,198 @@ void test11() {
   print_test_res(vld._count_solve_eq == 1, "2");
 }
 
+void chk_counterex_by_vld_to_interpreter_delta(inst* p, inst* delta, int start, int len,
+    string test_name, int counterex_type) {
+  inst* p_1 = new inst[inst::max_prog_len];
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    p_1[i] = p[i];
+  }
+  for (int i = 0; i < len; i++) {
+    p_1[i + start] = delta[i];
+  }
+  chk_counterex_by_vld_to_interpreter(p, inst::max_prog_len, p_1, inst::max_prog_len,
+                                      test_name, counterex_type, false);
+  delete []p_1;
+}
+
+void test12() {
+  cout << "1. counter-example from cilium rcv-sock4" << endl;
+  const int pgm_len = 91;
+  // bpf_sock.o section: rcv-sock4
+  inst rcv_sock4[pgm_len] = {inst(191, 1, 6, 0, 0),
+                             inst(183, 0, 1, 0, 0),
+                             inst(97, 6, 2, 36, 0),
+                             inst(86, 0, 2, 4, 6),
+                             inst(CALL, BPF_FUNC_get_prandom_u32),
+                             inst(188, 0, 1, 0, 0),
+                             inst(103, 0, 1, 0, 32),
+                             inst(119, 0, 1, 0, 32),
+                             inst(123, 1, 10, -40, 0),
+                             inst(97, 6, 1, 4, 0),
+                             inst(99, 1, 10, -32, 0),
+                             inst(97, 6, 1, 24, 0),
+                             inst(99, 1, 10, -16, 0),
+                             inst(180, 0, 8, 0, 0),
+                             inst(107, 8, 10, -26, 0),
+                             inst(97, 10, 1, -16, 0),
+                             inst(107, 1, 10, -28, 0),
+                             inst(191, 10, 2, 0, 0),
+                             inst(7, 0, 2, 0, -40),
+                             inst(LDMAPID, 1, 0),
+                             inst(0, 0, 0, 0),
+                             inst(133, 0, 0, 0, 1),
+                             inst(191, 0, 7, 0, 0),
+                             inst(21, 0, 7, 65, 0),
+                             inst(97, 7, 1, 0, 0),
+                             inst(99, 1, 10, -56, 0),
+                             inst(105, 7, 1, 4, 0),
+                             inst(107, 8, 10, -48, 0),
+                             inst(107, 8, 10, -50, 0),
+                             inst(107, 8, 10, -46, 0),
+                             inst(107, 1, 10, -52, 0),
+                             inst(22, 0, 1, 10, 0),
+                             inst(191, 10, 2, 0, 0),
+                             inst(7, 0, 2, 0, -56),
+                             inst(LDMAPID, 1, 1),
+                             inst(0, 0, 0, 0),
+                             inst(133, 0, 0, 0, 1),
+                             inst(21, 0, 0, 2, 0),
+                             inst(105, 0, 1, 4, 0),
+                             inst(86, 0, 1, 10, 0),
+                             inst(180, 0, 1, 0, 0),
+                             inst(107, 1, 10, -52, 0),
+                             inst(191, 10, 2, 0, 0),
+                             inst(7, 0, 2, 0, -56),
+                             inst(LDMAPID, 1, 1),
+                             inst(0, 0, 0, 0),
+                             inst(133, 0, 0, 0, 1),
+                             inst(21, 0, 0, 5, 0),
+                             inst(105, 0, 1, 4, 0),
+                             inst(22, 0, 1, 3, 0),
+                             inst(105, 7, 1, 6, 0),
+                             inst(105, 0, 2, 6, 0),
+                             inst(30, 1, 2, 20, 0),
+                             inst(191, 10, 2, 0, 0),
+                             inst(7, 0, 2, 0, -40),
+                             inst(LDMAPID, 1, 0),
+                             inst(0, 0, 0, 0),
+                             inst(133, 0, 0, 0, 3),
+                             inst(183, 0, 6, 0, 0),
+                             inst(123, 6, 10, -8, 0),
+                             inst(123, 6, 10, -16, 0),
+                             inst(183, 0, 1, 0, 264),
+                             inst(123, 1, 10, -24, 0),
+                             inst(191, 10, 2, 0, 0),
+                             inst(7, 0, 2, 0, -24),
+                             inst(LDMAPID, 1, 2),
+                             inst(0, 0, 0, 0),
+                             inst(133, 0, 0, 0, 1),
+                             inst(21, 0, 0, 9, 0),
+                             inst(121, 0, 1, 0, 0),
+                             inst(7, 0, 1, 0, 1),
+                             inst(123, 1, 0, 0, 0),
+                             inst(5, 0, 0, 16, 0),
+                             inst(97, 7, 1, 0, 0),
+                             inst(99, 1, 6, 4, 0),
+                             inst(105, 7, 1, 4, 0),
+                             inst(99, 1, 6, 24, 0),
+                             inst(5, 0, 0, 11, 0),
+                             inst(123, 6, 10, -8, 0),
+                             inst(183, 0, 1, 0, 1),
+                             inst(123, 1, 10, -16, 0),
+                             inst(191, 10, 2, 0, 0),
+                             inst(7, 0, 2, 0, -24),
+                             inst(191, 10, 3, 0, 0),
+                             inst(7, 0, 3, 0, -16),
+                             inst(LDMAPID, 1, 2),
+                             inst(0, 0, 0, 0),
+                             inst(180, 0, 4, 0, 0),
+                             inst(133, 0, 0, 0, 2),
+                             inst(180, 0, 0, 0, 1),
+                             inst(149, 0, 0, 0, 0),
+                            };
+  mem_t::_layout.clear();
+  inst::max_prog_len = 91;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(128);
+  mem_t::add_map(map_attr(128, 64, 91));
+  mem_t::add_map(map_attr(96, 96, 91));
+  mem_t::add_map(map_attr(64, 128, 91));
+  mem_t::_layout._n_randoms_u32 = 1;
+  smt_var::init_static_variables();
+  inst p_unsafe_1[] = {inst(LDXB, 8, 10, 10),
+                       inst(AND32XC, 2, 264),
+                       inst(STXH, 10, -26, 8),
+                       inst(MOV64XY, 5, 6),
+                      };
+  chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_unsafe_1, 12, 4, "1.1", COUNTEREX_safety_check);
+  inst p_unsafe_2[] = {inst(LDXH, 8, 10, 2),
+                       inst(NOP),
+                       inst(NOP),
+                       inst(STW, 10, -28, 5),
+                      };
+  chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_unsafe_2, 12, 4, "1.2", COUNTEREX_safety_check);
+  inst p_unsafe_3[] = {inst(LDXB, 8, 10, 4),
+                       inst(ARSH32XC, 8, 7),
+                       inst(STXH, 10, -26, 8),
+                       inst(ARSH64XC, 2, 36),
+                      };
+  chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_unsafe_3, 12, 4, "1.3", COUNTEREX_safety_check);
+  inst p_unsafe_4[] = {inst(LDXH, 7, 10, -1),
+                       inst(MOV32XC, 8, 2),
+                       inst(STXH, 10, -26, 7),
+                       inst(RSH32XC, 8, 22),
+                      };
+  chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_unsafe_4, 12, 4, "1.4", COUNTEREX_safety_check);
+  inst p_unsafe_5[] = {inst(LDMAPID, 0, 0),
+                       inst(LDXW, 8, 10, -1),
+                       inst(STXH, 10, -26, 8),
+                       inst(JEQ32XC, 8, -40, 33),
+                      };
+  chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_unsafe_5, 12, 4, "1.5", COUNTEREX_safety_check);
+  // p_unsafe_6 sometimes unsafe
+  inst p_unsafe_6[] = {inst(STXH, 10, -48, 8),
+                       inst(STXW, 10, -52, 1),
+                       inst(STXH, 10, -46, 8),
+                       inst(MOV64XY, 1, 6),
+                      };
+  chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_unsafe_6, 27, 4, "1.6", COUNTEREX_safety_check);
+  // p_unsafe_7 sometimes unsafe
+  inst p_unsafe_7[] = {inst(STXH, 10, -48, 8),
+                       inst(STXW, 10, -52, 1),
+                       inst(STXH, 10, -46, 8),
+                       inst(MOV32XC, 1, -56),
+                      };
+  chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_unsafe_7, 27, 4, "1.7", COUNTEREX_safety_check);
+  // p_unsafe_8 sometimes unsafe
+  inst p_unsafe_8[] = {inst(STXH, 10, -48, 8),
+                       inst(STXW, 10, -52, 1),
+                       inst(STXH, 10, -46, 8),
+                       inst(OR64XY, 1, 6),
+                      };
+  chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_unsafe_8, 27, 4, "1.8", COUNTEREX_safety_check);
+
+  inst p_uneq_1[] = {inst(STXH, 10, -48, 8),
+                     inst(STXW, 10, -52, 1),
+                     inst(STXH, 10, -46, 8),
+                     inst(MOV32XY, 1, 7),
+                    };
+  chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_uneq_1, 27, 4, "2.1", COUNTEREX_eq_check);
+  inst p_uneq_2[] = {inst(MOV64XY, 5, 6),
+                     inst(MOV32XC, 8, 0),
+                     inst(STXH, 10, -26, 2),
+                     inst(NOP),
+                    };
+  chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_uneq_2, 12, 4, "2.2", COUNTEREX_eq_check);
+
+  // set the static variable back
+  inst::max_prog_len = TEST_PGM_MAX_LEN;
+}
+
 int main() {
   // set for prog_eq_cache, if the prog len in the unit tests > 20,
   // please update inst::max_prog_len here
-  inst::max_prog_len = 25;
+  inst::max_prog_len = TEST_PGM_MAX_LEN;
   try {
     test1();
     test2();
@@ -1131,6 +1321,7 @@ int main() {
     test9();
     test10();
     test11();
+    test12();
   } catch (const string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
