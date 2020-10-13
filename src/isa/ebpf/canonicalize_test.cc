@@ -211,7 +211,8 @@ void test3() {
                inst(LDXB, 0, 2, 2),
                inst(EXIT),
               };
-  static_analysis(p1, sizeof(p1) / sizeof(inst));
+  prog_static_state pss;
+  static_analysis(pss, p1, sizeof(p1) / sizeof(inst));
 
   inst p2[] = {inst(MOV64XY, 2, 1),
                inst(JEQXY, 1, 2, 1),
@@ -219,7 +220,7 @@ void test3() {
                inst(LDXB, 0, 2, 2),
                inst(EXIT),
               };
-  static_analysis(p2, sizeof(p2) / sizeof(inst));
+  static_analysis(pss, p2, sizeof(p2) / sizeof(inst));
 }
 
 int main(int argc, char *argv[]) {
