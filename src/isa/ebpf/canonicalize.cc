@@ -170,11 +170,24 @@ void inst_static_state::insert_reg_state(inst_static_state& iss) {
   }
 }
 
+void inst_static_state::insert_live_reg(int reg) {
+  live_var.regs.insert(reg);
+}
+
+void inst_static_state::insert_live_off(int type, int off) {
+  auto found = live_var.mem.find(type);
+  if (found == live_var.mem.end()) {
+    live_var.mem[type] = {off};
+  } else {
+    found->second.insert(off);
+  }
+}
+
 void inst_static_state::insert_live_var(inst_static_state& iss) {
   // insert live registers
   unordered_set<int>& live_regs = iss.live_var.regs;
   for (auto it = live_regs.begin(); it != live_regs.end(); it++) {
-    live_var.regs.insert(*it);
+    insert_live_reg(*it);
   }
   // insert live memory
   unordered_map<int, unordered_set<int>>& live_mem = iss.live_var.mem;
@@ -188,6 +201,44 @@ void inst_static_state::insert_live_var(inst_static_state& iss) {
       for (auto off = offs.begin(); off != offs.end(); off++) {
         live_var.mem[type].insert(*off);
       }
+    }
+  }
+}
+
+static void union_live_var(inst_static_state& iss, inst_static_state& iss1, inst_static_state& iss2) {
+  iss.live_var.regs.clear();
+  iss.live_var.mem.clear();
+  iss.insert_live_var(iss1);
+  iss.insert_live_var(iss2);
+}
+
+// iss.live_var = iss1.live_var intersection iss2.live_var
+static void intersection_live_var(inst_static_state& iss, inst_static_state& iss1, inst_static_state& iss2) {
+  iss.live_var.regs.clear();
+  iss.live_var.mem.clear();
+
+  // process live registers
+  unordered_set<int>& live_reg1 = iss1.live_var.regs;
+  unordered_set<int>& live_reg2 = iss2.live_var.regs;
+  for (auto it = live_reg1.begin(); it != live_reg1.end(); it++) {
+    int reg = *it;
+    if (live_reg2.find(reg) != live_reg1.end()) {
+      iss.insert_live_reg(reg);
+    }
+  }
+
+  // process live memory
+  unordered_map<int, unordered_set<int>> live_mem1 = iss1.live_var.mem;
+  unordered_map<int, unordered_set<int>> live_mem2 = iss2.live_var.mem;
+  for (auto it1 = live_mem1.begin(); it1 != live_mem1.end(); it1++) {
+    int type = it1->first;
+    auto it2 = live_mem2.find(type);
+    if (it2 == live_mem2.end()) continue;
+    unordered_set<int>& off_set1 = it1->second;
+    unordered_set<int>& off_set2 = it2->second;
+    for (auto off1 = off_set1.begin(); off1 != off_set1.end(); off1++) {
+      if (off_set2.find(*off1) == off_set2.end()) continue;
+      iss.insert_live_off(type, *off1);
     }
   }
 }
