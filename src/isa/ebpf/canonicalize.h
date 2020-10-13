@@ -31,8 +31,10 @@ class inst_static_state {
   void copy_reg_state(int dst_reg, int src_reg);
   void set_reg_state(int reg, int type, int off = 0);
   void insert_reg_state(inst_static_state& iss);
+  void insert_live_reg(int reg);
+  void insert_live_off(int type, int off);
   void insert_live_var(inst_static_state& iss);
-  static intersection_live_var(inst_static_state& iss, inst_static_state& iss1, inst_static_state& iss2);
+  static void intersection_live_var(inst_static_state& iss, inst_static_state& iss1, inst_static_state& iss2);
 };
 
 typedef vector<inst_static_state> prog_static_state;
