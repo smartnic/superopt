@@ -212,6 +212,14 @@ void test3() {
                inst(EXIT),
               };
   static_analysis(p1, sizeof(p1) / sizeof(inst));
+
+  inst p2[] = {inst(MOV64XY, 2, 1),
+               inst(JEQXY, 1, 2, 1),
+               inst(ADD64XC, 2, 2),
+               inst(LDXB, 0, 2, 2),
+               inst(EXIT),
+              };
+  static_analysis(p2, sizeof(p2) / sizeof(inst));
 }
 
 int main(int argc, char *argv[]) {
