@@ -154,13 +154,17 @@ void inst_static_state::insert_reg_state(inst_static_state& iss) {
       int off = iss.reg_state[reg][i].off;
 
       // search <type, off> in self.reg_state. if it is, no need to insert
+      bool flag = false;
       for (int j = 0; j < reg_state[reg].size(); j++) {
         if ((reg_state[reg][j].type == type) &&
             (reg_state[reg][j].off == off)) {
+          flag = true;
           break;
         }
       }
-      reg_state[reg].push_back(register_state{type, off});
+      if (! flag) {
+        reg_state[reg].push_back(register_state{type, off});
+      }
     }
 
   }
@@ -227,15 +231,15 @@ void type_const_inference_pgm(prog_static_state& pss, inst* program, int len,
     unsigned int block = dag[i];
     unsigned int block_s = g.nodes[block]._start;
     unsigned int block_e = g.nodes[block]._end;
-    // get the block first instruction states by merging incoming states
+    // get the block initial states by merging incoming states
     for (int j = 0; j < g.nodes_in[block].size(); j++) {
       int block_in = g.nodes_in[block][j];
       unsigned int block_in_e = g.nodes[block_in]._end;
       pss[block_s].insert_reg_state(pss[block_in_e]);
     }
-    // process the block from the second instruction
+    // process the block from the first instruction
     for (int j = block_s; j <= block_e; j++) {
-      if (j != 0) { // insn 0 is set in `init root block`
+      if (j != block_s) { // insn 0 is set in `init root block`
         pss[j] = pss[j - 1]; // copy the previous state
       }
       type_const_inference_inst(pss[j], program[j]); // update state according to the instruction
