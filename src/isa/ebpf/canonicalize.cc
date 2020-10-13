@@ -204,6 +204,7 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
     }
   } else if (opcode == CALL) {
     if (imm == BPF_FUNC_map_lookup_elem) {
+      // todo: need to modify the offset later
       iss.set_reg_state(0, PTR_TO_MAP_VALUE_OR_NULL, 0);
     }
   } else {
