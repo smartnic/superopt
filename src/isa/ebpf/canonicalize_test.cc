@@ -203,10 +203,22 @@ void test2() {
   remove_nops_check(p4, sizeof(p4) / sizeof(inst), p4_expected, "4");
 }
 
+void test3() {
+  cout << "Test 3: program static analysis" << endl;
+  cout << "3.1 test register type inference" << endl;
+  inst p1[] = {inst(MOV64XY, 2, 1),
+               inst(ADD64XC, 2, 2),
+               inst(LDXB, 0, 2, 2),
+               inst(EXIT),
+              };
+  static_analysis(p1, sizeof(p1) / sizeof(inst));
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
     test2();
+    test3();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
