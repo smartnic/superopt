@@ -126,3 +126,139 @@ void canonicalize(inst* program, int len) {
   // remove nops
   remove_nops(program, len);
 }
+
+inst_static_state::inst_static_state() {
+  reg_state.resize(NUM_REGS);
+}
+
+void inst_static_state::copy_reg_state(int dst_reg, int src_reg) {
+  if (dst_reg == src_reg) return;
+  assert(dst_reg >= 0);
+  assert(dst_reg < NUM_REGS);
+  assert(src_reg >= 0);
+  assert(src_reg < NUM_REGS);
+  reg_state[dst_reg] = reg_state[src_reg];
+}
+
+void inst_static_state::set_reg_state(int reg, int type, int off) {
+  assert(reg >= 0);
+  assert(reg < NUM_REGS);
+  reg_state[reg] = {register_state{type, off}};
+}
+
+// insert iss.reg_state into self.reg_state
+void inst_static_state::insert_reg_state(inst_static_state& iss) {
+  for (int reg = 0; reg < NUM_REGS; reg++) {
+    for (int i = 0; i < iss.reg_state[reg].size(); i++) {
+      int type = iss.reg_state[reg][i].type;
+      int off = iss.reg_state[reg][i].off;
+
+      // search <type, off> in self.reg_state. if it is, no need to insert
+      for (int j = 0; j < reg_state[reg].size(); j++) {
+        if ((reg_state[reg][j].type == type) &&
+            (reg_state[reg][j].off == off)) {
+          break;
+        }
+      }
+      reg_state[reg].push_back(register_state{type, off});
+    }
+
+  }
+}
+
+bool is_ptr(int type) {
+  vector<int> ptr_array = {PTR_TO_STACK, PTR_TO_CTX, PTR_TO_MAP_VALUE_OR_NULL};
+  for (int i = 0; i < ptr_array.size(); i++) {
+    if (type == ptr_array[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// After executing the insn, update register type in inst_static_state
+void type_const_inference_inst(inst_static_state& iss, inst& insn) {
+  int opcode_type = insn.get_opcode_type();
+  vector<int> opcodes_upd_dst_reg = {OP_OTHERS, OP_ST, OP_LD, OP_CALL};
+  bool flag = false;
+  for (int i = 0; i < opcodes_upd_dst_reg.size(); i++) {
+    if (opcode_type == opcodes_upd_dst_reg[i]) {
+      flag = true;
+      break;
+    }
+  }
+  if (! flag) return;
+  int opcode = insn._opcode;
+  int dst_reg = insn._dst_reg;
+  int src_reg = insn._src_reg;
+  int imm = insn._imm;
+  // keep strack of pointers
+  if (opcode == MOV64XY) {
+    iss.copy_reg_state(dst_reg, src_reg);
+  } else if (opcode == ADD64XC) {
+    // update pointer offset
+    for (int i = 0; i < iss.reg_state[dst_reg].size(); i++) {
+      if (is_ptr(iss.reg_state[dst_reg][i].type)) {
+        iss.reg_state[dst_reg][i].off += imm;
+      }
+    }
+  } else if (opcode == CALL) {
+    if (imm == BPF_FUNC_map_lookup_elem) {
+      iss.set_reg_state(0, PTR_TO_MAP_VALUE_OR_NULL, 0);
+    }
+  } else {
+    iss.set_reg_state(dst_reg, SCALAR_VALUE);
+  }
+}
+
+void type_const_inference_pgm(prog_static_state& pss, inst* program, int len,
+                              graph& g, vector<unsigned int>& dag) {
+  assert(dag.size() >= 1);
+
+  pss.resize(len);
+  // init root block
+  int root = dag[0];
+  pss[root].set_reg_state(1, PTR_TO_CTX, 0); // register 1 contains input
+  pss[root].set_reg_state(10, PTR_TO_STACK, STACK_SIZE); // register 10 points to stack bottom
+
+  // process blocks
+  for (int i = 0; i < dag.size(); i++) {
+    unsigned int block = dag[i];
+    unsigned int block_s = g.nodes[block]._start;
+    unsigned int block_e = g.nodes[block]._end;
+    // get the block first instruction states by merging incoming states
+    for (int j = 0; j < g.nodes_in[block].size(); j++) {
+      int block_in = g.nodes_in[block][j];
+      unsigned int block_in_e = g.nodes[block_in]._end;
+      pss[block_s].insert_reg_state(pss[block_in_e]);
+    }
+    // process the block from the second instruction
+    for (int j = block_s; j <= block_e; j++) {
+      if (j != 0) { // insn 0 is set in `init root block`
+        pss[j] = pss[j - 1]; // copy the previous state
+      }
+      type_const_inference_inst(pss[j], program[j]); // update state according to the instruction
+    }
+  }
+}
+
+void static_analysis(inst* program, int len) {
+  // get program cfg
+  graph g(program, len);
+  vector<unsigned int> dag;
+  topo_sort_for_graph(dag, g);
+  prog_static_state pss;
+  type_const_inference_pgm(pss, program, len, g, dag);
+
+  for (int i = 0; i < pss.size(); i++) {
+    cout << "insn " << i << endl;
+    for (int j = 0; j < pss[i].reg_state.size(); j++) {
+      cout << "reg " << j << ": ";
+      for (int k = 0; k < pss[i].reg_state[j].size(); k++) {
+        cout << pss[i].reg_state[j][k].type << "," << pss[i].reg_state[j][k].off << " ";
+      }
+      cout << endl;
+    }
+  }
+  cout << endl;
+}
