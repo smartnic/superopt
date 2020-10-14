@@ -1536,6 +1536,55 @@ void test10() {
   print_test_res(is_illegal, "2.6");
 }
 
+void test11() {
+  cout << "Test 9: full interpretation check of window program" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(512); // pkt sz: 512 bytes
+  prog_state ps;
+  ps.init();
+  inout_t input, output, expected;
+  input.init();
+  output.init();
+  expected.init();
+  input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
+  inst p1[3] = {inst(MOV64XC, 0, 0),
+                inst(ADD64XC, 0, 1),
+                inst(EXIT),
+               };
+  // prepare the input
+  input.start_insn = 1;
+  input.reg_readable.resize(NUM_REGS);
+  input.stack_readble.resize(STACK_SIZE);
+  input.reg_type.resize(NUM_REGS);
+  input.reg_readable[0] = true;
+  input.regs[0] = 1;
+  expected.reg = input.regs[0] + 1;
+  interpret(output, p1, 3, ps, input);
+  print_test_res(output == expected, "interpret program 1");
+
+  inst p2[4] = {inst(STB, 10, -1, 0xff),
+                inst(MOV64XY, 0, 10),
+                inst(LDXB, 0, 0, -1),
+                inst(EXIT),
+               };
+  input.clear();
+  output.clear();
+  expected.clear();
+  input.start_insn = 2;
+  input.reg_readable.resize(NUM_REGS);
+  input.stack_readble.resize(STACK_SIZE);
+  input.reg_type.resize(NUM_REGS);
+  input.reg_readable[0] = true;
+  input.reg_type[0] = PTR_TO_STACK;
+  input.regs[0] = (uint64_t)ps._mem.get_stack_bottom_addr();
+  input.stack_readble[STACK_SIZE - 1] = true;
+  input.stack[STACK_SIZE - 1] = 0xff;
+  expected.reg = 0xff;
+  interpret(output, p2, 4, ps, input);
+  print_test_res(output == expected, "interpret program 2");
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
@@ -1548,6 +1597,7 @@ int main(int argc, char *argv[]) {
     test8();
     test9();
     test10();
+    test11();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

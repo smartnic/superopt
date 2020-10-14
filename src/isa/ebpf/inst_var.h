@@ -118,6 +118,7 @@ class mem_t {
   // 3. init _maps
   // 4. init _pkt_ptrs
   void init_by_layout();
+  void update_stack(int idx, uint8_t v);
   static void set_map_attr(int map_id, map_attr m_attr);
   static unsigned int get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map);
   void update_kv_in_map(int map_id, string k, const uint8_t* addr_v); // get v_sz from layout
@@ -403,6 +404,7 @@ class prog_state: public prog_state_base {
   unsigned int _cur_randoms_u32_idx = 0;
   prog_state();
   void init_safety_chk();
+  void init_safety_chk(const vector<bool>& reg_readable, const vector<bool>& stack_readble, const vector<int>& reg_type);
   void reg_safety_chk(int reg_write, vector<int> reg_read_list = {});
   void memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes, bool chk_safety, bool is_read, bool stack_aligned_chk = true);
   void memory_access_chk(uint64_t addr, uint64_t num_bytes);
@@ -430,6 +432,14 @@ class inout_t: public inout_t_base {
   int pgm_exit_type;
   // pseudo random values for BPF_FUNC_get_prandom_u32, prog_state get these values form get from input
   vector<uint32_t> randoms_u32;
+  int start_insn = 0;
+  // safety check state variables starts
+  vector<bool> reg_readable;
+  vector<bool> stack_readble;
+  vector<int> reg_type;
+  // safety check state variables ends
+  unordered_map<int, int64_t> regs;  // for regs
+  unordered_map<int, uint8_t> stack; // for stack
   inout_t();
   inout_t(const inout_t& rhs); // deep copy for vector push back
   ~inout_t();
