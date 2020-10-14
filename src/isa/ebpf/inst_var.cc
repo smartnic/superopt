@@ -273,6 +273,10 @@ void mem_t::set_map_attr(int map_id, map_attr m_attr) {
   _layout._maps_attr[map_id] = m_attr;
 }
 
+void mem_t::update_stack(int idx, uint8_t v) {
+  _mem[idx] = v;
+}
+
 unsigned int mem_t::get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map) {
   return (_layout._maps_start[map_id] +
           idx_in_map * (_layout._maps_attr[map_id].val_sz / NUM_BYTE_BITS));
@@ -1053,6 +1057,12 @@ void prog_state::init_safety_chk() {
   set_reg_type(10, PTR_TO_STACK);
 }
 
+void prog_state::init_safety_chk(const vector<bool>& reg_readable, const vector<bool>& stack_readble, const vector<int>& reg_type) {
+  _reg_readable = reg_readable;
+  _stack_readable = stack_readble;
+  _reg_type = reg_type;
+}
+
 void prog_state::reg_safety_chk(int reg_write, vector<int> reg_read_list) {
   // check whether reg_read is readable first, then set the reg_write is readable
   for (int i = 0; i < reg_read_list.size(); i++) {
@@ -1282,6 +1292,11 @@ void inout_t::set_randoms_u32() {
 void inout_t::clear() {
   reg = 0;
   for (int i = 0; i < maps.size(); i++) maps[i].clear();
+  reg_readable.clear();
+  stack_readble.clear();
+  reg_type.clear();
+  regs.clear();
+  stack.clear();
 }
 
 void inout_t::init() {
@@ -1373,7 +1388,9 @@ ostream& operator<<(ostream& out, const inout_t& x) {
 
 
 void update_ps_by_input(prog_state& ps, const inout_t& input) {
-  ps.init_safety_chk();
+  int start_insn = input.start_insn;
+  if (start_insn == 0) ps.init_safety_chk();
+  else ps.init_safety_chk(input.reg_readable, input.stack_readble, input.reg_type);
   ps._regs[10] = input.input_simu_r10;
   // cp input register
   ps._regs[1] = input.reg;
@@ -1407,6 +1424,17 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
     ps._randoms_u32[i] = input.randoms_u32[i];
   }
   ps._cur_randoms_u32_idx = 0;
+
+  if (start_insn != 0) { // it is a window program, get stack and registers from input
+    // update registers
+    for (auto it : input.regs) {
+      ps._regs[it.first] = it.second;
+    }
+    // update stack
+    for (auto it : input.stack) {
+      ps._mem.update_stack(it.first, it.second);
+    }
+  }
 }
 
 void update_output_by_ps(inout_t& output, const prog_state& ps) {

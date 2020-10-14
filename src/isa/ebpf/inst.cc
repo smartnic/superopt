@@ -976,7 +976,7 @@ int inst::reg_to_write() const {
   return -1;
 }
 
-void interpret(inout_t& output, inst * program, int length, prog_state & ps, const inout_t& input) {
+void interpret(inout_t& output, inst* program, int length, prog_state& ps, const inout_t& input) {
 #undef IMM
 #undef OFF
 #undef MEM
@@ -1017,7 +1017,8 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
 #define DST_ID (insn->_dst_reg)
 #define SRC_ID (insn->_src_reg)
 
-  inst* insn = program;
+  int start_insn = input.start_insn;
+  inst* insn = &program[start_insn];
   ps.clear();
   // register r10 is set by update_ps_by_input
   update_ps_by_input(ps, input);
