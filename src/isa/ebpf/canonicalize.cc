@@ -511,4 +511,73 @@ void static_analysis(prog_static_state& pss, inst* program, int len) {
   cout << "......" << endl;
 }
 
+void init_array_mem_table(smt_var& sv, inst_static_state& iss, int ptr_type, int mem_table_type) {
+  auto it = iss.live_var.mem.find(ptr_type);
+  if (it == iss.live_var.mem.end()) return;
+  unordered_set<int>& stack_offs = it->second;
+  int table_id = sv.mem_var.get_mem_table_id(mem_table_type);
+  assert(table_id != -1);
+  // add each off into urt
+  int block = 0;  // set block as the root
+  z3::expr is_valid = Z3_true;
+  for (auto off : stack_offs) {
+    z3::expr addr_off = to_expr(off);
+    z3::expr val = sv.new_var(NUM_BYTE_BITS);
+    sv.mem_var.add_in_mem_table_urt(table_id, block, is_valid, addr_off, val);
+  }
+}
+
+void init_pre(smt_var& sv, inst_static_state& iss) {
+  // init memory
+  init_array_mem_table(sv, iss, PTR_TO_STACK, MEM_TABLE_stack);
+  init_array_mem_table(sv, iss, PTR_TO_CTX, MEM_TABLE_pkt);
+}
+
+int reg_ptr_type_2_mem_table_type(int reg_type) {
+  switch (reg_type) {
+    case PTR_TO_STACK: return MEM_TABLE_stack;
+    case PTR_TO_CTX: return MEM_TABLE_pkt;
+    default: return -1;
+  }
+}
+
+// sv is the sv of program's root basic block
+z3::expr smt_set_pre(smt_var& sv, inst_static_state& iss) {
+  // 1. set up the memory table, ...
+  init_pre(sv, iss);
+  // 2. generate the precondition formula
+  z3::expr f = Z3_true;
+  // 2.1 set up pointer registers
+  for (auto reg : iss.live_var.regs) {
+    // get all possible register states from iss.reg_state
+    vector<z3::expr> path_conds;
+    for (int i = 0; i < iss.reg_state[reg].size(); i++) {
+      z3::expr pc = sv.update_is_valid();
+      path_conds.push_back(pc);
+    }
+    z3::expr reg_expr = sv.get_init_reg_var(reg);
+    for (int i = 0; i < iss.reg_state[reg].size(); i++) {
+      register_state reg_state = iss.reg_state[reg][i];
+      if (! is_ptr(reg_state.type)) continue;
+      int table_id = reg_ptr_type_2_mem_table_type(reg_state.type);
+      assert(table_id != -1);
+      z3::expr off_expr = to_expr(reg_state.off);
+      sv.mem_var.add_ptr(reg_expr, table_id, off_expr, path_conds[i]);
+    }
+    // generate the formula of path condition, iff one path condition is true
+    z3::expr f_pc = Z3_true;
+    for (int i = 0; i < path_conds.size(); i++) {
+      z3::expr f_pc_i = Z3_true;
+      for (int j = 0; j < i; j++) f_pc_i = f_pc_i && (! path_conds[j]);
+      for (int j = i + 1; j < path_conds.size(); j++) f_pc_i = f_pc_i && (! path_conds[j]);
+      f_pc = f_pc && z3::implies(path_conds[i], f_pc_i);
+    }
+    z3::expr f_pc_true = Z3_false;
+    for (int i = 0; i < path_conds.size(); i++) {
+      f_pc_true = f_pc_true || path_conds[i];
+    }
+    f_pc = f_pc && f_pc_true;
+  }
+  return f;
+}
 
