@@ -4,7 +4,8 @@
 
 using namespace std;
 
-struct input_paras {
+struct input_paras
+{
   int niter;
   int bm;
   bool bm_from_file;
