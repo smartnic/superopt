@@ -6,14 +6,16 @@ default_random_engine gen_codegen;
 uniform_real_distribution<double> unidist_codegen(0.0, 1.0);
 
 z3::expr latest_write_element(int idx, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
-z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
+z3::expr addr_in_addrs(z3::expr a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
 z3::expr addr_in_addrs_map_mem(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
 z3::expr key_not_found_after_idx(z3::expr key, int idx, smt_map_wt& m_wt);
 z3::expr key_not_in_map_wt(z3::expr k, smt_map_wt& m_wt, smt_var& sv, bool same_pgms = false, unsigned int block = 0);
 uint64_t compute_tail_call_helper(uint64_t ctx_ptr, uint64_t map_id, uint64_t index, prog_state& ps);
 uint64_t compute_get_prandom_u32_helper(prog_state& ps);
+int reg_ptr_type_2_mem_table_type(int reg_type);
+int mem_table_type_2_reg_ptr_type(int mem_table_type);
 
-z3::expr predicate_get_prandom_u32_helper(z3::expr out, smt_var &sv);
+z3::expr predicate_get_prandom_u32_helper(z3::expr out, smt_var&sv);
 
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
                                  uint64_t r4, uint64_t r5, simu_real& sr, prog_state& ps) {
@@ -130,7 +132,7 @@ z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned 
 }
 
 z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block,
-                        bool enable_addr_off) {
+                        bool enable_addr_off, bool is_win) {
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     int pkt_ptrs_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs);
@@ -172,10 +174,10 @@ z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, 
     }
   }
   return ((out.extract(63, 32) == to_expr(0, 32)) &&
-          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off) &&
-          predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block, Z3_true, enable_addr_off) &&
-          predicate_ld_byte(addr, off + 2, sv, out.extract(23, 16), block, Z3_true, enable_addr_off) &&
-          predicate_ld_byte(addr, off + 3, sv, out.extract(31, 24), block, Z3_true, enable_addr_off));
+          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off, is_win) &&
+          predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block, Z3_true, enable_addr_off, is_win) &&
+          predicate_ld_byte(addr, off + 2, sv, out.extract(23, 16), block, Z3_true, enable_addr_off, is_win) &&
+          predicate_ld_byte(addr, off + 3, sv, out.extract(31, 24), block, Z3_true, enable_addr_off, is_win));
 }
 
 z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
@@ -274,7 +276,7 @@ z3::expr urt_element_constrain(z3::expr a, z3::expr v, smt_wt& urt) {
 
 z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_info,
     z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond = Z3_true,
-    bool enable_addr_off = true) {
+    bool enable_addr_off = true, bool is_win = false) {
   cond = ptr_info.path_cond && sv.mem_var.get_block_path_cond(block) && cond;
   smt_wt& wt = sv.mem_var._mem_tables[table_id]._wt;
   z3::expr a = addr + off;
@@ -304,7 +306,7 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
     f_found_in_wt_after_i = f_found_in_wt_after_i || f_same;
   }
   // stack does not have urt
-  if (table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
+  if ((table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) && (! is_win)) {
     return f;
   }
   // add constrains on the element(a, out)
@@ -338,7 +340,7 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
 }
 
 z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond,
-                           bool enable_addr_off) {
+                           bool enable_addr_off, bool is_win) {
   // cout << "predicate_ld_byte: " << endl;
   // cout << "addr: " << addr << endl;
   z3::expr f = Z3_true;
@@ -351,16 +353,16 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr ou
   // cout << "ids.size(): " << ids.size() << endl;
   if (ids.size() == 0) {string s = "error!!!"; throw (s); return Z3_true;} // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
-    f = f && predicate_ld_byte_for_one_mem_table(ids[i], info_list[i], addr, off, sv, out, block, cond, enable_addr_off);
+    f = f && predicate_ld_byte_for_one_mem_table(ids[i], info_list[i], addr, off, sv, out, block, cond, enable_addr_off, is_win);
   }
   return f;
 }
 
 z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond,
-                              bool enable_addr_off) {
-  z3::expr f = predicate_ld_byte(addr, to_expr(0, 64), sv, out.extract(7, 0), block, cond, enable_addr_off);
+                              bool enable_addr_off, bool is_win) {
+  z3::expr f = predicate_ld_byte(addr, to_expr(0, 64), sv, out.extract(7, 0), block, cond, enable_addr_off, is_win);
   for (int i = 1; i < n; i++) {
-    f = f && predicate_ld_byte(addr, to_expr(i, 64), sv, out.extract(8 * i + 7, 8 * i), block, cond, enable_addr_off);
+    f = f && predicate_ld_byte(addr, to_expr(i, 64), sv, out.extract(8 * i + 7, 8 * i), block, cond, enable_addr_off, is_win);
   }
   return f;
 }
@@ -430,7 +432,7 @@ z3::expr addr_in_addrs_map_mem(z3::expr& a, vector<z3::expr>& is_valid_list, vec
   return f;
 }
 
-z3::expr addr_in_addrs(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x) {
+z3::expr addr_in_addrs(z3::expr a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x) {
   z3::expr f = string_to_expr("false");
   for (int i = 0; i < x.size(); i++) {
     f = f || ((a == x[i]) && is_valid_list[i]);
@@ -470,9 +472,130 @@ z3::expr pkt_addr_in_one_wt(smt_var& sv1, smt_var& sv2) {
   return f;
 }
 
+// offs = offs_1[reg_ptr_type] + offs_2[reg_ptr_type]
+void get_offs_in_both_output_offs(unordered_set<int>&offs, int reg_ptr_type,
+                                  unordered_map<int, unordered_set<int>>& offs_1,
+                                  unordered_map<int, unordered_set<int>>& offs_2) {
+  offs.clear();
+  auto find1 = offs_1.find(reg_ptr_type);
+  if (find1 != offs_1.end()) {
+    for (auto off : find1->second) {
+      offs.insert(off);
+    }
+  }
+  auto find2 = offs_2.find(reg_ptr_type);
+  if (find2 != offs_2.end()) {
+    for (auto off : find2->second) {
+      offs.insert(off);
+    }
+  }
+}
+
+// offs = offs_1[reg_ptr_type] - offs_2[reg_ptr_type]
+void get_offs_in_one_output_offs(unordered_set<int>&offs, int reg_ptr_type,
+                                 unordered_map<int, unordered_set<int>>& offs_1,
+                                 unordered_map<int, unordered_set<int>>& offs_2) {
+  offs.clear();
+  auto find1 = offs_1.find(reg_ptr_type);
+  auto find2 = offs_2.find(reg_ptr_type);
+  if (find1 == offs_1.end()) return;
+  if (find2 == offs_1.end()) {
+    for (auto off : find1->second) {
+      offs.insert(off);
+    }
+    return;
+  }
+  for (auto off : find1->second) {
+    if (find2->second.find(off) == find2->second.end()) {
+      offs.insert(off);
+    }
+  }
+}
+
+z3::expr ld_byte_from_wt_by_off(z3::expr off, smt_wt& wt, z3::expr out) {
+  z3::expr a = off;
+  z3::expr f = Z3_true;
+  z3::expr f_found_after_i = Z3_false;
+  for (int i = wt.addr.size() - 1; i >= 0; i--) {
+    z3::expr f_found_i = wt.is_valid[i] && (a == wt.addr[i]);
+    f = f && z3::implies((!f_found_after_i) && f_found_i, // latest write
+                         out == wt.val[i]);
+    f_found_after_i = f_found_after_i || f_found_i;
+  }
+  return f;
+}
+
+z3::expr ld_byte_from_urt_by_off(z3::expr off, smt_wt& urt, z3::expr out) {
+  z3::expr a = off;
+  z3::expr f = Z3_true;
+  for (int i = 0; i < urt.addr.size(); i++) {
+    z3::expr f_found_i = urt.is_valid[i] && (a == urt.addr[i]);
+    f = f && z3::implies(f_found_i, out == urt.val[i]);
+  }
+  return f;
+}
+
+z3::expr smt_array_mem_eq_chk_win_one_mem(unordered_set<int>& offs, smt_var& sv, int table_id, int reg_ptr_type) {
+  z3::expr f = Z3_true;
+  smt_wt& wt = sv.mem_var._mem_tables[table_id]._wt;
+  smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;
+  // each off should be found in input(urt)
+  for (auto off : offs) {
+    z3::expr f_off_in_urt = addr_in_addrs(to_expr(off), urt.is_valid, urt.addr);
+    f = f && f_off_in_urt;
+  }
+  // each off should be the same as input(urt)
+  for (auto off : offs) {
+    z3::expr off_expr = to_expr(off);
+    z3::expr v_out = sv.smt_out.off_val_expr(reg_ptr_type, off);
+    z3::expr v_in = smt_input::off_val_expr(reg_ptr_type, off);
+    z3::expr f1 = ld_byte_from_wt_by_off(off_expr, wt, v_out);
+    z3::expr f2 = ld_byte_from_urt_by_off(off_expr, urt, v_in);
+    f = f && z3::implies(f1 && f2, v_out == v_in);
+  }
+  return f;
+}
+
+z3::expr smt_array_mem_eq_chk_win(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_table_type) {
+  if (mem_sz == 0) return Z3_true;
+  int reg_ptr_type = mem_table_type_2_reg_ptr_type(mem_table_type);
+  assert(reg_ptr_type != -1);
+  unordered_set<int> offs_12, offs_1, offs_2;
+  get_offs_in_both_output_offs(offs_12, reg_ptr_type, sv1.smt_out.output_var.mem, sv2.smt_out.output_var.mem);
+  get_offs_in_one_output_offs(offs_1, reg_ptr_type, sv1.smt_out.output_var.mem, sv2.smt_out.output_var.mem);
+  get_offs_in_one_output_offs(offs_2, reg_ptr_type, sv2.smt_out.output_var.mem, sv1.smt_out.output_var.mem);
+
+  int id1 = sv1.mem_var.get_mem_table_id(mem_table_type);
+  int id2 = sv2.mem_var.get_mem_table_id(mem_table_type);
+  assert(id1 != -1);
+  assert(id2 != -1);
+  z3::expr f = Z3_true;
+  smt_wt& wt1 = sv1.mem_var._mem_tables[id1]._wt;
+  smt_wt& wt2 = sv2.mem_var._mem_tables[id2]._wt;
+
+  // case 1: offsets written in both programs
+  for (auto off : offs_12) {
+    z3::expr off_expr = to_expr(off);
+    z3::expr v1 = sv1.smt_out.off_val_expr(reg_ptr_type, off);
+    z3::expr v2 = sv2.smt_out.off_val_expr(reg_ptr_type, off);
+    z3::expr f1 = ld_byte_from_wt_by_off(off_expr, wt1, v1);
+    z3::expr f2 = ld_byte_from_wt_by_off(off_expr, wt2, v2);
+    f = f && z3::implies(f1 && f2, v1 == v2);
+  }
+  // case 2: offsets in program 1 not program 2
+  f = f && smt_array_mem_eq_chk_win_one_mem(offs_1, sv1, id1, reg_ptr_type);
+  // case 3: offsets in program 2 not program 1
+  f = f && smt_array_mem_eq_chk_win_one_mem(offs_2, sv2, id2, reg_ptr_type);
+  return f;
+}
+
 // 1. pkt address in both mem_p1 wt and mem_p2 wt => same value (latest write)
 // 2. pkt address in one of wts => value (latest write) == input
-z3::expr smt_array_mem_eq_chk(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_table_type) {
+z3::expr smt_array_mem_eq_chk(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_table_type, bool is_win) {
+  if (is_win) {
+    z3::expr f = smt_array_mem_eq_chk_win(sv1, sv2, mem_sz, mem_table_type);
+    return f;
+  }
   if (mem_sz == 0) return Z3_true;
   int id1 = sv1.mem_var.get_mem_table_id(mem_table_type);
   int id2 = sv2.mem_var.get_mem_table_id(mem_table_type);
@@ -820,33 +943,110 @@ z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2) {
   return f;
 }
 
-z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2) {
-  return smt_array_mem_eq_chk(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);
+z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win) {
+  return smt_array_mem_eq_chk(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt, is_win);
 }
 
-z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2) {
-  z3::expr f = smt_map_eq_chk(sv1, sv2);
-  f = f && smt_pkt_eq_chk(sv1, sv2);
-  f = f && smt_array_mem_eq_chk(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_skb);
+z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win) {
+  z3::expr f = Z3_true;
+  if (is_win) {
+    f = smt_map_eq_chk(sv1, sv2);
+  }
+  f = f && smt_pkt_eq_chk(sv1, sv2, is_win);
+  f = f && smt_array_mem_eq_chk(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_skb, is_win);
+  if (is_win) {
+    f = f && smt_array_mem_eq_chk(sv1, sv2, STACK_SIZE, MEM_TABLE_stack, is_win);
+  }
   return f;
 }
 
-z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2) {
-  z3::expr f = smt_pgm_mem_eq_chk(sv1, sv2);
+z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win) {
+  cout << "smt_pgm_eq_chk is_win:" << is_win << endl;
+  z3::expr f = smt_pgm_mem_eq_chk(sv1, sv2, is_win);
 
   smt_output& out1 = sv1.smt_out, out2 = sv2.smt_out;
-  z3::expr same_ret_val = (out1.ret_val == out2.ret_val);
+  // registers equivalence check
+  z3::expr same_regs = Z3_true;
+  if (! is_win) {
+    same_regs = (out1.ret_val == out2.ret_val);
+  } else {
+    unordered_set<int>& regs_1 = out1.output_var.regs;
+    unordered_set<int>& regs_2 = out1.output_var.regs;
+    for (int i = 0; i < NUM_REGS; i++) {
+      bool is_find1 = (regs_1.find(i) != regs_1.end());
+      bool is_find2 = (regs_2.find(i) != regs_2.end());
+      if (is_find1 && is_find2) {
+        same_regs = same_regs && (out1.reg_expr(i) == out2.reg_expr(i));
+      } else if (is_find1 && (! is_find2)) {
+        same_regs = same_regs && (out1.reg_expr(i) == smt_input::reg_expr(i));
+      } else if ((! is_find1) && is_find2) {
+        same_regs = same_regs && (out2.reg_expr(i) == smt_input::reg_expr(i));
+      }
+    }
+  }
   if ( (! out1.pgm_has_tail_call) && (! out2.pgm_has_tail_call) ) {
-    f = f && same_ret_val;
+    f = f && same_regs;
   } else {
     z3::expr same_exit_type = (out1.pgm_exit_type == out2.pgm_exit_type);
     z3::expr same_tail_call_paras = (out1.tail_call_args[0] == out2.tail_call_args[0]) &&
                                     (out1.tail_call_args[1] == out2.tail_call_args[1]) &&
                                     (out1.tail_call_args[2] == out2.tail_call_args[2]);
     f = f && same_exit_type &&
-        z3::implies(out1.pgm_exit_type == PGM_EXIT_TYPE_default, same_ret_val) &&
+        z3::implies(out1.pgm_exit_type == PGM_EXIT_TYPE_default, same_regs) &&
         z3::implies(out1.pgm_exit_type == PGM_EXIT_TYPE_tail_call, same_tail_call_paras);
   }
+  return f;
+}
+
+int reg_ptr_type_2_mem_table_type(int reg_type) {
+  switch (reg_type) {
+    case PTR_TO_STACK: return MEM_TABLE_stack;
+    case PTR_TO_CTX: return MEM_TABLE_pkt;
+    default: return -1;
+  }
+}
+
+int mem_table_type_2_reg_ptr_type(int mem_table_type) {
+  switch (mem_table_type) {
+    case MEM_TABLE_stack: return PTR_TO_STACK;
+    case MEM_TABLE_pkt: return PTR_TO_CTX;
+    default: return -1;
+  }
+}
+
+bool is_ptr(int type) {
+  vector<int> ptr_array = {PTR_TO_STACK, PTR_TO_CTX};
+  for (int i = 0; i < ptr_array.size(); i++) {
+    if (type == ptr_array[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Generate the precondition formula and set up the pointer registers,
+// sv is the sv of program's root basic block
+z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
+  cout << "smt_pgm_set_pre" << endl;
+  z3::expr f = Z3_true;
+  // set up pointer registers only for registers read by program
+  for (auto reg : input.prog_read.regs) {
+    cout << "reg " << reg << ":";
+    // get all possible register states from iss.reg_state
+    z3::expr reg_expr = sv.get_init_reg_var(reg);
+    f = f && (reg_expr == smt_input::reg_expr(reg));
+    for (int i = 0; i < input.reg_state[reg].size(); i++) {
+      register_state reg_state = input.reg_state[reg][i];
+      if (! is_ptr(reg_state.type)) continue;
+      z3::expr pc = input.reg_path_cond(reg, i);
+      int table_id = reg_ptr_type_2_mem_table_type(reg_state.type);
+      assert(table_id != -1);
+      z3::expr off_expr = to_expr(reg_state.off);
+      sv.mem_var.add_ptr(reg_expr, table_id, off_expr, pc);
+      cout << reg_expr << " " << table_id << " " << off_expr << endl;
+    }
+  }
+  f = f && input.input_constraint();
   return f;
 }
 
@@ -885,10 +1085,13 @@ z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2) {
   return smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._pkt_sz, MEM_TABLE_pkt);
 }
 
-z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2) {
+z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2, bool is_win) {
   z3::expr f = smt_map_set_same_input(sv1, sv2);
   f = f && smt_pkt_set_same_input(sv1, sv2);  // pkt
   f = f && smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_skb); // skb
+  if (is_win) {
+    f = f && smt_array_mem_set_same_input(sv1, sv2, STACK_SIZE, MEM_TABLE_stack);
+  }
   return f;
 }
 
@@ -952,7 +1155,7 @@ z3::expr predicate_st_n_bytes_in_mem_urt(int n, int table_id, z3::expr addr, smt
 
 // "addr_map_v" is the return value
 z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
-                                     smt_var& sv, unsigned int block, bool enable_addr_off) {
+                                     smt_var& sv, unsigned int block, bool enable_addr_off, bool is_win) {
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
   // get map id according to addr_map
@@ -972,7 +1175,7 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 
     /* add constrains on k */
     z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block,
-                                      map_id_path_conds[i], enable_addr_off);
+                                      map_id_path_conds[i], enable_addr_off, is_win);
 
     /* add constrains on addr_map_v for the following cases
        if key is in the target map, addr_map_v is the same as the corresponding
@@ -1010,7 +1213,7 @@ z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 
 // "out" is the return value
 z3::expr predicate_map_update_helper_for_one_map(int map_id, z3::expr map_id_path_cond,
-    z3::expr addr_k, z3::expr addr_v, z3::expr out, smt_var& sv, unsigned int block, bool enable_addr_off) {
+    z3::expr addr_k, z3::expr addr_v, z3::expr out, smt_var& sv, unsigned int block, bool enable_addr_off, bool is_win) {
   // cout << "predicate_map_update_helper_for_one_map: " << map_id << " " << map_id_path_cond << endl;
   z3::expr f_ret = string_to_expr("true");
   smt_mem& mem = sv.mem_var;
@@ -1021,8 +1224,8 @@ z3::expr predicate_map_update_helper_for_one_map(int map_id, z3::expr map_id_pat
   z3::expr addr_map_v = sv.update_addr_v();
   /* add constrains on "out", "k", "v" */
   z3::expr f = (out == MAP_UPD_RET_EXPR) &&
-               predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block, map_id_path_cond, enable_addr_off) &&
-               predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, sv, v, block, map_id_path_cond, enable_addr_off);
+               predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block, map_id_path_cond, enable_addr_off, is_win) &&
+               predicate_ld_n_bytes(v_sz / NUM_BYTE_BITS, addr_v, sv, v, block, map_id_path_cond, enable_addr_off, is_win);
   z3::expr next_addr_map_v = mem.get_and_update_addr_v_next(map_id);
   /* add constrains on "addr_map_v".
      if the key is in the target map WT. if the corresponding value address is NULL,
@@ -1083,7 +1286,7 @@ z3::expr predicate_map_update_helper_for_one_map(int map_id, z3::expr map_id_pat
 // "out" is the return value
 z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_v,
                                      z3::expr out, smt_var& sv, unsigned int block,
-                                     bool enable_addr_off) {
+                                     bool enable_addr_off, bool is_win) {
   z3::expr f_ret = Z3_true;
   // get map id according to addr_map
   vector<int> map_ids;
@@ -1096,7 +1299,7 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   if (map_ids.size() == 0) {string s = "error!!!"; throw (s); return f_ret;} // todo: addr_map is not a pointer
   for (int i = 0; i < map_ids.size(); i++) {
     f_ret = f_ret && predicate_map_update_helper_for_one_map(map_ids[i], map_id_path_conds[i],
-            addr_k, addr_v, out, sv, block, enable_addr_off);
+            addr_k, addr_v, out, sv, block, enable_addr_off, is_win);
   }
   return f_ret;
 }
@@ -1104,13 +1307,13 @@ z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
 // "out" is the return value
 // if key not in the map, out = 0xfffffffe, else out = 0
 z3::expr predicate_map_delete_helper_for_one_map(int map_id, z3::expr map_id_path_cond,
-    z3::expr addr_k, z3::expr out, smt_var& sv, unsigned int block, bool enable_addr_off) {
+    z3::expr addr_k, z3::expr out, smt_var& sv, unsigned int block, bool enable_addr_off, bool is_win) {
   z3::expr f_ret = Z3_true;
   smt_mem& mem = sv.mem_var;
   int k_sz = mem_t::map_key_sz(map_id);
   z3::expr k = sv.update_key(k_sz);
   /* add the constrains on "k" */
-  z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block, map_id_path_cond, enable_addr_off);
+  z3::expr f = predicate_ld_n_bytes(k_sz / NUM_BYTE_BITS, addr_k, sv, k, block, map_id_path_cond, enable_addr_off, is_win);
 
   /* add the constrains on "addr_map_v" according to "k" */
   z3::expr addr_map_v = sv.update_addr_v();
@@ -1152,7 +1355,7 @@ z3::expr predicate_map_delete_helper_for_one_map(int map_id, z3::expr map_id_pat
 }
 
 z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::expr out,
-                                     smt_var& sv, unsigned int block, bool enable_addr_off) {
+                                     smt_var& sv, unsigned int block, bool enable_addr_off, bool is_win) {
   z3::expr f_ret = Z3_true;
   // get map id according to addr_map
   vector<int> map_ids;
@@ -1165,20 +1368,20 @@ z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::exp
   if (map_ids.size() == 0) {string s = "error!!!"; throw (s); return f_ret;} // todo: addr_map is not a pointer
   for (int i = 0; i < map_ids.size(); i++) {
     f_ret = f_ret && predicate_map_delete_helper_for_one_map(map_ids[i], map_id_path_conds[i],
-            addr_k, out, sv, block, enable_addr_off);
+            addr_k, out, sv, block, enable_addr_off, is_win);
   }
   return f_ret;
 }
 
 z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::expr r3,
                                    z3::expr r4, z3::expr r5, z3::expr r0,
-                                   smt_var &sv, unsigned int block, bool enable_addr_off) {
+                                   smt_var& sv, unsigned int block, bool enable_addr_off, bool is_win) {
   if (func_id == BPF_FUNC_map_lookup_elem) {
-    return predicate_map_lookup_helper(r1, r2, r0, sv, block, enable_addr_off);
+    return predicate_map_lookup_helper(r1, r2, r0, sv, block, enable_addr_off, is_win);
   } else if (func_id == BPF_FUNC_map_update_elem) {
-    return predicate_map_update_helper(r1, r2, r3, r0, sv, block, enable_addr_off);
+    return predicate_map_update_helper(r1, r2, r3, r0, sv, block, enable_addr_off, is_win);
   } else if (func_id == BPF_FUNC_map_delete_elem) {
-    return predicate_map_delete_helper(r1, r2, r0, sv, block, enable_addr_off);
+    return predicate_map_delete_helper(r1, r2, r0, sv, block, enable_addr_off, is_win);
   } else if (func_id == BPF_FUNC_get_prandom_u32) {
     return predicate_get_prandom_u32_helper(r0, sv);
   } else {
@@ -1187,7 +1390,7 @@ z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::ex
 }
 
 // out is the return value (random_u32)
-z3::expr predicate_get_prandom_u32_helper(z3::expr out, smt_var &sv) {
+z3::expr predicate_get_prandom_u32_helper(z3::expr out, smt_var& sv) {
   // higher 32-bit of out is 0, lower 32-bit of out is a symbolic value
   z3::expr f = (out == z3::concat(to_expr((int32_t)0, 32), sv.get_next_random_u32()));
   return f;
@@ -1215,7 +1418,7 @@ string z3_bv_2_hex_str(z3::expr z3_bv) {
 // return uint64 for the given z3 bv64 constant
 // if z3 bv64 is not a constant: 1. assert flag is true, assert(false)
 // 2. assert flag is false, return 0
-uint64_t get_uint64_from_bv64(z3::expr& z3_val, bool assert) {
+uint64_t get_uint64_from_bv64(z3::expr & z3_val, bool assert) {
   bool is_num = z3_val.is_numeral();
   if (is_num) return z3_val.get_numeral_uint64();
   if (assert) {
@@ -1228,7 +1431,7 @@ uint64_t get_uint64_from_bv64(z3::expr& z3_val, bool assert) {
 // get an addr-val list for the given memory table,
 // if the null_addr_chk is true, the NULL value address in the memory table entry will be ignored
 void get_mem_from_mdl(vector<pair<uint64_t, uint8_t>>& mem_addr_val,
-                      z3::model& mdl, smt_var& sv, int mem_id,
+                      z3::model & mdl, smt_var& sv, int mem_id,
                       bool null_addr_chk = true) {
   smt_wt& mem_urt = sv.mem_var._mem_tables[mem_id]._urt;
   for (int i = 0; i < mem_urt.size(); i++) {
@@ -1271,7 +1474,7 @@ void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
   }
 }
 
-void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv, int mem_id, int map_id) {
+void counterex_urt_2_input_map(inout_t& input, z3::model & mdl, smt_var& sv, int mem_id, int map_id) {
   vector<pair< uint64_t, uint8_t>> mem_addr_val;
   get_mem_from_mdl(mem_addr_val, mdl, sv, mem_id);
 
@@ -1302,7 +1505,7 @@ void counterex_urt_2_input_map(inout_t& input, z3::model& mdl, smt_var& sv, int 
 // set input memory, for now, set pkt
 // 1. get mem_addr_val list according to the pkt mem urt;
 // 2. traverse mem_addr_val list, if the addr is in input memory address range, update "input"
-void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
+void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv) {
   int pkt_sz = mem_t::_layout._pkt_sz;
   if (pkt_sz > 0) {
     int pkt_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
@@ -1320,7 +1523,7 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
   }
 }
 
-void counterex_2_input_simu_r10(inout_t& input, z3::model& mdl, smt_var& sv) {
+void counterex_2_input_simu_r10(inout_t& input, z3::model & mdl, smt_var& sv) {
   z3::expr z3_stack_bottom = mdl.eval(sv.get_stack_bottom_addr());
   input.input_simu_r10 = get_uint64_from_bv64(z3_stack_bottom, false); // r10: stack bottom
   if (input.input_simu_r10 == 0) {// means z3 does not care about r10, assign a random value
@@ -1329,7 +1532,7 @@ void counterex_2_input_simu_r10(inout_t& input, z3::model& mdl, smt_var& sv) {
   }
 }
 
-void counterex_2_input_simu_pkt_ptrs(inout_t& input, z3::model& mdl, smt_var& sv) {
+void counterex_2_input_simu_pkt_ptrs(inout_t& input, z3::model & mdl, smt_var& sv) {
   if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
     z3::expr z3_pkt_start = mdl.eval(sv.get_pkt_start_addr());
     input.input_simu_pkt_ptrs[0] = (uint32_t)get_uint64_from_bv64(z3_pkt_start, true);
@@ -1338,7 +1541,7 @@ void counterex_2_input_simu_pkt_ptrs(inout_t& input, z3::model& mdl, smt_var& sv
   }
 }
 
-void counterex_2_input_randoms_u32(inout_t& input, z3::model& mdl, smt_var& sv) {
+void counterex_2_input_randoms_u32(inout_t& input, z3::model & mdl, smt_var& sv) {
   input.set_randoms_u32();
   for (int i = 0; i < smt_var::randoms_u32.size(); i++) {
     z3::expr z3_rand_u32 = mdl.eval(smt_var::randoms_u32[i]);
@@ -1348,7 +1551,7 @@ void counterex_2_input_randoms_u32(inout_t& input, z3::model& mdl, smt_var& sv) 
   }
 }
 
-void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model& mdl, smt_var& sv) {
+void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model & mdl, smt_var& sv) {
   counterex_2_input_simu_r10(input, mdl, sv);
   counterex_2_input_simu_pkt_ptrs(input, mdl, sv);
   counterex_2_input_randoms_u32(input, mdl, sv);
@@ -1361,7 +1564,7 @@ void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model& mdl, smt_va
 }
 
 // make sure sv1 is for the original program
-void counterex_2_input_mem(inout_t& input, z3::model& mdl,
+void counterex_2_input_mem(inout_t& input, z3::model & mdl,
                            smt_var& sv1, smt_var& sv2) {
   input.clear();
   input.set_pkt_random_val();
@@ -1372,7 +1575,7 @@ void counterex_2_input_mem(inout_t& input, z3::model& mdl,
 }
 
 // make sure sv1 is for the original program
-void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv) {
+void counterex_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv) {
   input.clear();
   input.set_pkt_random_val();
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv);

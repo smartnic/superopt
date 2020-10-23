@@ -4,8 +4,11 @@
 using namespace std;
 
 mem_layout mem_t::_layout;
+vector<vector<register_state>> smt_input::reg_state;
+live_variables smt_output::post_prog_r;
 vector<z3::expr> smt_var::randoms_u32;
 bool smt_var::enable_addr_off = true;
+bool smt_var::is_win = false;
 
 default_random_engine gen_ebpf_inst_var;
 uniform_real_distribution<double> unidist_ebpf_inst_var(0.0, 1.0);
@@ -683,6 +686,76 @@ ostream& operator<<(ostream& out, const smt_mem& s) {
 }
 /* class smt_wt end */
 
+void live_variables::intersection(live_variables& lv, const live_variables& lv1, const live_variables& lv2) {
+  lv.clear();
+  // process live registers
+  const unordered_set<int>& live_reg1 = lv1.regs;
+  const unordered_set<int>& live_reg2 = lv2.regs;
+  for (auto reg : lv1.regs) {
+    if (lv2.regs.find(reg) != lv1.regs.end()) {
+      lv.regs.insert(reg);
+    }
+  }
+
+  // process live memory
+  for (auto it1 = lv1.mem.begin(); it1 != lv1.mem.end(); it1++) {
+    int type = it1->first;
+    auto it2 = lv2.mem.find(type);
+    if (it2 == lv2.mem.end()) continue;
+    unordered_set<int> offs;
+    const unordered_set<int>& off_set1 = it1->second;
+    const unordered_set<int>& off_set2 = it2->second;
+    for (auto off : off_set1) {
+      if (off_set2.find(off) == off_set2.end()) continue;
+      offs.insert(off);
+    }
+    lv.mem[type] = offs;
+  }
+}
+
+ostream& operator<<(ostream& out, const live_variables& x) {
+  out << "regs: ";
+  for (auto reg : x.regs) out << reg << " ";
+  out << endl;
+  out << "mem: " << endl;;
+  for (auto it = x.mem.begin(); it != x.mem.end(); it++) {
+    out << it->first << ":";
+    for (auto off : it->second) out << off << " ";
+    out << endl;
+  }
+  return out;
+}
+
+z3::expr smt_input::input_constraint() {
+  z3::expr f = Z3_true;
+  // constraint of register path condition
+  vector<z3::expr> path_conds;
+  for (auto reg : prog_read.regs) {
+    for (int i = 0; i < reg_state[reg].size(); i++) {
+      z3::expr reg_pc = reg_path_cond(reg, i);
+      path_conds.push_back(reg_pc);
+    }
+    // 1. at least one path condition is true
+    z3::expr f_pc_true = Z3_false;
+    for (int i = 0; i < path_conds.size(); i++) {
+      f_pc_true = f_pc_true || path_conds[i];
+    }
+    // 2. at most one path condition is true
+    z3::expr f_pc = Z3_true;
+    for (int i = 0; i < path_conds.size(); i++) {
+      z3::expr f_pc_i = Z3_true;
+      for (int j = 0; j < path_conds.size(); j++) {
+        if (j == i) continue;
+        f_pc_i = f_pc_i && (! path_conds[j]);
+      }
+      f_pc = f_pc && z3::implies(path_conds[i], f_pc_i);
+    }
+
+    f = f && f_pc_true && f_pc;
+  }
+  return f;
+}
+
 /* class smt_var start */
 smt_var::smt_var()
   : smt_var_base() {
@@ -919,12 +992,13 @@ void smt_var::set_new_node_id(unsigned int node_id, const vector<unsigned int>& 
   }
 }
 
-void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks) {
+void smt_var::init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks, bool is_win) {
   smt_var_base::init(prog_id, node_id, num_regs);
   mem_var.init_by_layout(n_blocks);
   int root = 0;
   if (node_id != root) return;
   smt_out.set_pgm_id(prog_id);
+  if (is_win) return;
   // todo: move the init of root node into inst::smt_set_pre?
   int stack_mem_table_id = mem_var.get_mem_table_id(MEM_TABLE_stack);
   mem_var.add_ptr(get_init_reg_var(10), stack_mem_table_id, to_expr(STACK_SIZE), Z3_true); // r10 is the stack pointer

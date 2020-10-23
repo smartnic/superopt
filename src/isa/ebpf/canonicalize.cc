@@ -205,6 +205,22 @@ void inst_static_state::insert_live_var(inst_static_state& iss) {
   }
 }
 
+inst_static_state& inst_static_state::operator=(const inst_static_state &rhs) {
+  // reg_state.resize(rhs.reg_state.size());
+  // cout << "1.." << endl;
+  // for (int i = 0; i < rhs.reg_state.size(); i++) {
+  //   cout << i << endl;
+  //   for (int j = 0; j < rhs.reg_state[i].size(); j++) {
+  //     cout << i << " " << j << endl;
+  //     reg_state[i].push_back(rhs.reg_state[i][j]);
+  //   }
+  // }
+  reg_state = rhs.reg_state;
+  live_var.regs = rhs.live_var.regs;
+  live_var.mem = rhs.live_var.mem;
+  return *this;
+}
+
 static void union_live_var(inst_static_state& iss, inst_static_state& iss1, inst_static_state& iss2) {
   iss.live_var.regs.clear();
   iss.live_var.mem.clear();
@@ -243,20 +259,10 @@ static void intersection_live_var(inst_static_state& iss, inst_static_state& iss
   }
 }
 
-bool is_ptr(int type) {
-  vector<int> ptr_array = {PTR_TO_STACK, PTR_TO_CTX};
-  for (int i = 0; i < ptr_array.size(); i++) {
-    if (type == ptr_array[i]) {
-      return true;
-    }
-  }
-  return false;
-}
-
 // After executing the insn, update register type in inst_static_state
 void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   int opcode_type = insn.get_opcode_type();
-  vector<int> opcodes_upd_dst_reg = {OP_OTHERS, OP_ST, OP_LD, OP_CALL};
+  vector<int> opcodes_upd_dst_reg = {OP_OTHERS, OP_LD, OP_CALL};
   bool flag = false;
   for (int i = 0; i < opcodes_upd_dst_reg.size(); i++) {
     if (opcode_type == opcodes_upd_dst_reg[i]) {
@@ -368,7 +374,7 @@ void get_mem_read_offs(unordered_map<int, unordered_set<int>>& mem_read_offs,
     if (mem_read_offs.find(type) == mem_read_offs.end()) {
       mem_read_offs[type] = unordered_set<int> {};
     }
-    int off_s = iss.reg_state[src_reg][i].off;
+    int off_s = iss.reg_state[src_reg][i].off + insn._off;
     for (int j = 0; j < read_sz; j++) {
       mem_read_offs[type].insert(off_s + j);
     }
@@ -480,35 +486,123 @@ void static_analysis(prog_static_state& pss, inst* program, int len) {
   live_analysis_pgm(pss, program, len, g, dag);
   cout << "static_analysis end" << endl;
 
-  for (int i = 0; i < pss.size(); i++) {
-    cout << "insn " << i << endl;
-    for (int j = 0; j < pss[i].reg_state.size(); j++) {
-      cout << "reg" << j << ": ";
-      for (int k = 0; k < pss[i].reg_state[j].size(); k++) {
-        cout << pss[i].reg_state[j][k].type << "," << pss[i].reg_state[j][k].off << " ";
+  // for (int i = 0; i < pss.size(); i++) {
+  //   cout << "insn " << i << endl;
+  //   for (int j = 0; j < pss[i].reg_state.size(); j++) {
+  //     cout << "reg" << j << ": ";
+  //     for (int k = 0; k < pss[i].reg_state[j].size(); k++) {
+  //       cout << pss[i].reg_state[j][k].type << "," << pss[i].reg_state[j][k].off << " ";
+  //     }
+  //     cout << endl;
+  //   }
+  // }
+
+  // for (int i = 0; i < pss.size(); i++) {
+  //   cout << "insn " << i << endl;
+  //   cout << "live regs: ";
+  //   for (auto it = pss[i].live_var.regs.begin(); it != pss[i].live_var.regs.end(); it++) {
+  //     cout << *it << " ";
+  //   }
+  //   cout << endl;
+  //   cout << "live offs: ";
+  //   for (auto it = pss[i].live_var.mem.begin(); it != pss[i].live_var.mem.end(); it++) {
+  //     cout << it->first << ":";
+  //     for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
+  //       cout << *it2 << ",";
+  //     }
+  //     cout << " ";
+  //   }
+  //   cout << endl << endl;
+  // }
+  // cout << "......" << endl;
+}
+
+void set_up_smt_inout_orig(prog_static_state& pss, inst* program, int len, int win_start, int win_end) {
+  assert(pss.size() >= win_end);
+  smt_input::reg_state = pss[win_start - 1].reg_state;
+  smt_output::post_prog_r = pss[win_end + 1].live_var;
+  cout << "set_up_smt_inout_orig" << endl;
+  cout << "smt_input: " << endl;
+  for (int i = 0; i < smt_input::reg_state.size(); i++) {
+    if (smt_input::reg_state[i].size() > 0) cout << i << ":";
+    for (int j = 0; j < smt_input::reg_state[i].size(); j++) {
+      cout << smt_input::reg_state[i][j].type << "," << smt_input::reg_state[i][j].off << " ";
+    }
+    if (smt_input::reg_state[i].size() > 0) cout << endl;
+  }
+  cout << "smt_output:" << endl;
+  cout << "regs:";
+  for (auto reg : smt_output::post_prog_r.regs) cout << reg << " ";
+  cout << endl;
+  cout << "offs:" << endl;;
+  for (auto mem : smt_output::post_prog_r.mem) {
+    cout << mem.first << ":";
+    for (auto off : mem.second) {
+      cout << off << " ";
+    }
+    cout << endl;
+  }
+}
+
+void compute_win_w(live_variables& win_w, prog_static_state& pss_win, inst* program, int win_start, int win_end) {
+  win_w.clear();
+  for (int i = win_start; i <= win_end; i++) {
+    int reg_to_write = program[i].reg_to_write();
+    if (reg_to_write != -1) win_w.regs.insert(reg_to_write);
+
+    bool is_mem_write = false;
+    int op_class = BPF_CLASS(program[i]._opcode);
+    if ((op_class == BPF_ST) || (op_class == BPF_STX)) is_mem_write = true;
+    if (is_mem_write) {
+      unordered_map<int, unordered_set<int>> mem_write_offs;
+      get_mem_write_offs(mem_write_offs, pss_win[i - win_start], program[i]);
+      // remove mem_write_offs from live memory
+      for (auto it = mem_write_offs.begin(); it != mem_write_offs.end(); it++) {
+        int type = it->first;
+        win_w.mem[type] = it->second;
       }
-      cout << endl;
     }
   }
 
-  for (int i = 0; i < pss.size(); i++) {
-    cout << "insn " << i << endl;
-    cout << "live regs: ";
-    for (auto it = pss[i].live_var.regs.begin(); it != pss[i].live_var.regs.end(); it++) {
-      cout << *it << " ";
-    }
-    cout << endl;
-    cout << "live offs: ";
-    for (auto it = pss[i].live_var.mem.begin(); it != pss[i].live_var.mem.end(); it++) {
-      cout << it->first << ":";
-      for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
-        cout << *it2 << ",";
-      }
-      cout << " ";
-    }
-    cout << endl << endl;
+  cout << "win_w regs: " << " ";
+  for (auto reg : win_w.regs) {
+    cout << reg << " ";
   }
-  cout << "......" << endl;
+  cout << endl;
+}
+
+void set_up_smt_output_win(smt_output& sout, prog_static_state& pss_win,
+                           inst* program, int win_start, int win_end) {
+  cout << "set_up_smt_output_win" << endl;
+  live_variables win_w;
+  compute_win_w(win_w, pss_win, program, win_start, win_end);
+  // output_var = win_w intersection post_r
+  live_variables post_r = pss_win[win_end - win_start + 1].live_var;
+  live_variables::intersection(sout.output_var, win_w, post_r);
+  cout << "output_var:";
+  cout << sout.output_var << endl;
+}
+
+void set_up_smt_inout_win(smt_input& sin, smt_output& sout,
+                          prog_static_state& pss_orig, inst* program, int win_start, int win_end) {
+  // 1. compute pss_win according to the pss_orig and the window program
+  prog_static_state pss_win(win_end - win_start + 2);
+  for (int i = 0; i < pss_win.size(); i++) {
+    pss_win[i].reg_state = pss_orig[i + win_start].reg_state;
+  }
+  // todo: extended for window program with branches
+  for (int i = 0; i < pss_win.size(); i++) {
+    type_const_inference_inst(pss_win[i], program[i + win_start]);
+  }
+  for (int i = pss_win.size() - 1; i >= 0; i--) { // live analysis backward
+    live_analysis_inst(pss_win[i], program[i + win_start]);
+  }
+
+  sin.prog_read = pss_win[0].live_var; // set up smt_input
+  cout << "set_up_smt_input_win" << endl;
+  cout << "win_r: " << endl;
+  cout << sin.prog_read << endl;
+  set_up_smt_output_win(sout, pss_win, program, win_start, win_end);
 }
 
 void init_array_mem_table(smt_var& sv, inst_static_state& iss, int ptr_type, int mem_table_type) {
@@ -531,53 +625,5 @@ void init_pre(smt_var& sv, inst_static_state& iss) {
   // init memory
   init_array_mem_table(sv, iss, PTR_TO_STACK, MEM_TABLE_stack);
   init_array_mem_table(sv, iss, PTR_TO_CTX, MEM_TABLE_pkt);
-}
-
-int reg_ptr_type_2_mem_table_type(int reg_type) {
-  switch (reg_type) {
-    case PTR_TO_STACK: return MEM_TABLE_stack;
-    case PTR_TO_CTX: return MEM_TABLE_pkt;
-    default: return -1;
-  }
-}
-
-// sv is the sv of program's root basic block
-z3::expr smt_set_pre(smt_var& sv, inst_static_state& iss) {
-  // 1. set up the memory table, ...
-  init_pre(sv, iss);
-  // 2. generate the precondition formula
-  z3::expr f = Z3_true;
-  // 2.1 set up pointer registers
-  for (auto reg : iss.live_var.regs) {
-    // get all possible register states from iss.reg_state
-    vector<z3::expr> path_conds;
-    for (int i = 0; i < iss.reg_state[reg].size(); i++) {
-      z3::expr pc = sv.update_is_valid();
-      path_conds.push_back(pc);
-    }
-    z3::expr reg_expr = sv.get_init_reg_var(reg);
-    for (int i = 0; i < iss.reg_state[reg].size(); i++) {
-      register_state reg_state = iss.reg_state[reg][i];
-      if (! is_ptr(reg_state.type)) continue;
-      int table_id = reg_ptr_type_2_mem_table_type(reg_state.type);
-      assert(table_id != -1);
-      z3::expr off_expr = to_expr(reg_state.off);
-      sv.mem_var.add_ptr(reg_expr, table_id, off_expr, path_conds[i]);
-    }
-    // generate the formula of path condition, iff one path condition is true
-    z3::expr f_pc = Z3_true;
-    for (int i = 0; i < path_conds.size(); i++) {
-      z3::expr f_pc_i = Z3_true;
-      for (int j = 0; j < i; j++) f_pc_i = f_pc_i && (! path_conds[j]);
-      for (int j = i + 1; j < path_conds.size(); j++) f_pc_i = f_pc_i && (! path_conds[j]);
-      f_pc = f_pc && z3::implies(path_conds[i], f_pc_i);
-    }
-    z3::expr f_pc_true = Z3_false;
-    for (int i = 0; i < path_conds.size(); i++) {
-      f_pc_true = f_pc_true || path_conds[i];
-    }
-    f_pc = f_pc && f_pc_true;
-  }
-  return f;
 }
 

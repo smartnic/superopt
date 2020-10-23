@@ -9,19 +9,6 @@ void canonicalize(inst* program, int len);
 
 void remove_nops(inst* program, int len);
 
-// for static analysis
-// TODO: deal with map later
-struct register_state {
-  int type;
-  int off;
-};
-
-struct live_variables {
-  unordered_set<int> regs;
-  // stack, pkt
-  unordered_map<int, unordered_set<int>> mem; // offsets in different memory ranges, todo: deal with map later
-};
-
 class inst_static_state {
  public:
   vector<vector<register_state>> reg_state; // all possible states of registers
@@ -35,7 +22,10 @@ class inst_static_state {
   void insert_live_off(int type, int off);
   void insert_live_var(inst_static_state& iss);
   static void intersection_live_var(inst_static_state& iss, inst_static_state& iss1, inst_static_state& iss2);
+  inst_static_state& operator=(const inst_static_state &rhs);
 };
 
 typedef vector<inst_static_state> prog_static_state;
 void static_analysis(prog_static_state& pss, inst* program, int len);
+void set_up_smt_inout_orig(prog_static_state& pss, inst* program, int len, int win_start, int win_end);
+void set_up_smt_inout_win(smt_input& sin, smt_output& sout, prog_static_state& pss_orig, inst* program, int win_start, int win_end);

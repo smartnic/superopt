@@ -619,6 +619,7 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     return Z3_true;
   }
   bool enable_addr_off = smt_var::enable_addr_off;
+  bool is_win = smt_var::is_win;
   // Get curDst, curSrc, imm and newDst at the begining to avoid using switch case to
   // get some of these values for different opcodes. Should get curDst and curSrc before
   // updating curDst (curSrc may be the same reg as curDst)
@@ -681,10 +682,10 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
           return string_to_expr("false");
       }
     case LDMAPID: return predicate_ldmapid(IMM, NEWDST, sv, block);
-    case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, block, enable_addr_off);
-    case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, block, enable_addr_off);
-    case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, block, enable_addr_off);
-    case LDXDW: return predicate_ld64(CURSRC, OFF, sv, NEWDST, block, enable_addr_off);
+    case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
+    case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
+    case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
+    case LDXDW: return predicate_ld64(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
     case STXB: return predicate_st8(CURSRC, CURDST, OFF, sv, block, false, enable_addr_off); // bpf_st = false
     case STXH: return predicate_st16(CURSRC, CURDST, OFF, sv, block, false, enable_addr_off);
     case STXW: return predicate_st32(CURSRC, CURDST, OFF, sv, block, false, enable_addr_off);
@@ -697,7 +698,7 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     case XADD32: return predicate_xadd32(CURSRC, CURDST, OFF, sv, block, enable_addr_off);
     case LDABSH: return predicate_ldskbh(IMM, sv, R0, block);
     case LDINDH: return predicate_ldskbh(CURSRC, sv, R0, block); // todo: modify the function name
-    case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv, block, enable_addr_off);
+    case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv, block, enable_addr_off, is_win);
     default: return string_to_expr("false");
   }
 }
@@ -738,12 +739,20 @@ z3::expr inst::smt_inst_end(smt_var & sv) const {
         (sv.smt_out.tail_call_args[2] == R3);
   } else {
     f = (sv.smt_out.pgm_exit_type == PGM_EXIT_TYPE_default);
-    f = f && (sv.smt_out.ret_val == sv.get_cur_reg_var(0));
+    if (smt_var::is_win) {
+      unordered_set<int>& regs = sv.smt_out.output_var.regs;
+      for (auto reg : regs) {
+        f = f && (sv.smt_out.reg_expr(reg) == sv.get_cur_reg_var(reg));
+        cout << (sv.smt_out.reg_expr(reg) == sv.get_cur_reg_var(reg)) << endl;
+      }
+    } else {
+      f = f && (sv.smt_out.ret_val == sv.get_cur_reg_var(0));
+    }
   }
   return f;
 }
 
-z3::expr inst::smt_inst_safety_chk(smt_var& sv) const {
+z3::expr inst::smt_inst_safety_chk(smt_var & sv) const {
   z3::expr curSrc = sv.get_cur_reg_var(_src_reg);
   z3::expr curDst = sv.get_cur_reg_var(_dst_reg);
   int64_t imm = (int64_t)_imm;
@@ -976,7 +985,7 @@ int inst::reg_to_write() const {
   return -1;
 }
 
-void interpret(inout_t& output, inst* program, int length, prog_state& ps, const inout_t& input) {
+void interpret(inout_t& output, inst * program, int length, prog_state & ps, const inout_t& input) {
 #undef IMM
 #undef OFF
 #undef MEM
@@ -1311,7 +1320,7 @@ out:
 }
 
 // 1. BPF_ST is illegal if src_reg type is PTR_TO_CTX
-void safety_chk(inst& insn, prog_state& ps) {
+void safety_chk(inst & insn, prog_state & ps) {
   int op_class = BPF_CLASS(insn._opcode);
   if (op_class == BPF_ST) {
     int dst_reg_type = ps.get_reg_type(insn._dst_reg);

@@ -99,10 +99,10 @@ inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var
 inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
 inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
 // out == (read addr+off, sz, m); type: addr, off, out: bv64;
-inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true);
-inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true);
-z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true);
-inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true);
+inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
+inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
+z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
+inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 // *(u64*)(addr+off) += in
 z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool enable_addr_off = true);
 // *(u32*)(addr+off) += in
@@ -117,21 +117,23 @@ z3::expr predicate_ldmapid(z3::expr map_id, z3::expr out, smt_var& sv, unsigned 
 // parameter: z3::expr cond = Z3_true
 z3::expr predicate_helper_function(int func_id, z3::expr r1, z3::expr r2, z3::expr r3,
                                    z3::expr r4, z3::expr r5, z3::expr r0, smt_var& sv,
-                                   unsigned int block = 0, bool enable_addr_off = true);
+                                   unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 z3::expr predicate_map_lookup_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_map_v,
-                                     smt_var& sv, unsigned int block = 0, bool enable_addr_off = true);
+                                     smt_var& sv, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 z3::expr predicate_map_update_helper(z3::expr addr_map, z3::expr addr_k, z3::expr addr_v, z3::expr out,
-                                     smt_var& sv, unsigned int block = 0, bool enable_addr_off = true);
+                                     smt_var& sv, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 z3::expr predicate_map_delete_helper(z3::expr addr_map, z3::expr addr_k, z3::expr out, smt_var& sv,
-                                     unsigned int block = 0, bool enable_addr_off = true);
+                                     unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 // return the FOL formula that set two programs the same inputs (support: same input maps now)
 z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2);
 
-z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2);
+z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2, bool is_win = false);
 // return the FOL formula that check whether two programs have the same output
-z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2);
+z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win = false);
 // return the FOL formula that check whether two programs have the same output memories
-z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2);
+z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win = false);
+z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input);
+
 void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv1, smt_var& sv2);
 void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv);
 /* APIs exposed to the externals end */
@@ -144,7 +146,7 @@ z3::expr smt_one_map_eq_chk(int map_id, smt_var& sv1,
                             smt_var& sv2);
 z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2);
 z3::expr smt_pkt_set_same_input(smt_var& sv1, smt_var& sv2);
-z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2);
+z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win = false);
 // For the conversion from counterexample (z3 model from validator)
 // to input memory (mem_t) for interpreter
 string z3_bv_2_hex_str(z3::expr z3_bv);
@@ -419,26 +421,26 @@ inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var
 
 // implemented in inst_codegen.cc
 z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
-                           unsigned int block = 0, z3::expr cond = Z3_true, bool enable_addr_off = true);
+                           unsigned int block = 0, z3::expr cond = Z3_true, bool enable_addr_off = true, bool is_win = false);
 
 inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
-                              unsigned int block, bool enable_addr_off) {
+                              unsigned int block, bool enable_addr_off, bool is_win) {
   return ((out.extract(63, 8) == to_expr(0, 56)) &&
-          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off));
+          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off, is_win));
 }
 
 inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
-                               unsigned int block, bool enable_addr_off) {
+                               unsigned int block, bool enable_addr_off, bool is_win) {
   return ((out.extract(63, 16) == to_expr(0, 48)) &&
-          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off) &&
-          predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block, Z3_true, enable_addr_off));
+          predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off, is_win) &&
+          predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block, Z3_true, enable_addr_off, is_win));
 }
 
 inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
-                               unsigned int block, bool enable_addr_off) {
-  z3::expr f = predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off);
+                               unsigned int block, bool enable_addr_off, bool is_win) {
+  z3::expr f = predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off, is_win);
   for (int i = 1; i < 8; i++) {
-    f = f && predicate_ld_byte(addr, off + i, sv, out.extract(8 * i + 7, 8 * i), block, Z3_true, enable_addr_off);
+    f = f && predicate_ld_byte(addr, off + i, sv, out.extract(8 * i + 7, 8 * i), block, Z3_true, enable_addr_off, is_win);
   }
   return f;
 }
@@ -452,3 +454,4 @@ void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
 z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off = true);
 z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off = true);
 z3::expr safety_chk_st(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off = true);
+bool is_ptr(int type);

@@ -1131,102 +1131,103 @@ void chk_counterex_by_vld_to_interpreter_delta(inst* p, inst* delta, int start, 
   delete []p_1;
 }
 
+// bpf_sock.o section: rcv-sock4
+inst rcv_sock4[91] = {inst(191, 1, 6, 0, 0),
+                      inst(183, 0, 1, 0, 0),
+                      inst(97, 6, 2, 36, 0),
+                      inst(86, 0, 2, 4, 6),
+                      inst(CALL, BPF_FUNC_get_prandom_u32),
+                      inst(188, 0, 1, 0, 0),
+                      inst(103, 0, 1, 0, 32),
+                      inst(119, 0, 1, 0, 32),
+                      inst(123, 1, 10, -40, 0),
+                      inst(97, 6, 1, 4, 0),
+                      inst(99, 1, 10, -32, 0),
+                      inst(97, 6, 1, 24, 0),
+                      inst(99, 1, 10, -16, 0),
+                      inst(180, 0, 8, 0, 0),
+                      inst(107, 8, 10, -26, 0),
+                      inst(97, 10, 1, -16, 0),
+                      inst(107, 1, 10, -28, 0),
+                      inst(191, 10, 2, 0, 0),
+                      inst(7, 0, 2, 0, -40),
+                      inst(LDMAPID, 1, 0),
+                      inst(0, 0, 0, 0),
+                      inst(133, 0, 0, 0, 1),
+                      inst(191, 0, 7, 0, 0),
+                      inst(21, 0, 7, 65, 0),
+                      inst(97, 7, 1, 0, 0),
+                      inst(99, 1, 10, -56, 0),
+                      inst(105, 7, 1, 4, 0),
+                      inst(107, 8, 10, -48, 0),
+                      inst(107, 8, 10, -50, 0),
+                      inst(107, 8, 10, -46, 0),
+                      inst(107, 1, 10, -52, 0),
+                      inst(22, 0, 1, 10, 0),
+                      inst(191, 10, 2, 0, 0),
+                      inst(7, 0, 2, 0, -56),
+                      inst(LDMAPID, 1, 1),
+                      inst(0, 0, 0, 0),
+                      inst(133, 0, 0, 0, 1),
+                      inst(21, 0, 0, 2, 0),
+                      inst(105, 0, 1, 4, 0),
+                      inst(86, 0, 1, 10, 0),
+                      inst(180, 0, 1, 0, 0),
+                      inst(107, 1, 10, -52, 0),
+                      inst(191, 10, 2, 0, 0),
+                      inst(7, 0, 2, 0, -56),
+                      inst(LDMAPID, 1, 1),
+                      inst(0, 0, 0, 0),
+                      inst(133, 0, 0, 0, 1),
+                      inst(21, 0, 0, 5, 0),
+                      inst(105, 0, 1, 4, 0),
+                      inst(22, 0, 1, 3, 0),
+                      inst(105, 7, 1, 6, 0),
+                      inst(105, 0, 2, 6, 0),
+                      inst(30, 1, 2, 20, 0),
+                      inst(191, 10, 2, 0, 0),
+                      inst(7, 0, 2, 0, -40),
+                      inst(LDMAPID, 1, 0),
+                      inst(0, 0, 0, 0),
+                      inst(133, 0, 0, 0, 3),
+                      inst(183, 0, 6, 0, 0),
+                      inst(123, 6, 10, -8, 0),
+                      inst(123, 6, 10, -16, 0),
+                      inst(183, 0, 1, 0, 264),
+                      inst(123, 1, 10, -24, 0),
+                      inst(191, 10, 2, 0, 0),
+                      inst(7, 0, 2, 0, -24),
+                      inst(LDMAPID, 1, 2),
+                      inst(0, 0, 0, 0),
+                      inst(133, 0, 0, 0, 1),
+                      inst(21, 0, 0, 9, 0),
+                      inst(121, 0, 1, 0, 0),
+                      inst(7, 0, 1, 0, 1),
+                      inst(123, 1, 0, 0, 0),
+                      inst(5, 0, 0, 16, 0),
+                      inst(97, 7, 1, 0, 0),
+                      inst(99, 1, 6, 4, 0),
+                      inst(105, 7, 1, 4, 0),
+                      inst(99, 1, 6, 24, 0),
+                      inst(5, 0, 0, 11, 0),
+                      inst(123, 6, 10, -8, 0),
+                      inst(183, 0, 1, 0, 1),
+                      inst(123, 1, 10, -16, 0),
+                      inst(191, 10, 2, 0, 0),
+                      inst(7, 0, 2, 0, -24),
+                      inst(191, 10, 3, 0, 0),
+                      inst(7, 0, 3, 0, -16),
+                      inst(LDMAPID, 1, 2),
+                      inst(0, 0, 0, 0),
+                      inst(180, 0, 4, 0, 0),
+                      inst(133, 0, 0, 0, 2),
+                      inst(180, 0, 0, 0, 1),
+                      inst(149, 0, 0, 0, 0),
+                     };
+
 void test12() {
   cout << "1. counter-example from cilium rcv-sock4" << endl;
   const int pgm_len = 91;
-  // bpf_sock.o section: rcv-sock4
-  inst rcv_sock4[pgm_len] = {inst(191, 1, 6, 0, 0),
-                             inst(183, 0, 1, 0, 0),
-                             inst(97, 6, 2, 36, 0),
-                             inst(86, 0, 2, 4, 6),
-                             inst(CALL, BPF_FUNC_get_prandom_u32),
-                             inst(188, 0, 1, 0, 0),
-                             inst(103, 0, 1, 0, 32),
-                             inst(119, 0, 1, 0, 32),
-                             inst(123, 1, 10, -40, 0),
-                             inst(97, 6, 1, 4, 0),
-                             inst(99, 1, 10, -32, 0),
-                             inst(97, 6, 1, 24, 0),
-                             inst(99, 1, 10, -16, 0),
-                             inst(180, 0, 8, 0, 0),
-                             inst(107, 8, 10, -26, 0),
-                             inst(97, 10, 1, -16, 0),
-                             inst(107, 1, 10, -28, 0),
-                             inst(191, 10, 2, 0, 0),
-                             inst(7, 0, 2, 0, -40),
-                             inst(LDMAPID, 1, 0),
-                             inst(0, 0, 0, 0),
-                             inst(133, 0, 0, 0, 1),
-                             inst(191, 0, 7, 0, 0),
-                             inst(21, 0, 7, 65, 0),
-                             inst(97, 7, 1, 0, 0),
-                             inst(99, 1, 10, -56, 0),
-                             inst(105, 7, 1, 4, 0),
-                             inst(107, 8, 10, -48, 0),
-                             inst(107, 8, 10, -50, 0),
-                             inst(107, 8, 10, -46, 0),
-                             inst(107, 1, 10, -52, 0),
-                             inst(22, 0, 1, 10, 0),
-                             inst(191, 10, 2, 0, 0),
-                             inst(7, 0, 2, 0, -56),
-                             inst(LDMAPID, 1, 1),
-                             inst(0, 0, 0, 0),
-                             inst(133, 0, 0, 0, 1),
-                             inst(21, 0, 0, 2, 0),
-                             inst(105, 0, 1, 4, 0),
-                             inst(86, 0, 1, 10, 0),
-                             inst(180, 0, 1, 0, 0),
-                             inst(107, 1, 10, -52, 0),
-                             inst(191, 10, 2, 0, 0),
-                             inst(7, 0, 2, 0, -56),
-                             inst(LDMAPID, 1, 1),
-                             inst(0, 0, 0, 0),
-                             inst(133, 0, 0, 0, 1),
-                             inst(21, 0, 0, 5, 0),
-                             inst(105, 0, 1, 4, 0),
-                             inst(22, 0, 1, 3, 0),
-                             inst(105, 7, 1, 6, 0),
-                             inst(105, 0, 2, 6, 0),
-                             inst(30, 1, 2, 20, 0),
-                             inst(191, 10, 2, 0, 0),
-                             inst(7, 0, 2, 0, -40),
-                             inst(LDMAPID, 1, 0),
-                             inst(0, 0, 0, 0),
-                             inst(133, 0, 0, 0, 3),
-                             inst(183, 0, 6, 0, 0),
-                             inst(123, 6, 10, -8, 0),
-                             inst(123, 6, 10, -16, 0),
-                             inst(183, 0, 1, 0, 264),
-                             inst(123, 1, 10, -24, 0),
-                             inst(191, 10, 2, 0, 0),
-                             inst(7, 0, 2, 0, -24),
-                             inst(LDMAPID, 1, 2),
-                             inst(0, 0, 0, 0),
-                             inst(133, 0, 0, 0, 1),
-                             inst(21, 0, 0, 9, 0),
-                             inst(121, 0, 1, 0, 0),
-                             inst(7, 0, 1, 0, 1),
-                             inst(123, 1, 0, 0, 0),
-                             inst(5, 0, 0, 16, 0),
-                             inst(97, 7, 1, 0, 0),
-                             inst(99, 1, 6, 4, 0),
-                             inst(105, 7, 1, 4, 0),
-                             inst(99, 1, 6, 24, 0),
-                             inst(5, 0, 0, 11, 0),
-                             inst(123, 6, 10, -8, 0),
-                             inst(183, 0, 1, 0, 1),
-                             inst(123, 1, 10, -16, 0),
-                             inst(191, 10, 2, 0, 0),
-                             inst(7, 0, 2, 0, -24),
-                             inst(191, 10, 3, 0, 0),
-                             inst(7, 0, 3, 0, -16),
-                             inst(LDMAPID, 1, 2),
-                             inst(0, 0, 0, 0),
-                             inst(180, 0, 4, 0, 0),
-                             inst(133, 0, 0, 0, 2),
-                             inst(180, 0, 0, 0, 1),
-                             inst(149, 0, 0, 0, 0),
-                            };
   mem_t::_layout.clear();
   inst::max_prog_len = 91;
   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
@@ -1305,11 +1306,75 @@ void test12() {
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 }
 
+void test13() {
+  inst p1[] = {inst(),
+               inst(MOV64XC, 2, 2),
+               inst(MOV64XY, 0, 2),
+              };
+  inst p1_2[] = {inst(),
+                 inst(MOV64XC, 2, 3),
+                 inst(MOV64XY, 0, 2),
+                };
+  int win_start = 1, win_end = 1;
+  bool enable_win = true;
+  validator vld(p1, 3, enable_win, win_start, win_end);
+  vld._enable_prog_eq_cache = false;
+  print_test_res(vld.is_equal_to(p1, 3, p1_2, 3) == 0, "1");
+
+  inst p2[] = {inst(),
+               inst(),
+               inst(STB, 10, -1, 0xff),
+               inst(LDXB, 1, 10, -1),
+               inst(MOV64XY, 0, 1),
+              };
+  inst p2_1[] = {inst(),
+                 inst(MOV64XC, 2, 0xff),
+                 inst(STXB, 10, -1, 2),
+                 inst(LDXB, 1, 10, -1),
+                 inst(MOV64XY, 0, 1),
+                };
+  win_start = 1, win_end = 2;
+  vld.set_orig(p2, 5, win_start, win_end);
+  print_test_res(vld.is_equal_to(p2, 5, p2_1, 5) == 1, "2");
+
+  mem_t::_layout.clear();
+  const int prog_len = 91;
+  inst::max_prog_len = prog_len;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(128);
+  mem_t::add_map(map_attr(128, 64, 91));
+  mem_t::add_map(map_attr(96, 96, 91));
+  mem_t::add_map(map_attr(64, 128, 91));
+  mem_t::_layout._n_randoms_u32 = 1;
+  smt_var::init_static_variables();
+  win_start = 4;
+  win_end = 7;
+  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  inst rcv_sock4_1[prog_len];
+  for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
+  rcv_sock4_1[6] = inst();
+  rcv_sock4_1[7] = inst();
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len), "rcv-sock4 1");
+
+  win_start = 5;
+  win_end = 7;
+  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len), "rcv-sock4 2");
+
+  win_start = 27;
+  win_end = 30;
+  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4, prog_len), "rcv-sock4 3");
+  inst::max_prog_len = TEST_PGM_MAX_LEN;
+}
+
 int main() {
   // set for prog_eq_cache, if the prog len in the unit tests > 20,
   // please update inst::max_prog_len here
   inst::max_prog_len = TEST_PGM_MAX_LEN;
   try {
+    test13();
+    return 0;
     test1();
     test2();
     test3();
