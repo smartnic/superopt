@@ -291,7 +291,11 @@ struct map_id_pc {
 // TODO: deal with map later
 struct register_state {
   int type;
-  int off;
+  int off; // memory offset (stack, pkt)
+  // bool is_val; // flag of whether `val` is available
+  int64_t val; // register value
+  // default values are all 0
+  register_state(int t = 0, int o = 0 , int64_t v = 0) {type = t; off = o, val = v;}
 };
 
 class live_variables {
@@ -421,6 +425,7 @@ enum REG_TYPE {
   SCALAR_VALUE = 0,
   PTR_TO_STACK,
   PTR_TO_CTX,
+  CONST_PTR_TO_MAP,
   PTR_TO_MAP_VALUE_OR_NULL,
   MAX_REG_TYPE,
 };

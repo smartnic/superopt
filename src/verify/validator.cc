@@ -283,7 +283,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   if (is_equal == 0) {
     // cout << is_equal << endl;
     cout << mdl << endl;
-    gen_counterex(orig, length_orig, mdl, post_sv_synth, COUNTEREX_eq_check);
+    // gen_counterex(orig, length_orig, mdl, post_sv_synth, COUNTEREX_eq_check);
     if (_enable_prog_uneq_cache) {
       insert_into_prog_cache(synth_prog_uneq_cache, _prog_uneq_cache);
       cout << "unequal program insert" << endl;

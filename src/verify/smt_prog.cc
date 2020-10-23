@@ -203,6 +203,7 @@ void smt_prog::init_pgm_dag(unsigned int root_node) {
 }
 
 expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length, bool is_win, int win_start, int win_end) {
+  cout << "gen_smt: " << is_win << " " << win_start << " " << win_end << endl;
   try {
     // generate a cfg
     // illegal input would be detected: 1. program with loop
