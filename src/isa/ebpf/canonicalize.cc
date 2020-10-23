@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <utility>
 #include "../../../src/verify/cfg.h"
 #include "canonicalize.h"
 
@@ -143,7 +144,16 @@ void inst_static_state::copy_reg_state(int dst_reg, int src_reg) {
 void inst_static_state::set_reg_state(int reg, int type, int off) {
   assert(reg >= 0);
   assert(reg < NUM_REGS);
-  reg_state[reg] = {register_state{type, off}};
+  register_state rs;
+  rs.type = type;
+  rs.off = off;
+  reg_state[reg] = {rs};
+}
+
+void inst_static_state::set_reg_state(int reg, register_state rs) {
+  assert(reg >= 0);
+  assert(reg < NUM_REGS);
+  reg_state[reg] = {rs};
 }
 
 // insert iss.reg_state into self.reg_state
@@ -152,18 +162,20 @@ void inst_static_state::insert_reg_state(inst_static_state& iss) {
     for (int i = 0; i < iss.reg_state[reg].size(); i++) {
       int type = iss.reg_state[reg][i].type;
       int off = iss.reg_state[reg][i].off;
+      int64_t val = iss.reg_state[reg][i].val;
 
       // search <type, off> in self.reg_state. if it is, no need to insert
       bool flag = false;
       for (int j = 0; j < reg_state[reg].size(); j++) {
         if ((reg_state[reg][j].type == type) &&
-            (reg_state[reg][j].off == off)) {
+            (reg_state[reg][j].off == off) &&
+            (reg_state[reg][j].val == val)) {
           flag = true;
           break;
         }
       }
       if (! flag) {
-        reg_state[reg].push_back(register_state{type, off});
+        reg_state[reg].push_back(register_state{type, off, val});
       }
     }
 
@@ -290,6 +302,11 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
       // todo: need to modify the offset later
       iss.set_reg_state(0, PTR_TO_MAP_VALUE_OR_NULL, 0);
     }
+  } else if (opcode == LDMAPID) {
+    register_state rs;
+    rs.type = CONST_PTR_TO_MAP;
+    rs.val = insn._imm;
+    iss.set_reg_state(dst_reg, rs);
   } else {
     iss.set_reg_state(dst_reg, SCALAR_VALUE);
   }
@@ -327,6 +344,8 @@ void type_const_inference_pgm(prog_static_state& pss, inst* program, int len,
 
 void get_mem_write_offs(unordered_map<int, unordered_set<int>>& mem_write_offs,
                         inst_static_state& iss, inst& insn) {
+  cout << "get_mem_write_offs" << endl;
+  insn.print();
   mem_write_offs.clear();
   int write_sz;
   switch (insn._opcode) {
@@ -345,7 +364,7 @@ void get_mem_write_offs(unordered_map<int, unordered_set<int>>& mem_write_offs,
   for (int i = 0; i < iss.reg_state[dst_reg].size(); i++) {
     int type = iss.reg_state[dst_reg][i].type;
     if (! is_ptr(type)) continue;
-    int off_s = iss.reg_state[dst_reg][i].off;
+    int off_s = iss.reg_state[dst_reg][i].off + insn._off;
     if (mem_write_offs.find(type) == mem_write_offs.end()) {
       mem_write_offs[type] = unordered_set<int> {};
     }
@@ -355,28 +374,57 @@ void get_mem_write_offs(unordered_map<int, unordered_set<int>>& mem_write_offs,
   }
 }
 
+void get_mem_read_regs_and_read_sz_from_helper(vector<pair<int, int> >& regs_sz, inst_static_state& iss, inst& insn) {
+  cout << "get_mem_read_regs_and_read_sz_from_helper" << endl;
+  if (insn._opcode != CALL) return;
+  int func_id = insn._imm;
+
+  if ((func_id == BPF_FUNC_map_lookup_elem) || (func_id == BPF_FUNC_map_delete_elem)) {
+    assert(iss.reg_state[1].size() == 1); // r1 points to map
+    int map_id = iss.reg_state[1][0].val;
+    int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
+    regs_sz.push_back({2, k_sz});
+    cout << map_id << " " << k_sz << endl;
+
+  } else if (func_id == BPF_FUNC_map_update_elem) {
+    assert(iss.reg_state[1].size() == 1);
+    int map_id = iss.reg_state[1][0].val;
+    int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
+    int v_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
+    regs_sz.push_back({2, k_sz});
+    regs_sz.push_back({3, v_sz});
+
+  }
+}
+
 void get_mem_read_offs(unordered_map<int, unordered_set<int>>& mem_read_offs,
                        inst_static_state& iss, inst& insn) {
+  cout << "get_mem_read_offs: " << (insn._opcode == CALL) << endl;
+  insn.print();
   mem_read_offs.clear();
-  int read_sz;
+  vector<pair<int, int> > regs_sz; // regs and read sz
   switch (insn._opcode) {
-    case LDXB: read_sz = 1; break;
-    case LDXH: read_sz = 2; break;
-    case LDXW: read_sz = 4; break;
-    case LDXDW: read_sz = 8; break;
+    case LDXB: regs_sz.push_back({insn._src_reg, 1}); break;
+    case LDXH: regs_sz.push_back({insn._src_reg, 2}); break;
+    case LDXW: regs_sz.push_back({insn._src_reg, 4}); break;
+    case LDXDW: regs_sz.push_back({insn._src_reg, 8}); break;
+    case CALL: get_mem_read_regs_and_read_sz_from_helper(regs_sz, iss, insn); break;
     default: return;
   }
 
-  int src_reg = insn._src_reg;
-  for (int i = 0; i < iss.reg_state[src_reg].size(); i++) {
-    int type = iss.reg_state[src_reg][i].type;
-    if (! is_ptr(type)) continue;
-    if (mem_read_offs.find(type) == mem_read_offs.end()) {
-      mem_read_offs[type] = unordered_set<int> {};
-    }
-    int off_s = iss.reg_state[src_reg][i].off + insn._off;
-    for (int j = 0; j < read_sz; j++) {
-      mem_read_offs[type].insert(off_s + j);
+  for (int id = 0; id < regs_sz.size(); id++) {
+    int reg = regs_sz[id].first;
+    int read_sz = regs_sz[id].second;
+    for (int i = 0; i < iss.reg_state[reg].size(); i++) {
+      int type = iss.reg_state[reg][i].type;
+      if (! is_ptr(type)) continue;
+      if (mem_read_offs.find(type) == mem_read_offs.end()) {
+        mem_read_offs[type] = unordered_set<int> {};
+      }
+      int off_s = iss.reg_state[reg][i].off + insn._off;
+      for (int j = 0; j < read_sz; j++) {
+        mem_read_offs[type].insert(off_s + j);
+      }
     }
   }
 }
@@ -404,8 +452,10 @@ void live_analysis_inst(inst_static_state& iss, inst& insn) {
   if (is_mem_write) {
     unordered_map<int, unordered_set<int>> mem_write_offs;
     get_mem_write_offs(mem_write_offs, iss, insn);
+    cout << "mem write" << endl;
     // remove mem_write_offs from live memory
     for (auto it = mem_write_offs.begin(); it != mem_write_offs.end(); it++) {
+      cout << "type: " << it->first << endl;
       int type = it->first;
       auto found = iss.live_var.mem.find(type);
       if (found == iss.live_var.mem.end()) {
@@ -414,6 +464,7 @@ void live_analysis_inst(inst_static_state& iss, inst& insn) {
       unordered_set<int>& live_offs = found->second;
       unordered_set<int>& write_offs = it->second;
       for (auto it_off = write_offs.begin(); it_off != write_offs.end(); it_off++) {
+        cout << "write off: " << *it_off << endl;
         live_offs.erase(*it_off);
       }
     }
@@ -421,7 +472,8 @@ void live_analysis_inst(inst_static_state& iss, inst& insn) {
 
   // 2.2 update memory read
   bool is_mem_read = false;
-  // update map helper later
+  // update map later
+  if (insn._opcode == CALL) is_mem_read = true; // map helpers will read from stack
   if (op_class == BPF_LDX) is_mem_read = true;
   if (is_mem_read) {
     unordered_map<int, unordered_set<int>> mem_read_offs;
@@ -429,6 +481,7 @@ void live_analysis_inst(inst_static_state& iss, inst& insn) {
     cout << "mem_read_offs size: " << mem_read_offs.size() << endl;
     // add read_offs into live memory
     for (auto it = mem_read_offs.begin(); it != mem_read_offs.end(); it++) {
+      cout << "type: " << it->first << endl;
       int type = it->first;
       auto found = iss.live_var.mem.find(type);
       if (found == iss.live_var.mem.end()) {
@@ -468,6 +521,8 @@ void live_analysis_pgm(prog_static_state& pss, inst* program, int len,
         pss[j].live_var = pss[j + 1].live_var; // copy the previous state
       }
       live_analysis_inst(pss[j], program[j]); // update state according to the instruction
+      cout << j << endl;
+      cout << pss[j].live_var << endl;
     }
   }
   cout << "live_analysis_pgm end" << endl;
@@ -559,25 +614,25 @@ void compute_win_w(live_variables& win_w, prog_static_state& pss_win, inst* prog
       // remove mem_write_offs from live memory
       for (auto it = mem_write_offs.begin(); it != mem_write_offs.end(); it++) {
         int type = it->first;
-        win_w.mem[type] = it->second;
+        for (auto off : it->second) {
+          win_w.mem[type].insert(off);
+        }
       }
     }
   }
 
-  cout << "win_w regs: " << " ";
-  for (auto reg : win_w.regs) {
-    cout << reg << " ";
-  }
-  cout << endl;
+  cout << "win_w " << endl << win_w << endl;
 }
 
 void set_up_smt_output_win(smt_output& sout, prog_static_state& pss_win,
+                           prog_static_state& pss_orig,
                            inst* program, int win_start, int win_end) {
   cout << "set_up_smt_output_win" << endl;
   live_variables win_w;
   compute_win_w(win_w, pss_win, program, win_start, win_end);
   // output_var = win_w intersection post_r
-  live_variables post_r = pss_win[win_end - win_start + 1].live_var;
+  live_variables post_r = pss_orig[win_end + 1].live_var;
+  cout << "post_r" << endl << post_r << endl;
   live_variables::intersection(sout.output_var, win_w, post_r);
   cout << "output_var:";
   cout << sout.output_var << endl;
@@ -585,16 +640,30 @@ void set_up_smt_output_win(smt_output& sout, prog_static_state& pss_win,
 
 void set_up_smt_inout_win(smt_input& sin, smt_output& sout,
                           prog_static_state& pss_orig, inst* program, int win_start, int win_end) {
+  cout << "enter set_up_smt_inout_win" << endl;
   // 1. compute pss_win according to the pss_orig and the window program
-  prog_static_state pss_win(win_end - win_start + 2);
-  for (int i = 0; i < pss_win.size(); i++) {
-    pss_win[i].reg_state = pss_orig[i + win_start].reg_state;
+  prog_static_state pss_win(win_end - win_start + 1); // [win_start, win_end]
+  // get the initial state from `win_start-1`
+  pss_win[0].reg_state = pss_orig[win_start - 1].reg_state;
+  for (int i = 0; i < pss_win[0].reg_state.size(); i++) {
+    cout << i << ": ";
+    for (int j = 0; j < pss_win[0].reg_state[i].size(); j++) {
+      cout << pss_win[0].reg_state[i][j].type << "," << pss_win[0].reg_state[i][j].off << "," << pss_win[0].reg_state[i][j].val << " ";
+    }
+    cout << endl;
   }
   // todo: extended for window program with branches
   for (int i = 0; i < pss_win.size(); i++) {
+    if (i != 0) {
+      pss_win[i].reg_state = pss_win[i - 1].reg_state;
+    }
     type_const_inference_inst(pss_win[i], program[i + win_start]);
   }
+
   for (int i = pss_win.size() - 1; i >= 0; i--) { // live analysis backward
+    if (i != pss_win.size() - 1) {
+      pss_win[i].live_var = pss_win[i + 1].live_var;
+    }
     live_analysis_inst(pss_win[i], program[i + win_start]);
   }
 
@@ -602,7 +671,7 @@ void set_up_smt_inout_win(smt_input& sin, smt_output& sout,
   cout << "set_up_smt_input_win" << endl;
   cout << "win_r: " << endl;
   cout << sin.prog_read << endl;
-  set_up_smt_output_win(sout, pss_win, program, win_start, win_end);
+  set_up_smt_output_win(sout, pss_win, pss_orig, program, win_start, win_end);
 }
 
 void init_array_mem_table(smt_var& sv, inst_static_state& iss, int ptr_type, int mem_table_type) {

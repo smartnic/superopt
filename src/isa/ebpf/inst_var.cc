@@ -728,9 +728,9 @@ ostream& operator<<(ostream& out, const live_variables& x) {
 
 z3::expr smt_input::input_constraint() {
   z3::expr f = Z3_true;
-  // constraint of register path condition
-  vector<z3::expr> path_conds;
   for (auto reg : prog_read.regs) {
+    // constraint of register path condition
+    vector<z3::expr> path_conds;
     for (int i = 0; i < reg_state[reg].size(); i++) {
       z3::expr reg_pc = reg_path_cond(reg, i);
       path_conds.push_back(reg_pc);

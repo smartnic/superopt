@@ -196,6 +196,7 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
   for (int i = 0; i < ids.size(); i++) {
     z3::expr is_valid = sv.update_is_valid();
     z3::expr cond = path_cond && info_list[i].path_cond;
+    cout << "predicate_st_byte: " << path_cond.simplify() << " " << info_list[i].path_cond << " " << is_valid << endl;;
     f = f && (is_valid == cond);
     // safety check of BPF_ST storing in the input memory is not allowed
     if (bpf_st) {

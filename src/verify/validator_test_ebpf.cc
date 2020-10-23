@@ -1306,6 +1306,46 @@ void test12() {
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 }
 
+inst from_network[38] = {inst(180, 0, 2, 0, 0),
+                         inst(99, 2, 1, 64, 0),
+                         inst(183, 0, 2, 0, 0),
+                         inst(99, 2, 1, 60, 0),
+                         inst(99, 2, 1, 56, 0),
+                         inst(99, 2, 1, 52, 0),
+                         inst(99, 2, 1, 48, 0),
+                         inst(97, 1, 6, 0, 0),
+                         inst(123, 2, 10, -8, 0),
+                         inst(123, 2, 10, -16, 0),
+                         inst(183, 0, 1, 0, 259),
+                         inst(123, 1, 10, -24, 0),
+                         inst(191, 10, 2, 0, 0),
+                         inst(7, 0, 2, 0, -24),
+                         inst(24, 0, 1, 0, 0), // ldmapid r1 = 0
+                         inst(0, 0, 0, 0, 0),
+                         inst(133, 0, 0, 0, 1),
+                         inst(21, 0, 0, 7, 0),
+                         inst(121, 0, 1, 0, 0),
+                         inst(7, 0, 1, 0, 1),
+                         inst(123, 1, 0, 0, 0),
+                         inst(121, 0, 1, 8, 0),
+                         inst(15, 6, 1, 0, 0),
+                         inst(123, 1, 0, 8, 0),
+                         inst(5, 0, 0, 11, 0),
+                         inst(183, 0, 1, 0, 1),
+                         inst(123, 1, 10, -16, 0),
+                         inst(123, 6, 10, -8, 0),
+                         inst(191, 10, 2, 0, 0),
+                         inst(7, 0, 2, 0, -24),
+                         inst(191, 10, 3, 0, 0),
+                         inst(7, 0, 3, 0, -16),
+                         inst(24, 0, 1, 0, 0), // ldmapid r1 = 0
+                         inst(0, 0, 0, 0),
+                         inst(180, 0, 4, 0, 0),
+                         inst(133, 0, 0, 0, 2),
+                         inst(180, 0, 0, 0, 0),
+                         inst(149, 0, 0, 0, 0),
+                        };
+
 void test13() {
   inst p1[] = {inst(),
                inst(MOV64XC, 2, 2),
@@ -1354,17 +1394,51 @@ void test13() {
   for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
   rcv_sock4_1[6] = inst();
   rcv_sock4_1[7] = inst();
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len), "rcv-sock4 1");
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 1");
 
   win_start = 5;
   win_end = 7;
   vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len), "rcv-sock4 2");
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 2");
 
   win_start = 27;
   win_end = 30;
   vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4, prog_len), "rcv-sock4 3");
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4, prog_len) == 1, "rcv-sock4 3");
+  inst::max_prog_len = TEST_PGM_MAX_LEN;
+
+  // test from-network
+  mem_t::_layout.clear();
+  const int prog_len_fn = 38;
+  inst::max_prog_len = prog_len_fn;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(68);
+  mem_t::add_map(map_attr(64, 128, prog_len_fn));
+  smt_var::init_static_variables();
+  win_start = 0;
+  win_end = 6;
+  vld.set_orig(from_network, prog_len_fn, win_start, win_end);
+
+  inst from_network_1[prog_len_fn];
+  for (int i = 0; i < prog_len_fn; i++) from_network_1[i] = from_network[i];
+  from_network_1[2] = inst();
+  vld.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn);
+
+  for (int i = 0; i < prog_len_fn; i++) from_network_1[i] = from_network[i];
+  from_network_1[3] = inst();
+  from_network_1[4] = inst();
+  from_network_1[5] = inst(STXDW, 1, 48, 2);
+  from_network_1[6] = inst(STXDW, 1, 56, 2);
+  print_test_res(vld.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn) == 1, "from-network 1");
+
+  win_start = 8;
+  win_end = 9;
+  vld.set_orig(from_network, prog_len_fn, win_start, win_end);
+  for (int i = 0; i < prog_len_fn; i++) from_network_1[i] = from_network[i];
+  from_network_1[8] = inst();
+  from_network_1[9] = inst();
+  print_test_res(vld.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn) == 1, "from-network 2");
+
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 }
 
