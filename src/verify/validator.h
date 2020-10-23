@@ -59,6 +59,10 @@ class validator {
   bool _enable_prog_eq_cache = true;
   unordered_map<int, vector<prog*> > _prog_uneq_cache;
   bool _enable_prog_uneq_cache = false;
+  bool _is_win = false;
+  int _win_start, _win_end;
+  smt_input _smt_input_orig;
+  prog_static_state _pss_orig;
   // mem_t _last_counterex_mem;
   /* store variables start */
   // ps_: program logic formula, including basic program logic
@@ -79,11 +83,11 @@ class validator {
   unsigned int _count_solve_eq = 0;
   /* counter variables end */
   validator();
-  validator(inst* orig, int length);
+  validator(inst* orig, int length, bool is_win = false, int win_start = 0, int win_end = inst::max_prog_len);
   validator(expr fx, expr input, expr output);
   ~validator();
   // calculate and store pre_orig, ps_orign
-  void set_orig(inst* orig, int length);
+  void set_orig(inst* orig, int length, int win_start = 0, int win_end = inst::max_prog_len);
   // fx is the original FOL formula, input/output is the input/output variable of fx
   void set_orig(expr fx, expr input, expr output);
   // check whether synth is equal to orig
@@ -95,7 +99,7 @@ class validator {
   int is_smt_valid(expr& smt, model& mdl);
   void gen_counterex(inst* orig, int length, model& m, smt_var& post_sv_synth, int counterex_type);
   // set register 0 in basic block 0 as input[prog_id]
-  void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg);
+  void smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs, unsigned int input_reg, smt_input& sin, smt_var& sv);
   // set the input variable of FOL formula as input[prog_id]
   void smt_pre(expr& pre, expr e);
   // setting outputs of two programs are equal

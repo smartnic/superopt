@@ -57,5 +57,5 @@ class smt_prog {
   ~smt_prog();
   // Return the program logic FOL formula 'PL' including basic program logic
   // and the formula of capturing the output of the program in the variable output[prog_id]
-  expr gen_smt(unsigned int prog_id, inst* inst_lst, int length);
+  expr gen_smt(unsigned int prog_id, inst* inst_lst, int length, bool is_win = false, int win_start = 0, int win_end = inst::max_prog_len);
 };

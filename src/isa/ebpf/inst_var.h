@@ -287,7 +287,38 @@ struct map_id_pc {
   map_id_pc(int id, z3::expr pc) {map_id = id; path_cond = pc;}
 };
 
+// for static analysis
+// TODO: deal with map later
+struct register_state {
+  int type;
+  int off;
+};
+
+class live_variables {
+ public:
+  unordered_set<int> regs;
+  // stack, pkt
+  unordered_map<int, unordered_set<int>> mem; // offsets in different memory ranges, todo: deal with map later
+  void clear() {regs.clear(); mem.clear();};
+  // lv = lv1 intersection lv2
+  static void intersection(live_variables& lv, const live_variables& lv1, const live_variables& lv2);
+  friend ostream& operator<<(ostream& out, const live_variables& x);
+};
+
+class smt_input {
+ public:
+  // registers
+  static vector<vector<register_state>> reg_state;
+  live_variables prog_read;
+  static z3::expr reg_expr(int reg) {return to_expr("input_r_" + to_string(reg));}
+  static z3::expr reg_path_cond(int reg, int state_id) {return to_bool_expr("input_pc_r_" + to_string(reg) + "_" + to_string(state_id));}
+  static z3::expr off_val_expr(int ptr_type, int off) {return to_expr("input_offval_" + to_string(ptr_type) + "_" + to_string(off), NUM_BYTE_BITS);}
+  z3::expr input_constraint();
+};
+
 class smt_output {
+ private:
+  int prog_id;
  public:
   bool pgm_has_tail_call = false;
   // for now, only two program exit types are supported, so 1 bit is enough
@@ -298,12 +329,20 @@ class smt_output {
                                      to_expr("tc_arg1"),
                                      to_expr("tc_arg2"),
                                     };
+  live_variables output_var;
+  static live_variables post_prog_r;
   void set_pgm_id(unsigned int prog_id) {
+    this->prog_id = prog_id;
     string id = to_string(prog_id);
     ret_val = to_expr("ret_val_" + id);
     pgm_exit_type = to_expr("pgm_exit_type_" + id, 1);
     for (int i = 0; i < tail_call_args.size(); i++)
       tail_call_args[i] = to_expr("tc_arg" + to_string(i) + "_" + id);
+  }
+  // output register expression, should make sure register is in `output_var`
+  z3::expr reg_expr(int reg) {return to_expr("output_r_" + to_string(reg) + "_" + to_string(prog_id));}
+  z3::expr off_val_expr(int ptr_type, int off) {
+    return to_expr("output_offval_" + to_string(ptr_type) + "_" + to_string(off) + "_" + to_string(prog_id), NUM_BYTE_BITS);
   }
 };
 
@@ -327,6 +366,7 @@ class smt_var: public smt_var_base {
   static vector<z3::expr> randoms_u32;
   // flag of whether offset-based address is enabled in memory tables
   static bool enable_addr_off;
+  static bool is_win;
   smt_var();
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])
   // 2. Initialize reg_val[i] = r_[_name]_0, i = 0, ..., num_regs
@@ -356,7 +396,7 @@ class smt_var: public smt_var_base {
                        const vector<z3::expr>& node_in_pc_list,
                        const vector<vector<z3::expr>>& nodes_in_regs);
   void init(unsigned int n_blocks = 1) {mem_var.init_by_layout(n_blocks);}
-  void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks = 1);
+  void init(unsigned int prog_id, unsigned int node_id, unsigned int num_regs, unsigned int n_blocks = 1, bool is_win = false);
   static void init_static_variables();
   z3::expr get_next_random_u32();
   void clear();

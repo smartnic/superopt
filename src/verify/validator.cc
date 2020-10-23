@@ -17,8 +17,10 @@ validator::validator() {
   _last_counterex.output.init();
 }
 
-validator::validator(inst* orig, int length) {
-  set_orig(orig, length);
+validator::validator(inst* orig, int length, bool is_win, int win_start, int win_end) {
+  _is_win = is_win;
+  smt_var::is_win = is_win;
+  set_orig(orig, length, win_start, win_end);
   _last_counterex.input.init();
   _last_counterex.output.init();
 }
@@ -99,13 +101,18 @@ int validator::is_smt_valid(expr& smt, model& mdl) {
 // for eBPF, r10=bottom_of_stack
 // todo: move pre constrain setting as a call from class inst
 void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs,
-                        unsigned int input_reg) {
-  smt_var sv;
-  sv.init(prog_id, 0, num_regs);
+                        unsigned int input_reg, smt_input& sin, smt_var& sv) {
   expr input = string_to_expr("input");
   // TODO: set input limit, need to be generalized
   expr p = (input >= -1024) && (input <= 1024);
-  p = p && inst::smt_set_pre(input, sv);
+  if (! _is_win) {
+    smt_var sv_tmp;
+    sv_tmp.init(prog_id, 0, num_regs);
+    p = p && inst::smt_set_pre(input, sv_tmp);
+  } else {
+    sv.init(prog_id, 0, num_regs, true);
+    p = p && smt_pgm_set_pre(sv, sin);
+  }
   pre = p;
 }
 
@@ -115,20 +122,30 @@ void validator::smt_pre(expr& pre, expr e) {
 
 void validator::smt_post(expr& pst, unsigned int prog_id1, unsigned int prog_id2,
                          smt_var& post_sv_synth) {
-  pst = smt_pgm_eq_chk(_post_sv_orig, post_sv_synth);
+  pst = smt_pgm_eq_chk(_post_sv_orig, post_sv_synth, _is_win);
 }
 
 // calculate and store pre_orig, ps_orign
-void validator::set_orig(inst* orig, int length) {
-  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg());
+void validator::set_orig(inst* orig, int length, int win_start, int win_end) {
   smt_prog ps_orig;
+  if (_is_win) {
+    _win_start = win_start;
+    _win_end = win_end;
+    // update smt_input and smt_output static variables with the original program
+    static_analysis(_pss_orig, orig, length);
+    set_up_smt_inout_orig(_pss_orig, orig, length, _win_start, _win_end);
+    set_up_smt_inout_win(_smt_input_orig, ps_orig.sv.smt_out, _pss_orig, orig, _win_start, _win_end);
+  }
+  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg(), _smt_input_orig, ps_orig.sv);
   try {
-    _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, length);
+    cout << "gen smt" << endl;
+    _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, length, _is_win, _win_start, _win_end);
   } catch (const string err_msg) {
     throw (err_msg);
     return;
   }
   _post_sv_orig = ps_orig.sv;
+
   _store_ps_orig = ps_orig; // store
 
   // reset _prog_eq_cache, _prog_uneq_cache, since original program is reset
@@ -198,12 +215,21 @@ int validator::safety_check(inst* orig, int len, expr& pre, expr& pl, expr& p_sc
 
 int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_syn) {
   _count_is_equal_to++;
-  expr pre_synth = string_to_expr("true");
-  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg());
   smt_prog ps_synth;
+  smt_input smt_input_synth;
+  if (_is_win) {
+    prog_static_state pss_synth;
+    set_up_smt_inout_win(smt_input_synth, ps_synth.sv.smt_out, _pss_orig, synth, _win_start, _win_end);
+  }
+  expr pre_synth = string_to_expr("true");
+  cout << "smt_Pre..." << endl;
+  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg(), smt_input_synth, ps_synth.sv);
+  cout << "smt_Pre end..." << endl;
+
   expr pl_synth = string_to_expr("true");
   try {
-    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length_syn);
+    cout << "gen_smt..." << endl;
+    pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length_syn, _is_win, _win_start, _win_end);
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
     // cerr << err_msg << endl;
@@ -240,7 +266,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     return sc;
   }
 
-  expr pre_mem_same_mem = smt_pgm_set_same_input(_post_sv_orig, post_sv_synth);
+  expr pre_mem_same_mem = smt_pgm_set_same_input(_post_sv_orig, post_sv_synth, _is_win);
   expr post = string_to_expr("true");
   smt_post(post, VLD_PROG_ID_ORIG, VLD_PROG_ID_SYNTH, post_sv_synth);
   expr smt = implies(pre_mem_same_mem && _pre_orig && pre_synth && _pl_orig && pl_synth, post);
@@ -256,7 +282,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
 
   if (is_equal == 0) {
     // cout << is_equal << endl;
-    // cout << mdl << endl;
+    cout << mdl << endl;
     gen_counterex(orig, length_orig, mdl, post_sv_synth, COUNTEREX_eq_check);
     if (_enable_prog_uneq_cache) {
       insert_into_prog_cache(synth_prog_uneq_cache, _prog_uneq_cache);
@@ -272,7 +298,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
 
 reg_t validator::get_orig_output(reg_t input, unsigned int num_regs, unsigned int input_reg) {
   expr input_logic = string_to_expr("false");
-  smt_pre(input_logic, VLD_PROG_ID_ORIG, num_regs, input_reg);
+  smt_pre(input_logic, VLD_PROG_ID_ORIG, num_regs, input_reg, _smt_input_orig, _post_sv_orig);
   input_logic = (string_to_expr("input") == to_expr(input)) && input_logic;
   tactic t = tactic(smt_c, "bv");
   solver s = t.mk_solver();
