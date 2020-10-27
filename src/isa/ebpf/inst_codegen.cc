@@ -342,6 +342,7 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
 
 z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond,
                            bool enable_addr_off, bool is_win) {
+  cout << "predicate_ld_byte: " << is_win << endl;
   // cout << "predicate_ld_byte: " << endl;
   // cout << "addr: " << addr << endl;
   z3::expr f = Z3_true;
@@ -368,9 +369,9 @@ z3::expr predicate_ld_n_bytes(int n, z3::expr addr, smt_var& sv, z3::expr out, u
   return f;
 }
 
-z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block, bool enable_addr_off) {
+z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block, bool enable_addr_off, bool is_win) {
   z3::expr v64_1 = sv.new_var(64);
-  z3::expr f = predicate_ld64(addr, off, sv, v64_1, block, enable_addr_off);
+  z3::expr f = predicate_ld64(addr, off, sv, v64_1, block, enable_addr_off, is_win);
   z3::expr v64_2 = sv.new_var(64);
   f = f && (v64_2 == (v64_1 + in));
   bool bpf_st = false; // xadd64 opcode is not BPF_ST
@@ -378,9 +379,9 @@ z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
   return f;
 }
 
-z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block, bool enable_addr_off) {
+z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block, bool enable_addr_off, bool is_win) {
   z3::expr v64_1 = sv.new_var(64);
-  z3::expr f = predicate_ld32(addr, off, sv, v64_1, block, enable_addr_off);
+  z3::expr f = predicate_ld32(addr, off, sv, v64_1, block, enable_addr_off, is_win);
   z3::expr v64_2 = sv.new_var(64);
   f = f && (v64_2 == (v64_1 + in));
   bool bpf_st = false; // xadd32 opcode is not BPF_ST
@@ -950,7 +951,7 @@ z3::expr smt_pkt_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win) {
 
 z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win) {
   z3::expr f = Z3_true;
-  if (is_win) {
+  if (! is_win) {
     f = smt_map_eq_chk(sv1, sv2);
   }
   f = f && smt_pkt_eq_chk(sv1, sv2, is_win);

@@ -203,9 +203,47 @@ void test2() {
   remove_nops_check(p4, sizeof(p4) / sizeof(inst), p4_expected, "4");
 }
 
+bool reg_state_is_equal(vector<register_state>& x, vector<register_state>& y) {
+  if (x.size() != y.size()) return false;
+  bool is_equal = true;
+  // x[i] can be found in y
+  for (int i = 0; i < x.size(); i++) {
+    bool is_equal_i = false;
+    for (int j = 0; j < y.size(); j++) {
+      is_equal_i = is_equal_i || (x[i] == y[j]);
+    }
+    is_equal = is_equal && is_equal_i;
+  }
+  return is_equal;
+}
+
+bool live_var_is_equal(live_variables& x, live_variables& y) {
+  if (x.regs.size() != y.regs.size()) return false;
+  for (auto reg : x.regs) {
+    // `reg` can be found in y.regs
+    if (y.regs.find(reg) == y.regs.end()) return false;
+  }
+
+  if (x.mem.size() != y.mem.size()) return false;
+  for (auto it1 = x.mem.begin(); it1 != x.mem.end(); it1++) {
+    int type = it1->first;
+    auto it2 = y.mem.find(type);
+    if (it2 == y.mem.end()) return false;
+    for (auto off : it1->second) {
+      if (it2->second.find(off) == it2->second.end()) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 void test3() {
   cout << "Test 3: program static analysis" << endl;
   cout << "3.1 test register type inference" << endl;
+  mem_t::set_pkt_sz(16);
+  mem_t::add_map(map_attr(16, 32, 16)); // key_sz = 2 bytes, val_sz = 4 bytes
+
   inst p1[] = {inst(MOV64XY, 2, 1),
                inst(ADD64XC, 2, 2),
                inst(LDXB, 0, 2, 2),
@@ -213,6 +251,10 @@ void test3() {
               };
   prog_static_state pss;
   static_analysis(pss, p1, sizeof(p1) / sizeof(inst));
+  // check r2 state before executing insn 2
+  vector<register_state> expected_insn2_r2_p1;
+  expected_insn2_r2_p1.push_back(register_state{PTR_TO_CTX, 2, 0});
+  print_test_res(reg_state_is_equal(expected_insn2_r2_p1, pss.static_state[2].reg_state[2]), "1");
 
   inst p2[] = {inst(MOV64XY, 2, 1),
                inst(JEQXY, 1, 2, 1),
@@ -221,6 +263,45 @@ void test3() {
                inst(EXIT),
               };
   static_analysis(pss, p2, sizeof(p2) / sizeof(inst));
+  // check r2 state before executing insn 3
+  vector<register_state> expected_insn3_r2_p2;
+  expected_insn3_r2_p2.push_back(register_state{PTR_TO_CTX, 0, 0});
+  expected_insn3_r2_p2.push_back(register_state{PTR_TO_CTX, 2, 0});
+  print_test_res(reg_state_is_equal(expected_insn3_r2_p2, pss.static_state[3].reg_state[2]), "2");
+
+  cout << "3.2 test live analysis" << endl;
+  inst p2_1[] = {inst(),
+                 inst(STH, 10, -8, 0xff),
+                 inst(LDMAPID, 1, 0),
+                 inst(MOV64XY, 2, 10),
+                 inst(ADD64XC, 2, -8),
+                 inst(CALL, BPF_FUNC_map_lookup_elem),
+                 inst(EXIT),
+                };
+  static_analysis(pss, p2_1, sizeof(p2_1) / sizeof(inst));
+  // check live variables after executing insn 4
+  live_variables expected_insn4_p21;
+  expected_insn4_p21.regs = {1, 2};
+  expected_insn4_p21.mem[PTR_TO_STACK] = {STACK_SIZE - 8, STACK_SIZE - 7};
+  print_test_res(live_var_is_equal(expected_insn4_p21, pss.static_state[4].live_var), "1.1");
+  // check live variables after executing insn 0
+  live_variables expected_insn0_p21;
+  expected_insn0_p21.regs = {10};
+  print_test_res(live_var_is_equal(expected_insn0_p21, pss.static_state[0].live_var), "1.2");
+
+  inst p2_2[] = {inst(JEQXY, 1, 2, 2),
+                 inst(MOV64XY, 1, 5),
+                 inst(LDXB, 2, 10, -1),
+                 inst(MOV64XY, 1, 6),
+                 inst(LDXB, 2, 10, -2),
+                 inst(EXIT),
+                };
+  static_analysis(pss, p2_2, sizeof(p2_2) / sizeof(inst));
+  // check live variables after executing insn 0
+  live_variables expected_insn0_p22;
+  expected_insn0_p22.regs = {5, 6, 10};
+  expected_insn0_p22.mem[PTR_TO_STACK] = {STACK_SIZE - 1, STACK_SIZE - 2};
+  print_test_res(live_var_is_equal(expected_insn0_p22, pss.static_state[0].live_var), "2");
 }
 
 int main(int argc, char *argv[]) {

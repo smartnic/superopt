@@ -5,7 +5,7 @@
 #include <set>
 #include <unordered_map>
 #include "../../src/utils.h"
-#include "../../src/isa/inst_header.h"
+#include "../../src/isa/inst_header_basic.h"
 
 using namespace std;
 
@@ -44,6 +44,7 @@ class graph {
   ~graph();
   void gen_graph(inst* inst_lst, int length);
   string graph_to_str() const;
+  void clear() {nodes.clear(); nodes_in.clear(); nodes_out.clear();};
   friend ostream& operator<<(ostream& out, const graph& g);
 };
 

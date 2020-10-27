@@ -694,8 +694,8 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     case STH: return predicate_st16(IMM, CURDST, OFF, sv, block, true, enable_addr_off);
     case STW: return predicate_st32(IMM, CURDST, OFF, sv, block, true, enable_addr_off);
     case STDW: return predicate_st64(IMM, CURDST, OFF, sv, block, true, enable_addr_off);
-    case XADD64: return predicate_xadd64(CURSRC, CURDST, OFF, sv, block, enable_addr_off);
-    case XADD32: return predicate_xadd32(CURSRC, CURDST, OFF, sv, block, enable_addr_off);
+    case XADD64: return predicate_xadd64(CURSRC, CURDST, OFF, sv, block, enable_addr_off, is_win);
+    case XADD32: return predicate_xadd32(CURSRC, CURDST, OFF, sv, block, enable_addr_off, is_win);
     case LDABSH: return predicate_ldskbh(IMM, sv, R0, block);
     case LDINDH: return predicate_ldskbh(CURSRC, sv, R0, block); // todo: modify the function name
     case CALL: return predicate_helper_function(imm, R1, R2, R3, R4, R5, R0, sv, block, enable_addr_off, is_win);

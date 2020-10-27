@@ -289,13 +289,21 @@ struct map_id_pc {
 
 // for static analysis
 // TODO: deal with map later
-struct register_state {
+class register_state {
+ public:
   int type;
   int off; // memory offset (stack, pkt)
   // bool is_val; // flag of whether `val` is available
   int64_t val; // register value
   // default values are all 0
   register_state(int t = 0, int o = 0 , int64_t v = 0) {type = t; off = o, val = v;}
+  bool operator==(const register_state &rhs) {
+    return (type == rhs.type) && (off == rhs.off) && (val == rhs.val);
+  }
+  friend ostream& operator<<(ostream& out, const register_state& x) {
+    out << x.type << "," << x.off << "," << x.val;
+    return out;
+  }
 };
 
 class live_variables {
