@@ -12,62 +12,52 @@
 #define FORMULA_SIZE_BYTES (1 << 22)
 #define RESULT_SIZE_BYTES (1 << 22)
 
-// #define PORT 8002
-
 using namespace std;
 
 z3::context c;
 int read_problem_from_z3client();
 
 char buffer[FORMULA_SIZE_BYTES + 1] = {0};
-char res_buffer[RESULT_SIZE_BYTES + 1] = {0};
+char res_buffer[RESULT_SIZE_BYTES + 1]  = {0};
 
-string run_solver(char *formula)
-{
+string run_solver(char* formula) {
   z3::tactic t = z3::tactic(c, "bv");
   z3::solver s = t.mk_solver();
   Z3_set_ast_print_mode(s.ctx(), Z3_PRINT_SMTLIB2_COMPLIANT);
   string res;
   s.from_string(formula);
   // cout << "Running the solver..." << endl;
-  switch (s.check())
-  {
-  case z3::unsat:
-  {
-    return "unsat";
-  }
-  case z3::sat:
-  {
-    ostringstream strm;
-    z3::model mdl = s.get_model();
-    strm << mdl;
-    res = strm.str();
-    return res;
-  }
-  case z3::unknown:
-  {
-    return "unknown";
-  }
+  switch (s.check()) {
+    case z3::unsat: {
+      return "unsat";
+    }
+    case z3::sat: {
+      ostringstream strm;
+      z3::model mdl = s.get_model();
+      strm << mdl;
+      res = strm.str();
+      return res;
+    }
+    case z3::unknown: {
+      return "unknown";
+    }
   }
 }
 
-int read_problem_from_z3client(int PORT)
-{
+int read_problem_from_z3client() {
   int server_fd, acc_socket, nread, total_read, nchars;
   int opt = 1;
   struct sockaddr_in address;
   int addrlen = sizeof(address);
   string result;
 
-  if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-  {
+  if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
     perror("z3server: socket creation failed");
     exit(EXIT_FAILURE);
   }
 
   if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEPORT,
-                 (char *)&opt, sizeof(opt)) < 0)
-  {
+                 (char*)&opt, sizeof(opt)) < 0) {
     perror("z3server: setsockopt to reuse addr/port failed");
     exit(EXIT_FAILURE);
   }
@@ -77,24 +67,20 @@ int read_problem_from_z3client(int PORT)
   address.sin_port = htons(PORT);
 
   if (::bind(server_fd, (struct sockaddr *)&address,
-             sizeof(address)) < 0)
-  {
+             sizeof(address)) < 0) {
     perror("z3server: socket bind to local address/port failed");
     exit(EXIT_FAILURE);
   }
 
-  if (listen(server_fd, 1) < 0)
-  {
+  if (listen(server_fd, 1) < 0) {
     perror("z3server: can't listen to bound socket");
     exit(EXIT_FAILURE);
   }
 
   /* Main server + solver loop */
   while ((acc_socket = accept(server_fd, (struct sockaddr *)&address,
-                              (socklen_t *)&addrlen)))
-  {
-    if (acc_socket < 0)
-    {
+                              (socklen_t*)&addrlen)) ) {
+    if (acc_socket < 0) {
       perror("z3server: failed to accept incoming connection");
       exit(EXIT_FAILURE);
     }
@@ -102,8 +88,7 @@ int read_problem_from_z3client(int PORT)
     // cout << "Received a new connection. Reading formula...\n";
     /* Read the full formula into buffer. */
     total_read = 0;
-    do
-    {
+    do {
       nread = read(acc_socket, buffer + total_read, FORMULA_SIZE_BYTES - total_read);
       total_read += nread;
     } while (buffer[total_read - 1] != '\0' &&
@@ -125,10 +110,7 @@ int read_problem_from_z3client(int PORT)
   return 0;
 }
 
-int main(int argc, char *argv[])
-{
-  /* Receive a z3 smtlib2 formula in a shared memory segment, and
-     return sat or unsat in another one. */
+int main() {
   if (argc != 2)
   {
     cout << "No port argument" << endl;
@@ -136,6 +118,8 @@ int main(int argc, char *argv[])
   }
   int PORT = std::stoi(argv[1]);
   cout << "Port is  " << argv[1] << endl;
-  read_problem_from_z3client(PORT);
+  /* Receive a z3 smtlib2 formula in a shared memory segment, and
+     return sat or unsat in another one. */
+  read_problem_from_z3client();
   return 0;
 }
