@@ -1033,9 +1033,9 @@ z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
   z3::expr f = Z3_true;
   // set up pointer registers only for registers read by program
   for (auto reg : input.prog_read.regs) {
-    cout << "reg " << reg << ":";
     // get all possible register states from iss.reg_state
     z3::expr reg_expr = sv.get_init_reg_var(reg);
+    cout << "reg " << reg << ":" << reg_expr << endl;;
     f = f && (reg_expr == smt_input::reg_expr(reg));
     for (int i = 0; i < input.reg_state[reg].size(); i++) {
       register_state reg_state = input.reg_state[reg][i];
@@ -1045,10 +1045,16 @@ z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
       assert(table_id != -1);
       z3::expr off_expr = to_expr(reg_state.off);
       sv.mem_var.add_ptr(reg_expr, table_id, off_expr, pc);
+      if (reg_state.type == PTR_TO_STACK) {
+        f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_stack_start_addr() + off_expr));
+      } else if (reg_state.type == PTR_TO_CTX) {
+        f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_pkt_start_addr() + off_expr));
+      }
       cout << reg_expr << " " << table_id << " " << off_expr << endl;
     }
   }
   f = f && input.input_constraint();
+  f = f && sv.mem_layout_constrain();
   return f;
 }
 
@@ -1507,7 +1513,8 @@ void counterex_urt_2_input_map(inout_t& input, z3::model & mdl, smt_var& sv, int
 // set input memory, for now, set pkt
 // 1. get mem_addr_val list according to the pkt mem urt;
 // 2. traverse mem_addr_val list, if the addr is in input memory address range, update "input"
-void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv) {
+void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt_input& sin) {
+  cout << "counterex_urt_2_input_mem" << endl;
   int pkt_sz = mem_t::_layout._pkt_sz;
   if (pkt_sz > 0) {
     int pkt_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
@@ -1521,6 +1528,28 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv) {
       uint8_t val = mem_addr_val[i].second;
       assert(off < pkt_sz);
       input.pkt[off] = val;
+    }
+  }
+  cout << "smt_var::is_win: " << smt_var::is_win << endl;
+  if (smt_var::is_win) { // update stack value
+    int mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
+    assert(mem_id != -1);
+    vector<pair< uint64_t, uint8_t>> mem_addr_val;
+    bool stack_null_off_chk = false; // since stack is offset-record in the table
+    get_mem_from_mdl(mem_addr_val, mdl, sv, mem_id, stack_null_off_chk);
+
+    for (int i = 0; i < mem_addr_val.size(); i++) {
+      uint64_t off = mem_addr_val[i].first;
+      uint8_t val = mem_addr_val[i].second;
+      assert(off < STACK_SIZE);
+      input.stack[off] = val;
+    }
+
+    auto it = sin.prog_read.mem.find(PTR_TO_STACK);
+    if (it != sin.prog_read.mem.end()) {
+      for (auto off : it->second) {
+        input.stack_readble[off] = true;
+      }
     }
   }
 }
@@ -1553,11 +1582,11 @@ void counterex_2_input_randoms_u32(inout_t& input, z3::model & mdl, smt_var& sv)
   }
 }
 
-void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model & mdl, smt_var& sv) {
+void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model & mdl, smt_var& sv, smt_input& sin) {
   counterex_2_input_simu_r10(input, mdl, sv);
   counterex_2_input_simu_pkt_ptrs(input, mdl, sv);
   counterex_2_input_randoms_u32(input, mdl, sv);
-  counterex_urt_2_input_mem(input, mdl, sv);
+  counterex_urt_2_input_mem(input, mdl, sv, sin);
   for (int i = 0; i < mem_t::maps_number(); i++) {
     int mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_map, i);
     assert(mem_id != -1);
@@ -1565,22 +1594,58 @@ void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model & mdl, smt_v
   }
 }
 
-// make sure sv1 is for the original program
-void counterex_2_input_mem(inout_t& input, z3::model & mdl,
-                           smt_var& sv1, smt_var& sv2) {
-  input.clear();
-  input.set_pkt_random_val();
-  // update input memory for executing path condition later
-  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2);
-  // update sv1[sv1_id] finally, the same update before will be overwritten
-  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
+void counterex_2_input_regs(inout_t& input, z3::model& mdl, smt_var& sv, smt_input& sin) {
+  if (! smt_var::is_win) return;
+  vector<vector<register_state>>& pre_regs = smt_input::reg_state;
+  for (auto reg : sin.prog_read.regs) {
+    // update register readable state
+    input.reg_readable[reg] = true;
+    // update register value
+    z3::expr r_expr = smt_input::reg_expr(reg);
+    z3::expr r_val = mdl.eval(r_expr);
+    if (r_val.is_numeral()) { // if not is_numeral,  mean Z3 does not care about this value
+      input.regs[reg] = (int64_t)r_val.get_numeral_uint64();
+    }
+    // update register type
+    bool pc_in_mdl = false;
+    for (int i = 0; i < pre_regs[reg].size(); i++) {
+      z3::expr pc_expr = smt_input::reg_path_cond(reg, i);
+      z3::expr pc_val = mdl.eval(pc_expr);
+      int pc = mdl.eval(pc_val).bool_value();
+      if (pc != 1) continue; // -1 means z3 false, 1 means z3 true, 0: z3 const (not know it is true or false)
+      input.reg_type[reg] = pre_regs[reg][i].type;
+      pc_in_mdl = true;
+      break;
+    }
+    if (! pc_in_mdl) {
+      assert(pre_regs[reg].size() > 0);
+      input.reg_type[reg] = pre_regs[reg][0].type;
+    }
+  }
 }
 
 // make sure sv1 is for the original program
-void counterex_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv) {
+void counterex_2_input_mem(inout_t& input, z3::model & mdl,
+                           smt_var& sv1, smt_var& sv2,
+                           smt_input& sin1, smt_input& sin2) {
   input.clear();
   input.set_pkt_random_val();
-  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv);
+  // update input memory for executing path condition later
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2, sin2);
+  // update sv1[sv1_id] finally, the same update before will be overwritten
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1, sin1);
+  if (smt_var::is_win) {
+    counterex_2_input_regs(input, mdl, sv2, sin2);
+    counterex_2_input_regs(input, mdl, sv1, sin1);
+  }
+}
+
+// make sure sv1 is for the original program
+void counterex_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt_input& sin) {
+  input.clear();
+  input.set_pkt_random_val();
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv, sin);
+  counterex_2_input_regs(input, mdl, sv, sin);
 }
 
 

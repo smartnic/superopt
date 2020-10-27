@@ -1132,10 +1132,13 @@ void prog_state::init_safety_chk() {
   set_reg_type(10, PTR_TO_STACK);
 }
 
-void prog_state::init_safety_chk(const vector<bool>& reg_readable, const vector<bool>& stack_readble, const vector<int>& reg_type) {
-  _reg_readable = reg_readable;
-  _stack_readable = stack_readble;
-  _reg_type = reg_type;
+void prog_state::init_safety_chk(const vector<bool>& reg_readable, const vector<bool>& stack_readable, const vector<int>& reg_type) {
+  _reg_readable.resize(NUM_REGS);
+  for (int i = 0; i < _reg_readable.size(); i++) _reg_readable[i] = reg_readable[i];
+  _stack_readable.resize(STACK_SIZE);
+  for (int i = 0; i < _stack_readable.size(); i++) _stack_readable[i] = stack_readable[i];
+  _reg_type.resize(NUM_REGS);
+  for (int i = 0; i < _reg_type.size(); i++) _reg_type[i] = reg_type[i];
 }
 
 void prog_state::reg_safety_chk(int reg_write, vector<int> reg_read_list) {
@@ -1284,6 +1287,9 @@ inout_t::inout_t() {
   skb = new uint8_t[mem_t::_layout._skb_max_sz];
   memset(skb, 0, sizeof(uint8_t)*mem_t::_layout._skb_max_sz);
   randoms_u32.resize(mem_t::_layout._n_randoms_u32);
+  reg_readable.resize(NUM_REGS);
+  stack_readble.resize(STACK_SIZE);
+  reg_type.resize(NUM_REGS);
 }
 
 // deep copy for vector push back
@@ -1510,6 +1516,7 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
       ps._mem.update_stack(it.first, it.second);
     }
   }
+  cout << "ps._regs[10]: " << ps._regs[10] << endl;
 }
 
 void update_output_by_ps(inout_t& output, const prog_state& ps) {

@@ -33,23 +33,27 @@ validator::validator(expr fx, expr input, expr output) {
 
 validator::~validator() {}
 
-void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv_synth, int counterex_type) {
-  expr input_orig = string_to_expr("input");
+void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv_synth, smt_input& sin_synth, int counterex_type) {
   _last_counterex.clear();
   // func counterex_2_input_mem will clear input
   // TODO: update input.reg in counterex_2_input_mem(.)
   if (counterex_type == COUNTEREX_eq_check) {
-    counterex_2_input_mem(_last_counterex.input, m, _post_sv_orig, post_sv_synth);
+    counterex_2_input_mem(_last_counterex.input, m, _post_sv_orig, post_sv_synth, _smt_input_orig, sin_synth);
   } else if (counterex_type == COUNTEREX_safety_check) {
-    counterex_2_input_mem(_last_counterex.input, m, post_sv_synth);
+    counterex_2_input_mem(_last_counterex.input, m, post_sv_synth, sin_synth);
   } else {
     cout << "ERROR: no counterex_type matches" << endl;
   }
-  expr input_orig_val = m.eval(input_orig);
-  if (input_orig_val.is_numeral()) {
-    _last_counterex.input.reg = (reg_t)input_orig_val.get_numeral_uint64();
-  } else {  // mean Z3 does not care about this value
-    _last_counterex.input.reg = (double)unidist_vld(gen_vld) * 0xffffffffffffffff;
+  if (! _is_win) {
+    expr input_orig = string_to_expr("input");
+    expr input_orig_val = m.eval(input_orig);
+    if (input_orig_val.is_numeral()) {
+      _last_counterex.input.reg = (reg_t)input_orig_val.get_numeral_uint64();
+    } else {  // mean Z3 does not care about this value
+      _last_counterex.input.reg = (double)unidist_vld(gen_vld) * 0xffffffffffffffff;
+    }
+  } else {
+    _last_counterex.input.start_insn = _win_start;
   }
   // get output from interpreter
   prog_state ps;
@@ -158,7 +162,7 @@ void validator::set_orig(inst* orig, int length, int win_start, int win_end) {
   _count_solve_eq = 0;
 
   // safety check of the original program
-  int sc = safety_check(orig, length, _pre_orig, _pl_orig, ps_orig.p_sc, _post_sv_orig);
+  int sc = safety_check(orig, length, _pre_orig, _pl_orig, ps_orig.p_sc, _post_sv_orig, _smt_input_orig);
   if (sc != 1) {
     string err_msg = "original program is unsafe";
     throw (err_msg);
@@ -199,7 +203,7 @@ void validator::insert_into_prog_cache(prog& pgm, unordered_map<int, vector<prog
   prog_cache[ph].push_back(pgm_copy);
 }
 
-int validator::safety_check(inst* orig, int len, expr& pre, expr& pl, expr& p_sc, smt_var& sv) {
+int validator::safety_check(inst* orig, int len, expr& pre, expr& pl, expr& p_sc, smt_var& sv, smt_input& sin) {
   expr smt_safety_chk = implies(pre && pl, p_sc);
   model mdl_sc(smt_c);
   auto t1 = NOW;
@@ -207,7 +211,7 @@ int validator::safety_check(inst* orig, int len, expr& pre, expr& pl, expr& p_sc
   auto t2 = NOW;
   cout << "vld solve safety: " << DUR(t1, t2) << " us" << " " << is_safe << endl;
   if (is_safe == 0) {
-    gen_counterex(orig, len, mdl_sc, sv, COUNTEREX_safety_check);
+    gen_counterex(orig, len, mdl_sc, sv, sin, COUNTEREX_safety_check);
     return ILLEGAL_CEX;
   }
   return is_safe;
@@ -256,7 +260,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
 
   smt_var post_sv_synth = ps_synth.sv;
 
-  int sc = safety_check(orig, length_orig, pre_synth, pl_synth, ps_synth.p_sc, post_sv_synth);
+  int sc = safety_check(orig, length_orig, pre_synth, pl_synth, ps_synth.p_sc, post_sv_synth, smt_input_synth);
   if (sc != 1) {
     if ((sc == ILLEGAL_CEX) && _enable_prog_uneq_cache) {
       insert_into_prog_cache(synth_prog_uneq_cache, _prog_uneq_cache);
@@ -283,7 +287,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   if (is_equal == 0) {
     // cout << is_equal << endl;
     cout << mdl << endl;
-    gen_counterex(orig, length_orig, mdl, post_sv_synth, COUNTEREX_eq_check);
+    // gen_counterex(orig, length_orig, mdl, post_sv_synth, smt_input_synth, COUNTEREX_eq_check);
     if (_enable_prog_uneq_cache) {
       insert_into_prog_cache(synth_prog_uneq_cache, _prog_uneq_cache);
       cout << "unequal program insert" << endl;
