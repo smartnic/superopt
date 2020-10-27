@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_set>
+#include "../../../src/verify/cfg.h"
 #include "inst.h"
 
 using namespace std;
@@ -24,9 +25,18 @@ class inst_static_state {
   void insert_live_var(inst_static_state& iss);
   static void intersection_live_var(inst_static_state& iss, inst_static_state& iss1, inst_static_state& iss2);
   inst_static_state& operator=(const inst_static_state &rhs);
+  friend ostream& operator<<(ostream& out, const inst_static_state& x);
 };
 
-typedef vector<inst_static_state> prog_static_state;
+class prog_static_state {
+ public:
+  vector<inst_static_state> static_state;
+  vector<inst_static_state> block_static_state;
+  graph g;
+  vector<unsigned int> dag;
+  void clear() {static_state.clear(); g.clear(); dag.clear();};
+};
+
 void static_analysis(prog_static_state& pss, inst* program, int len);
 void set_up_smt_inout_orig(prog_static_state& pss, inst* program, int len, int win_start, int win_end);
 void set_up_smt_inout_win(smt_input& sin, smt_output& sout, prog_static_state& pss_orig, inst* program, int win_start, int win_end);

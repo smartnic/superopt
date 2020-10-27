@@ -2,7 +2,6 @@
 #include <iostream>
 #include <algorithm>
 #include <utility>
-#include "../../../src/verify/cfg.h"
 #include "canonicalize.h"
 
 void canonicalize_prog_without_branch(unordered_set<int>& live_regs,
@@ -218,19 +217,24 @@ void inst_static_state::insert_live_var(inst_static_state& iss) {
 }
 
 inst_static_state& inst_static_state::operator=(const inst_static_state &rhs) {
-  // reg_state.resize(rhs.reg_state.size());
-  // cout << "1.." << endl;
-  // for (int i = 0; i < rhs.reg_state.size(); i++) {
-  //   cout << i << endl;
-  //   for (int j = 0; j < rhs.reg_state[i].size(); j++) {
-  //     cout << i << " " << j << endl;
-  //     reg_state[i].push_back(rhs.reg_state[i][j]);
-  //   }
-  // }
   reg_state = rhs.reg_state;
   live_var.regs = rhs.live_var.regs;
   live_var.mem = rhs.live_var.mem;
   return *this;
+}
+
+ostream& operator<<(ostream& out, const inst_static_state& x) {
+  out << "reg_state: ";
+  for (int i = 0; i < x.reg_state.size(); i++) {
+    if (x.reg_state[i].size() == 0) continue;
+    out << "r" << i << ":";
+    for (int j = 0; j < x.reg_state[i].size(); j++) {
+      out << x.reg_state[i][j] << " ";
+    }
+  }
+  out << endl;
+  out << "live variables: " << x.live_var << endl;
+  return out;
 }
 
 static void union_live_var(inst_static_state& iss, inst_static_state& iss1, inst_static_state& iss2) {
@@ -312,40 +316,45 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   }
 }
 
-void type_const_inference_pgm(prog_static_state& pss, inst* program, int len,
-                              graph& g, vector<unsigned int>& dag) {
-  assert(dag.size() >= 1);
+// compute ss.reg_state, ss.reg_state[i] stores the register states before executing insn i
+void type_const_inference_pgm(prog_static_state& pss, inst* program, int len) {
+  assert(pss.dag.size() >= 1);
+  vector<inst_static_state>& ss = pss.static_state;
+  graph& g = pss.g;
+  vector<unsigned int>& dag = pss.dag;
 
-  // init root block
-  int root = dag[0];
-  pss[root].set_reg_state(1, PTR_TO_CTX, 0); // register 1 contains input
-  pss[root].set_reg_state(10, PTR_TO_STACK, STACK_SIZE); // register 10 points to stack bottom
+  // `bss[i]` (temporarily) stores the register states after executing the basic block i.
+  // These states are used for initializing the states of the first basic block insn
+  vector<inst_static_state>& bss = pss.block_static_state;
+  bss.resize(dag.size());
 
-  // process blocks
+  // initialize the register states before executing the first insn by input
+  ss[0].set_reg_state(1, PTR_TO_CTX); // register 1 contains input
+  ss[0].set_reg_state(10, PTR_TO_STACK, STACK_SIZE); // register 10 points to the stack bottom
+
+  // process blocks in order of dag
   for (int i = 0; i < dag.size(); i++) {
     unsigned int block = dag[i];
     unsigned int block_s = g.nodes[block]._start;
     unsigned int block_e = g.nodes[block]._end;
-    // get the block initial states by merging incoming states
-    for (int j = 0; j < g.nodes_in[block].size(); j++) {
+    // get the block initial states by merging incoming states from `bss`
+    for (int j = 0; j < g.nodes_in[block].size(); j++) { // root block does not have incoming blocks
       int block_in = g.nodes_in[block][j];
-      unsigned int block_in_e = g.nodes[block_in]._end;
-      pss[block_s].insert_reg_state(pss[block_in_e]);
+      ss[block_s].insert_reg_state(bss[block_in]);
     }
-    // process the block from the first instruction
-    for (int j = block_s; j <= block_e; j++) {
-      if (j != block_s) { // insn 0 is set in `init root block`
-        pss[j].reg_state = pss[j - 1].reg_state; // copy the previous state
-      }
-      type_const_inference_inst(pss[j], program[j]); // update state according to the instruction
+    // process the block from the first block insn
+    for (int j = block_s; j < block_e; j++) {
+      ss[j + 1].reg_state = ss[j].reg_state; // copy the previous state
+      type_const_inference_inst(ss[j + 1], program[j]); // update state according to the insn
     }
+    // update the basic block post register states
+    bss[i].reg_state = ss[block_e].reg_state;
+    type_const_inference_inst(bss[i], program[block_e]);
   }
 }
 
 void get_mem_write_offs(unordered_map<int, unordered_set<int>>& mem_write_offs,
-                        inst_static_state& iss, inst& insn) {
-  cout << "get_mem_write_offs" << endl;
-  insn.print();
+                        vector<vector<register_state>>& reg_state, inst& insn) {
   mem_write_offs.clear();
   int write_sz;
   switch (insn._opcode) {
@@ -361,10 +370,10 @@ void get_mem_write_offs(unordered_map<int, unordered_set<int>>& mem_write_offs,
   }
 
   int dst_reg = insn._dst_reg;
-  for (int i = 0; i < iss.reg_state[dst_reg].size(); i++) {
-    int type = iss.reg_state[dst_reg][i].type;
+  for (int i = 0; i < reg_state[dst_reg].size(); i++) {
+    int type = reg_state[dst_reg][i].type;
     if (! is_ptr(type)) continue;
-    int off_s = iss.reg_state[dst_reg][i].off + insn._off;
+    int off_s = reg_state[dst_reg][i].off + insn._off;
     if (mem_write_offs.find(type) == mem_write_offs.end()) {
       mem_write_offs[type] = unordered_set<int> {};
     }
@@ -374,33 +383,34 @@ void get_mem_write_offs(unordered_map<int, unordered_set<int>>& mem_write_offs,
   }
 }
 
-void get_mem_read_regs_and_read_sz_from_helper(vector<pair<int, int> >& regs_sz, inst_static_state& iss, inst& insn) {
-  cout << "get_mem_read_regs_and_read_sz_from_helper" << endl;
+void get_mem_read_regs_and_read_sz_from_helper(vector<pair<int, int> >& regs_sz,
+    vector<vector<register_state>>& reg_state, inst& insn) {
   if (insn._opcode != CALL) return;
   int func_id = insn._imm;
 
   if ((func_id == BPF_FUNC_map_lookup_elem) || (func_id == BPF_FUNC_map_delete_elem)) {
-    assert(iss.reg_state[1].size() == 1); // r1 points to map
-    int map_id = iss.reg_state[1][0].val;
-    int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
-    regs_sz.push_back({2, k_sz});
-    cout << map_id << " " << k_sz << endl;
+    for (int i = 0; i < reg_state[1].size(); i++) { // r1 points to map id
+      assert(reg_state[1][i].type == CONST_PTR_TO_MAP);
+      int map_id = reg_state[1][i].val;
+      int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
+      regs_sz.push_back({2, k_sz}); // r2 points to the key stored on stack
+    }
 
   } else if (func_id == BPF_FUNC_map_update_elem) {
-    assert(iss.reg_state[1].size() == 1);
-    int map_id = iss.reg_state[1][0].val;
-    int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
-    int v_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
-    regs_sz.push_back({2, k_sz});
-    regs_sz.push_back({3, v_sz});
+    for (int i = 0; i < reg_state[1].size(); i++) { // r1 points to map id
+      assert(reg_state[1][i].type == CONST_PTR_TO_MAP);
+      int map_id = reg_state[1][i].val;
+      int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
+      int v_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
+      regs_sz.push_back({2, k_sz}); // r2 points to the key stored on stack
+      regs_sz.push_back({3, v_sz}); // r3 points to the value stored on stack
+    }
 
   }
 }
 
 void get_mem_read_offs(unordered_map<int, unordered_set<int>>& mem_read_offs,
-                       inst_static_state& iss, inst& insn) {
-  cout << "get_mem_read_offs: " << (insn._opcode == CALL) << endl;
-  insn.print();
+                       vector<vector<register_state>>& reg_state, inst& insn) {
   mem_read_offs.clear();
   vector<pair<int, int> > regs_sz; // regs and read sz
   switch (insn._opcode) {
@@ -408,20 +418,20 @@ void get_mem_read_offs(unordered_map<int, unordered_set<int>>& mem_read_offs,
     case LDXH: regs_sz.push_back({insn._src_reg, 2}); break;
     case LDXW: regs_sz.push_back({insn._src_reg, 4}); break;
     case LDXDW: regs_sz.push_back({insn._src_reg, 8}); break;
-    case CALL: get_mem_read_regs_and_read_sz_from_helper(regs_sz, iss, insn); break;
+    case CALL: get_mem_read_regs_and_read_sz_from_helper(regs_sz, reg_state, insn); break;
     default: return;
   }
 
   for (int id = 0; id < regs_sz.size(); id++) {
     int reg = regs_sz[id].first;
     int read_sz = regs_sz[id].second;
-    for (int i = 0; i < iss.reg_state[reg].size(); i++) {
-      int type = iss.reg_state[reg][i].type;
+    for (int i = 0; i < reg_state[reg].size(); i++) {
+      int type = reg_state[reg][i].type;
       if (! is_ptr(type)) continue;
       if (mem_read_offs.find(type) == mem_read_offs.end()) {
         mem_read_offs[type] = unordered_set<int> {};
       }
-      int off_s = iss.reg_state[reg][i].off + insn._off;
+      int off_s = reg_state[reg][i].off + insn._off;
       for (int j = 0; j < read_sz; j++) {
         mem_read_offs[type].insert(off_s + j);
       }
@@ -430,18 +440,17 @@ void get_mem_read_offs(unordered_map<int, unordered_set<int>>& mem_read_offs,
 }
 
 // live variables before the insn is executed
-void live_analysis_inst(inst_static_state& iss, inst& insn) {
-  cout << "live_analysis_inst" << endl;
-  insn.print();
+// input: insn and reg_state before the insn is executed
+void live_analysis_inst(live_variables& live_var, vector<vector<register_state>>& reg_state, inst& insn) {
   // 1. update live registers
   vector<int> regs_to_read;
   insn.regs_to_read(regs_to_read);
   int reg_to_write = insn.reg_to_write();
   // remove reg_to_write in currrent live regs
-  if (reg_to_write != -1) iss.live_var.regs.erase(reg_to_write);
+  if (reg_to_write != -1) live_var.regs.erase(reg_to_write);
   // add regs_to_read in current live regs
   for (int i = 0; i < regs_to_read.size(); i++) {
-    iss.live_var.regs.insert(regs_to_read[i]);
+    live_var.regs.insert(regs_to_read[i]);
   }
 
   // 2. update live memory
@@ -451,21 +460,21 @@ void live_analysis_inst(inst_static_state& iss, inst& insn) {
   if ((op_class == BPF_ST) || (op_class == BPF_STX)) is_mem_write = true;
   if (is_mem_write) {
     unordered_map<int, unordered_set<int>> mem_write_offs;
-    get_mem_write_offs(mem_write_offs, iss, insn);
-    cout << "mem write" << endl;
+    get_mem_write_offs(mem_write_offs, reg_state, insn);
     // remove mem_write_offs from live memory
     for (auto it = mem_write_offs.begin(); it != mem_write_offs.end(); it++) {
-      cout << "type: " << it->first << endl;
       int type = it->first;
-      auto found = iss.live_var.mem.find(type);
-      if (found == iss.live_var.mem.end()) {
+      auto found = live_var.mem.find(type);
+      if (found == live_var.mem.end()) {
         continue;
       }
       unordered_set<int>& live_offs = found->second;
       unordered_set<int>& write_offs = it->second;
       for (auto it_off = write_offs.begin(); it_off != write_offs.end(); it_off++) {
-        cout << "write off: " << *it_off << endl;
         live_offs.erase(*it_off);
+      }
+      if (live_offs.size() == 0) {
+        live_var.mem.erase(type);
       }
     }
   }
@@ -477,129 +486,78 @@ void live_analysis_inst(inst_static_state& iss, inst& insn) {
   if (op_class == BPF_LDX) is_mem_read = true;
   if (is_mem_read) {
     unordered_map<int, unordered_set<int>> mem_read_offs;
-    get_mem_read_offs(mem_read_offs, iss, insn);
-    cout << "mem_read_offs size: " << mem_read_offs.size() << endl;
+    get_mem_read_offs(mem_read_offs, reg_state, insn);
     // add read_offs into live memory
     for (auto it = mem_read_offs.begin(); it != mem_read_offs.end(); it++) {
-      cout << "type: " << it->first << endl;
       int type = it->first;
-      auto found = iss.live_var.mem.find(type);
-      if (found == iss.live_var.mem.end()) {
-        iss.live_var.mem[type] = unordered_set<int> {};
+      auto found = live_var.mem.find(type);
+      if (found == live_var.mem.end()) {
+        live_var.mem[type] = unordered_set<int> {};
       }
-      found = iss.live_var.mem.find(type);
+      found = live_var.mem.find(type);
       unordered_set<int>& live_offs = found->second;
       unordered_set<int>& read_offs = it->second;
       for (auto it_off = read_offs.begin(); it_off != read_offs.end(); it_off++) {
-        cout << "read_off: " << *it_off << endl;
         live_offs.insert(*it_off);
       }
     }
   }
 }
 
-void live_analysis_pgm(prog_static_state& pss, inst* program, int len,
-                       graph& g, vector<unsigned int>& dag) {
-  cout << "live_analysis_pgm" << endl;
+// compute ss.live_var, ss.live_var[i] stores the live variables after executing insn i
+void live_analysis_pgm(prog_static_state& pss, inst* program, int len) {
+  vector<inst_static_state>& ss = pss.static_state;
+  graph& g = pss.g;
+  vector<unsigned int>& dag = pss.dag;
+
+  // `bss[i]` (temporarily) stores the live variables before executing the basic block i.
+  // These states are used for initializing the states of the last basic block insn
+  vector<inst_static_state>& bss = pss.block_static_state;
+  bss.resize(dag.size());
+
   // process blocks backward
   for (int i = dag.size() - 1; i >= 0; i--) {
 
     unsigned int block = dag[i];
     int block_s = g.nodes[block]._start;
     int block_e = g.nodes[block]._end;
+
+    // assume no live variables in the output, deal with the output later
     // get the block initial live variables by merging outgoing live variables
-    cout << "get block initial live variables" << endl;
     for (int j = 0; j < g.nodes_out[block].size(); j++) {
       int block_out = g.nodes_out[block][j];
-      unsigned int block_out_s = g.nodes[block_out]._start;
-      pss[block_e].insert_live_var(pss[block_out_s]);
+      ss[block_e].insert_live_var(bss[block_out]);
     }
     // process each block instruction backward
-    cout << "processing block instruction" << endl;
-    for (int j = block_e; j >= block_s; j--) {
-      if (j != block_e) { // insn 0 is set in `init root block`
-        pss[j].live_var = pss[j + 1].live_var; // copy the previous state
-      }
-      live_analysis_inst(pss[j], program[j]); // update state according to the instruction
-      cout << j << endl;
-      cout << pss[j].live_var << endl;
+    for (int j = block_e; j > block_s; j--) {
+      ss[j - 1].live_var = ss[j].live_var; // copy the previous state
+      live_analysis_inst(ss[j - 1].live_var, ss[j].reg_state, program[j]); // update state according to the instruction
     }
+    // update bss[i]'s live variables
+    bss[i].live_var = ss[block_s].live_var;
+    live_analysis_inst(bss[i].live_var, ss[block_s].reg_state, program[block_s]); // update state according to the instruction
   }
-  cout << "live_analysis_pgm end" << endl;
-
 }
 
 void static_analysis(prog_static_state& pss, inst* program, int len) {
   pss.clear();
-  pss.resize(len);
+  pss.static_state.resize(len + 1);
   // get program cfg
-  graph g(program, len);
-  cout << g << endl;
-  vector<unsigned int> dag;
-  topo_sort_for_graph(dag, g);
-  type_const_inference_pgm(pss, program, len, g, dag);
-  live_analysis_pgm(pss, program, len, g, dag);
-  cout << "static_analysis end" << endl;
-
-  // for (int i = 0; i < pss.size(); i++) {
-  //   cout << "insn " << i << endl;
-  //   for (int j = 0; j < pss[i].reg_state.size(); j++) {
-  //     cout << "reg" << j << ": ";
-  //     for (int k = 0; k < pss[i].reg_state[j].size(); k++) {
-  //       cout << pss[i].reg_state[j][k].type << "," << pss[i].reg_state[j][k].off << " ";
-  //     }
-  //     cout << endl;
-  //   }
-  // }
-
-  // for (int i = 0; i < pss.size(); i++) {
-  //   cout << "insn " << i << endl;
-  //   cout << "live regs: ";
-  //   for (auto it = pss[i].live_var.regs.begin(); it != pss[i].live_var.regs.end(); it++) {
-  //     cout << *it << " ";
-  //   }
-  //   cout << endl;
-  //   cout << "live offs: ";
-  //   for (auto it = pss[i].live_var.mem.begin(); it != pss[i].live_var.mem.end(); it++) {
-  //     cout << it->first << ":";
-  //     for (auto it2 = it->second.begin(); it2 != it->second.end(); it2++) {
-  //       cout << *it2 << ",";
-  //     }
-  //     cout << " ";
-  //   }
-  //   cout << endl << endl;
-  // }
-  // cout << "......" << endl;
+  pss.g.gen_graph(program, len);
+  topo_sort_for_graph(pss.dag, pss.g);
+  type_const_inference_pgm(pss, program, len);
+  live_analysis_pgm(pss, program, len);
 }
 
+// update the original program's pre-condition and post-condition
 void set_up_smt_inout_orig(prog_static_state& pss, inst* program, int len, int win_start, int win_end) {
-  assert(pss.size() >= win_end);
-  smt_input::reg_state = pss[win_start - 1].reg_state;
-  smt_output::post_prog_r = pss[win_end + 1].live_var;
-  cout << "set_up_smt_inout_orig" << endl;
-  cout << "smt_input: " << endl;
-  for (int i = 0; i < smt_input::reg_state.size(); i++) {
-    if (smt_input::reg_state[i].size() > 0) cout << i << ":";
-    for (int j = 0; j < smt_input::reg_state[i].size(); j++) {
-      cout << smt_input::reg_state[i][j].type << "," << smt_input::reg_state[i][j].off << " ";
-    }
-    if (smt_input::reg_state[i].size() > 0) cout << endl;
-  }
-  cout << "smt_output:" << endl;
-  cout << "regs:";
-  for (auto reg : smt_output::post_prog_r.regs) cout << reg << " ";
-  cout << endl;
-  cout << "offs:" << endl;;
-  for (auto mem : smt_output::post_prog_r.mem) {
-    cout << mem.first << ":";
-    for (auto off : mem.second) {
-      cout << off << " ";
-    }
-    cout << endl;
-  }
+  vector<inst_static_state>& ss = pss.static_state;
+  assert(ss.size() >= win_end);
+  smt_input::reg_state = ss[win_start].reg_state;
+  smt_output::post_prog_r = ss[win_end].live_var;
 }
 
-void compute_win_w(live_variables& win_w, prog_static_state& pss_win, inst* program, int win_start, int win_end) {
+void compute_win_w(live_variables& win_w, vector<inst_static_state>& ss_win, inst* program, int win_start, int win_end) {
   win_w.clear();
   for (int i = win_start; i <= win_end; i++) {
     int reg_to_write = program[i].reg_to_write();
@@ -610,7 +568,7 @@ void compute_win_w(live_variables& win_w, prog_static_state& pss_win, inst* prog
     if ((op_class == BPF_ST) || (op_class == BPF_STX)) is_mem_write = true;
     if (is_mem_write) {
       unordered_map<int, unordered_set<int>> mem_write_offs;
-      get_mem_write_offs(mem_write_offs, pss_win[i - win_start], program[i]);
+      get_mem_write_offs(mem_write_offs, ss_win[i - win_start].reg_state, program[i]);
       // remove mem_write_offs from live memory
       for (auto it = mem_write_offs.begin(); it != mem_write_offs.end(); it++) {
         int type = it->first;
@@ -620,58 +578,45 @@ void compute_win_w(live_variables& win_w, prog_static_state& pss_win, inst* prog
       }
     }
   }
-
-  cout << "win_w " << endl << win_w << endl;
 }
 
-void set_up_smt_output_win(smt_output& sout, prog_static_state& pss_win,
-                           prog_static_state& pss_orig,
+void set_up_smt_output_win(smt_output& sout, vector<inst_static_state>& ss_win,
+                           vector<inst_static_state>& ss_orig,
                            inst* program, int win_start, int win_end) {
-  cout << "set_up_smt_output_win" << endl;
   live_variables win_w;
-  compute_win_w(win_w, pss_win, program, win_start, win_end);
+  compute_win_w(win_w, ss_win, program, win_start, win_end);
   // output_var = win_w intersection post_r
-  live_variables post_r = pss_orig[win_end + 1].live_var;
-  cout << "post_r" << endl << post_r << endl;
+  live_variables post_r = ss_orig[win_end].live_var;
   live_variables::intersection(sout.output_var, win_w, post_r);
-  cout << "output_var:";
-  cout << sout.output_var << endl;
 }
 
 void set_up_smt_inout_win(smt_input& sin, smt_output& sout,
                           prog_static_state& pss_orig, inst* program, int win_start, int win_end) {
-  cout << "enter set_up_smt_inout_win" << endl;
-  // 1. compute pss_win according to the pss_orig and the window program
-  prog_static_state pss_win(win_end - win_start + 1); // [win_start, win_end]
-  // get the initial state from `win_start-1`
-  pss_win[0].reg_state = pss_orig[win_start - 1].reg_state;
-  for (int i = 0; i < pss_win[0].reg_state.size(); i++) {
-    cout << i << ": ";
-    for (int j = 0; j < pss_win[0].reg_state[i].size(); j++) {
-      cout << pss_win[0].reg_state[i][j].type << "," << pss_win[0].reg_state[i][j].off << "," << pss_win[0].reg_state[i][j].val << " ";
-    }
-    cout << endl;
-  }
+  int win_len = win_end - win_start + 1;
+  // 1. compute ss_win according to the ss_orig and the window program
+  vector<inst_static_state> ss_win(win_len); // [win_start, win_end]
+  // get the initial reg state from pss_orig `win_start`
+  ss_win[0].reg_state = pss_orig.static_state[win_start].reg_state;
   // todo: extended for window program with branches
-  for (int i = 0; i < pss_win.size(); i++) {
-    if (i != 0) {
-      pss_win[i].reg_state = pss_win[i - 1].reg_state;
-    }
-    type_const_inference_inst(pss_win[i], program[i + win_start]);
+  // update reg_state of win_program from insn 1 to len, reg_state: before executing insn
+  for (int i = 0; i < win_len - 1; i++) {
+    ss_win[i + 1].reg_state = ss_win[i].reg_state;
+    type_const_inference_inst(ss_win[i + 1], program[i + win_start]);
   }
 
-  for (int i = pss_win.size() - 1; i >= 0; i--) { // live analysis backward
-    if (i != pss_win.size() - 1) {
-      pss_win[i].live_var = pss_win[i + 1].live_var;
-    }
-    live_analysis_inst(pss_win[i], program[i + win_start]);
+  // get the initial live variable from pss_orig `win_end`, live variable: after executing insn
+  ss_win[win_len - 1].live_var = pss_orig.static_state[win_end].live_var;
+  for (int i = win_len - 1; i > 0; i--) { // live analysis backward, from insn len to 1
+    ss_win[i - 1].live_var = ss_win[i].live_var;
+    live_analysis_inst(ss_win[i - 1].live_var, ss_win[i].reg_state, program[i + win_start]);
   }
 
-  sin.prog_read = pss_win[0].live_var; // set up smt_input
-  cout << "set_up_smt_input_win" << endl;
-  cout << "win_r: " << endl;
-  cout << sin.prog_read << endl;
-  set_up_smt_output_win(sout, pss_win, pss_orig, program, win_start, win_end);
+  live_variables win_prog_r;
+  win_prog_r = ss_win[0].live_var;
+  live_analysis_inst(win_prog_r, ss_win[0].reg_state, program[win_start]);
+
+  sin.prog_read = win_prog_r; // set up smt_input
+  set_up_smt_output_win(sout, ss_win, pss_orig.static_state, program, win_start, win_end);
 }
 
 void init_array_mem_table(smt_var& sv, inst_static_state& iss, int ptr_type, int mem_table_type) {

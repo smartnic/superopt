@@ -104,9 +104,9 @@ inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::exp
 z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 // *(u64*)(addr+off) += in
-z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool enable_addr_off = true);
+z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 // *(u32*)(addr+off) += in
-z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool enable_addr_off = true);
+z3::expr predicate_xadd32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 // out == *(u16*)skb[off]
 z3::expr predicate_ldskbh(z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0);
 // out == map_id, and track the out

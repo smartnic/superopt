@@ -920,6 +920,7 @@ z3::expr smt_var::mem_layout_constrain() const {
                  ugt(pkt_start, skb_end) &&
                  ugt(mem_start, pkt_off) && ugt(mem_start - pkt_off, pkt_start) &&
                  uge(max_uint64 - mem_off, mem_start);
+    return f;
   }
   return Z3_true;
 }
