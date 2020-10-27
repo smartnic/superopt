@@ -458,7 +458,7 @@ class prog_state: public prog_state_base {
   unsigned int _cur_randoms_u32_idx = 0;
   prog_state();
   void init_safety_chk();
-  void init_safety_chk(const vector<bool>& reg_readable, const vector<bool>& stack_readble, const vector<int>& reg_type);
+  void init_safety_chk(const vector<bool>& reg_readable, const vector<bool>& stack_readable, const vector<int>& reg_type);
   void reg_safety_chk(int reg_write, vector<int> reg_read_list = {});
   void memory_access_and_safety_chk(uint64_t addr, uint64_t num_bytes, bool chk_safety, bool is_read, bool stack_aligned_chk = true);
   void memory_access_chk(uint64_t addr, uint64_t num_bytes);

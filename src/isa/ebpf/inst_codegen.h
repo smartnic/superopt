@@ -134,8 +134,8 @@ z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win = false);
 z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win = false);
 z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input);
 
-void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv1, smt_var& sv2);
-void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv);
+void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv1, smt_var& sv2, smt_input& sin1, smt_input& sin2);
+void counterex_2_input_mem(inout_t& input, z3::model& mdl, smt_var& sv, smt_input& sin);
 /* APIs exposed to the externals end */
 
 /* APIS for unit tests start */

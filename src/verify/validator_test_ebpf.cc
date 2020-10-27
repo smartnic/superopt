@@ -500,10 +500,19 @@ void test3() {
 }
 
 void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
-    string test_name, int counterex_type = COUNTEREX_eq_check, bool interpret_check = true) {
+    string test_name, int counterex_type = COUNTEREX_eq_check, bool interpret_check = true,
+    bool is_win = false, int win_start = 0, int win_end = inst::max_prog_len) {
   prog_state ps;
   ps.init();
-  validator vld(p1, len1);
+  validator vld;
+  if (is_win) {
+    vld._enable_prog_eq_cache = false;
+    vld._is_win = true;
+    smt_var::is_win = is_win;
+    vld.set_orig(p1, len1, win_start, win_end);
+  } else {
+    vld.set_orig(p1, len1);
+  }
   int ret_val = 0;
   if (counterex_type == COUNTEREX_eq_check) ret_val = 0; // 0: not equal
   else if (counterex_type == COUNTEREX_safety_check) ret_val = ILLEGAL_CEX;
@@ -1347,6 +1356,7 @@ inst from_network[38] = {inst(180, 0, 2, 0, 0),
                         };
 
 void test13() {
+  cout << "test 13: window program test" << endl;
   inst p1[] = {inst(),
                inst(MOV64XC, 2, 2),
                inst(MOV64XY, 0, 2),
@@ -1359,6 +1369,9 @@ void test13() {
   bool enable_win = true;
   validator vld(p1, 3, enable_win, win_start, win_end);
   vld._enable_prog_eq_cache = false;
+
+  validator vld1;
+  vld1._enable_prog_eq_cache = false;
   print_test_res(vld.is_equal_to(p1, 3, p1_2, 3) == 0, "1");
 
   inst p2[] = {inst(),
@@ -1395,16 +1408,28 @@ void test13() {
   rcv_sock4_1[6] = inst();
   rcv_sock4_1[7] = inst();
   print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 1");
+  vld1.set_orig(rcv_sock4, prog_len);
+  cout << "vld1" << endl;
+  vld1.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len);
+  cout << "vld1 end" << endl;
 
   win_start = 5;
   win_end = 7;
   vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
   print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 2");
+  cout << "vld1" << endl;
+  vld1.set_orig(rcv_sock4, prog_len);
+  vld1.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len);
+  cout << "vld1 end" << endl;
 
   win_start = 27;
   win_end = 30;
   vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
   print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4, prog_len) == 1, "rcv-sock4 3");
+  cout << "vld1" << endl;
+  vld1.set_orig(rcv_sock4, prog_len);
+  vld1.is_equal_to(rcv_sock4, prog_len, rcv_sock4, prog_len);
+  cout << "vld1 end" << endl;
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 
   // test from-network
@@ -1418,11 +1443,15 @@ void test13() {
   win_start = 0;
   win_end = 6;
   vld.set_orig(from_network, prog_len_fn, win_start, win_end);
+  vld1.set_orig(from_network, prog_len_fn);
 
   inst from_network_1[prog_len_fn];
   for (int i = 0; i < prog_len_fn; i++) from_network_1[i] = from_network[i];
   from_network_1[2] = inst();
   vld.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn);
+  cout << "vld1" << endl;
+  vld1.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn);
+  cout << "vld1 end" << endl;
 
   for (int i = 0; i < prog_len_fn; i++) from_network_1[i] = from_network[i];
   from_network_1[3] = inst();
@@ -1430,6 +1459,9 @@ void test13() {
   from_network_1[5] = inst(STXDW, 1, 48, 2);
   from_network_1[6] = inst(STXDW, 1, 56, 2);
   print_test_res(vld.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn) == 1, "from-network 1");
+  cout << "vld1" << endl;
+  vld1.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn);
+  cout << "vld1 end" << endl;
 
   win_start = 8;
   win_end = 9;
@@ -1438,8 +1470,47 @@ void test13() {
   from_network_1[8] = inst();
   from_network_1[9] = inst();
   print_test_res(vld.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn) == 1, "from-network 2");
+  cout << "vld1" << endl;
+  vld1.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn);
+  cout << "vld1 end" << endl;
 
   inst::max_prog_len = TEST_PGM_MAX_LEN;
+}
+
+void chk_counterex_by_vld_to_interpreter_win(inst* p1, int len1, inst* p2, int len2,
+    int win_start, int win_end, string test_name) {
+  bool interpret_check = false;
+  bool is_win = true;
+  chk_counterex_by_vld_to_interpreter(p1, len1, p2, len2, test_name, COUNTEREX_eq_check,
+                                      interpret_check, is_win, win_start, win_end);
+}
+
+void test14() {
+  cout << "test 13: window program counter-example" << endl;
+  inst p1[] = {inst(MOV64XC, 2, 2),
+               inst(MOV64XY, 0, 2),
+              };
+  inst p1_2[] = {inst(MOV64XC, 2, 3),
+                 inst(MOV64XY, 0, 2),
+                };
+  int win_start = 0, win_end = 0;
+  chk_counterex_by_vld_to_interpreter_win(p1, 2, p1_2, 2, win_start, win_end, "1");
+
+  inst p2[] = {inst(STB, 10, -1, 0xff),
+               inst(LDXB, 1, 10, -1),
+               inst(ADD64XC, 1, 1),
+               inst(MOV64XY, 0, 1),
+               inst(EXIT),
+              };
+  inst p2_2[] = {inst(STB, 10, -1, 0xff),
+                 inst(LDXB, 1, 10, -1),
+                 inst(ADD64XC, 1, 2),
+                 inst(MOV64XY, 0, 1),
+                 inst(EXIT),
+                };
+  win_start = 1;
+  win_end = 2;
+  chk_counterex_by_vld_to_interpreter_win(p2, 5, p2_2, 5, win_start, win_end, "2");
 }
 
 int main() {
@@ -1447,6 +1518,9 @@ int main() {
   // please update inst::max_prog_len here
   inst::max_prog_len = TEST_PGM_MAX_LEN;
   try {
+    test13();
+    test14();
+    return 0;
     test1();
     test2();
     test3();
@@ -1459,7 +1533,6 @@ int main() {
     test10();
     test11();
     test12();
-    // test13();
   } catch (const string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
