@@ -377,6 +377,7 @@ class smt_var: public smt_var_base {
   // symbolic values of BPF_FUNC_get_prandom_u32, each element is 32-bit
   static vector<z3::expr> randoms_u32;
   // flag of whether offset-based address is enabled in memory tables
+  // todo: enable_addr_off and is_win are not suitable to be `static`
   static bool enable_addr_off;
   static bool is_win;
   smt_var();
