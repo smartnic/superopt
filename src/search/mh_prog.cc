@@ -296,7 +296,8 @@ void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_
 }
 
 void mh_sampler::mcmc_iter(int niter, prog &orig,
-                           unordered_map<int, vector<prog*> > &prog_freq) {
+                           unordered_map<int, vector<prog*> > &prog_freq,
+                           bool is_win) {
   prog *curr, *next;
   curr = new prog(orig);
   curr->reset_vals();
@@ -320,6 +321,9 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
       cout << "start from program (error and performance costs: "
            << curr->_error_cost << " " << curr-> _perf_cost << "):" << endl;
       curr->print();
+      if (is_win) { // reset validator original program
+        _cost.set_orig(curr, inst::max_prog_len, win.first, win.second);
+      }
     }
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {

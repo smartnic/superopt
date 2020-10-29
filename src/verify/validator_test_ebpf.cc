@@ -1518,9 +1518,6 @@ int main() {
   // please update inst::max_prog_len here
   inst::max_prog_len = TEST_PGM_MAX_LEN;
   try {
-    // test13();
-    test14();
-    return 0;
     test1();
     test2();
     test3();
@@ -1533,6 +1530,8 @@ int main() {
     test10();
     test11();
     test12();
+    test13();
+    test14();
   } catch (const string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

@@ -116,5 +116,6 @@ class mh_sampler {
   void turn_on_measure();
   void turn_off_measure();
   void mcmc_iter(int niter, prog &orig,
-                 unordered_map<int, vector<prog*> > &prog_freq);
+                 unordered_map<int, vector<prog*> > &prog_freq,
+                 bool is_win = false);
 };
