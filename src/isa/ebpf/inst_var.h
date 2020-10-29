@@ -486,6 +486,7 @@ class inout_t: public inout_t_base {
   int pgm_exit_type;
   // pseudo random values for BPF_FUNC_get_prandom_u32, prog_state get these values form get from input
   vector<uint32_t> randoms_u32;
+  bool is_win = false;
   int start_insn = 0;
   // safety check state variables starts
   vector<bool> reg_readable;

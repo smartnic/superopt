@@ -283,10 +283,16 @@ void test3() {
   live_variables expected_insn4_p21;
   expected_insn4_p21.regs = {1, 2};
   expected_insn4_p21.mem[PTR_TO_STACK] = {STACK_SIZE - 8, STACK_SIZE - 7};
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    expected_insn4_p21.mem[PTR_TO_CTX].insert(i);
+  }
   print_test_res(live_var_is_equal(expected_insn4_p21, pss.static_state[4].live_var), "1.1");
   // check live variables after executing insn 0
   live_variables expected_insn0_p21;
   expected_insn0_p21.regs = {10};
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    expected_insn0_p21.mem[PTR_TO_CTX].insert(i);
+  }
   print_test_res(live_var_is_equal(expected_insn0_p21, pss.static_state[0].live_var), "1.2");
 
   inst p2_2[] = {inst(JEQXY, 1, 2, 2),
@@ -299,9 +305,27 @@ void test3() {
   static_analysis(pss, p2_2, sizeof(p2_2) / sizeof(inst));
   // check live variables after executing insn 0
   live_variables expected_insn0_p22;
-  expected_insn0_p22.regs = {5, 6, 10};
+  expected_insn0_p22.regs = {0, 5, 6, 10};
   expected_insn0_p22.mem[PTR_TO_STACK] = {STACK_SIZE - 1, STACK_SIZE - 2};
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    expected_insn0_p22.mem[PTR_TO_CTX].insert(i);
+  }
   print_test_res(live_var_is_equal(expected_insn0_p22, pss.static_state[0].live_var), "2");
+
+  // test output pkt
+  inst p2_3[] = {inst(STB, 1, 2, 0xff),
+                 inst(STB, 1, 1, 0xff),
+                };
+  static_analysis(pss, p2_3, sizeof(p2_3) / sizeof(inst));
+  // check live variables after executing insn 0
+  live_variables expected_insn0_p23;
+  expected_insn0_p23.regs = {0, 1};
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    expected_insn0_p23.mem[PTR_TO_CTX].insert(i);
+  }
+  expected_insn0_p23.mem[PTR_TO_CTX].erase(1);
+  print_test_res(live_var_is_equal(expected_insn0_p23, pss.static_state[0].live_var), "3");
+
 }
 
 int main(int argc, char *argv[]) {

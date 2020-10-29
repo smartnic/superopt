@@ -1532,6 +1532,14 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt
   }
   cout << "smt_var::is_win: " << smt_var::is_win << endl;
   if (smt_var::is_win) { // update stack value
+    auto it = sin.prog_read.mem.find(PTR_TO_STACK);
+    if (it != sin.prog_read.mem.end()) {
+      for (auto off : it->second) {
+        input.stack_readble[off] = true;
+        input.stack[off] = unidist_codegen(gen_codegen) * 0x100; // [0 - 0xff]
+      }
+    }
+
     int mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
     assert(mem_id != -1);
     vector<pair< uint64_t, uint8_t>> mem_addr_val;
@@ -1545,12 +1553,6 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt
       input.stack[off] = val;
     }
 
-    auto it = sin.prog_read.mem.find(PTR_TO_STACK);
-    if (it != sin.prog_read.mem.end()) {
-      for (auto off : it->second) {
-        input.stack_readble[off] = true;
-      }
-    }
   }
 }
 

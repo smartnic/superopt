@@ -1469,8 +1469,7 @@ ostream& operator<<(ostream& out, const inout_t& x) {
 
 
 void update_ps_by_input(prog_state& ps, const inout_t& input) {
-  int start_insn = input.start_insn;
-  if (start_insn == 0) ps.init_safety_chk();
+  if (! input.is_win) ps.init_safety_chk();
   else ps.init_safety_chk(input.reg_readable, input.stack_readble, input.reg_type);
   ps._regs[10] = input.input_simu_r10;
   // cp input register
@@ -1491,7 +1490,17 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   ps._mem._simu_mem_s = input.input_simu_r10 - STACK_SIZE;
   int pgm_input_type = mem_t::get_pgm_input_type();
   if ((pgm_input_type == PGM_INPUT_pkt) || (pgm_input_type == PGM_INPUT_skb)) {
-    ps._mem._simu_pkt_s = (uint64_t)input.reg;
+    if (! input.is_win) {
+      ps._mem._simu_pkt_s = (uint64_t)input.reg;
+    } else {
+      for (auto it : input.regs) {
+        int reg = it.first;
+        int64_t val = it.second;
+        if (input.reg_type[reg] != PTR_TO_CTX) continue;
+        ps._mem._simu_pkt_s = val;
+        break;
+      }
+    }
   } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     ps._mem._simu_pkt_ptrs_s = (uint64_t)input.reg;
     ps._mem._pkt_ptrs[0] = input.input_simu_pkt_ptrs[0];
@@ -1506,7 +1515,7 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   }
   ps._cur_randoms_u32_idx = 0;
 
-  if (start_insn != 0) { // it is a window program, get stack and registers from input
+  if (input.is_win) { // it is a window program, get stack and registers from input
     // update registers
     for (auto it : input.regs) {
       ps._regs[it.first] = it.second;

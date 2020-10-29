@@ -522,11 +522,17 @@ void live_analysis_pgm(prog_static_state& pss, inst* program, int len) {
     int block_s = g.nodes[block]._start;
     int block_e = g.nodes[block]._end;
 
-    // assume no live variables in the output, deal with the output later
-    // get the block initial live variables by merging outgoing live variables
-    for (int j = 0; j < g.nodes_out[block].size(); j++) {
-      int block_out = g.nodes_out[block][j];
-      ss[block_e].insert_live_var(bss[block_out]);
+    // get the block initial live variables by merging outgoing live variables or from output
+    if (g.nodes_out[block].size() == 0) { // from output (r0 + pkt)
+      ss[block_e].insert_live_reg(0); // r0
+      for (int j = 0; j < mem_t::_layout._pkt_sz; j++) { // pkt
+        ss[block_e].insert_live_off(PTR_TO_CTX, j);
+      }
+    } else {
+      for (int j = 0; j < g.nodes_out[block].size(); j++) { // merging outgoing live variables
+        int block_out = g.nodes_out[block][j];
+        ss[block_e].insert_live_var(bss[block_out]);
+      }
     }
     // process each block instruction backward
     for (int j = block_e; j > block_s; j--) {
