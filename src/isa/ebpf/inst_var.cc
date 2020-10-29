@@ -1469,7 +1469,7 @@ ostream& operator<<(ostream& out, const inout_t& x) {
 
 
 void update_ps_by_input(prog_state& ps, const inout_t& input) {
-  if (! input.is_win) ps.init_safety_chk();
+  if ((! input.is_win) || (input.start_insn == 0)) ps.init_safety_chk();
   else ps.init_safety_chk(input.reg_readable, input.stack_readble, input.reg_type);
   ps._regs[10] = input.input_simu_r10;
   // cp input register
@@ -1490,9 +1490,8 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   ps._mem._simu_mem_s = input.input_simu_r10 - STACK_SIZE;
   int pgm_input_type = mem_t::get_pgm_input_type();
   if ((pgm_input_type == PGM_INPUT_pkt) || (pgm_input_type == PGM_INPUT_skb)) {
-    if (! input.is_win) {
-      ps._mem._simu_pkt_s = (uint64_t)input.reg;
-    } else {
+    ps._mem._simu_pkt_s = (uint64_t)input.reg;
+    if (input.is_win) {
       for (auto it : input.regs) {
         int reg = it.first;
         int64_t val = it.second;
@@ -1525,7 +1524,6 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
       ps._mem.update_stack(it.first, it.second);
     }
   }
-  cout << "ps._regs[10]: " << ps._regs[10] << endl;
 }
 
 void update_output_by_ps(inout_t& output, const prog_state& ps) {
@@ -1703,13 +1701,14 @@ void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
   }
 }
 
-void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max) {
+void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max, bool is_win) {
   uint64_t max_uint64 = 0xffffffffffffffff;
   // 1. Generate stack bottom address r10
   uint64_t r10_min = 1; // address cannot be 0
   uint64_t mem_size_without_stack = get_mem_size_by_layout() - STACK_SIZE;
   uint64_t r10_max = max_uint64 - mem_size_without_stack - mem_t::_layout._pkt_sz;
   for (int i = 0; i < inputs.size(); i++) {
+    inputs[i].is_win = is_win;
     inputs[i].input_simu_r10 = r10_min + (uint64_t)((r10_max - r10_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var));
   }
   // 2. Generate pkt, set pkt with random values

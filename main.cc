@@ -55,6 +55,9 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
   out << "p_inst_operand:" << ip.p_inst_operand << endl
       << "p_inst:" << ip.p_inst << endl;
   out << "server_port:" << ip.server_port << endl;
+      << "disable_prog_eq_cache:" << ip.disable_prog_eq_cache << endl
+      << "enable_prog_uneq_cache:" << ip.enable_prog_uneq_cache << endl
+      << "is_win:" << ip.is_win << endl;
   return out;
 }
 
@@ -107,9 +110,10 @@ void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
                 in_para.st_ex, in_para.st_eq,
                 in_para.st_avg, in_para.st_perf,
                 (! in_para.disable_prog_eq_cache),
-                in_para.enable_prog_uneq_cache);
+                in_para.enable_prog_uneq_cache,
+                in_para.is_win);
   try {
-    mh.mcmc_iter(in_para.niter, orig, prog_dic);
+    mh.mcmc_iter(in_para.niter, orig, prog_dic, in_para.is_win);
   } catch (string err_msg) {
     cout << err_msg << endl;
   }
@@ -284,7 +288,8 @@ void usage() {
        << setw(W) << "--port arg" << ": " << para_port_desc() << endl;
        << endl << "validator related arguments" << endl
        << setw(W) << "--disable_prog_eq_cache: disable the usage of prog_eq_cache" << endl
-       << setw(W) << "--enable_prog_uneq_cache: enable the usage of prog_uneq_cache" << endl;
+       << setw(W) << "--enable_prog_uneq_cache: enable the usage of prog_uneq_cache" << endl
+       << setw(W) << "--is_win: enable window program equivalence check" << endl;
 }
 
 void set_w_list(vector<double> &list, string s) {
@@ -331,6 +336,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"port", required_argument, nullptr, 22},
     {"disable_prog_eq_cache", no_argument, nullptr, 23},
     {"enable_prog_uneq_cache", no_argument, nullptr, 24},
+    {"is_win", no_argument, nullptr, 25},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -365,6 +371,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 22: in_para.server_port = stoi(optarg); break;
       case 23: in_para.disable_prog_eq_cache = true; break;
       case 24: in_para.enable_prog_uneq_cache = true; break;
+      case 25: in_para.is_win = true; break;
       case '?': usage(); return false;
     }
   }
@@ -423,6 +430,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.server_port = 8002;
   in_para.disable_prog_eq_cache = false;
   in_para.enable_prog_uneq_cache = false;
+  in_para.is_win = false;
 }
 
 int main(int argc, char* argv[]) {
@@ -448,8 +456,8 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < inputs.size(); i++) {
     inputs[i].init();
   }
-  gen_random_input(inputs, -50, 50);
   SERVER_PORT = in_para.server_port;
+  gen_random_input(inputs, -50, 50, in_para.is_win);
   run_mh_sampler(in_para, bm_optis_orig);
   vector<prog*> best_pgms;
   get_best_pgms_from_candidates(best_pgms);

@@ -49,8 +49,9 @@ class cost {
             int strategy_ex = 0, int strategy_eq = 0,
             int strategy_avg = 0, int strategy_perf = 0,
             bool enable_prog_eq_cache = true,
-            bool enable_prog_uneq_cache = false);
-  void set_orig(prog* orig, int len);
+            bool enable_prog_uneq_cache = false,
+            bool is_win = false);
+  void set_orig(prog* orig, int len, int win_start = 0, int win_end = inst::max_prog_len);
   double error_cost(prog* orig, int len1, prog* synth, int len2);
   double perf_cost(prog* synth, int len);
   double total_prog_cost(prog* orig, int len1, prog* synth, int len2);

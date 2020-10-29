@@ -196,7 +196,6 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
   for (int i = 0; i < ids.size(); i++) {
     z3::expr is_valid = sv.update_is_valid();
     z3::expr cond = path_cond && info_list[i].path_cond;
-    cout << "predicate_st_byte: " << path_cond.simplify() << " " << info_list[i].path_cond << " " << is_valid << endl;;
     f = f && (is_valid == cond);
     // safety check of BPF_ST storing in the input memory is not allowed
     if (bpf_st) {
@@ -342,7 +341,6 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
 
 z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block, z3::expr cond,
                            bool enable_addr_off, bool is_win) {
-  cout << "predicate_ld_byte: " << is_win << endl;
   // cout << "predicate_ld_byte: " << endl;
   // cout << "addr: " << addr << endl;
   z3::expr f = Z3_true;
@@ -963,7 +961,6 @@ z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win) {
 }
 
 z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win) {
-  cout << "smt_pgm_eq_chk is_win:" << is_win << endl;
   z3::expr f = smt_pgm_mem_eq_chk(sv1, sv2, is_win);
 
   smt_output& out1 = sv1.smt_out, out2 = sv2.smt_out;
@@ -1029,13 +1026,13 @@ bool is_ptr(int type) {
 // Generate the precondition formula and set up the pointer registers,
 // sv is the sv of program's root basic block
 z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
-  cout << "smt_pgm_set_pre" << endl;
+  // cout << "smt_pgm_set_pre" << endl;
   z3::expr f = Z3_true;
   // set up pointer registers only for registers read by program
   for (auto reg : input.prog_read.regs) {
     // get all possible register states from iss.reg_state
     z3::expr reg_expr = sv.get_init_reg_var(reg);
-    cout << "reg " << reg << ":" << reg_expr << endl;;
+    // cout << "reg " << reg << ":" << reg_expr << endl;;
     f = f && (reg_expr == smt_input::reg_expr(reg));
     for (int i = 0; i < input.reg_state[reg].size(); i++) {
       register_state reg_state = input.reg_state[reg][i];
@@ -1050,7 +1047,7 @@ z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
       } else if (reg_state.type == PTR_TO_CTX) {
         f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_pkt_start_addr() + off_expr));
       }
-      cout << reg_expr << " " << table_id << " " << off_expr << endl;
+      // cout << reg_expr << " " << table_id << " " << off_expr << endl;
     }
   }
   f = f && input.input_constraint();
@@ -1514,7 +1511,6 @@ void counterex_urt_2_input_map(inout_t& input, z3::model & mdl, smt_var& sv, int
 // 1. get mem_addr_val list according to the pkt mem urt;
 // 2. traverse mem_addr_val list, if the addr is in input memory address range, update "input"
 void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt_input& sin) {
-  cout << "counterex_urt_2_input_mem" << endl;
   int pkt_sz = mem_t::_layout._pkt_sz;
   if (pkt_sz > 0) {
     int pkt_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
@@ -1530,7 +1526,6 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt
       input.pkt[off] = val;
     }
   }
-  cout << "smt_var::is_win: " << smt_var::is_win << endl;
   if (smt_var::is_win) { // update stack value
     auto it = sin.prog_read.mem.find(PTR_TO_STACK);
     if (it != sin.prog_read.mem.end()) {

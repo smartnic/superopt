@@ -48,8 +48,6 @@ void smt_prog::smt_block(expr& smt_b, expr& smt_sc,
   expr p = string_to_expr("true");
   smt_sc = Z3_true;
   for (size_t i = start; i <= end; i++) {
-    cout << i << endl;
-    program[i].print();
     int op_type = program[i].get_opcode_type();
     if ((op_type == OP_OTHERS) || (op_type == OP_LD) ||
         (op_type == OP_ST) || (op_type == OP_CALL)) {
@@ -203,7 +201,6 @@ void smt_prog::init_pgm_dag(unsigned int root_node) {
 }
 
 expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length, bool is_win, int win_start, int win_end) {
-  cout << "gen_smt: " << is_win << " " << win_start << " " << win_end << endl;
   try {
     // generate a cfg
     // illegal input would be detected: 1. program with loop

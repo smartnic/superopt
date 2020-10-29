@@ -17,9 +17,11 @@ cost::~cost() {}
 void cost::init(prog* orig, int len, const vector<inout_t> &input,
                 double w_e, double w_p,
                 int strategy_ex, int strategy_eq, int strategy_avg, int strategy_perf,
-                bool enable_prog_eq_cache, bool enable_prog_uneq_cache) {
+                bool enable_prog_eq_cache, bool enable_prog_uneq_cache, bool is_win) {
   try {
-    set_orig(orig, len);
+    if (! is_win) {
+      set_orig(orig, len);
+    }
     _examples.clear();
     prog_state ps;
     ps.init();
@@ -48,11 +50,13 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
   _meas_new_counterex_gened = false;
   _vld._enable_prog_eq_cache = enable_prog_eq_cache;
   _vld._enable_prog_uneq_cache = enable_prog_uneq_cache;
+  _vld._is_win = is_win;  // enable win eq chk
+  smt_var::is_win = is_win;
 }
 
-void cost::set_orig(prog* orig, int len) {
+void cost::set_orig(prog* orig, int len, int win_start, int win_end) {
   try {
-    _vld.set_orig(orig->inst_list, len);
+    _vld.set_orig(orig->inst_list, len, win_start, win_end);
   } catch (const string err_msg) {
     cout << "ERROR: the original program is illegal. ";
     cerr << err_msg << endl;
@@ -191,6 +195,19 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
     auto t1 = NOW;
     try {
       is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+      if ((smt_var::is_win) && (is_equal != 1)) {
+        // check win prog eq check result
+        validator vld1;
+        vld1._is_win = false;
+        smt_var::is_win = false;
+        vld1.set_orig(orig->inst_list, len1);
+        int is_equal_expected = vld1.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+        cout << "win prog check: " << is_equal << " " << is_equal_expected << endl;
+        if (is_equal_expected != is_equal) {
+          cout << "win prog check fail: " << is_equal << " " << is_equal_expected << endl;
+        }
+        smt_var::is_win = true;
+      }
     } catch (const string err_msg) {
       // illegal program
       synth->set_error_cost(ERROR_COST_MAX);

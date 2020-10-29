@@ -143,7 +143,6 @@ void validator::set_orig(inst* orig, int length, int win_start, int win_end) {
   }
   smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg(), _smt_input_orig, ps_orig.sv);
   try {
-    cout << "gen smt" << endl;
     _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, length, _is_win, _win_start, _win_end);
   } catch (const string err_msg) {
     throw (err_msg);
@@ -210,7 +209,7 @@ int validator::safety_check(inst* orig, int len, expr& pre, expr& pl, expr& p_sc
   auto t1 = NOW;
   int is_safe = is_smt_valid(smt_safety_chk, mdl_sc);
   auto t2 = NOW;
-  cout << "vld solve safety: " << DUR(t1, t2) << " us" << " " << is_safe << endl;
+  cout << "win" << _is_win << " vld solve safety: " << DUR(t1, t2) << " us" << " " << is_safe << endl;
   if (is_safe == 0) {
     gen_counterex(orig, len, mdl_sc, sv, sin, COUNTEREX_safety_check);
     return ILLEGAL_CEX;
@@ -227,13 +226,10 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     set_up_smt_inout_win(smt_input_synth, ps_synth.sv.smt_out, _pss_orig, synth, _win_start, _win_end);
   }
   expr pre_synth = string_to_expr("true");
-  cout << "smt_Pre..." << endl;
   smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg(), smt_input_synth, ps_synth.sv);
-  cout << "smt_Pre end..." << endl;
 
   expr pl_synth = string_to_expr("true");
   try {
-    cout << "gen_smt..." << endl;
     pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length_syn, _is_win, _win_start, _win_end);
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
@@ -283,7 +279,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   auto t1 = NOW;
   int is_equal = is_smt_valid(smt, mdl);
   auto t2 = NOW;
-  cout << "validator solve eq: " << DUR(t1, t2) << " us" << " " << is_equal << endl;
+  cout << "win" << _is_win << " validator solve eq: " << DUR(t1, t2) << " us" << " " << is_equal << endl;
 
   if (is_equal == 0) {
     // cout << is_equal << endl;
