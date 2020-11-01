@@ -21,7 +21,7 @@
 #include "src/verify/port.h"
 using namespace std;
 
-int PORT = 8002; /* default port */
+int SERVER_PORT = 8002; /* default port */
 string FILE_CONFIG = "config";
 
 inst* bm;
@@ -353,7 +353,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 18: set_win_list(in_para.win_e_list, optarg); break;
       case 19: in_para.p_inst_operand = stod(optarg); break;
       case 20: in_para.p_inst = stod(optarg); break;
-      case 21: PORT = stoi(optarg); cout << "Set Port to: " << PORT << "\n"; break;
+      case 21: SERVER_PORT = stoi(optarg); cout << "Set Port to: " << SERVER_PORT << "\n"; break;
       case '?': usage(); return false;
     }
   }
@@ -409,7 +409,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.win_e_list = {inst::max_prog_len - 1};
   in_para.p_inst_operand = 1.0 / 3.0;
   in_para.p_inst = 1.0 / 3.0;
-  PORT = 8001;
+  SERVER_PORT = 8001;
 }
 
 int main(int argc, char* argv[]) {
