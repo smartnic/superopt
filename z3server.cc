@@ -12,8 +12,6 @@
 #define FORMULA_SIZE_BYTES (1 << 22)
 #define RESULT_SIZE_BYTES (1 << 22)
 
-#define PORT 8001
-
 using namespace std;
 
 z3::context c;
@@ -113,6 +111,13 @@ int read_problem_from_z3client() {
 }
 
 int main() {
+  if (argc != 2)
+  {
+    cout << "No port argument" << endl;
+    return 1;
+  }
+  int PORT = std::stoi(argv[1]);
+  cout << "Port is  " << argv[1] << endl;
   /* Receive a z3 smtlib2 formula in a shared memory segment, and
      return sat or unsat in another one. */
   read_problem_from_z3client();

@@ -18,9 +18,10 @@
 #include "measure/benchmark_header.h"
 #include "measure/meas_mh_bhv.h"
 #include "main.h"
-
+#include "src/verify/port.h"
 using namespace std;
 
+int PORT = 8002; /* default port */
 string FILE_CONFIG = "config";
 
 inst* bm;
@@ -238,6 +239,11 @@ string para_p_inst_desc() {
   return s;
 }
 
+string para_port_desc(){
+  string s = "port number the z3 server and client communicate on";
+  return s;
+}
+
 void usage() {
   // setw(.): Sets the field width to be used on output operations.
   // reference: http://www.cplusplus.com/reference/iomanip/setw/
@@ -272,7 +278,8 @@ void usage() {
        << setw(W) << "--win_e_list arg" << ": " + para_win_e_list_desc() << endl
        << endl << para_next_proposal_desc() << endl
        << setw(W) << "--p_inst_operand arg:" << ": " << para_p_inst_operand_desc() << endl
-       << setw(W) << "--p_inst arg" << ": " << para_p_inst_desc() << endl;
+       << setw(W) << "--p_inst arg" << ": " << para_p_inst_desc() << endl
+       << setw(W) << "--port arg" << ": " << para_port_desc() << endl;
 }
 
 void set_w_list(vector<double> &list, string s) {
@@ -315,6 +322,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"win_e_list", required_argument, nullptr, 18},
     {"p_inst_operand", required_argument, nullptr, 19},
     {"p_inst", required_argument, nullptr, 20},
+    {"port", required_argument, nullptr, 21},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -345,6 +353,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 18: set_win_list(in_para.win_e_list, optarg); break;
       case 19: in_para.p_inst_operand = stod(optarg); break;
       case 20: in_para.p_inst = stod(optarg); break;
+      case 21: PORT = stoi(optarg); cout << "Set Port to: " << PORT << "\n"; break;
       case '?': usage(); return false;
     }
   }
@@ -400,6 +409,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.win_e_list = {inst::max_prog_len - 1};
   in_para.p_inst_operand = 1.0 / 3.0;
   in_para.p_inst = 1.0 / 3.0;
+  PORT = 8001
 }
 
 int main(int argc, char* argv[]) {

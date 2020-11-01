@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include "port.h"
 
 using namespace std;
 
@@ -20,7 +21,7 @@ using namespace std;
 #define RESULT_SIZE_BYTES (1 << 22)
 #define SOLVER_RESPAWN_THRESOLD 1000
 
-#define PORT 8001
+
 
 z3::context c;
 pid_t child_pid = -1;
@@ -36,7 +37,8 @@ int spawn_server() {
     cout << "Fork error occurred. Can't spawn a z3 solver server.";
     return -1;
   } else if (pid == 0) { /* in the child process; exec to z3server */
-    char *argv_list[] = {(char*)"./z3server.out", (char*)NULL};
+    std::string NEWPORT = std::to_string(PORT);
+    char *argv_list[] = {(char *)"./z3server.out ", const_cast<char *>(NEWPORT.c_str()), (char *)NULL};
     execv("./z3server.out", argv_list);
     exit(-1); /* never supposed to get here until the exec fails. */
   } else {
