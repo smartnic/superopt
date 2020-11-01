@@ -44,7 +44,7 @@ string run_solver(char* formula) {
   }
 }
 
-int read_problem_from_z3client() {
+int read_problem_from_z3client(int PORT) {
   int server_fd, acc_socket, nread, total_read, nchars;
   int opt = 1;
   struct sockaddr_in address;
@@ -110,7 +110,7 @@ int read_problem_from_z3client() {
   return 0;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   if (argc != 2)
   {
     cout << "No port argument" << endl;
@@ -120,6 +120,6 @@ int main() {
   cout << "Port is  " << argv[1] << endl;
   /* Receive a z3 smtlib2 formula in a shared memory segment, and
      return sat or unsat in another one. */
-  read_problem_from_z3client();
+  read_problem_from_z3client(PORT);
   return 0;
 }

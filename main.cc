@@ -409,7 +409,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.win_e_list = {inst::max_prog_len - 1};
   in_para.p_inst_operand = 1.0 / 3.0;
   in_para.p_inst = 1.0 / 3.0;
-  PORT = 8001
+  PORT = 8001;
 }
 
 int main(int argc, char* argv[]) {
