@@ -1,2 +1,2 @@
 using namespace std;
-extern int PORT;
+extern int SERVER_PORT;

@@ -37,7 +37,7 @@ int spawn_server() {
     cout << "Fork error occurred. Can't spawn a z3 solver server.";
     return -1;
   } else if (pid == 0) { /* in the child process; exec to z3server */
-    std::string NEWPORT = std::to_string(PORT);
+    std::string NEWPORT = std::to_string(SERVER_PORT);
     char *argv_list[] = {(char *)"./z3server.out ", const_cast<char *>(NEWPORT.c_str()), (char *)NULL};
     execv("./z3server.out", argv_list);
     exit(-1); /* never supposed to get here until the exec fails. */
@@ -74,7 +74,7 @@ string write_problem_to_z3server(string formula) {
   }
 
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(PORT);
+  serv_addr.sin_port = htons(SERVER_PORT);
   if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
     perror("z3client: Invalid localhost network address");
     return "";
