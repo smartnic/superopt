@@ -195,19 +195,6 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
     auto t1 = NOW;
     try {
       is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
-      if ((smt_var::is_win) && (is_equal != 1)) {
-        // check win prog eq check result
-        validator vld1;
-        vld1._is_win = false;
-        smt_var::is_win = false;
-        vld1.set_orig(orig->inst_list, len1);
-        int is_equal_expected = vld1.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
-        cout << "win prog check: " << is_equal << " " << is_equal_expected << endl;
-        if (is_equal_expected != is_equal) {
-          cout << "win prog check fail: " << is_equal << " " << is_equal_expected << endl;
-        }
-        smt_var::is_win = true;
-      }
     } catch (const string err_msg) {
       // illegal program
       synth->set_error_cost(ERROR_COST_MAX);

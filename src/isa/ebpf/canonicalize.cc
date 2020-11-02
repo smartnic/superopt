@@ -624,26 +624,3 @@ void set_up_smt_inout_win(smt_input& sin, smt_output& sout,
   sin.prog_read = win_prog_r; // set up smt_input
   set_up_smt_output_win(sout, ss_win, pss_orig.static_state, program, win_start, win_end);
 }
-
-void init_array_mem_table(smt_var& sv, inst_static_state& iss, int ptr_type, int mem_table_type) {
-  auto it = iss.live_var.mem.find(ptr_type);
-  if (it == iss.live_var.mem.end()) return;
-  unordered_set<int>& stack_offs = it->second;
-  int table_id = sv.mem_var.get_mem_table_id(mem_table_type);
-  assert(table_id != -1);
-  // add each off into urt
-  int block = 0;  // set block as the root
-  z3::expr is_valid = Z3_true;
-  for (auto off : stack_offs) {
-    z3::expr addr_off = to_expr(off);
-    z3::expr val = sv.new_var(NUM_BYTE_BITS);
-    sv.mem_var.add_in_mem_table_urt(table_id, block, is_valid, addr_off, val);
-  }
-}
-
-void init_pre(smt_var& sv, inst_static_state& iss) {
-  // init memory
-  init_array_mem_table(sv, iss, PTR_TO_STACK, MEM_TABLE_stack);
-  init_array_mem_table(sv, iss, PTR_TO_CTX, MEM_TABLE_pkt);
-}
-
