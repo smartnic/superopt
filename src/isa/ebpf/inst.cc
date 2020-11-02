@@ -743,7 +743,6 @@ z3::expr inst::smt_inst_end(smt_var & sv) const {
       unordered_set<int>& regs = sv.smt_out.output_var.regs;
       for (auto reg : regs) {
         f = f && (sv.smt_out.reg_expr(reg) == sv.get_cur_reg_var(reg));
-        cout << (sv.smt_out.reg_expr(reg) == sv.get_cur_reg_var(reg)) << endl;
       }
     } else {
       f = f && (sv.smt_out.ret_val == sv.get_cur_reg_var(0));
