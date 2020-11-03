@@ -1544,10 +1544,20 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt
     for (int i = 0; i < mem_addr_val.size(); i++) {
       uint64_t off = mem_addr_val[i].first;
       uint8_t val = mem_addr_val[i].second;
+      cout << "counterex_urt_2_input_mem: " << off << endl;
       assert(off < STACK_SIZE);
       input.stack[off] = val;
     }
 
+  }
+}
+
+void counterex_2_input_simu_pkt_s(inout_t& input, z3::model& mdl, smt_var& sv) {
+  z3::expr z3_pkt_s = mdl.eval(sv.get_pkt_start_addr());
+  input.input_simu_pkt_s = get_uint64_from_bv64(z3_pkt_s, false); // r10: stack bottom
+  if (input.input_simu_pkt_s == 0) {// means z3 does not care about r10, assign a random value
+    // 0x10000000 is to make sure r10 >> stack_s
+    input.input_simu_pkt_s = 0x10000000 + unidist_codegen(gen_codegen) * (double)0xffff;
   }
 }
 
@@ -1580,6 +1590,7 @@ void counterex_2_input_randoms_u32(inout_t& input, z3::model & mdl, smt_var& sv)
 }
 
 void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model & mdl, smt_var& sv, smt_input& sin) {
+  counterex_2_input_simu_pkt_s(input, mdl, sv);
   counterex_2_input_simu_r10(input, mdl, sv);
   counterex_2_input_simu_pkt_ptrs(input, mdl, sv);
   counterex_2_input_randoms_u32(input, mdl, sv);

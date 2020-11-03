@@ -1026,7 +1026,10 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
 #define SRC_ID (insn->_src_reg)
 
   int start_insn = input.start_insn;
-  inst* insn = &program[start_insn];
+  if (smt_var::is_win) { // length is from 0
+    length = inout_t::end_insn + 1;
+  }
+  inst* insn = &program[inout_t::start_insn];
   ps.clear();
   // register r10 is set by update_ps_by_input
   update_ps_by_input(ps, input);
@@ -1037,7 +1040,7 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
   simu_real sr;
   if (pgm_input_type != PGM_INPUT_pkt_ptrs) {
     uint64_t real_r1 = (uint64_t)ps._mem.get_pkt_start_addr();
-    uint64_t simu_r1 = (uint64_t)ps._regs[1];
+    uint64_t simu_r1 = (uint64_t)input.input_simu_pkt_s; // pkt start
     if (real_r1 == 0) real_r1 = simu_r1;
     sr.set_vals(simu_r10, real_r10, simu_r1, real_r1);
   } else { // PGM_INPUT_pkt_ptrs

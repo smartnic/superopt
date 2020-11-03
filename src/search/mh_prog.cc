@@ -307,14 +307,16 @@ void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_
   restart.print();
 }
 
-void mh_sampler::mcmc_iter(int niter, prog &orig,
+void mh_sampler::mcmc_iter(int niter, prog* orig,
                            unordered_map<int, vector<prog*> > &prog_freq,
                            bool is_win) {
-  prog *curr, *next;
-  curr = new prog(orig);
-  curr->reset_vals();
+  cout << "mh_sampler::mcmc_iter: " << endl;
+  prog *curr, *next, *prog_start;
   // curr->canonicalize();
   auto start = NOW;
+  prog_start = new prog(*orig);
+  curr = new prog(*prog_start);
+  curr->reset_vals();
   for (int i = 0; i < niter; i++) {
     cout << "iter: " << i << endl;
     if (_next_win.whether_to_reset(i)) {
@@ -325,26 +327,30 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
       // set this program as the start program for the new window
       prog* best = get_best_pgm_from_pgm_dic(prog_freq);
       if (best != nullptr) {
-        if (curr != best) {
+        if (prog_start != best) {
+          delete prog_start;
+          prog_start = new prog(*best);
+        }
+        if (curr != prog_start) {
           delete curr;
-          curr = new prog(*best);
+          curr = new prog(*prog_start);
         }
       }
       cout << "start from program (error and performance costs: "
-           << curr->_error_cost << " " << curr-> _perf_cost << "):" << endl;
-      curr->print();
+           << prog_start->_error_cost << " " << prog_start-> _perf_cost << "):" << endl;
+      prog_start->print();
       if (is_win) { // reset validator original program
-        _cost.set_orig(curr, inst::max_prog_len, win.first, win.second);
+        _cost.set_orig(prog_start, inst::max_prog_len, win.first, win.second);
         // clear the test cases and generate new test cases
         prog_static_state pss;
-        static_analysis(pss, curr->inst_list, inst::max_prog_len);
+        static_analysis(pss, prog_start->inst_list, inst::max_prog_len);
         int num_examples = 30;
         vector<inout_t> examples;
-        gen_random_input_for_win(examples, num_examples, pss.static_state[win.first]);
-        _cost.set_examples(examples, curr);
+        gen_random_input_for_win(examples, num_examples, pss.static_state[win.first], win.first, win.second);
+        _cost.set_examples(examples, prog_start);
       }
       clear_prog_freq_dic(prog_freq);
-      insert_into_prog_freq_dic(*curr, prog_freq);
+      insert_into_prog_freq_dic(*prog_start, prog_freq);
     }
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {
@@ -360,7 +366,7 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
       print_restart_info(i, *restart, restart_we_wp.first, restart_we_wp.second);
     }
     // sample one program
-    next = mh_next(curr, &orig);
+    next = mh_next(curr, prog_start);
     // insert the next program into frequency dictionary of programs
     insert_into_prog_freq_dic(*next, prog_freq);
     // update measurement data and update current program with the next program

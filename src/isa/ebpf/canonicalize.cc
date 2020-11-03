@@ -640,7 +640,7 @@ int random_int(int start, int end) {
 }
 
 uint64_t random_uint64(uint64_t start, uint64_t end) {
-  end++;
+  if (end != 0xffffffffffffffff) end++;
   uint64_t val;
   do {
     val = start + (uint64_t)(unidist_ebpf_cano(gen_ebpf_cano) * (double)(end - start));
@@ -695,22 +695,26 @@ void gen_random_input(vector<inout_t>& inputs, int n, int64_t reg_min, int64_t r
   } else { // case 2: r1 is used as pkt address
     for (int i = 0; i < inputs.size(); i++) {
       inputs[i].reg = gen_random_pkt_start(inputs[i].input_simu_r10);
+      inputs[i].input_simu_pkt_s = inputs[i].reg;
     }
   }
 }
 
-void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state& iss) {
+void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state& iss, int win_start, int win_end) {
   cout << "gen_random_input_for_win" << endl;
   inputs.clear();
   inputs.resize(n);
   gen_random_input_for_common(inputs, true);
 
   cout << "gen_random_input_for_common end" << endl;
+  inout_t::start_insn = win_start;
+  inout_t::end_insn = win_end;
   // Generate random variables that have been written in precondition
   for (int i = 0; i < inputs.size(); i++) {
     uint64_t stack_bottom = inputs[i].input_simu_r10;
     uint64_t pkt_start = gen_random_pkt_start(stack_bottom);
     uint64_t stack_top = stack_bottom - STACK_SIZE;
+    inputs[i].input_simu_pkt_s = pkt_start;
     cout << "registers" << endl;
     // 1. Generate registers
     uint64_t max_u64 = 0xffffffffffffffff;
@@ -736,6 +740,7 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
         }
       } else {
         reg_v = random_uint64(min_u64, max_u64);
+        cout << reg << " reg_v: " << reg_v << " ";
       }
       inputs[i].regs[reg] = reg_v;
     }

@@ -9,6 +9,8 @@ live_variables smt_output::post_prog_r;
 vector<z3::expr> smt_var::randoms_u32;
 bool smt_var::enable_addr_off = true;
 bool smt_var::is_win = false;
+int inout_t::start_insn = 0;
+int inout_t::end_insn = 0;
 
 default_random_engine gen_ebpf_inst_var;
 uniform_real_distribution<double> unidist_ebpf_inst_var(0.0, 1.0);
@@ -318,6 +320,10 @@ void mem_t::update_kv_in_map(int map_id, string k, const vector<uint8_t>& v) {
   for (int i = 0; i < v_sz; i++) {
     addr_v_dst[i] = v[i];
   }
+}
+
+uint8_t mem_t::get_stack_val_by_offset(int off) const {
+  return _mem[_layout._stack_start + off];
 }
 
 uint8_t* mem_t::get_stack_start_addr() const {
@@ -1295,6 +1301,7 @@ inout_t::inout_t() {
 // deep copy for vector push back
 inout_t::inout_t(const inout_t& rhs) {
   pkt = new uint8_t[mem_t::_layout._pkt_sz];
+  input_simu_pkt_s = rhs.input_simu_pkt_s;
   input_simu_r10 = rhs.input_simu_r10;
   reg = rhs.reg;
   maps = rhs.maps;
@@ -1308,7 +1315,6 @@ inout_t::inout_t(const inout_t& rhs) {
     randoms_u32[i] = rhs.randoms_u32[i];
   }
   is_win = rhs.is_win;
-  start_insn = rhs.start_insn;
   reg_readable.resize(NUM_REGS);
   stack_readble.resize(STACK_SIZE);
   reg_type.resize(NUM_REGS);
@@ -1401,6 +1407,7 @@ void inout_t::init() {
 }
 
 void inout_t::operator=(const inout_t &rhs) {
+  input_simu_pkt_s = rhs.input_simu_pkt_s;
   input_simu_r10 = rhs.input_simu_r10;
   reg = rhs.reg;
   maps = rhs.maps;
@@ -1412,7 +1419,6 @@ void inout_t::operator=(const inout_t &rhs) {
     randoms_u32[i] = rhs.randoms_u32[i];
   }
   is_win = rhs.is_win;
-  start_insn = rhs.start_insn;
   for (int i = 0; i < reg_readable.size(); i++) reg_readable[i] = rhs.reg_readable[i];
   for (int i = 0; i < stack_readble.size(); i++) stack_readble[i] = rhs.stack_readble[i];
   for (int i = 0; i < reg_type.size(); i++) reg_type[i] = rhs.reg_type[i];
@@ -1482,7 +1488,6 @@ ostream& operator<<(ostream& out, const inout_t& x) {
   for (int i = 0; i < x.randoms_u32.size(); i++) {
     out << hex << x.randoms_u32[i] << dec << " ";
   }
-  out << "  start_insn:" << x.start_insn << " ";
   for (auto it : x.regs) {
     out << "r" << it.first << ":" << hex << it.second << dec
         << ",type:" << x.reg_type[it.first] << "," << x.reg_readable[it.first] << " ";
@@ -1557,8 +1562,38 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   }
 }
 
+// update output according to program state for window_base program equivalence check method
+void update_output_by_ps_win(inout_t& output, const prog_state& ps) {
+  // update V_post_r in output
+  const live_variables& post_r = smt_output::post_prog_r;
+  // 1. update registers
+  for (auto reg : post_r.regs) {
+    output.regs[reg] = ps._regs[reg];
+  }
+  // 2. update stack
+  auto it = post_r.mem.find(PTR_TO_STACK);
+  if (it != post_r.mem.end()) {
+    const unordered_set<int>& offs = it->second;
+    for (auto off : offs) {
+      output.stack[off] = ps._mem.get_stack_val_by_offset(off);
+    }
+  }
+  // 3. update pkt
+  it = post_r.mem.find(PTR_TO_CTX);
+  if (it != post_r.mem.end()) {
+    const unordered_set<int>& offs = it->second;
+    for (auto off : offs) {
+      output.pkt[off] = ps._mem._pkt[off];
+    }
+  }
+}
+
 void update_output_by_ps(inout_t& output, const prog_state& ps) {
   output.clear();
+  if (smt_var::is_win) {
+    update_output_by_ps_win(output, ps);
+    return;
+  }
   // cp register
   output.reg = ps._regs[0];
   // cp map
@@ -1691,9 +1726,38 @@ int get_cmp_lists_one_map(vector<int64_t>& val_list1, vector<int64_t>& val_list2
   return diff_count;
 }
 
+void get_cmp_lists_win(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
+                       inout_t& output1, inout_t& output2) {
+  val_list1.clear();
+  val_list2.clear();
+  // update registers
+  for (auto it1 = output1.regs.begin(); it1 != output1.regs.end(); it1++) {
+    int reg = it1->first;
+    auto it2 = output2.regs.find(reg);
+    assert(it2 != output2.regs.end()); // all register in V_post_r are in output
+    val_list1.push_back(it1->second);
+    val_list2.push_back(it2->second);
+  }
+  // update stack
+  for (auto it1 = output1.stack.begin(); it1 != output1.stack.end(); it1++) {
+    int off = it1->first;
+    auto it2 = output2.stack.find(off);
+    assert(it2 != output2.stack.end()); // all stack offs in V_post_r are in output
+    val_list1.push_back(it1->second);
+    val_list2.push_back(it2->second);
+  }
+  // update pkt
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list1.push_back(output1.pkt[i]);
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list2.push_back(output2.pkt[i]);
+}
+
 // val_list: [reg, #different keys, map0[k0], map0[k1], ...., map1[k0'], ...., pkt]
 void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
                    inout_t& output1, inout_t& output2) {
+  if (smt_var::is_win) {
+    get_cmp_lists_win(val_list1, val_list2, output1, output2);
+    return;
+  }
   int diff_count1 = 0;
   int diff_count2 = 0;
   for (int i = 0; i < mem_t::maps_number(); i++) {

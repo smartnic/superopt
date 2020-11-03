@@ -123,6 +123,7 @@ class mem_t {
   static unsigned int get_mem_off_by_idx_in_map(int map_id, unsigned int idx_in_map);
   void update_kv_in_map(int map_id, string k, const uint8_t* addr_v); // get v_sz from layout
   void update_kv_in_map(int map_id, string k, const vector<uint8_t>& v);
+  uint8_t get_stack_val_by_offset(int off) const;
   uint8_t* get_stack_start_addr() const;
   // designed for r10
   uint8_t* get_stack_bottom_addr() const;
@@ -476,6 +477,7 @@ class inout_t: public inout_t_base {
  public:
   // uint64_t input_simu_r10, input_simu_pkt_ptrs[2];
   uint64_t input_simu_r10;
+  uint64_t input_simu_pkt_s;
   uint32_t input_simu_pkt_ptrs[2];
   int64_t reg;
   // kv map: k hex_string, v: vector<uint8_t>
@@ -487,7 +489,8 @@ class inout_t: public inout_t_base {
   // pseudo random values for BPF_FUNC_get_prandom_u32, prog_state get these values form get from input
   vector<uint32_t> randoms_u32;
   bool is_win = false;
-  int start_insn = 0;
+  static int start_insn;
+  static int end_insn;
   // safety check state variables starts
   vector<bool> reg_readable;
   vector<bool> stack_readble;

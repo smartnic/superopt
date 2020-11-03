@@ -1510,6 +1510,26 @@ void test14() {
   from_network_2[3] = inst();
   chk_counterex_by_vld_to_interpreter_win(from_network, prog_len_fn, from_network_2, prog_len_fn,
                                           win_start, win_end, "from-network 2");
+
+
+  mem_t::_layout.clear();
+  const int prog_len = 91;
+  inst::max_prog_len = prog_len;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(128);
+  mem_t::add_map(map_attr(128, 64, 91));
+  mem_t::add_map(map_attr(96, 96, 91));
+  mem_t::add_map(map_attr(64, 128, 91));
+  mem_t::_layout._n_randoms_u32 = 1;
+  smt_var::init_static_variables();
+  win_start = 6;
+  win_end = 7;
+  inst rcv_sock4_1[prog_len];
+  for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
+  rcv_sock4_1[6] = inst(LSH64XC, 1, 32);
+  rcv_sock4_1[7] = inst(RSH64XC, 1, 7);
+  chk_counterex_by_vld_to_interpreter_win(rcv_sock4, prog_len, rcv_sock4_1, prog_len, win_start, win_end, "rcv_sock4 1");
+
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 }
 

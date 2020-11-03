@@ -93,6 +93,7 @@ string gen_file_name_suffix_from_input(const input_paras &in_para) {
 }
 
 void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
+  cout << "run_mh_sampler..." << endl;
   mh_sampler mh;
   mh._restart.set_st_when_to_restart(in_para.st_when_to_restart,
                                      in_para.st_when_to_restart_niter);
@@ -113,7 +114,7 @@ void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
                 in_para.enable_prog_uneq_cache,
                 in_para.is_win);
   try {
-    mh.mcmc_iter(in_para.niter, orig, prog_dic, in_para.is_win);
+    mh.mcmc_iter(in_para.niter, &orig, prog_dic, in_para.is_win);
   } catch (string err_msg) {
     cout << err_msg << endl;
   }

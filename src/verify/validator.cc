@@ -45,6 +45,7 @@ void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv
     cout << "ERROR: no counterex_type matches" << endl;
   }
   if (! _is_win) {
+    _last_counterex.input.is_win = false;
     expr input_orig = string_to_expr("input");
     expr input_orig_val = m.eval(input_orig);
     if (input_orig_val.is_numeral()) {

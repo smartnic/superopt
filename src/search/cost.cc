@@ -18,10 +18,12 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
                 double w_e, double w_p,
                 int strategy_ex, int strategy_eq, int strategy_avg, int strategy_perf,
                 bool enable_prog_eq_cache, bool enable_prog_uneq_cache, bool is_win) {
+  _vld._is_win = is_win;  // enable win eq chk
+  smt_var::is_win = is_win;
   if (! is_win) {
     set_orig(orig, len);
+    set_examples(input, orig);
   }
-  set_examples(input, orig);
   _w_e = w_e;
   _w_p = w_p;
   _strategy_ex = strategy_ex;
@@ -31,16 +33,16 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
   _meas_new_counterex_gened = false;
   _vld._enable_prog_eq_cache = enable_prog_eq_cache;
   _vld._enable_prog_uneq_cache = enable_prog_uneq_cache;
-  _vld._is_win = is_win;  // enable win eq chk
-  smt_var::is_win = is_win;
 }
 
 void cost::set_examples(const vector<inout_t> &input, prog* orig) {
+  cout << "set_examples" << endl;
   _examples.clear();
   prog_state ps;
   ps.init();
   try {
     for (size_t i = 0; i < input.size(); i++) {
+      cout << i << ": " << input[i] << endl;
       ps.clear();
       inout_t output;
       output.init();
@@ -143,6 +145,21 @@ double cost::get_final_error_cost(double exs_cost, int is_equal,
   }
 }
 
+bool is_win_in_one_block(inst* inst_lst, int length, int win_start, int win_end) {
+  graph g;
+  g.gen_graph(inst_lst, length);
+  // cout << win_start << " " << win_end << endl;
+  bool is_in_one_block = false;
+  for (int i = 0; i <= g.nodes.size(); i++) {
+    if ((g.nodes[i]._start <= win_start) && (win_end <= g.nodes[i]._end)) {
+      // cout << g.nodes[i]._start << " " << g.nodes[i]._end << endl;
+      is_in_one_block = true;
+      break;
+    }
+  }
+  return is_in_one_block;
+}
+
 /*
  * Steps for error cost computation:
  * 1. Compute c_ex, the error cost from EACH example
@@ -164,6 +181,18 @@ double cost::get_final_error_cost(double exs_cost, int is_equal,
  */
 double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_error_cost != -1) return synth->_error_cost;
+  try {
+    bool is_n_one_block = is_win_in_one_block(synth->inst_list, len2, inout_t::start_insn, inout_t::end_insn);
+    // cout << "is_n_one_block: " << is_n_one_block << endl;
+    if (! is_n_one_block) {
+      synth->set_error_cost(ERROR_COST_MAX);
+      return ERROR_COST_MAX;
+    }
+  } catch (const string err_msg) {
+    synth->set_error_cost(ERROR_COST_MAX);
+    return ERROR_COST_MAX;
+  }
+
   double total_cost = 0;
   inout_t output1, output2;
   output1.init();
@@ -198,6 +227,19 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
     auto t1 = NOW;
     try {
       is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+      // if (smt_var::is_win) {
+      //   // check win prog eq check result
+      //   validator vld1;
+      //   vld1._is_win = false;
+      //   smt_var::is_win = false;
+      //   vld1.set_orig(orig->inst_list, len1);
+      //   int is_equal_expected = vld1.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+      //   cout << "win prog check: " << is_equal << " " << is_equal_expected << endl;
+      //   if (is_equal_expected != is_equal) {
+      //     cout << "win prog check fail: " << is_equal << " " << is_equal_expected << endl;
+      //   }
+      //   smt_var::is_win = true;
+      // }
     } catch (const string err_msg) {
       // illegal program
       synth->set_error_cost(ERROR_COST_MAX);
@@ -231,6 +273,7 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
       (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
+    cout << "counterexample: " << endl;
     cout << _vld._last_counterex.input << endl;
     cout << _vld._last_counterex.output << endl;
   }
@@ -245,7 +288,7 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   return total_cost;
 }
 
-double cost::perf_cost(prog* synth, int len) {
+double cost::perf_cost(prog * synth, int len) {
   if (synth->_perf_cost != -1) return synth->_perf_cost;
   double total_cost;
   if (_strategy_perf == PERF_COST_STRATEGY_LEN) {
@@ -261,7 +304,7 @@ double cost::perf_cost(prog* synth, int len) {
   return total_cost;
 }
 
-double cost::total_prog_cost(prog* orig, int len1, prog* synth, int len2) {
+double cost::total_prog_cost(prog * orig, int len1, prog * synth, int len2) {
   bool flag = (synth->_error_cost == -1);
   double err_cost = error_cost(orig, len1, synth, len2);
   double per_cost = perf_cost(synth, len2);
