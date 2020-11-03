@@ -4,6 +4,9 @@
 #include <utility>
 #include "canonicalize.h"
 
+default_random_engine gen_ebpf_cano;
+uniform_real_distribution<double> unidist_ebpf_cano(0.0, 1.0);
+
 void canonicalize_prog_without_branch(unordered_set<int>& live_regs,
                                       inst* program, int start, int end,
                                       const unordered_set<int>& initial_live_regs) {
@@ -623,4 +626,131 @@ void set_up_smt_inout_win(smt_input& sin, smt_output& sout,
 
   sin.prog_read = win_prog_r; // set up smt_input
   set_up_smt_output_win(sout, ss_win, pss_orig.static_state, program, win_start, win_end);
+}
+
+// todo: move random number generation into utils.h/cc
+// Return a uniformly random integer from start to end inclusive
+int random_int(int start, int end) {
+  end++;
+  int val;
+  do {
+    val = start + (int)(unidist_ebpf_cano(gen_ebpf_cano) * (double)(end - start));
+  } while (val == end && end > start);
+  return val;
+}
+
+uint64_t random_uint64(uint64_t start, uint64_t end) {
+  end++;
+  uint64_t val;
+  do {
+    val = start + (uint64_t)(unidist_ebpf_cano(gen_ebpf_cano) * (double)(end - start));
+  } while (val == end && end > start);
+  return val;
+}
+
+// generate random value of stack bottom
+uint64_t gen_random_stack_bottom() {
+  uint64_t max_uint64 = 0xffffffffffffffff;
+  uint64_t stack_bottom_min = STACK_SIZE + 1; // address cannot be 0
+  uint64_t mem_size_without_stack = get_mem_size_by_layout() - STACK_SIZE;
+  uint64_t stack_bottom_max = max_uint64 - mem_size_without_stack - mem_t::_layout._pkt_sz;
+  return random_uint64(stack_bottom_min, stack_bottom_max);
+}
+
+uint64_t gen_random_pkt_start(uint64_t stack_bottom) {
+  uint64_t max_uint64 = 0xffffffffffffffff;
+  uint64_t mem_size_without_stack = get_mem_size_by_layout() - STACK_SIZE;
+  uint64_t pkt_min = stack_bottom + mem_size_without_stack;
+  uint64_t pkt_max = max_uint64;
+  return random_uint64(pkt_min, max_uint64);
+}
+
+void gen_random_input_for_common(vector<inout_t>& inputs, bool is_win) {
+  // Generate common part for window and full program input:
+  // 1. pkt, set pkt with random values; 2. is_win flag 3. input_simu_r10
+  for (int i = 0; i < inputs.size(); i++) {
+    inputs[i].set_pkt_random_val();
+    inputs[i].set_skb_random_val();
+    inputs[i].set_randoms_u32();
+    inputs[i].is_win = is_win;
+    inputs[i].input_simu_r10 = gen_random_stack_bottom();
+  }
+}
+
+void gen_random_input(vector<inout_t>& inputs, int n, int64_t reg_min, int64_t reg_max) {
+  inputs.clear();
+  inputs.resize(n);
+  gen_random_input_for_common(inputs, false);
+  // Generate input register r1
+  if (mem_t::_layout._pkt_sz == 0) { // case 1: r1 is not used as pkt address
+    unordered_set<int64_t> reg_set; // use set to avoid that registers have the same values
+    for (int i = 0; i < inputs.size();) {
+      int64_t reg = reg_min + (reg_max - reg_min) * unidist_ebpf_cano(gen_ebpf_cano);
+      if (reg_set.find(reg) == reg_set.end()) {
+        reg_set.insert(reg);
+        inputs[i].reg = reg;
+        i++;
+      }
+    }
+  } else { // case 2: r1 is used as pkt address
+    for (int i = 0; i < inputs.size(); i++) {
+      inputs[i].reg = gen_random_pkt_start(inputs[i].input_simu_r10);
+    }
+  }
+}
+
+void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state& iss) {
+  cout << "gen_random_input_for_win" << endl;
+  inputs.clear();
+  inputs.resize(n);
+  gen_random_input_for_common(inputs, true);
+
+  cout << "gen_random_input_for_common end" << endl;
+  // Generate random variables that have been written in precondition
+  for (int i = 0; i < inputs.size(); i++) {
+    uint64_t stack_bottom = inputs[i].input_simu_r10;
+    uint64_t pkt_start = gen_random_pkt_start(stack_bottom);
+    uint64_t stack_top = stack_bottom - STACK_SIZE;
+    cout << "registers" << endl;
+    // 1. Generate registers
+    uint64_t max_u64 = 0xffffffffffffffff;
+    uint64_t min_u64 = 0;
+    for (int reg = 0; reg < iss.reg_state.size(); reg++) {
+      if (iss.reg_state[reg].size() == 0) continue;
+      cout << "r" << reg << ":";
+      inputs[i].reg_readable[reg] = true;
+
+      int max = iss.reg_state[reg].size() - 1;
+      int min = 0;
+      int sample = random_int(min, max);
+      cout << "sample:" << sample << ",";
+      inputs[i].reg_type[reg] = iss.reg_state[reg][sample].type;
+
+      int64_t reg_v;
+      if (is_ptr(inputs[i].reg_type[reg])) {
+        cout << "type:" << inputs[i].reg_type[reg] << ",";
+        if (inputs[i].reg_type[reg] == PTR_TO_STACK) {
+          reg_v = stack_top + iss.reg_state[reg][sample].off;
+        } else if (inputs[i].reg_type[reg] == PTR_TO_CTX) {
+          reg_v = pkt_start + iss.reg_state[reg][sample].off;
+        }
+      } else {
+        reg_v = random_uint64(min_u64, max_u64);
+      }
+      inputs[i].regs[reg] = reg_v;
+    }
+
+    // 2. Generte stack, use live_variable info
+    // todo: do we need to compute and use precondition memory write
+    auto it = iss.live_var.mem.find(PTR_TO_STACK);
+    if (it != iss.live_var.mem.end()) {
+      for (auto off : it->second) {
+        inputs[i].stack_readble[off] = true;
+        inputs[i].stack[off] = random_int(0, 0xff);
+        cout << off << ":" << (int)inputs[i].stack[off] << " ";
+      }
+    }
+    cout << endl;
+  }
+
 }

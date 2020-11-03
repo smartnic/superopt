@@ -288,6 +288,18 @@ prog* get_best_pgm_from_pgm_dic(unordered_map<int, vector<prog*> >& pgm_dic) {
   return best;
 }
 
+
+void clear_prog_freq_dic(unordered_map<int, vector<prog*> > &pgm_dic) {
+  // get the minimum performance cost with zero error cost
+  for (auto& element : pgm_dic) {
+    vector<prog*>& pl = element.second; // list of progs with the same hash
+    for (auto p : pl) {
+      delete p;
+    }
+  }
+  pgm_dic.clear();
+}
+
 void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_e, double w_p) {
   cout << "restart at iteration " << iter_num << endl;
   cout << "  restart w_e, w_p: " << w_e << ", " << w_p << endl;
@@ -323,7 +335,16 @@ void mh_sampler::mcmc_iter(int niter, prog &orig,
       curr->print();
       if (is_win) { // reset validator original program
         _cost.set_orig(curr, inst::max_prog_len, win.first, win.second);
+        // clear the test cases and generate new test cases
+        prog_static_state pss;
+        static_analysis(pss, curr->inst_list, inst::max_prog_len);
+        int num_examples = 30;
+        vector<inout_t> examples;
+        gen_random_input_for_win(examples, num_examples, pss.static_state[win.first]);
+        _cost.set_examples(examples, curr);
       }
+      clear_prog_freq_dic(prog_freq);
+      insert_into_prog_freq_dic(*curr, prog_freq);
     }
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {

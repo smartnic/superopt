@@ -540,4 +540,4 @@ uint64_t get_simu_addr_by_real(uint64_t real_addr, mem_t& mem, simu_real sr);
 uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int reg_type);
 void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
                    inout_t& output1, inout_t& output2);
-void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max, bool is_win = false);
+int get_mem_size_by_layout();

@@ -51,6 +51,7 @@ class cost {
             bool enable_prog_eq_cache = true,
             bool enable_prog_uneq_cache = false,
             bool is_win = false);
+  void set_examples(const vector<inout_t> &input, prog* orig);
   void set_orig(prog* orig, int len, int win_start = 0, int win_end = inst::max_prog_len);
   double error_cost(prog* orig, int len1, prog* synth, int len2);
   double perf_cost(prog* synth, int len);

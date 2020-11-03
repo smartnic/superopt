@@ -1307,6 +1307,16 @@ inout_t::inout_t(const inout_t& rhs) {
   for (int i = 0; i < randoms_u32.size(); i++) {
     randoms_u32[i] = rhs.randoms_u32[i];
   }
+  is_win = rhs.is_win;
+  start_insn = rhs.start_insn;
+  reg_readable.resize(NUM_REGS);
+  stack_readble.resize(STACK_SIZE);
+  reg_type.resize(NUM_REGS);
+  for (int i = 0; i < reg_readable.size(); i++) reg_readable[i] = rhs.reg_readable[i];
+  for (int i = 0; i < stack_readble.size(); i++) stack_readble[i] = rhs.stack_readble[i];
+  for (int i = 0; i < reg_type.size(); i++) reg_type[i] = rhs.reg_type[i];
+  regs = rhs.regs;
+  stack = rhs.stack;
 }
 
 inout_t::~inout_t() {
@@ -1401,6 +1411,13 @@ void inout_t::operator=(const inout_t &rhs) {
   for (int i = 0; i < randoms_u32.size(); i++) {
     randoms_u32[i] = rhs.randoms_u32[i];
   }
+  is_win = rhs.is_win;
+  start_insn = rhs.start_insn;
+  for (int i = 0; i < reg_readable.size(); i++) reg_readable[i] = rhs.reg_readable[i];
+  for (int i = 0; i < stack_readble.size(); i++) stack_readble[i] = rhs.stack_readble[i];
+  for (int i = 0; i < reg_type.size(); i++) reg_type[i] = rhs.reg_type[i];
+  regs = rhs.regs;
+  stack = rhs.stack;
 }
 
 bool inout_t::operator==(const inout_t &rhs) const {
@@ -1444,6 +1461,7 @@ bool inout_t::operator==(const inout_t &rhs) const {
 }
 
 ostream& operator<<(ostream& out, const inout_t& x) {
+  out << "is_win:" << x.is_win << " ";
   out << hex << "simu_r10:" << x.input_simu_r10 << dec << " ";
   out << hex << "reg:" << x.reg << " " << dec;
   for (int i = 0; i < x.maps.size(); i++) {
@@ -1464,12 +1482,25 @@ ostream& operator<<(ostream& out, const inout_t& x) {
   for (int i = 0; i < x.randoms_u32.size(); i++) {
     out << hex << x.randoms_u32[i] << dec << " ";
   }
+  out << "  start_insn:" << x.start_insn << " ";
+  for (auto it : x.regs) {
+    out << "r" << it.first << ":" << hex << it.second << dec
+        << ",type:" << x.reg_type[it.first] << "," << x.reg_readable[it.first] << " ";
+  }
+  out << "  stack: ";
+  for (auto it : x.stack) {
+    out << it.first << ":" << hex << (int)it.second << dec
+        << "," << x.stack_readble[it.first] << " ";
+  }
+
   return out;
 }
 
 
 void update_ps_by_input(prog_state& ps, const inout_t& input) {
-  if ((! input.is_win) || (input.start_insn == 0)) ps.init_safety_chk();
+  // cout << "input" << endl;
+  // cout << input << endl;
+  if (! input.is_win) ps.init_safety_chk();
   else ps.init_safety_chk(input.reg_readable, input.stack_readble, input.reg_type);
   ps._regs[10] = input.input_simu_r10;
   // cp input register
@@ -1698,41 +1729,5 @@ void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
     val_list2.push_back(output2.tail_call_para);
   } else {
     assert(false); // program has bug
-  }
-}
-
-void gen_random_input(vector<inout_t>& inputs, int64_t reg_min, int64_t reg_max, bool is_win) {
-  uint64_t max_uint64 = 0xffffffffffffffff;
-  // 1. Generate stack bottom address r10
-  uint64_t r10_min = 1; // address cannot be 0
-  uint64_t mem_size_without_stack = get_mem_size_by_layout() - STACK_SIZE;
-  uint64_t r10_max = max_uint64 - mem_size_without_stack - mem_t::_layout._pkt_sz;
-  for (int i = 0; i < inputs.size(); i++) {
-    inputs[i].is_win = is_win;
-    inputs[i].input_simu_r10 = r10_min + (uint64_t)((r10_max - r10_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var));
-  }
-  // 2. Generate pkt, set pkt with random values
-  for (int i = 0; i < inputs.size(); i++) {
-    inputs[i].set_pkt_random_val();
-    inputs[i].set_skb_random_val();
-    inputs[i].set_randoms_u32();
-  }
-  // 3. Generate input register r1
-  if (mem_t::_layout._pkt_sz == 0) { // case 1: r1 is not used as pkt address
-    unordered_set<int64_t> reg_set; // use set to avoid that registers have the same values
-    for (int i = 0; i < inputs.size();) {
-      int64_t reg = reg_min + (reg_max - reg_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
-      if (reg_set.find(reg) == reg_set.end()) {
-        reg_set.insert(reg);
-        inputs[i].reg = reg;
-        i++;
-      }
-    }
-  } else { // case 2: r1 is used as pkt address
-    for (int i = 0; i < inputs.size(); i++) {
-      uint64_t pkt_min = inputs[i].input_simu_r10 + mem_size_without_stack;
-      uint64_t pkt_max = max_uint64;
-      inputs[i].reg = pkt_min + (uint64_t)((pkt_max - pkt_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var));
-    }
   }
 }

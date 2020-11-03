@@ -18,29 +18,10 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
                 double w_e, double w_p,
                 int strategy_ex, int strategy_eq, int strategy_avg, int strategy_perf,
                 bool enable_prog_eq_cache, bool enable_prog_uneq_cache, bool is_win) {
-  try {
-    if (! is_win) {
-      set_orig(orig, len);
-    }
-    _examples.clear();
-    prog_state ps;
-    ps.init();
-    for (size_t i = 0; i < input.size(); i++) {
-      ps.clear();
-      inout_t output;
-      output.init();
-      // Assume original program can pass the interpreter
-      orig->interpret(output, ps, input[i]);
-      inout example;
-      example.set_in_out(input[i], output);
-      _examples.insert(example);
-    }
-  } catch (const string err_msg) {
-    cout << "ERROR: cost::init(): ";
-    cerr << err_msg << endl;
-    throw (err_msg);
-    return;
+  if (! is_win) {
+    set_orig(orig, len);
   }
+  set_examples(input, orig);
   _w_e = w_e;
   _w_p = w_p;
   _strategy_ex = strategy_ex;
@@ -52,6 +33,28 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
   _vld._enable_prog_uneq_cache = enable_prog_uneq_cache;
   _vld._is_win = is_win;  // enable win eq chk
   smt_var::is_win = is_win;
+}
+
+void cost::set_examples(const vector<inout_t> &input, prog* orig) {
+  _examples.clear();
+  prog_state ps;
+  ps.init();
+  try {
+    for (size_t i = 0; i < input.size(); i++) {
+      ps.clear();
+      inout_t output;
+      output.init();
+      // Assume original program can pass the interpreter
+      orig->interpret(output, ps, input[i]);
+      inout example;
+      example.set_in_out(input[i], output);
+      _examples.insert(example);
+    }
+  } catch (const string err_msg) {
+    cout << "ERROR: set_examples: ";
+    cerr << err_msg << endl;
+    throw (err_msg);
+  }
 }
 
 void cost::set_orig(prog* orig, int len, int win_start, int win_end) {
@@ -228,6 +231,7 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
       (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
+    cout << _vld._last_counterex.input << endl;
     cout << _vld._last_counterex.output << endl;
   }
   // in case there is overflow which makes a positive value become a negative value or

@@ -451,10 +451,9 @@ int main(int argc, char* argv[]) {
   } else {
     init_benchmarks(&bm, bm_optis_orig, in_para.bm);
   }
-  int num_examples = 30;
-  inputs.resize(num_examples);
-  for (int i = 0; i < inputs.size(); i++) {
-    inputs[i].init();
+  if (! in_para.is_win) {
+    int num_examples = 30;
+    gen_random_input(inputs, num_examples, -50, 50);
   }
   SERVER_PORT = in_para.server_port;
   gen_random_input(inputs, -50, 50, in_para.is_win);

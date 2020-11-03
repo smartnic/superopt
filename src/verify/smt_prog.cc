@@ -216,6 +216,19 @@ expr smt_prog::gen_smt(unsigned int prog_id, inst* inst_lst, int length, bool is
   }
 
   if (is_win) {
+    // check whether window program is in one basic block
+    bool is_in_one_block = false;
+    graph g_full(inst_lst, length);
+    for (int i = 0; i <= g_full.nodes.size(); i++) {
+      if ((g_full.nodes[i]._start <= win_start) && (win_end <= g_full.nodes[i]._end)) {
+        is_in_one_block = true;
+        break;
+      }
+    }
+    if (! is_in_one_block) {
+      string err_msg = "window not in one basic block";
+      throw (err_msg);
+    }
     expr f_wl = Z3_true;
     sv.init(prog_id, 0, NUM_REGS, 1, is_win);
     smt_block(f_wl, p_sc, inst_lst, win_start, win_end, sv, 0);
