@@ -85,7 +85,7 @@ int read_problem_from_z3client(int PORT) {
       exit(EXIT_FAILURE);
     }
 
-    // cout << "Received a new connection. Reading formula...\n";
+    cout << "Received a new connection. Reading formula...\n";
     /* Read the full formula into buffer. */
     total_read = 0;
     do {
@@ -95,7 +95,7 @@ int read_problem_from_z3client(int PORT) {
              total_read < FORMULA_SIZE_BYTES);
     if (total_read >= FORMULA_SIZE_BYTES)
       cout << "Exhausted formula read buffer\n";
-    // cout << "Formula from client:\n" << buffer << endl;
+    //cout << "Formula from client:\n" << buffer << endl;
 
     /* Run the solver. */
     result = run_solver(buffer);
@@ -103,6 +103,7 @@ int read_problem_from_z3client(int PORT) {
     strncpy(res_buffer, result.c_str(), nchars);
     res_buffer[nchars] = '\0';
 
+    cout << "Sending formula to Client...\n";
     /* Send result. */
     send(acc_socket, res_buffer, nchars + 1, 0);
     close(acc_socket);
@@ -117,7 +118,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   int PORT = std::stoi(argv[1]);
-  cout << "Port is  " << argv[1] << endl;
+  cout << "z3server: Port is  " << argv[1] << endl;
   /* Receive a z3 smtlib2 formula in a shared memory segment, and
      return sat or unsat in another one. */
   read_problem_from_z3client(PORT);
