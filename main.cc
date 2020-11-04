@@ -54,6 +54,7 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
   out << endl;
   out << "p_inst_operand:" << ip.p_inst_operand << endl
       << "p_inst:" << ip.p_inst << endl;
+  out << "server_port:" << ip.server_port << endl;
   return out;
 }
 
@@ -353,7 +354,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 18: set_win_list(in_para.win_e_list, optarg); break;
       case 19: in_para.p_inst_operand = stod(optarg); break;
       case 20: in_para.p_inst = stod(optarg); break;
-      case 21: SERVER_PORT = stoi(optarg); cout << "Set Port to: " << SERVER_PORT << "\n"; break;
+      case 21: in_para.server_port = stoi(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -409,7 +410,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.win_e_list = {inst::max_prog_len - 1};
   in_para.p_inst_operand = 1.0 / 3.0;
   in_para.p_inst = 1.0 / 3.0;
-  SERVER_PORT = 8001;
+  in_para.server_port = 8002;
 }
 
 int main(int argc, char* argv[]) {
@@ -435,6 +436,7 @@ int main(int argc, char* argv[]) {
     inputs[i].init();
   }
   gen_random_input(inputs, -50, 50);
+  SERVER_PORT = in_para.server_port;
   run_mh_sampler(in_para, bm_optis_orig);
   vector<prog*> best_pgms;
   get_best_pgms_from_candidates(best_pgms);
