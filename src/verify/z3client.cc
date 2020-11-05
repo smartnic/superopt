@@ -11,7 +11,6 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <signal.h>
-#include "port.h"
 
 using namespace std;
 
@@ -22,7 +21,7 @@ using namespace std;
 #define SOLVER_RESPAWN_THRESOLD 1000
 
 
-
+int SERVER_PORT = 8002; /* default port */ 
 z3::context c;
 pid_t child_pid = -1;
 pid_t pid;
