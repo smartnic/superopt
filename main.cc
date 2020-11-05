@@ -18,10 +18,9 @@
 #include "measure/benchmark_header.h"
 #include "measure/meas_mh_bhv.h"
 #include "main.h"
-#include "src/verify/port.h"
+#include "src/verify/z3client.h"
 using namespace std;
 
-int SERVER_PORT = 8002; /* default port */
 string FILE_CONFIG = "config";
 
 inst* bm;
