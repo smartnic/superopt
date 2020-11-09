@@ -169,15 +169,13 @@ void inst_static_state::insert_reg_state(inst_static_state& iss) {
       // search <type, off> in self.reg_state. if it is, no need to insert
       bool flag = false;
       for (int j = 0; j < reg_state[reg].size(); j++) {
-        if ((reg_state[reg][j].type == type) &&
-            (reg_state[reg][j].off == off) &&
-            (reg_state[reg][j].val == val)) {
+        if (reg_state[reg][j] == iss.reg_state[reg][i]) {
           flag = true;
           break;
         }
       }
       if (! flag) {
-        reg_state[reg].push_back(register_state{type, off, val});
+        reg_state[reg].push_back(iss.reg_state[reg][i]);
       }
     }
 
@@ -294,14 +292,28 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   int dst_reg = insn._dst_reg;
   int src_reg = insn._src_reg;
   int imm = insn._imm;
-  // keep strack of pointers
-  if (opcode == MOV64XY) {
+  // keep strack of pointers and constant
+  if (opcode == MOV64XC) {
+    register_state rs;
+    rs.type = SCALAR_VALUE;
+    rs.val = insn._imm;
+    rs.val_flag = true;
+    iss.set_reg_state(dst_reg, rs);
+  } else if (opcode == MOV32XC) {
+    register_state rs;
+    rs.type = SCALAR_VALUE;
+    rs.val = L32(insn._imm);
+    rs.val_flag = true;
+    iss.set_reg_state(dst_reg, rs);
+  } else if (opcode == MOV64XY) {
     iss.copy_reg_state(dst_reg, src_reg);
   } else if (opcode == ADD64XC) {
     // update pointer offset
     for (int i = 0; i < iss.reg_state[dst_reg].size(); i++) {
       if (is_ptr(iss.reg_state[dst_reg][i].type)) {
         iss.reg_state[dst_reg][i].off += imm;
+      } else if (iss.reg_state[dst_reg][i].val_flag) {
+        iss.reg_state[dst_reg][i].val += imm;
       }
     }
   } else if (opcode == CALL) {
@@ -313,6 +325,7 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
     register_state rs;
     rs.type = CONST_PTR_TO_MAP;
     rs.val = insn._imm;
+    rs.val_flag = true;
     iss.set_reg_state(dst_reg, rs);
   } else {
     iss.set_reg_state(dst_reg, SCALAR_VALUE);
@@ -394,6 +407,7 @@ void get_mem_read_regs_and_read_sz_from_helper(vector<pair<int, int> >& regs_sz,
   if ((func_id == BPF_FUNC_map_lookup_elem) || (func_id == BPF_FUNC_map_delete_elem)) {
     for (int i = 0; i < reg_state[1].size(); i++) { // r1 points to map id
       assert(reg_state[1][i].type == CONST_PTR_TO_MAP);
+      assert(reg_state[1][i].val_flag);
       int map_id = reg_state[1][i].val;
       int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
       regs_sz.push_back({2, k_sz}); // r2 points to the key stored on stack
@@ -402,6 +416,7 @@ void get_mem_read_regs_and_read_sz_from_helper(vector<pair<int, int> >& regs_sz,
   } else if (func_id == BPF_FUNC_map_update_elem) {
     for (int i = 0; i < reg_state[1].size(); i++) { // r1 points to map id
       assert(reg_state[1][i].type == CONST_PTR_TO_MAP);
+      assert(reg_state[1][i].val_flag);
       int map_id = reg_state[1][i].val;
       int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
       int v_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;

@@ -326,6 +326,49 @@ void test3() {
   expected_insn0_p23.mem[PTR_TO_CTX].erase(1);
   print_test_res(live_var_is_equal(expected_insn0_p23, pss.static_state[0].live_var), "3");
 
+
+  cout << "3.3 test register constant inference" << endl;
+  inst p3_1[] = {inst(MOV64XC, 1, 5),
+                 inst(MOV64XY, 2, 1),
+                 inst(EXIT),
+                };
+  static_analysis(pss, p3_1, sizeof(p3_1) / sizeof(inst));
+  vector<register_state> expected_insn2_r1_p31;
+  expected_insn2_r1_p31.push_back(register_state{SCALAR_VALUE, 0, 5, true});
+  print_test_res(reg_state_is_equal(expected_insn2_r1_p31, pss.static_state[2].reg_state[1]), "1.1");
+  vector<register_state> expected_insn2_r2_p31;
+  expected_insn2_r2_p31.push_back(register_state{SCALAR_VALUE, 0, 5, true});
+  print_test_res(reg_state_is_equal(expected_insn2_r2_p31, pss.static_state[2].reg_state[2]), "1.2");
+
+  inst p3_2[] = {inst(MOV64XC, 1, 5),
+                 inst(JA, 1),
+                 inst(ADD64XC, 1, 4),
+                 inst(MOV64XY, 2, 1),
+                 inst(EXIT),
+                };
+  static_analysis(pss, p3_2, sizeof(p3_2) / sizeof(inst));
+  vector<register_state> expected_insn4_r1_p32;
+  expected_insn4_r1_p32.push_back(register_state{SCALAR_VALUE, 0, 5, true});
+  print_test_res(reg_state_is_equal(expected_insn4_r1_p32, pss.static_state[4].reg_state[1]), "2.1");
+  vector<register_state> expected_insn4_r2_p32;
+  expected_insn4_r2_p32.push_back(register_state{SCALAR_VALUE, 0, 5, true});
+  print_test_res(reg_state_is_equal(expected_insn4_r2_p32, pss.static_state[4].reg_state[2]), "2.2");
+
+  inst p3_3[] = {inst(MOV64XC, 1, 5),
+                 inst(JEQXY, 0, 1, 1),
+                 inst(ADD64XC, 1, 4),
+                 inst(MOV64XY, 2, 1),
+                 inst(EXIT),
+                };
+  static_analysis(pss, p3_3, sizeof(p3_3) / sizeof(inst));
+  vector<register_state> expected_insn4_r1_p33;
+  expected_insn4_r1_p33.push_back(register_state{SCALAR_VALUE, 0, 5, true});
+  expected_insn4_r1_p33.push_back(register_state{SCALAR_VALUE, 0, 9, true});
+  print_test_res(reg_state_is_equal(expected_insn4_r1_p33, pss.static_state[4].reg_state[1]), "3.1");
+  vector<register_state> expected_insn4_r2_p33;
+  expected_insn4_r2_p33.push_back(register_state{SCALAR_VALUE, 0, 5, true});
+  expected_insn4_r2_p33.push_back(register_state{SCALAR_VALUE, 0, 9, true});
+  print_test_res(reg_state_is_equal(expected_insn4_r2_p33, pss.static_state[4].reg_state[2]), "3.2");
 }
 
 int main(int argc, char *argv[]) {
