@@ -1434,7 +1434,18 @@ void test13() {
   win_start = 27;
   win_end = 30;
   vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4, prog_len) == 1, "rcv-sock4 3");
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 3");
+
+  win_start = 12;
+  win_end = 16;
+  for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
+  rcv_sock4_1[12] = inst(LDMAPID, 0, 0);
+  rcv_sock4_1[13] = inst(MOV64XC, 9, 10);
+  rcv_sock4_1[14] = inst(STXH, 10, -26, 0);
+  rcv_sock4_1[15] = inst(OR64XY, 9, 0);
+  rcv_sock4_1[16] = inst(STXH, 10, -28, 1);
+  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == -1, "rcv-sock4 4");
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 
   // test from-network

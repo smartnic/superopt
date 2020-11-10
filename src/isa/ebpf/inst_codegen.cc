@@ -970,7 +970,7 @@ z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win) {
     same_regs = (out1.ret_val == out2.ret_val);
   } else {
     unordered_set<int>& regs_1 = out1.output_var.regs;
-    unordered_set<int>& regs_2 = out1.output_var.regs;
+    unordered_set<int>& regs_2 = out2.output_var.regs;
     for (int i = 0; i < NUM_REGS; i++) {
       bool is_find1 = (regs_1.find(i) != regs_1.end());
       bool is_find2 = (regs_2.find(i) != regs_2.end());

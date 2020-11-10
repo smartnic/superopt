@@ -142,8 +142,8 @@ void validator::set_orig(inst* orig, int length, int win_start, int win_end) {
     set_up_smt_inout_orig(_pss_orig, orig, length, _win_start, _win_end);
     set_up_smt_inout_win(_smt_input_orig, ps_orig.sv.smt_out, _pss_orig, orig, _win_start, _win_end);
   }
-  smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg(), _smt_input_orig, ps_orig.sv);
   try {
+    smt_pre(_pre_orig, VLD_PROG_ID_ORIG, NUM_REGS, orig->get_input_reg(), _smt_input_orig, ps_orig.sv);
     _pl_orig = ps_orig.gen_smt(VLD_PROG_ID_ORIG, orig, length, _is_win, _win_start, _win_end);
   } catch (const string err_msg) {
     throw (err_msg);
@@ -227,10 +227,10 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     set_up_smt_inout_win(smt_input_synth, ps_synth.sv.smt_out, _pss_orig, synth, _win_start, _win_end);
   }
   expr pre_synth = string_to_expr("true");
-  smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg(), smt_input_synth, ps_synth.sv);
 
   expr pl_synth = string_to_expr("true");
   try {
+    smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg(), smt_input_synth, ps_synth.sv);
     pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length_syn, _is_win, _win_start, _win_end);
   } catch (const string err_msg) {
     // TODO error program process; Now just return false

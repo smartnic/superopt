@@ -735,6 +735,11 @@ ostream& operator<<(ostream& out, const live_variables& x) {
 z3::expr smt_input::input_constraint() {
   z3::expr f = Z3_true;
   for (auto reg : prog_read.regs) {
+    if (reg_state[reg].size() == 0) {
+      string err_msg = "prog_read r" + to_string(reg) + " is not in input";
+      throw err_msg;
+    }
+
     // constraint of register path condition
     vector<z3::expr> path_conds;
     for (int i = 0; i < reg_state[reg].size(); i++) {
@@ -763,6 +768,10 @@ z3::expr smt_input::input_constraint() {
   // add constraints to input register (constant registers, type: SCALAR_VALUE)
   z3::expr f_const_reg = Z3_true;
   for (auto reg : prog_read.regs) {
+    if (reg_state[reg].size() == 0) {
+      string err_msg = "r" + to_string(reg) + "in prog_read is not in input";
+      throw err_msg;
+    }
     for (int i = 0; i < reg_state[reg].size(); i++) {
       int type = reg_state[reg][i].type;
       bool val_flag = reg_state[reg][i].val_flag;
