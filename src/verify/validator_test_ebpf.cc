@@ -500,7 +500,7 @@ void test3() {
 }
 
 void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
-    string test_name, int counterex_type = COUNTEREX_eq_check, bool interpret_check = true,
+    string test_name, int counterex_type = COUNTEREX_eq_check, bool interpret_check = false,
     bool is_win = false, int win_start = 0, int win_end = inst::max_prog_len) {
   prog_state ps;
   ps.init();
@@ -509,6 +509,8 @@ void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
     vld._enable_prog_eq_cache = false;
     vld._is_win = true;
     smt_var::is_win = is_win;
+    inout_t::start_insn = win_start;
+    inout_t::end_insn = win_end;
     vld.set_orig(p1, len1, win_start, win_end);
   } else {
     vld.set_orig(p1, len1);
@@ -518,6 +520,10 @@ void chk_counterex_by_vld_to_interpreter(inst* p1, int len1, inst* p2, int len2,
   else if (counterex_type == COUNTEREX_safety_check) ret_val = ILLEGAL_CEX;
   else cout << "ERROR: no counterex_type matches" << endl;
   bool res_expected = (vld.is_equal_to(p1, len1, p2, len2) == ret_val);
+  if (! res_expected) {
+    print_test_res(res_expected, test_name);
+    return;
+  }
   inout_t input, output0, output1;
   input.init();
   output0.init();
@@ -1387,6 +1393,20 @@ void test13() {
   vld.set_orig(p2, 5, win_start, win_end);
   print_test_res(vld.is_equal_to(p2, 5, p2_1, 5) == 1, "2");
 
+  inst p3[] = {inst(MOV64XC, 1, 0),
+               inst(STXB, 10, -1, 1),
+               inst(STXB, 10, -2, 1),
+               inst(LDXH, 0, 10, -2),
+              };
+  inst p3_1[] = {inst(MOV64XC, 1, 0),
+                 inst(STXH, 10, -2, 1),
+                 inst(),
+                 inst(LDXH, 0, 10, -2),
+                };
+  win_start = 1, win_end = 2;
+  vld.set_orig(p3, 4, win_start, win_end);
+  print_test_res(vld.is_equal_to(p3, 4, p3_1, 4) == 1, "3");
+
   mem_t::_layout.clear();
   const int prog_len = 91;
   inst::max_prog_len = prog_len;
@@ -1449,6 +1469,17 @@ void test13() {
   from_network_1[9] = inst();
   print_test_res(vld.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn) == 1, "from-network 2");
 
+  // test constant track
+  win_start = 3;
+  win_end = 6;
+  vld.set_orig(from_network, prog_len_fn, win_start, win_end);
+  for (int i = 0; i < prog_len_fn; i++) from_network_1[i] = from_network[i];
+  from_network_1[3] = inst();
+  from_network_1[4] = inst();
+  from_network_1[5] = inst(STXDW, 1, 48, 2);
+  from_network_1[6] = inst(STXDW, 1, 56, 2);
+  print_test_res(vld.is_equal_to(from_network, prog_len_fn, from_network_1, prog_len_fn) == 1, "from-network 3");
+
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 }
 
@@ -1461,7 +1492,7 @@ void chk_counterex_by_vld_to_interpreter_win(inst* p1, int len1, inst* p2, int l
 }
 
 void test14() {
-  cout << "test 13: window program counter-example" << endl;
+  cout << "test 14: window program counter-example" << endl;
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_constant);
   inst p1[] = {inst(MOV64XC, 2, 2),

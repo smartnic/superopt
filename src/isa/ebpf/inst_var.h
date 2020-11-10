@@ -298,7 +298,7 @@ class register_state {
   bool val_flag = false; // if `val_flag` is true, `val` is valid
   int64_t val; // register value
   // default values are all 0
-  register_state(int t = 0, int o = 0, int64_t v = 0, bool vf = false) {
+  register_state(int t = 0, int o = 0 , int64_t v = 0, bool vf = false) {
     type = t;
     off = o;
     val = v;

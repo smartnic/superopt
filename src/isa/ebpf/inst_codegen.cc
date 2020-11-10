@@ -1544,7 +1544,6 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt
     for (int i = 0; i < mem_addr_val.size(); i++) {
       uint64_t off = mem_addr_val[i].first;
       uint8_t val = mem_addr_val[i].second;
-      cout << "counterex_urt_2_input_mem: " << off << endl;
       assert(off < STACK_SIZE);
       input.stack[off] = val;
     }

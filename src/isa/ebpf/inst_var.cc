@@ -759,6 +759,22 @@ z3::expr smt_input::input_constraint() {
 
     f = f && f_pc_true && f_pc;
   }
+
+  // add constraints to input register (constant registers, type: SCALAR_VALUE)
+  z3::expr f_const_reg = Z3_true;
+  for (auto reg : prog_read.regs) {
+    for (int i = 0; i < reg_state[reg].size(); i++) {
+      int type = reg_state[reg][i].type;
+      bool val_flag = reg_state[reg][i].val_flag;
+      int64_t val = reg_state[reg][i].val;
+      // only deal with constant register
+      if ((type != SCALAR_VALUE) || (! val_flag)) continue;
+      z3::expr pc = reg_path_cond(reg, i);
+      z3::expr f_reg = (reg_expr(reg) == to_expr(val));
+      f_const_reg = f_const_reg && z3::implies(pc, f_reg);
+    }
+  }
+  f = f && f_const_reg;
   return f;
 }
 
@@ -1463,6 +1479,22 @@ bool inout_t::operator==(const inout_t &rhs) const {
     assert(false); // program has bug
   }
 
+  if (smt_var::is_win) {
+    // compare registers
+    for (auto it1 = regs.begin(); it1 != regs.end(); it1++) {
+      int reg = it1->first;
+      auto it2 = rhs.regs.find(reg);
+      assert(it2 != rhs.regs.end()); // all register in V_post_r are in output
+      if (it1->second != it2->second) return false;
+    }
+    // update stack
+    for (auto it1 = stack.begin(); it1 != stack.end(); it1++) {
+      int off = it1->first;
+      auto it2 = rhs.stack.find(off);
+      assert(it2 != rhs.stack.end()); // all stack offs in V_post_r are in output
+      if (it1->second != it2->second) return false;
+    }
+  }
   return true;
 }
 
