@@ -174,7 +174,7 @@ bool is_win_legal(inst* orig, int len1, inst* synth, int len2,
   g_orig.gen_graph(orig, len1);
   bool is_orig_win_end_block = false;
   for (int i = 0; i <= g_orig.nodes.size(); i++) {
-    if ((win_end == g.nodes[i]._end) && (g.nodes_out[i].size() == 0)) {
+    if ((win_end == g_orig.nodes[i]._end) && (g_orig.nodes_out[i].size() == 0)) {
       is_orig_win_end_block = true;
       break;
     }
