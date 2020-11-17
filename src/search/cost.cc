@@ -145,19 +145,43 @@ double cost::get_final_error_cost(double exs_cost, int is_equal,
   }
 }
 
-bool is_win_in_one_block(inst* inst_lst, int length, int win_start, int win_end) {
+// 1. check window is in one block.
+// 2. If it is an end block and win_end is the last block insn,
+//    original win should be an end block and win_end is also the last block insn
+bool is_win_legal(inst* orig, int len1, inst* synth, int len2,
+                  int win_start, int win_end) {
   graph g;
-  g.gen_graph(inst_lst, length);
+  g.gen_graph(synth, len2);
   // cout << win_start << " " << win_end << endl;
-  bool is_in_one_block = false;
+  int win_block = -1;
   for (int i = 0; i <= g.nodes.size(); i++) {
-    if ((g.nodes[i]._start <= win_start) && (win_end <= g.nodes[i]._end)) {
-      // cout << g.nodes[i]._start << " " << g.nodes[i]._end << endl;
-      is_in_one_block = true;
+    if ((g.nodes[i]._start <= win_start) && (win_start <= g.nodes[i]._end)) {
+      win_block = i;
       break;
     }
   }
-  return is_in_one_block;
+
+  if (win_end > g.nodes[win_block]._end) { // not in the same basic block
+    return false;
+  }
+
+  // check win_end is the end insn of the block or whether synth win is an end block
+  if ((win_end < g.nodes[win_block]._end) || (g.nodes_out[win_block].size() != 0)) {
+    return true;
+  }
+
+  graph g_orig;
+  g_orig.gen_graph(orig, len1);
+  bool is_orig_win_end_block = false;
+  for (int i = 0; i <= g_orig.nodes.size(); i++) {
+    if ((win_end == g.nodes[i]._end) && (g.nodes_out[i].size() == 0)) {
+      is_orig_win_end_block = true;
+      break;
+    }
+  }
+
+  bool synth_win_can_be_end = is_orig_win_end_block;
+  return synth_win_can_be_end;
 }
 
 /*
@@ -184,7 +208,8 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   try {
     static_safety_check_pgm(synth->inst_list, len2);
     if (smt_var::is_win) {
-      bool is_n_one_block = is_win_in_one_block(synth->inst_list, len2, inout_t::start_insn, inout_t::end_insn);
+      bool is_n_one_block = is_win_legal(orig->inst_list, len1, synth->inst_list, len2,
+                                         inout_t::start_insn, inout_t::end_insn);
       // cout << "is_n_one_block: " << is_n_one_block << endl;
       if (! is_n_one_block) {
         synth->set_error_cost(ERROR_COST_MAX);
