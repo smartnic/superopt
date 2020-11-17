@@ -786,6 +786,31 @@ inst bm23[N23] = {inst(180, 0, 2, 0, 0),
                   inst(180, 0, 0, 0, 0),
                   inst(149, 0, 0, 0, 0),
                  };
+
+// katran: xdp_pktcntr
+inst bm24[N24] = {inst(183, 0, 1, 0, 0),
+                  inst(99, 1, 10, -4, 0),
+                  inst(99, 1, 10, -8, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -4),
+                  inst(LDMAPID, 1, 0),
+                  inst(),
+                  inst(133, 0, 0, 0, 1),
+                  inst(21, 0, 0, 11, 0),
+                  inst(97, 0, 1, 0, 0),
+                  inst(21, 0, 1, 9, 0),
+                  inst(191, 10, 2, 0, 0),
+                  inst(7, 0, 2, 0, -8),
+                  inst(LDMAPID, 1, 1),
+                  inst(),
+                  inst(133, 0, 0, 0, 1),
+                  inst(21, 0, 0, 3, 0),
+                  inst(121, 0, 1, 0, 0),
+                  inst(7, 0, 1, 0, 1),
+                  inst(123, 1, 0, 0, 0),
+                  inst(183, 0, 0, 0, 2),
+                  inst(149, 0, 0, 0, 0),
+                 };
 // Struct needs to be defined because the loader writes to
 // the .ins file using bpf_insn which has a different size
 // than insn
@@ -1161,8 +1186,16 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       inst::max_prog_len = N23;
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(68);
-      mem_t::add_map(map_attr(64, 128, N20));
+      mem_t::add_map(map_attr(64, 128, N23));
       *bm = bm23;
+      break;
+    case 24:
+      inst::max_prog_len = N24;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(68);
+      mem_t::add_map(map_attr(32, 32, N24));
+      mem_t::add_map(map_attr(32, 64, N24));
+      *bm = bm24;
       break;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
