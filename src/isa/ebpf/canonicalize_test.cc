@@ -257,17 +257,18 @@ void test3() {
   print_test_res(reg_state_is_equal(expected_insn2_r2_p1, pss.static_state[2].reg_state[2]), "1");
 
   inst p2[] = {inst(MOV64XY, 2, 1),
-               inst(JEQXY, 1, 2, 1),
+               inst(MOV64XC, 3, 5),
+               inst(JEQXY, 3, 3, 1),
                inst(ADD64XC, 2, 2),
                inst(LDXB, 0, 2, 2),
                inst(EXIT),
               };
   static_analysis(pss, p2, sizeof(p2) / sizeof(inst));
   // check r2 state before executing insn 3
-  vector<register_state> expected_insn3_r2_p2;
-  expected_insn3_r2_p2.push_back(register_state{PTR_TO_CTX, 0, 0});
-  expected_insn3_r2_p2.push_back(register_state{PTR_TO_CTX, 2, 0});
-  print_test_res(reg_state_is_equal(expected_insn3_r2_p2, pss.static_state[3].reg_state[2]), "2");
+  vector<register_state> expected_insn4_r2_p2;
+  expected_insn4_r2_p2.push_back(register_state{PTR_TO_CTX, 0, 0});
+  expected_insn4_r2_p2.push_back(register_state{PTR_TO_CTX, 2, 0});
+  print_test_res(reg_state_is_equal(expected_insn4_r2_p2, pss.static_state[4].reg_state[2]), "2");
 
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
@@ -295,7 +296,8 @@ void test3() {
   }
   print_test_res(live_var_is_equal(expected_insn0_p21, pss.static_state[0].live_var), "1.2");
 
-  inst p2_2[] = {inst(JEQXY, 1, 2, 2),
+  inst p2_2[] = {inst(MOV64XC, 3, 5),
+                 inst(JEQXY, 3, 3, 2),
                  inst(MOV64XY, 1, 5),
                  inst(LDXB, 2, 10, -1),
                  inst(MOV64XY, 1, 6),
@@ -304,13 +306,13 @@ void test3() {
                 };
   static_analysis(pss, p2_2, sizeof(p2_2) / sizeof(inst));
   // check live variables after executing insn 0
-  live_variables expected_insn0_p22;
-  expected_insn0_p22.regs = {0, 5, 6, 10};
-  expected_insn0_p22.mem[PTR_TO_STACK] = {STACK_SIZE - 1, STACK_SIZE - 2};
+  live_variables expected_insn1_p22;
+  expected_insn1_p22.regs = {0, 5, 6, 10};
+  expected_insn1_p22.mem[PTR_TO_STACK] = {STACK_SIZE - 1, STACK_SIZE - 2};
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
-    expected_insn0_p22.mem[PTR_TO_CTX].insert(i);
+    expected_insn1_p22.mem[PTR_TO_CTX].insert(i);
   }
-  print_test_res(live_var_is_equal(expected_insn0_p22, pss.static_state[0].live_var), "2");
+  print_test_res(live_var_is_equal(expected_insn1_p22, pss.static_state[1].live_var), "2");
 
   // test output pkt
   inst p2_3[] = {inst(STB, 1, 2, 0xff),
@@ -355,7 +357,7 @@ void test3() {
   print_test_res(reg_state_is_equal(expected_insn4_r2_p32, pss.static_state[4].reg_state[2]), "2.2");
 
   inst p3_3[] = {inst(MOV64XC, 1, 5),
-                 inst(JEQXY, 0, 1, 1),
+                 inst(JEQXC, 1, 7, 1),
                  inst(ADD64XC, 1, 4),
                  inst(MOV64XY, 2, 1),
                  inst(EXIT),
@@ -371,11 +373,55 @@ void test3() {
   print_test_res(reg_state_is_equal(expected_insn4_r2_p33, pss.static_state[4].reg_state[2]), "3.2");
 }
 
+// expected_safe is either true for safe or false for unsafe
+void test_safety_check(inst* program, int len, bool expected_safe, string test_name) {
+  bool is_succ = false;
+  try {
+    static_safety_check_pgm(program, len);
+    if (expected_safe) is_succ = true;
+  } catch (string err_msg) {
+    if (! expected_safe) is_succ = true;
+  }
+  print_test_res(is_succ, test_name);
+}
+
+void test4() {
+  cout << "Test 4: program static safety check" << endl;
+  cout << "4.1 illegal pointer operations" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
+  inst p1_1[] = {inst(JEQXC, 1, 0, 0),
+                 inst(EXIT),
+                };
+  test_safety_check(p1_1, sizeof(p1_1) / sizeof(inst), false, "1");
+
+  inst p1_2[] = {inst(AND64XC, 1),
+                 inst(EXIT),
+                };
+  test_safety_check(p1_2, sizeof(p1_2) / sizeof(inst), false, "2");
+
+  inst p1_3[] = {inst(STB, 10, -1, 0x1),
+                 inst(LDMAPID, 1, 0),
+                 inst(MOV64XY, 2, 10),
+                 inst(ADD64XC, 2, -1),
+                 inst(CALL, BPF_FUNC_map_lookup_elem),
+                 inst(JEQXC, 0, 0, 2),
+                 inst(LDXB, 0, 0, 0),
+                 inst(EXIT),
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  test_safety_check(p1_3, sizeof(p1_3) / sizeof(inst), true, "3");
+
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
     test2();
     test3();
+    test4();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

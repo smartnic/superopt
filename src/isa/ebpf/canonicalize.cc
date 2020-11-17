@@ -366,8 +366,8 @@ void type_const_inference_pgm(prog_static_state& pss, inst* program, int len) {
       type_const_inference_inst(ss[j + 1], program[j]); // update state according to the insn
     }
     // update the basic block post register states
-    bss[i].reg_state = ss[block_e].reg_state;
-    type_const_inference_inst(bss[i], program[block_e]);
+    bss[block].reg_state = ss[block_e].reg_state;
+    type_const_inference_inst(bss[block], program[block_e]);
   }
 }
 
@@ -560,8 +560,8 @@ void live_analysis_pgm(prog_static_state& pss, inst* program, int len) {
       live_analysis_inst(ss[j - 1].live_var, ss[j].reg_state, program[j]); // update state according to the instruction
     }
     // update bss[i]'s live variables
-    bss[i].live_var = ss[block_s].live_var;
-    live_analysis_inst(bss[i].live_var, ss[block_s].reg_state, program[block_s]); // update state according to the instruction
+    bss[block].live_var = ss[block_s].live_var;
+    live_analysis_inst(bss[block].live_var, ss[block_s].reg_state, program[block_s]); // update state according to the instruction
   }
 }
 
@@ -573,6 +573,36 @@ void static_analysis(prog_static_state& pss, inst* program, int len) {
   topo_sort_for_graph(pss.dag, pss.g);
   type_const_inference_pgm(pss, program, len);
   live_analysis_pgm(pss, program, len);
+}
+
+void safety_chk_insn(inst& insn, const vector<vector<register_state>>& reg_state) {
+  vector<int> not_ptr_regs;
+  insn.regs_cannot_be_ptrs(not_ptr_regs);
+  for (int i = 0; i < not_ptr_regs.size(); i++) {
+    int reg = not_ptr_regs[i];
+    for (int j = 0; j < reg_state[reg].size(); j++) {
+      int type = reg_state[reg][j].type;
+      unordered_set<int> ptrs = {PTR_TO_CTX, PTR_TO_STACK, PTR_TO_MAP_VALUE_OR_NULL};
+      if (ptrs.find(type) == ptrs.end()) continue;
+      // `JEQXC r 0` is legal if r.type == PTR_TO_MAP_VALUE_OR_NULL
+      if ((type == PTR_TO_MAP_VALUE_OR_NULL) && (insn._opcode == JEQXC) && (insn._imm == 0)) {
+        continue;
+      }
+      string err_msg = "illegal pointer operation of r" + to_string(reg);
+      throw (err_msg);
+    }
+  }
+}
+
+void static_safety_check_pgm(inst* program, int len) {
+  prog_static_state pss;
+  pss.static_state.resize(len + 1);
+  pss.g.gen_graph(program, len);
+  topo_sort_for_graph(pss.dag, pss.g);
+  type_const_inference_pgm(pss, program, len);
+  for (int i = 0; i < len; i++) {
+    safety_chk_insn(program[i], pss.static_state[i].reg_state);
+  }
 }
 
 // update the original program's pre-condition and post-condition

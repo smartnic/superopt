@@ -340,6 +340,7 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
            << prog_start->_error_cost << " " << prog_start-> _perf_cost << "):" << endl;
       prog_start->print();
       if (is_win) { // reset validator original program
+        static_safety_check_pgm(prog_start->inst_list, inst::max_prog_len);
         _cost.set_orig(prog_start, inst::max_prog_len, win.first, win.second);
         // clear the test cases and generate new test cases
         prog_static_state pss;

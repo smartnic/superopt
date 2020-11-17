@@ -42,3 +42,4 @@ void set_up_smt_inout_orig(prog_static_state& pss, inst* program, int len, int w
 void set_up_smt_inout_win(smt_input& sin, smt_output& sout, prog_static_state& pss_orig, inst* program, int win_start, int win_end);
 void gen_random_input(vector<inout_t>& inputs, int n, int64_t reg_min, int64_t reg_max);
 void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state& iss, int win_start, int win_end);
+void static_safety_check_pgm(inst* program, int len);
