@@ -24,6 +24,7 @@
 #include "src/verify/z3client.h"
 using namespace std;
 
+int SERVER_PORT = 8022; /* default port */
 string FILE_CONFIG = "config";
 
 inst* bm;
