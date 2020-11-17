@@ -11,7 +11,9 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <vector>
 #include "port.h"
+#include "../../src/utils.h"
 
 using namespace std;
 
@@ -23,6 +25,7 @@ using namespace std;
 
 
 
+// int SERVER_PORT = 8020;
 z3::context c;
 pid_t child_pid_1 = -1;
 pid_t child_pid_2 = -1;
@@ -33,6 +36,9 @@ char form_buffer[FORMULA_SIZE_BYTES + 1] = {0};
 char res_buffer[RESULT_SIZE_BYTES + 1] = {0};
 
 int spawn_server(int port) {
+  // cout << "Hello before sleep\n";
+  // sleep(10);
+  // cout << "after sleep\n";
   cout << "Spawining Server with port: " << port << "\n";
   pid = fork();
   if (pid == -1) {
@@ -93,7 +99,6 @@ void read_from_solver(int sock){
   if (total_read >= RESULT_SIZE_BYTES)
     cout << "Exhausted result read buffer\n";
   close(sock);
-  nsolve++;
 }
 
 string write_problem_to_z3server(string formula) {
@@ -108,6 +113,9 @@ string write_problem_to_z3server(string formula) {
       kill(child_pid_1, SIGKILL);
 
     child_pid_1 = spawn_server(SERVER_PORT);
+    // cout << "Hello1";
+    sleep(2);
+    // cout << "Hello2";
     child_pid_2 = spawn_server(SERVER_PORT+1000);
     if (child_pid_1 <= 0) { /* unsuccessful spawn */
       cout << "z3client: spawning server 1 failed\n";
@@ -130,6 +138,7 @@ string write_problem_to_z3server(string formula) {
   }
 
   send_formula(sock1, formula);
+  // sleep(15);
   send_formula(sock2, formula);
 
   /* Block until one socket returns data */
@@ -150,9 +159,9 @@ string write_problem_to_z3server(string formula) {
   int server1_read = FD_ISSET (sock1, &fds);
   int server2_read = FD_ISSET (sock2, &fds);
   // cout << "Reached Here\n";
-  // cout << server1_read << "\n";
-  // cout << server2_read << "\n";
-
+  cout << server1_read << "\n";
+  cout << server2_read << "\n";
+  int status; 
   if (server1_read > 0 && server2_read > 0) { /* both sockets are readable */
     cout << "Both1 Servers returned\n";
     read_from_solver(sock1);
@@ -162,10 +171,17 @@ string write_problem_to_z3server(string formula) {
   else if (server1_read > 0 && server2_read == 0) { /* socket 1 is readable */
     read_from_solver(sock1);
     FD_ZERO (&fds);
-    FD_SET (sock1, &fds);
     FD_SET (sock2, &fds);
-    readSockets = select (FD_SETSIZE, &fds, NULL, NULL, 0);
+    struct timeval tv1 = {2, 0};
+    auto t1 = NOW;
+    readSockets = select (FD_SETSIZE, &fds, NULL, NULL, &tv1);
+    auto t2 = NOW;
+    cout << "second select: " << DUR(t1, t2) << endl; 
+    if (readSockets == 0){
+      cout << "Timed out\n";
+    } 
     server2_read = FD_ISSET (sock2, &fds);
+    cout << server2_read << "\n";
     if (server2_read > 0){
       cout << "Both2 Servers returned\n";
       read_from_solver(sock2);
@@ -174,6 +190,10 @@ string write_problem_to_z3server(string formula) {
       cout << "Only server 1 returned. ";
       cout << "Killing server 2\n";
       kill(child_pid_2, SIGKILL);
+      t1 = NOW;
+      waitpid(child_pid_2, &status, 0);
+      t2 = NOW;
+      cout << "Wait time: " << DUR(t1, t2) << endl;
       child_pid_2 = spawn_server(SERVER_PORT+1000);
     }
     nsolve++;
@@ -182,9 +202,16 @@ string write_problem_to_z3server(string formula) {
     read_from_solver(sock2);
     FD_ZERO (&fds);
     FD_SET (sock1, &fds);
-    FD_SET (sock2, &fds);
-    readSockets = select (FD_SETSIZE, &fds, NULL, NULL, &tv);
+    struct timeval tv1 = {2, 0};
+    auto t1 = NOW;
+    readSockets = select (FD_SETSIZE, &fds, NULL, NULL, &tv1);
+    auto t2 = NOW;
+    cout << "second select: " << DUR(t1, t2) << endl; 
+    if (readSockets == 0){
+      cout << "Timed out\n";
+    }   
     server1_read = FD_ISSET (sock1, &fds);
+    cout << server1_read << "\n";
     if (server1_read > 0){
       cout << "Both2 Servers returned\n";
       read_from_solver(sock1);
@@ -193,6 +220,10 @@ string write_problem_to_z3server(string formula) {
       cout << "Only server 2 returned. ";
       cout << "Killing server 1\n";
       kill(child_pid_1, SIGKILL);
+      t1 = NOW;
+      waitpid(child_pid_1, &status, 0);
+      t2 = NOW;
+      cout << "Wait time: " << DUR(t1, t2) << endl; 
       child_pid_1 = spawn_server(SERVER_PORT);
     }
     nsolve++;

@@ -21,7 +21,7 @@
 #include "src/verify/port.h"
 using namespace std;
 
-int SERVER_PORT = 8002; /* default port */
+int SERVER_PORT = 8022; /* default port */
 string FILE_CONFIG = "config";
 
 inst* bm;

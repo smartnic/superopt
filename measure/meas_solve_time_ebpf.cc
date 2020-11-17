@@ -71,10 +71,49 @@ void meas_solve_time_of_rcv_sock4() {
               };
   meas_solve_time_delta_n_times(rcv_sock4, p2, 12, 4, "p2", vld);
 }
+void meas_solve_time_of_network() {
+  cout << "Original program is network" << endl;
+  // Init program and static variables
+  inst::max_prog_len = N20;
+  inst network[inst::max_prog_len];
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    network[i] = bm20[i];
+  }
+  //mem_t::_layout.clear();
+  inst::max_prog_len = N20;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(68);
+  mem_t::add_map(map_attr(64, 128, N20));
+
+  validator vld(network, inst::max_prog_len);
+  inst p1[] = {inst(MOV32XC, 2, 0),
+               inst(STXW, 1, 64, 2),
+               inst(MOV64XY, 4, 1),
+               inst(STXW, 4, 60, 2),
+               inst(STXW, 1, 56, 2),
+               inst(STXW, 4, 52, 2),
+               inst(STXW, 1, 48, 2),
+               inst(LDXW, 6, 1, 0),
+               inst(LE, 1, 32),
+               inst(MOV64XY, 9, 10),
+              };
+  meas_solve_time_delta_n_times(network, p1, 0, 10, "p3", vld);
+}
+// 0: MOV32XC 2 0
+// 1: STXW 1 64 2
+// 2: MOV64XY 4 1
+// 3: STXW 4 60 2
+// 4: STXW 1 56 2
+// 5: STXW 4 52 2
+// 6: STXW 1 48 2
+// 7: LDXW 6 1 0
+// 8: LE 1 32
+// 9: MOV64XY 9 10
 
 int main(int argc, char* argv[]) {
   if (argc > 1) {
     loop_times = atoi(argv[1]);
   }
-  meas_solve_time_of_rcv_sock4();
+  //meas_solve_time_of_rcv_sock4();
+  meas_solve_time_of_network();
 }
