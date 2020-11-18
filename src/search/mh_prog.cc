@@ -315,8 +315,12 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
   // curr->canonicalize();
   auto start = NOW;
   prog_start = new prog(*orig);
+  // set the error cost and perf cost of the prog start
+  prog_start->_error_cost = 0;
+  _cost.perf_cost(prog_start, inst::max_prog_len);
+  cout << "original program's perf cost: " << prog_start->_perf_cost << endl;
+
   curr = new prog(*prog_start);
-  curr->reset_vals();
   for (int i = 0; i < niter; i++) {
     cout << "iter: " << i << endl;
     if (_next_win.whether_to_reset(i)) {
@@ -353,7 +357,6 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
         _cost.set_examples(examples, prog_start);
       }
       clear_prog_freq_dic(prog_freq);
-      insert_into_prog_freq_dic(*prog_start, prog_freq);
     }
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {
