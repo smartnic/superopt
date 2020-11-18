@@ -754,8 +754,6 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
   gen_random_input_for_common(inputs, true);
 
   cout << "gen_random_input_for_common end" << endl;
-  inout_t::start_insn = win_start;
-  inout_t::end_insn = win_end;
   // Generate random variables that have been written in precondition
   for (int i = 0; i < inputs.size(); i++) {
     uint64_t stack_bottom = inputs[i].input_simu_r10;
