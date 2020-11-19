@@ -416,12 +416,65 @@ void test4() {
 
 }
 
+void test5() {
+  // test PGM_INPUT_pkt_ptrs related
+  cout << "Test 5: program static analysis of PGM_INPUT_pkt_ptrs" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+  mem_t::set_pkt_sz(32);
+  cout << "5.1 test register type inference" << endl;
+  inst p1[] = {inst(LDXW, 2, 1, 0),
+               inst(EXIT),
+              };
+  prog_static_state pss;
+  static_analysis(pss, p1, sizeof(p1) / sizeof(inst));
+  // check r2 state before executing insn 1
+  vector<register_state> expected_insn1_r2_p1;
+  expected_insn1_r2_p1.push_back(register_state{PTR_TO_PKT, 0});
+  print_test_res(reg_state_is_equal(expected_insn1_r2_p1, pss.static_state[1].reg_state[2]), "1");
+
+  inst p2[] = {inst(LDXW, 2, 1, 0),
+               inst(MOV64XY, 3, 2),
+               inst(ADD64XC, 3, 1), // r3: PTR_TO_PKT with offset 1
+               inst(EXIT),
+              };
+  static_analysis(pss, p2, sizeof(p2) / sizeof(inst));
+  vector<register_state> expected_insn3_r3_p2;
+  expected_insn3_r3_p2.push_back(register_state{PTR_TO_PKT, 1});
+  print_test_res(reg_state_is_equal(expected_insn3_r3_p2, pss.static_state[3].reg_state[3]), "2");
+
+  inst p3[] = {inst(LDXW, 2, 1, 2),
+               inst(LDXW, 3, 2, 0),
+               inst(EXIT),
+              };
+  static_analysis(pss, p3, sizeof(p3) / sizeof(inst));
+  vector<register_state> expected_insn1_r2_p3;
+  expected_insn1_r2_p3.push_back(register_state{SCALAR_VALUE});
+  print_test_res(reg_state_is_equal(expected_insn1_r2_p3, pss.static_state[1].reg_state[2]), "3.1");
+  vector<register_state> expected_insn2_r3_p3;
+  expected_insn2_r3_p3.push_back(register_state{SCALAR_VALUE});
+  print_test_res(reg_state_is_equal(expected_insn2_r3_p3, pss.static_state[2].reg_state[3]), "3.2");
+
+  cout << "5.2 safety check" << endl;
+  test_safety_check(p1, sizeof(p1) / sizeof(inst), true, "1");
+  test_safety_check(p2, sizeof(p2) / sizeof(inst), true, "2");
+
+  inst p2_1[] = {inst(LDXW, 2, 1, 0),
+                 inst(LDXW, 3, 2, 0),
+                 inst(EXIT),
+                };
+  test_safety_check(p2_1, sizeof(p2_1) / sizeof(inst), true, "3");
+
+  mem_t::_layout.clear();
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
     test2();
     test3();
     test4();
+    test5();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
