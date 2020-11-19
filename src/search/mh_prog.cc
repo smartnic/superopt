@@ -335,10 +335,10 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
           delete prog_start;
           prog_start = new prog(*best);
         }
-        if (curr != prog_start) {
-          delete curr;
-          curr = new prog(*prog_start);
-        }
+      }
+      if (curr != prog_start) {
+        delete curr;
+        curr = new prog(*prog_start);
       }
       cout << "start from program (error and performance costs: "
            << prog_start->_error_cost << " " << prog_start-> _perf_cost << "):" << endl;
