@@ -558,8 +558,18 @@ void live_analysis_pgm(prog_static_state& pss, inst* program, int len) {
     // get the block initial live variables by merging outgoing live variables or from output
     if (g.nodes_out[block].size() == 0) { // from output (r0 + pkt)
       ss[block_e].insert_live_reg(0); // r0
-      for (int j = 0; j < mem_t::_layout._pkt_sz; j++) { // pkt
-        ss[block_e].insert_live_off(PTR_TO_CTX, j);
+      int pgm_input_type = mem_t::get_pgm_input_type();
+      if (pgm_input_type == PGM_INPUT_pkt) {
+        for (int j = 0; j < mem_t::_layout._pkt_sz; j++) { // pkt
+          ss[block_e].insert_live_off(PTR_TO_CTX, j);
+        }
+      } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+        for (int j = 0; j < 8; j++) { // input pointers, 8 bytes for two 32-bit pointers
+          ss[block_e].insert_live_off(PTR_TO_CTX, j);
+        }
+        for (int j = 0; j < mem_t::_layout._pkt_sz; j++) { // pkt
+          ss[block_e].insert_live_off(PTR_TO_PKT, j);
+        }
       }
     } else {
       for (int j = 0; j < g.nodes_out[block].size(); j++) { // merging outgoing live variables

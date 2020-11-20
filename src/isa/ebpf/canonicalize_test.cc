@@ -241,6 +241,8 @@ bool live_var_is_equal(live_variables& x, live_variables& y) {
 void test3() {
   cout << "Test 3: program static analysis" << endl;
   cout << "3.1 test register type inference" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::set_pkt_sz(16);
   mem_t::add_map(map_attr(16, 32, 16)); // key_sz = 2 bytes, val_sz = 4 bytes
 
@@ -465,6 +467,22 @@ void test5() {
                 };
   test_safety_check(p2_1, sizeof(p2_1) / sizeof(inst), true, "3");
 
+  cout << "5.3 liveness analysis" << endl;
+  inst p3_1[] = {inst(LDXW, 2, 1, 0),
+                 inst(MOV64XY, 0, 2),
+                 inst(EXIT),
+                };
+  static_analysis(pss, p3_1, sizeof(p3_1) / sizeof(inst));
+  live_variables liv_expected_insn0_p31;
+  // check live variables after executing insn 0
+  liv_expected_insn0_p31.regs = {2};
+  for (int i = 0; i < 8; i++) { // 8: two 32-bit pointers
+    liv_expected_insn0_p31.mem[PTR_TO_CTX].insert(i);
+  }
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    liv_expected_insn0_p31.mem[PTR_TO_PKT].insert(i);
+  }
+  print_test_res(live_var_is_equal(liv_expected_insn0_p31, pss.static_state[0].live_var), "1");
   mem_t::_layout.clear();
 }
 
