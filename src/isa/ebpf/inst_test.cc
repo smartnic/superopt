@@ -1537,7 +1537,7 @@ void test10() {
 }
 
 void test11() {
-  cout << "Test 9: full interpretation check of window program" << endl;
+  cout << "Test 11: full interpretation check of window program" << endl;
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::set_pkt_sz(512); // pkt sz: 512 bytes
@@ -1547,13 +1547,15 @@ void test11() {
   input.init();
   output.init();
   expected.init();
+  input.is_win = true;
   input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
   inst p1[3] = {inst(MOV64XC, 0, 0),
                 inst(ADD64XC, 0, 1),
                 inst(EXIT),
                };
   // prepare the input
-  input.start_insn = 1;
+  inout_t::start_insn = 1;
+  inout_t::end_insn = 2;
   input.reg_readable.resize(NUM_REGS);
   input.stack_readble.resize(STACK_SIZE);
   input.reg_type.resize(NUM_REGS);
@@ -1571,7 +1573,8 @@ void test11() {
   input.clear();
   output.clear();
   expected.clear();
-  input.start_insn = 2;
+  inout_t::start_insn = 2;
+  inout_t::end_insn = 3;
   input.reg_readable.resize(NUM_REGS);
   input.stack_readble.resize(STACK_SIZE);
   input.reg_type.resize(NUM_REGS);
@@ -1583,6 +1586,41 @@ void test11() {
   expected.reg = 0xff;
   interpret(output, p2, 4, ps, input);
   print_test_res(output == expected, "interpret program 2");
+}
+
+void test12() {
+  cout << "Test 12: full interpretation check of PGM_INPUT_pkt_ptrs window program" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+  mem_t::set_pkt_sz(4); // 4 bytes
+  prog_state ps;
+  ps.init();
+  inout_t input, output, expected;
+  input.init();
+  output.init();
+  expected.init();
+  input.is_win = true;
+  inout_t::start_insn = 1;
+  inout_t::end_insn = 2;
+  // input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
+  // check when pkt_sz is 2 bytes, which is smaller than the layout pkt sz 4
+  input.input_simu_pkt_ptrs[0] = (uint64_t)ps._mem.get_pkt_start_addr();
+  input.input_simu_pkt_ptrs[1] = input.input_simu_pkt_ptrs[0] + 1;
+  input.reg_readable[1] = true;
+  input.reg_type[1] = PTR_TO_CTX;
+  input.regs[1] = input.input_simu_pkt_ptrs[0];
+  input.reg = (uint64_t)ps._mem.get_pkt_ptrs_start_addr();
+  inst p1[3] = {inst(LDXW, 1, 1, 0), // r1 = pkt_start_addr
+                inst(LDXB, 3, 1, 0), // r3 = pkt[0]
+                inst(MOV64XY, 0, 3),
+               };
+  input.pkt[0] = 0x11;
+  input.pkt[1] = 0x22;
+  interpret(output, p1, 3, ps, input);
+  expected.pkt[0] = 0x11;
+  expected.pkt[1] = 0x22;
+  expected.reg = 0x11;
+  print_test_res(output == expected, "interpret program 1");
 }
 
 int main(int argc, char *argv[]) {
@@ -1598,6 +1636,7 @@ int main(int argc, char *argv[]) {
     test9();
     test10();
     test11();
+    test12();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
