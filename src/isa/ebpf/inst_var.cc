@@ -1817,6 +1817,14 @@ void get_cmp_lists_win(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
   // update pkt
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list1.push_back(output1.pkt[i]);
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list2.push_back(output2.pkt[i]);
+  // update pkt_ptrs if PGM_INPUT_pkt_ptrs
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    for (int i = 0; i < 2; i++) { // 2 pointers
+      val_list1.push_back(output1.input_simu_pkt_ptrs[i]);
+      val_list2.push_back(output2.input_simu_pkt_ptrs[i]);
+    }
+  }
 }
 
 // val_list: [reg, #different keys, map0[k0], map0[k1], ...., map1[k0'], ...., pkt]
