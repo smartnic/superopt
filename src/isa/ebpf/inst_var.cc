@@ -1477,15 +1477,17 @@ bool inout_t::operator==(const inout_t &rhs) const {
     if (pkt[i] != rhs.pkt[i]) return false;
   }
 
-  if (pgm_exit_type != rhs.pgm_exit_type) return false;
-  // now two outputs have the same program exit type
-  int output_type = pgm_exit_type;
-  if (output_type == PGM_EXIT_TYPE_default) {
-    if (reg != rhs.reg) return false;
-  } else if (output_type == MAP_TYPE_prog_array) {
-    if (tail_call_para != rhs.tail_call_para) return false;
-  } else {
-    assert(false); // program has bug
+  if (! smt_var::is_win) {
+    if (pgm_exit_type != rhs.pgm_exit_type) return false;
+    // now two outputs have the same program exit type
+    int output_type = pgm_exit_type;
+    if (output_type == PGM_EXIT_TYPE_default) {
+      if (reg != rhs.reg) return false;
+    } else if (output_type == MAP_TYPE_prog_array) {
+      if (tail_call_para != rhs.tail_call_para) return false;
+    } else {
+      assert(false); // program has bug
+    }
   }
 
   if (smt_var::is_win) {
@@ -1502,6 +1504,12 @@ bool inout_t::operator==(const inout_t &rhs) const {
       auto it2 = rhs.stack.find(off);
       assert(it2 != rhs.stack.end()); // all stack offs in V_post_r are in output
       if (it1->second != it2->second) return false;
+    }
+    // compare ptr
+    int pgm_input_type = mem_t::get_pgm_input_type();
+    if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+      if (input_simu_pkt_ptrs[0] != rhs.input_simu_pkt_ptrs[0]) return false;
+      if (input_simu_pkt_ptrs[1] != rhs.input_simu_pkt_ptrs[1]) return false;
     }
   }
   return true;
@@ -1620,11 +1628,30 @@ void update_output_by_ps_win(inout_t& output, const prog_state& ps) {
     }
   }
   // 3. update pkt
-  it = post_r.mem.find(PTR_TO_CTX);
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  int pkt_mem_type = PTR_TO_CTX;
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    pkt_mem_type = PTR_TO_PKT;
+  }
+  it = post_r.mem.find(pkt_mem_type);
   if (it != post_r.mem.end()) {
     const unordered_set<int>& offs = it->second;
     for (auto off : offs) {
       output.pkt[off] = ps._mem._pkt[off];
+    }
+  }
+
+  // 4. update pkt_ptrs if input type is PGM_INPUT_pkt_ptrs
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    it = post_r.mem.find(PTR_TO_CTX);
+    if (it != post_r.mem.end()) {
+      const unordered_set<int>& offs = it->second;
+      uint64_t addr1 = (uint64_t)&output.input_simu_pkt_ptrs;
+      uint64_t addr2 = (uint64_t)&ps._mem._pkt_ptrs;
+      for (auto off : offs) {
+        uint64_t offset = off;
+        *(uint8_t*)(addr1 + offset) = *(uint8_t*)(addr2 + offset);
+      }
     }
   }
 }

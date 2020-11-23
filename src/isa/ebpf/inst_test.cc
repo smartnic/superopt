@@ -1593,6 +1593,7 @@ void test12() {
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
   mem_t::set_pkt_sz(4); // 4 bytes
+  smt_var::is_win = true;
   prog_state ps;
   ps.init();
   inout_t input, output, expected;
@@ -1601,26 +1602,43 @@ void test12() {
   expected.init();
   input.is_win = true;
   inout_t::start_insn = 1;
-  inout_t::end_insn = 2;
+  inout_t::end_insn = 4;
+  inst p1[5] = {inst(LDXW, 2, 1, 0), // r2 = pkt_start_addr
+                inst(LDXB, 3, 2, 0), // r3 = pkt[0]
+                inst(MOV64XY, 0, 3), // r0 = r3
+                inst(MOV64XC, 3, 0x12),  // r2 = 0x12
+                inst(STXB, 1, 0, 3), // *(r1 + 0) = 0x12
+               };
   // input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
   // check when pkt_sz is 2 bytes, which is smaller than the layout pkt sz 4
   input.input_simu_pkt_ptrs[0] = (uint64_t)ps._mem.get_pkt_start_addr();
   input.input_simu_pkt_ptrs[1] = input.input_simu_pkt_ptrs[0] + 1;
+  input.reg = (uint64_t)ps._mem.get_pkt_ptrs_start_addr();
   input.reg_readable[1] = true;
   input.reg_type[1] = PTR_TO_CTX;
-  input.regs[1] = input.input_simu_pkt_ptrs[0];
-  input.reg = (uint64_t)ps._mem.get_pkt_ptrs_start_addr();
-  inst p1[3] = {inst(LDXW, 1, 1, 0), // r1 = pkt_start_addr
-                inst(LDXB, 3, 1, 0), // r3 = pkt[0]
-                inst(MOV64XY, 0, 3),
-               };
+  input.regs[1] = (uint64_t)ps._mem.get_pkt_ptrs_start_addr();
+  input.reg_readable[2] = true;
+  input.reg_type[2] = PTR_TO_PKT;
+  input.regs[2] = input.input_simu_pkt_ptrs[0];
   input.pkt[0] = 0x11;
   input.pkt[1] = 0x22;
-  interpret(output, p1, 3, ps, input);
+  smt_output::post_prog_r.clear();
+  smt_output::post_prog_r.regs = {0};
+  smt_output::post_prog_r.mem[PTR_TO_CTX] = {0, 1, 2, 3, 4, 5, 6, 7};
+  smt_output::post_prog_r.mem[PTR_TO_PKT] = {0, 1, 2, 3};
+  interpret(output, p1, 5, ps, input);
   expected.pkt[0] = 0x11;
   expected.pkt[1] = 0x22;
-  expected.reg = 0x11;
+  expected.regs[0] = 0x11;
+  expected.input_simu_pkt_ptrs[0] = input.input_simu_pkt_ptrs[0];
+  expected.input_simu_pkt_ptrs[1] = input.input_simu_pkt_ptrs[1];
+  *(uint8_t*)&expected.input_simu_pkt_ptrs = 0x12;
   print_test_res(output == expected, "interpret program 1");
+
+  // clear up environment
+  smt_output::post_prog_r.clear();
+  mem_t::_layout.clear();
+  smt_var::is_win = false;
 }
 
 int main(int argc, char *argv[]) {

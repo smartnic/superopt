@@ -783,8 +783,11 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
     uint64_t pkt_start = gen_random_pkt_start(stack_bottom);
     uint64_t stack_top = stack_bottom - STACK_SIZE;
     inputs[i].input_simu_pkt_s = pkt_start;
+
+    // 1. Generate input_simu_pkt_ptrs for PGM_INPUT_pkt_ptrs
+    int pgm_input_type = mem_t::get_pgm_input_type();
     cout << "registers" << endl;
-    // 1. Generate registers
+    // 2. Generate registers
     uint64_t max_u64 = 0xffffffffffffffff;
     uint64_t min_u64 = 0;
     for (int reg = 0; reg < iss.reg_state.size(); reg++) {
@@ -813,7 +816,7 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
       inputs[i].regs[reg] = reg_v;
     }
 
-    // 2. Generte stack, use live_variable info
+    // 3. Generte stack, use live_variable info
     // todo: do we need to compute and use precondition memory write
     auto it = iss.live_var.mem.find(PTR_TO_STACK);
     if (it != iss.live_var.mem.end()) {
