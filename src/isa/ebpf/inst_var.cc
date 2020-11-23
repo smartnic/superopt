@@ -1587,8 +1587,18 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
     }
   } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     ps._mem._simu_pkt_ptrs_s = (uint64_t)input.reg;
+    if (input.is_win) {
+      for (auto it : input.regs) {
+        int reg = it.first;
+        int64_t val = it.second;
+        if (input.reg_type[reg] != PTR_TO_CTX) continue;
+        ps._mem._simu_pkt_ptrs_s = val;
+        break;
+      }
+    }
     ps._mem._pkt_ptrs[0] = input.input_simu_pkt_ptrs[0];
     ps._mem._pkt_ptrs[1] = input.input_simu_pkt_ptrs[1];
+    ps._mem._simu_pkt_s = ps._mem._pkt_ptrs[0];
   }
   // set the exit type as the default type
   ps._pgm_exit_type = PGM_EXIT_TYPE_default;

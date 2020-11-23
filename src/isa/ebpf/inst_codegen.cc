@@ -954,6 +954,10 @@ z3::expr smt_pgm_mem_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win) {
   }
   f = f && smt_pkt_eq_chk(sv1, sv2, is_win);
   f = f && smt_array_mem_eq_chk(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_skb, is_win);
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    f = f && smt_array_mem_eq_chk(sv1, sv2, 8, MEM_TABLE_pkt_ptrs, is_win);
+  }
   if (is_win) {
     f = f && smt_array_mem_eq_chk(sv1, sv2, STACK_SIZE, MEM_TABLE_stack, is_win);
   }
@@ -998,19 +1002,47 @@ z3::expr smt_pgm_eq_chk(smt_var& sv1, smt_var& sv2, bool is_win) {
 }
 
 int reg_ptr_type_2_mem_table_type(int reg_type) {
-  switch (reg_type) {
-    case PTR_TO_STACK: return MEM_TABLE_stack;
-    case PTR_TO_CTX: return MEM_TABLE_pkt;
-    default: return -1;
+  if (reg_type == PTR_TO_STACK) return MEM_TABLE_stack;
+
+  int pgm_input_type = mem_t::get_pgm_input_type();
+
+  if (reg_type == PTR_TO_CTX) {
+    if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+      return MEM_TABLE_pkt_ptrs;
+    } else {
+      return MEM_TABLE_pkt;
+    }
   }
+
+  if (reg_type == PTR_TO_PKT) {
+    if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+      return MEM_TABLE_pkt;
+    }
+  }
+
+  return -1; // -1 means not found
 }
 
 int mem_table_type_2_reg_ptr_type(int mem_table_type) {
-  switch (mem_table_type) {
-    case MEM_TABLE_stack: return PTR_TO_STACK;
-    case MEM_TABLE_pkt: return PTR_TO_CTX;
-    default: return -1;
+  if (mem_table_type == MEM_TABLE_stack) return PTR_TO_STACK;
+
+  int pgm_input_type = mem_t::get_pgm_input_type();
+
+  if (mem_table_type == MEM_TABLE_pkt) {
+    if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+      return PTR_TO_PKT;
+    } else {
+      return PTR_TO_CTX;
+    }
   }
+
+  if (mem_table_type == MEM_TABLE_pkt_ptrs) {
+    if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+      return PTR_TO_CTX;
+    }
+  }
+
+  return -1; // -1 means not found
 }
 
 bool is_ptr(int type) {
@@ -1027,6 +1059,7 @@ bool is_ptr(int type) {
 // sv is the sv of program's root basic block
 z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
   // cout << "smt_pgm_set_pre" << endl;
+  int pgm_input_type = mem_t::get_pgm_input_type();
   z3::expr f = Z3_true;
   // set up pointer registers only for registers read by program
   for (auto reg : input.prog_read.regs) {
@@ -1045,6 +1078,12 @@ z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
       if (reg_state.type == PTR_TO_STACK) {
         f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_stack_start_addr() + off_expr));
       } else if (reg_state.type == PTR_TO_CTX) {
+        if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+          f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_pkt_start_ptr_addr() + off_expr));
+        } else {
+          f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_pkt_start_addr() + off_expr));
+        }
+      } else if (reg_state.type == PTR_TO_PKT) {
         f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_pkt_start_addr() + off_expr));
       }
       // cout << reg_expr << " " << table_id << " " << off_expr << endl;
@@ -1094,6 +1133,10 @@ z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2, bool is_win) {
   z3::expr f = smt_map_set_same_input(sv1, sv2);
   f = f && smt_pkt_set_same_input(sv1, sv2);  // pkt
   f = f && smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_skb); // skb
+  int pgm_input_type = mem_t::get_pgm_input_type();
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    f = f && smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_pkt_ptrs);
+  }
   if (is_win) {
     f = f && smt_array_mem_set_same_input(sv1, sv2, STACK_SIZE, MEM_TABLE_stack);
   }

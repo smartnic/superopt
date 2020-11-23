@@ -1575,6 +1575,44 @@ void test14() {
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 }
 
+void test15() {
+  std::cout << "test 15: window program equivalence check for \"PGM_INPUT_pkt_ptrs\"" << endl;
+  cout << "15.1: window program equivalence check" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+  mem_t::set_pkt_sz(16);
+  inst p1[5] = {inst(MOV64XC, 0, 0x12),
+                inst(LDXW, 1, 1, 0),
+                inst(STXW, 1, 0, 0),
+                inst(NOP),
+                inst(EXIT),
+               };
+  inst p1_1[5] = {inst(MOV64XC, 0, 0x12),
+                  inst(LDXW, 1, 1, 0),
+                  inst(STXB, 1, 0, 0),
+                  inst(NOP),
+                  inst(EXIT),
+                 };
+  int win_start = 0, win_end = 4;
+  bool enable_win = true;
+  validator vld(p1, 5, enable_win, win_start, win_end);
+  vld._enable_prog_eq_cache = false;
+  print_test_res(vld.is_equal_to(p1, 5, p1, 5) == 1, "1");
+  print_test_res(vld.is_equal_to(p1, 5, p1_1, 5) == 0, "2");
+
+  win_start = 2; win_end = 3;
+  vld.set_orig(p1, 5, win_start, win_end);
+  print_test_res(vld.is_equal_to(p1, 5, p1, 5) == 1, "3");
+  print_test_res(vld.is_equal_to(p1, 5, p1_1, 5) == 0, "4");
+
+  cout << "15.2: counter-example from window program equivalence check" << endl;
+  win_start = 0; win_end = 4;
+  chk_counterex_by_vld_to_interpreter_win(p1, 5, p1_1, 5, win_start, win_end, "1");
+
+  win_start = 2; win_end = 3;
+  chk_counterex_by_vld_to_interpreter_win(p1, 5, p1_1, 5, win_start, win_end, "2");
+}
+
 int main() {
   // set for prog_eq_cache, if the prog len in the unit tests > 20,
   // please update inst::max_prog_len here
@@ -1594,6 +1632,7 @@ int main() {
     test12();
     test13();
     test14();
+    test15();
   } catch (const string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
