@@ -1502,7 +1502,8 @@ void get_input_mem_after_lookup_ld(inout_t& input, z3::expr v_ulookup,
   z3::expr smt = z3::implies(f && f_same_input && f_pc, f_equal);
   z3::model mdl(smt_c);
   get_counterex_model(mdl, smt);
-  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
+  smt_input sin;
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1, sin);
 }
 
 void test12() {
@@ -1744,7 +1745,8 @@ void test13() {
   z3::model mdl(smt_c);
   bool is_expected = ! get_counterex_model(mdl, smt);
   if (is_expected) {
-    counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
+    smt_input sin;
+    counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1, sin);
     is_expected = (input.pkt[0] != input.pkt[pkt_sz - 1]);
   }
   print_test_res(is_expected, "1");
@@ -1821,8 +1823,9 @@ void test14() {
   input.init();
   inout_t input_expected;
   input_expected.init();
-  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1);
-  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2);
+  smt_input sin;
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1, sin);
+  counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2, sin);
   bool res = (input.skb[0] != input.skb[2]) || (input.skb[1] != input.skb[3]);
   print_test_res(res, "1");
 }

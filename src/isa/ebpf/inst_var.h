@@ -485,6 +485,7 @@ class inout_t: public inout_t_base {
   // uint64_t input_simu_r10, input_simu_pkt_ptrs[2];
   uint64_t input_simu_r10;
   uint64_t input_simu_pkt_s;
+  uint64_t input_simu_pkt_ptrs_s;
   uint32_t input_simu_pkt_ptrs[2];
   int64_t reg;
   // kv map: k hex_string, v: vector<uint8_t>

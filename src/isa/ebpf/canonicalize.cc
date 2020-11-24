@@ -720,19 +720,19 @@ uint64_t random_uint64(uint64_t start, uint64_t end) {
 
 // generate random value of stack bottom
 uint64_t gen_random_stack_bottom() {
-  uint64_t max_uint64 = 0xffffffffffffffff;
+  uint64_t max_uint32 = 0xffffffff;
   uint64_t stack_bottom_min = STACK_SIZE + 1; // address cannot be 0
   uint64_t mem_size_without_stack = get_mem_size_by_layout() - STACK_SIZE;
-  uint64_t stack_bottom_max = max_uint64 - mem_size_without_stack - mem_t::_layout._pkt_sz;
+  uint64_t stack_bottom_max = max_uint32 - mem_size_without_stack - mem_t::_layout._pkt_sz;
   return random_uint64(stack_bottom_min, stack_bottom_max);
 }
 
 uint64_t gen_random_pkt_start(uint64_t stack_bottom) {
-  uint64_t max_uint64 = 0xffffffffffffffff;
+  uint64_t max_uint32 = 0xffffffff;
   uint64_t mem_size_without_stack = get_mem_size_by_layout() - STACK_SIZE;
   uint64_t pkt_min = stack_bottom + mem_size_without_stack;
-  uint64_t pkt_max = max_uint64;
-  return random_uint64(pkt_min, max_uint64);
+  uint64_t pkt_max = max_uint32;
+  return random_uint64(pkt_min, max_uint32);
 }
 
 void gen_random_input_for_common(vector<inout_t>& inputs, bool is_win) {
@@ -783,9 +783,15 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
     uint64_t pkt_start = gen_random_pkt_start(stack_bottom);
     uint64_t stack_top = stack_bottom - STACK_SIZE;
     inputs[i].input_simu_pkt_s = pkt_start;
-
+    uint64_t pkt_ptrs_start = random_uint64(0x100000000, 0x110000000);
+    inputs[i].input_simu_pkt_ptrs_s = pkt_ptrs_start;
     // 1. Generate input_simu_pkt_ptrs for PGM_INPUT_pkt_ptrs
     int pgm_input_type = mem_t::get_pgm_input_type();
+    if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+      int real_pkt_sz = random_int(0, mem_t::_layout._pkt_sz);
+      inputs[i].input_simu_pkt_ptrs[0] = pkt_start;
+      inputs[i].input_simu_pkt_ptrs[1] = pkt_start + real_pkt_sz - 1;
+    }
     cout << "registers" << endl;
     // 2. Generate registers
     uint64_t max_u64 = 0xffffffffffffffff;
@@ -807,7 +813,15 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
         if (inputs[i].reg_type[reg] == PTR_TO_STACK) {
           reg_v = stack_top + iss.reg_state[reg][sample].off;
         } else if (inputs[i].reg_type[reg] == PTR_TO_CTX) {
-          reg_v = pkt_start + iss.reg_state[reg][sample].off;
+          if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+            reg_v = pkt_ptrs_start + iss.reg_state[reg][sample].off;
+          } else {
+            reg_v = pkt_start + iss.reg_state[reg][sample].off;
+          }
+        } else if (inputs[i].reg_type[reg] == PTR_TO_CTX) {
+          if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+            reg_v = pkt_start + iss.reg_state[reg][sample].off;
+          }
         }
       } else {
         reg_v = random_uint64(min_u64, max_u64);
