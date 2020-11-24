@@ -1595,11 +1595,11 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
         ps._mem._simu_pkt_ptrs_s = val;
         break;
       }
+      ps._mem._simu_pkt_ptrs_s = input.input_simu_pkt_ptrs_s;
     }
     ps._mem._pkt_ptrs[0] = input.input_simu_pkt_ptrs[0];
     ps._mem._pkt_ptrs[1] = input.input_simu_pkt_ptrs[1];
     ps._mem._simu_pkt_s = ps._mem._pkt_ptrs[0];
-    ps._mem._simu_pkt_ptrs_s = input.input_simu_pkt_ptrs_s;
   }
   // set the exit type as the default type
   ps._pgm_exit_type = PGM_EXIT_TYPE_default;

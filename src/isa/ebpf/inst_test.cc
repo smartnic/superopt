@@ -1457,6 +1457,8 @@ bool safety_check_is_illegal(inst* p, int len) {
     inout_t input, output;
     input.init();
     output.init();
+    input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
+    input.reg = (uint64_t)ps._mem.get_pkt_start_addr();
     interpret(output, p, len, ps, input);
   } catch (string err_msg) {
     return is_illegal;
@@ -1609,7 +1611,8 @@ void test12() {
                 inst(MOV64XC, 3, 0x12),  // r2 = 0x12
                 inst(STXB, 1, 0, 3), // *(r1 + 0) = 0x12
                };
-  // input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
+  input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
+  input.input_simu_pkt_ptrs_s = (uint64_t)ps._mem.get_pkt_ptrs_start_addr();
   // check when pkt_sz is 2 bytes, which is smaller than the layout pkt sz 4
   input.input_simu_pkt_ptrs[0] = (uint64_t)ps._mem.get_pkt_start_addr();
   input.input_simu_pkt_ptrs[1] = input.input_simu_pkt_ptrs[0] + 1;

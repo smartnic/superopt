@@ -1040,7 +1040,8 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
   simu_real sr;
   if (pgm_input_type != PGM_INPUT_pkt_ptrs) {
     uint64_t real_r1 = (uint64_t)ps._mem.get_pkt_start_addr();
-    uint64_t simu_r1 = (uint64_t)input.input_simu_pkt_s; // pkt start
+    uint64_t simu_r1 = input.reg; // pkt start
+    if (input.is_win) simu_r1 = (uint64_t)input.input_simu_pkt_s;
     if (real_r1 == 0) real_r1 = simu_r1;
     sr.set_vals(simu_r10, real_r10, simu_r1, real_r1);
   } else { // PGM_INPUT_pkt_ptrs
@@ -1049,6 +1050,9 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     uint64_t simu_r1 = (uint64_t)ps._regs[1];
     uint64_t real_pkt = (uint64_t)ps._mem.get_pkt_start_addr();
     uint64_t simu_pkt = (uint64_t)input.input_simu_pkt_ptrs[0];
+    if (input.is_win) {
+      simu_r1 = (uint64_t)ps._mem._simu_pkt_ptrs_s; // pkt_ptrs_s
+    }
     sr.set_vals(simu_r10, real_r10, simu_r1, real_r1, simu_pkt, real_pkt);
   }
   uint64_t real_addr = 0; // used as temporary variable in instruction execution
