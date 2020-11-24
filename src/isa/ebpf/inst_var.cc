@@ -1556,9 +1556,11 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   // cout << input << endl;
   if (! input.is_win) ps.init_safety_chk();
   else ps.init_safety_chk(input.reg_readable, input.stack_readble, input.reg_type);
-  ps._regs[10] = input.input_simu_r10;
-  // cp input register
-  ps._regs[1] = input.reg;
+  if (! input.is_win) {
+    ps._regs[10] = input.input_simu_r10;
+    // cp input register
+    ps._regs[1] = input.reg;
+  }
   ps._input_reg_val = input.reg;
   // cp input map
   ps._mem.clear();
@@ -1577,24 +1579,11 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   if ((pgm_input_type == PGM_INPUT_pkt) || (pgm_input_type == PGM_INPUT_skb)) {
     ps._mem._simu_pkt_s = (uint64_t)input.reg;
     if (input.is_win) {
-      for (auto it : input.regs) {
-        int reg = it.first;
-        int64_t val = it.second;
-        if (input.reg_type[reg] != PTR_TO_CTX) continue;
-        ps._mem._simu_pkt_s = val;
-        break;
-      }
+      ps._mem._simu_pkt_s = input.input_simu_pkt_s;
     }
   } else if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     ps._mem._simu_pkt_ptrs_s = (uint64_t)input.reg;
     if (input.is_win) {
-      for (auto it : input.regs) {
-        int reg = it.first;
-        int64_t val = it.second;
-        if (input.reg_type[reg] != PTR_TO_CTX) continue;
-        ps._mem._simu_pkt_ptrs_s = val;
-        break;
-      }
       ps._mem._simu_pkt_ptrs_s = input.input_simu_pkt_ptrs_s;
     }
     ps._mem._pkt_ptrs[0] = input.input_simu_pkt_ptrs[0];

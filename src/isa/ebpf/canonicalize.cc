@@ -605,6 +605,7 @@ void safety_chk_insn(inst& insn, const vector<vector<register_state>>& reg_state
     int reg = not_ptr_regs[i];
     for (int j = 0; j < reg_state[reg].size(); j++) {
       int type = reg_state[reg][j].type;
+      // todo: add PTR_TO_PKT
       unordered_set<int> ptrs = {PTR_TO_CTX, PTR_TO_STACK, PTR_TO_MAP_VALUE_OR_NULL};
       if (ptrs.find(type) == ptrs.end()) continue;
       // `JEQXC r 0` is legal if r.type == PTR_TO_MAP_VALUE_OR_NULL
@@ -790,7 +791,8 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
     if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
       int real_pkt_sz = random_int(0, mem_t::_layout._pkt_sz);
       inputs[i].input_simu_pkt_ptrs[0] = pkt_start;
-      inputs[i].input_simu_pkt_ptrs[1] = pkt_start + real_pkt_sz - 1;
+      // inputs[i].input_simu_pkt_ptrs[1] = pkt_start + real_pkt_sz - 1;
+      inputs[i].input_simu_pkt_ptrs[1] = pkt_start + mem_t::_layout._pkt_sz - 1;
     }
     cout << "registers" << endl;
     // 2. Generate registers
@@ -818,7 +820,7 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
           } else {
             reg_v = pkt_start + iss.reg_state[reg][sample].off;
           }
-        } else if (inputs[i].reg_type[reg] == PTR_TO_CTX) {
+        } else if (inputs[i].reg_type[reg] == PTR_TO_PKT) {
           if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
             reg_v = pkt_start + iss.reg_state[reg][sample].off;
           }
