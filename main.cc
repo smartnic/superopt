@@ -468,8 +468,11 @@ int main(int argc, char* argv[]) {
 
   cout << "Best program(s): " << endl;
   for (auto p : best_pgms) {
-    p->print();
     cout << "cost: " << p->_error_cost << " " <<  p->_perf_cost << endl;
+    p->print();
+    for (int i = 0; i < inst::max_prog_len; i++) {
+      cout << p->inst_list[i].get_bytecode_str() << "," << endl;
+    }
   }
   for (auto p : best_pgms) {
     delete p;
