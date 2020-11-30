@@ -570,31 +570,32 @@ inst bm19[N19] = {inst(183, 0, 2, 0, 1),
                   inst(183, 0, 4, 0, 0),
                   inst(103, 0, 4, 0, 4),
                   inst(127, 4, 1, 0, 0),
-                  inst(103, 0, 1, 0, 32),
-                  inst(119, 0, 1, 0, 32),
+                  inst(MOV32XY, 1, 1),
+                  inst(),
                   inst(183, 0, 3, 0, 1),
                   inst(37, 0, 1, 1, 255),
                   inst(183, 0, 3, 0, 0),
                   inst(103, 0, 3, 0, 3),
                   inst(127, 3, 1, 0, 0),
                   inst(79, 4, 3, 0, 0),
-                  inst(103, 0, 1, 0, 32),
-                  inst(119, 0, 1, 0, 32),
+                  inst(),
+                  inst(MOV32XY, 1, 1),
                   inst(183, 0, 4, 0, 1),
                   inst(37, 0, 1, 1, 15),
                   inst(183, 0, 4, 0, 0),
                   inst(103, 0, 4, 0, 2),
                   inst(79, 4, 3, 0, 0),
                   inst(127, 4, 1, 0, 0),
-                  inst(103, 0, 1, 0, 32),
-                  inst(119, 0, 1, 0, 32),
+                  inst(MOV32XY, 1, 1),
+                  inst(),
                   inst(37, 0, 1, 1, 3),
                   inst(183, 0, 2, 0, 0),
                   inst(103, 0, 2, 0, 1),
                   inst(79, 2, 3, 0, 0),
                   inst(127, 2, 1, 0, 0),
-                  inst(24, 0, 2, 0, -2),
-                  inst(95, 2, 1, 0, 0),
+                  inst(),
+                  inst(),
+                  inst(),
                   inst(119, 0, 1, 0, 1),
                   inst(79, 1, 3, 0, 0),
                   inst(123, 3, 10, -8, 0),
@@ -811,44 +812,6 @@ inst bm24[N24] = {inst(183, 0, 1, 0, 0),
                   inst(183, 0, 0, 0, 2),
                   inst(149, 0, 0, 0, 0),
                  };
-// xdp_redirect_map_kern
-inst bm25[N25] = {inst(97, 1, 2, 4, 0),
-                  inst(97, 1, 6, 0, 0),
-                  inst(183, 0, 1, 0, 0),
-                  inst(99, 1, 10, -4, 0),
-                  inst(183, 0, 0, 0, 1),
-                  inst(191, 6, 1, 0, 0),
-                  inst(7, 0, 1, 0, 14),
-                  inst(45, 2, 1, 26, 0),
-                  inst(191, 10, 2, 0, 0),
-                  inst(7, 0, 2, 0, -4),
-                  inst(LDMAPID, 1, 0), // ldmapid, map0: rxcnt
-                  inst(),
-                  inst(133, 0, 0, 0, 1),
-                  inst(21, 0, 0, 3, 0),
-                  inst(121, 0, 1, 0, 0),
-                  inst(7, 0, 1, 0, 1),
-                  inst(123, 1, 0, 0, 0),
-                  inst(105, 6, 1, 0, 0),
-                  inst(105, 6, 2, 6, 0),
-                  inst(107, 2, 6, 0, 0),
-                  inst(105, 6, 2, 8, 0),
-                  inst(105, 6, 3, 2, 0),
-                  inst(107, 3, 6, 8, 0),
-                  inst(107, 2, 6, 2, 0),
-                  inst(105, 6, 2, 10, 0),
-                  inst(105, 6, 3, 4, 0),
-                  inst(107, 3, 6, 10, 0),
-                  inst(107, 1, 6, 6, 0),
-                  inst(107, 2, 6, 4, 0),
-                  inst(LDMAPID, 1, 1), // ldmapid, map1: tx_port
-                  inst(),
-                  inst(183, 0, 2, 0, 0),
-                  inst(183, 0, 3, 0, 0),
-                  inst(133, 0, 0, 0, 51),
-                  inst(149, 0, 0, 0, 0),
-                 };
-
 // Struct needs to be defined because the loader writes to
 // the .ins file using bpf_insn which has a different size
 // than insn
@@ -1234,14 +1197,6 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::add_map(map_attr(32, 32, N24));
       mem_t::add_map(map_attr(32, 64, N24));
       *bm = bm24;
-      break;
-    case 25:
-      inst::max_prog_len = N25;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
-      mem_t::set_pkt_sz(68);
-      mem_t::add_map(map_attr(32, 64, N25));
-      mem_t::add_map(map_attr(32, 32, N25));
-      *bm = bm25;
       break;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
