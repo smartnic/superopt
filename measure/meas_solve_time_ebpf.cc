@@ -333,16 +333,7 @@ void meas_solve_time_of_network() {
               };
   meas_solve_time_delta_n_times(network, p1, 0, 10, "p3", vld);
 }
-// 0: MOV32XC 2 0
-// 1: STXW 1 64 2
-// 2: MOV64XY 4 1
-// 3: STXW 4 60 2
-// 4: STXW 1 56 2
-// 5: STXW 4 52 2
-// 6: STXW 1 48 2
-// 7: LDXW 6 1 0
-// 8: LE 1 32
-// 9: MOV64XY 9 10
+
 
 int main(int argc, char* argv[]) {
   if (argc > 1) {
