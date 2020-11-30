@@ -16,7 +16,7 @@
 using namespace std;
 
 z3::context c;
-int read_problem_from_z3client();
+int read_problem_from_z3client(int PORT);
 
 char buffer[FORMULA_SIZE_BYTES + 1] = {0};
 char res_buffer[RESULT_SIZE_BYTES + 1]  = {0};
@@ -45,6 +45,16 @@ string run_solver(char* formula) {
     }
   }
 }
+void set_seed(){
+  srand (time(NULL));
+  int iSecret = rand() % ((int) pow(2,8)) + 1;
+  // iSecret = rand() % 4 + 1;
+  cout << "z3server: seed = " << iSecret << endl;
+  z3::set_param("sls.random_seed", iSecret);
+  z3::set_param("smt.random_seed", iSecret);
+  z3::set_param("sat.random_seed", iSecret);
+  z3::set_param("fp.spacer.random_seed", iSecret);
+}
 
 int read_problem_from_z3client(int PORT) {
   int server_fd, acc_socket, nread, total_read, nchars;
@@ -52,14 +62,7 @@ int read_problem_from_z3client(int PORT) {
   struct sockaddr_in address;
   int addrlen = sizeof(address);
   string result;
-  srand (time(NULL));
-  int iSecret = rand() % ((int) pow(2,8)) + 1;
-  // iSecret = rand() % 4 + 1;
-  cout << "This is the seed: " << iSecret << endl;
-  z3::set_param("sls.random_seed", iSecret);
-  z3::set_param("smt.random_seed", iSecret);
-  z3::set_param("sat.random_seed", iSecret);
-  z3::set_param("fp.spacer.random_seed", iSecret);
+  set_seed();
   if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
     perror("z3server: socket creation failed");
     exit(EXIT_FAILURE);
@@ -94,7 +97,7 @@ int read_problem_from_z3client(int PORT) {
       exit(EXIT_FAILURE);
     }
 
-    cout << "z3server: Received a new connection. Reading formula on port: " << PORT << endl;
+    //cout << "z3server: Received a new connection. Reading formula on port: " << PORT << endl;
     /* Read the full formula into buffer. */
     total_read = 0;
     do {
@@ -105,7 +108,7 @@ int read_problem_from_z3client(int PORT) {
     if (total_read >= FORMULA_SIZE_BYTES)
       cout << "Exhausted formula read buffer\n";
     
-    cout << "z3server: Recieved Formula from client on port: " << PORT << endl;
+    //cout << "z3server: Recieved Formula from client on port: " << PORT << endl;
 
     /* Run the solver. */
     result = run_solver(buffer);
@@ -113,7 +116,7 @@ int read_problem_from_z3client(int PORT) {
     strncpy(res_buffer, result.c_str(), nchars);
     res_buffer[nchars] = '\0';
 
-    cout << "z3server: Sending formula to Client...\n";
+    //cout << "z3server: Sending formula to Client...\n";
     /* Send result. */
     send(acc_socket, res_buffer, nchars + 1, 0);
     close(acc_socket);
