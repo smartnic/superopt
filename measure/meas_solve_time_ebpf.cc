@@ -55,7 +55,7 @@ void meas_solve_time_of_rcv_sock4() {
   unsigned int n_randoms_u32 = 1;
   mem_t::_layout._n_randoms_u32 = n_randoms_u32;
   smt_var::init_static_variables();
-  // Set rcv_sock4 as the original program in the validator
+  
   validator vld(rcv_sock4, inst::max_prog_len);
   inst p1[] = {inst(MOV32XC, 9, 32),
                inst(MOV32XC, 8, -4),
@@ -99,21 +99,12 @@ void meas_solve_time_of_network() {
               };
   meas_solve_time_delta_n_times(network, p1, 0, 10, "p3", vld);
 }
-// 0: MOV32XC 2 0
-// 1: STXW 1 64 2
-// 2: MOV64XY 4 1
-// 3: STXW 4 60 2
-// 4: STXW 1 56 2
-// 5: STXW 4 52 2
-// 6: STXW 1 48 2
-// 7: LDXW 6 1 0
-// 8: LE 1 32
-// 9: MOV64XY 9 10
+
 
 int main(int argc, char* argv[]) {
   if (argc > 1) {
     loop_times = atoi(argv[1]);
   }
-  //meas_solve_time_of_rcv_sock4();
-  meas_solve_time_of_network();
+  meas_solve_time_of_rcv_sock4();
+  //meas_solve_time_of_network();
 }
