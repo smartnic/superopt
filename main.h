@@ -37,6 +37,7 @@ class input_paras {
   bool enable_prog_uneq_cache;
   bool is_win;
   int logger_level;
+  int server_port;
 };
 struct bpf_insn {
   uint8_t opcode;
