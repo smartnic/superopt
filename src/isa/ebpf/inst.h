@@ -102,6 +102,9 @@ static const int sp_bpf_func[] = {
   BPF_FUNC_map_delete_elem,
   BPF_FUNC_get_prandom_u32,
   BPF_FUNC_tail_call,
+  BPF_FUNC_redirect,
+  BPF_FUNC_xdp_adjust_head,
+  BPF_FUNC_redirect_map,
 };
 
 static constexpr int SP_BPF_FUNC_MAX_ID = (sizeof(sp_bpf_func) / sizeof(int));

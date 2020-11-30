@@ -962,6 +962,9 @@ void inst::regs_to_read(vector<int>& regs) const {
         case BPF_FUNC_map_delete_elem: regs = {1, 2}; return;
         case BPF_FUNC_tail_call: regs = {1, 2, 3}; return;
         case BPF_FUNC_get_prandom_u32: return;
+        case BPF_FUNC_redirect: regs = {1, 2}; return;
+        case BPF_FUNC_xdp_adjust_head: regs = {1, 2}; return;
+        case BPF_FUNC_redirect_map: regs = {1, 2, 3}; return;
         default: cout << "Error: unknown function id " << _imm << endl; return;
       }
     case EXIT: return;
