@@ -92,7 +92,7 @@ int create_and_connect_socket(int port) {
 /* Send the formula to the server */
 void send_formula(int sock, string formula) {
   int nchars;
-  cout << "z3client: Sending formula to server...\n";
+  //cout << "z3client: Sending formula to server...\n";
   nchars = std::min(FORMULA_SIZE_BYTES, (int)formula.length());
   strncpy(form_buffer, formula.c_str(), nchars);
   form_buffer[nchars] = '\0';
@@ -187,7 +187,7 @@ string write_problem_to_z3server(string formula) {
   int server2_read = FD_ISSET (sock2, &fds);
   int status; 
   if (server1_read > 0 && server2_read > 0) { /* both sockets are readable */
-    cout << "z3Server: both servers returned\n";
+    cout << "z3Client: both servers returned\n";
     read_from_solver(sock1);
     read_from_solver(sock2);
     nsolve1++;
@@ -197,12 +197,12 @@ string write_problem_to_z3server(string formula) {
     read_from_solver(sock1);
     server2_read = poll_servers(sock2, 2);
     if (server2_read > 0){
-      cout << "z3Server: both servers returned\n";
+      cout << "z3client: both servers returned\n";
       read_from_solver(sock2);
       nsolve2++;
     }
     else{
-      cout << "Only server 1 returned. Killing server 2\n";
+      cout << "z3client: Only server 1 returned. Killing server 2\n";
       kill(child_pid_2, SIGKILL);
       waitpid(child_pid_2, &status, 0);
       child_pid_2 = spawn_server(SERVER_PORT+1000);
@@ -213,12 +213,12 @@ string write_problem_to_z3server(string formula) {
     read_from_solver(sock2);
     server1_read = poll_servers(sock1, 2);
     if (server1_read > 0){
-      cout << "z3Server: both servers returned\n";
+      cout << "z3client: both servers returned\n";
       read_from_solver(sock1);
       nsolve1++;
     }
     else{
-      cout << "Only server 2 returned. Killing server 1\n";
+      cout << "z3client: Only server 2 returned. Killing server 1\n";
       kill(child_pid_1, SIGKILL);
       waitpid(child_pid_1, &status, 0);
       child_pid_1 = spawn_server(SERVER_PORT);
