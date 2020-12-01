@@ -1449,6 +1449,8 @@ void inout_t::operator=(const inout_t &rhs) {
   for (int i = 0; i < reg_type.size(); i++) reg_type[i] = rhs.reg_type[i];
   regs = rhs.regs;
   stack = rhs.stack;
+  input_simu_pkt_ptrs[0] = rhs.input_simu_pkt_ptrs[0];
+  input_simu_pkt_ptrs[1] = rhs.input_simu_pkt_ptrs[1];
 }
 
 bool inout_t::operator==(const inout_t &rhs) const {

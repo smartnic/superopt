@@ -42,8 +42,8 @@ examples::~examples() {}
 
 void examples::insert(const inout& ex) {
   inout io;
-  io.set_in_out(ex.input, ex.output);
   _exs.push_back(io);
+  _exs[_exs.size() - 1].set_in_out(ex.input, ex.output);
 }
 
 void examples::clear() {
