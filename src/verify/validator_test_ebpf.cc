@@ -861,6 +861,7 @@ void test6() {
                  inst(STB, 1, 0, 1),
                 };
   validator vld(p1, 5);
+  vld._enable_prog_eq_cache = false;
   print_test_res(vld.is_equal_to(p1, 5, p1, 5) == 1, "1");
   print_test_res(vld.is_equal_to(p1, 5, p11, 9) == 1, "2");
   print_test_res(vld.is_equal_to(p1, 5, p12, 3) == 0, "3");
