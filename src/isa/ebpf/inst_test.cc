@@ -1575,6 +1575,7 @@ void test11() {
   input.clear();
   output.clear();
   expected.clear();
+  input.is_win = true;
   inout_t::start_insn = 2;
   inout_t::end_insn = 3;
   input.reg_readable.resize(NUM_REGS);
@@ -1583,6 +1584,9 @@ void test11() {
   input.reg_readable[0] = true;
   input.reg_type[0] = PTR_TO_STACK;
   input.regs[0] = (uint64_t)ps._mem.get_stack_bottom_addr();
+  input.reg_readable[10] = true;
+  input.reg_type[10] = PTR_TO_STACK;
+  input.regs[10] = (uint64_t)ps._mem.get_stack_bottom_addr();
   input.stack_readble[STACK_SIZE - 1] = true;
   input.stack[STACK_SIZE - 1] = 0xff;
   expected.reg = 0xff;

@@ -1127,15 +1127,14 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
   };
 
 #define CONT {                                                     \
+      safety_chk(*insn, ps);                                       \
       insn++;                                                      \
       if (insn < program + length) {                               \
-        safety_chk(*insn, ps);                                     \
         goto *jumptable[opcode_2_idx(insn->_opcode)];              \
       } else goto out;                                             \
   }
 
 select_insn:
-  safety_chk(*insn, ps);
   goto *jumptable[opcode_2_idx(insn->_opcode)];
 
 INSN_NOP:
