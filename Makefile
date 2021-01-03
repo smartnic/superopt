@@ -158,6 +158,20 @@ run_tests:
 	./measure/meas_time.out
 	./measure/meas_mh_bhv_test.out
 
+ebpf_tests: main_ebpf.out z3server.out inst_codegen_test_ebpf.out prog_test_ebpf.out ebpf_inst_test.out validator_test_ebpf.out cfg_test_ebpf.out canonicalize_test_ebpf.out
+
+run_ebpf_tests:
+	make ebpf_tests
+	./main_ebpf.out
+	./src/isa/prog_test_ebpf.out
+	./src/isa/ebpf/inst_codegen_test.out
+	./src/isa/ebpf/canonicalize_test_ebpf.out
+	./src/isa/ebpf/inst_test.out
+	./src/verify/validator_test_ebpf.out
+	./src/verify/cfg_test_ebpf.out
+
+
+
 all_measure: meas_time.out meas_mh_bhv_test.out
 
 meas_time.out: measure/meas_time.cc measure/benchmark_toy_isa.cc measure/benchmark_toy_isa.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc meas_time_z3.o $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h $(SEARCH)proposals.cc $(SEARCH)proposals.h $(ISA)prog.cc $(ISA)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(TOY_ISA)inst_codegen.h $(TOY_ISA)inst_var.h $(TOY_ISA)inst_var.cc $(ISA)inst_header.h $(ISA)inst_header_basic.h $(ISA)inst.cc $(ISA)inst.h $(TOY_ISA)inst.cc $(TOY_ISA)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)z3client.cc $(VERIFY)z3client.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(ISA)inst_var.cc $(ISA)inst_var.h $(SRC)utils.cc $(SRC)utils.h
@@ -172,14 +186,14 @@ meas_mh_bhv_test.out: meas_mh_bhv_z3.o measure/meas_mh_bhv.h measure/meas_mh_bhv
 meas_mh_bhv_z3.o: measure/meas_mh_bhv_test.cc
 	$(CXX) $(TOY_ISA_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)measure/meas_mh_bhv_z3.o  -I../z3/src/api -I../z3/src/api/c++ measure/meas_mh_bhv_test.cc
 
-meas_time_ebpf.out: measure/meas_time_ebpf.cc measure/benchmark_ebpf.cc measure/benchmark_ebpf.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc meas_time_z3_ebpf.o $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h $(SEARCH)proposals.cc $(SEARCH)proposals.h $(ISA)prog.cc $(ISA)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(EBPF)inst_codegen.h $(EBPF)inst_var.h $(EBPF)inst_var.cc $(ISA)inst_header.h $(ISA)inst_header_basic.h $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.cc $(EBPF)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)z3client.cc $(VERIFY)z3client.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(ISA)inst_var.cc $(ISA)inst_var.h $(SRC)utils.cc $(SRC)utils.h
-	g++ $(EBPF_FLAG) -std=c++11 measure/meas_time_z3_ebpf.o measure/benchmark_ebpf.cc measure/meas_mh_bhv.cc $(ISA)inst.cc $(EBPF)inst.cc $(EBPF)inst_var.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(ISA)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(EBPF)inst_codegen.cc $(VERIFY)validator.cc $(VERIFY)z3client.cc $(VERIFY)cfg.cc $(VERIFY)smt_prog.cc $(ISA)inst_var.cc $(SRC)utils.cc -o measure/meas_time_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+meas_time_ebpf.out: measure/meas_time_ebpf.cc measure/benchmark_ebpf.cc measure/benchmark_ebpf.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc meas_time_z3_ebpf.o $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h $(SEARCH)proposals.cc $(SEARCH)proposals.h $(ISA)prog.cc $(ISA)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(EBPF)inst_codegen.h $(EBPF)inst_var.h $(EBPF)inst_var.cc $(ISA)inst_header.h $(ISA)inst_header_basic.h $(EBPF)canonicalize.h $(EBPF)canonicalize.cc $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.cc $(EBPF)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)z3client.cc $(VERIFY)z3client.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(ISA)inst_var.cc $(ISA)inst_var.h $(SRC)utils.cc $(SRC)utils.h
+	g++ $(EBPF_FLAG) -std=c++11 measure/meas_time_z3_ebpf.o measure/benchmark_ebpf.cc measure/meas_mh_bhv.cc $(ISA)inst.cc $(EBPF)inst.cc $(EBPF)inst_var.cc $(EBPF)canonicalize.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(ISA)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(EBPF)inst_codegen.cc $(VERIFY)validator.cc $(VERIFY)z3client.cc $(VERIFY)cfg.cc $(VERIFY)smt_prog.cc $(ISA)inst_var.cc $(SRC)utils.cc -o measure/meas_time_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 meas_time_z3_ebpf.o: measure/meas_time_ebpf.cc
 	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)measure/meas_time_z3_ebpf.o  -I../z3/src/api -I../z3/src/api/c++ measure/meas_time_ebpf.cc
 
-meas_solve_time_ebpf.out: measure/meas_solve_time_ebpf.cc measure/benchmark_ebpf.cc measure/benchmark_ebpf.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc meas_solve_time_z3_ebpf.o $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h $(SEARCH)proposals.cc $(SEARCH)proposals.h $(ISA)prog.cc $(ISA)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(EBPF)inst_codegen.h $(EBPF)inst_var.h $(EBPF)inst_var.cc $(ISA)inst_header.h $(ISA)inst_header_basic.h $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.cc $(EBPF)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(ISA)inst_var.cc $(ISA)inst_var.h $(SRC)utils.cc $(SRC)utils.h $(VERIFY)z3client.cc $(VERIFY)z3client.h
-	g++ $(EBPF_FLAG) -std=c++11 measure/meas_solve_time_z3_ebpf.o measure/benchmark_ebpf.cc measure/meas_mh_bhv.cc $(ISA)inst.cc $(EBPF)inst.cc $(EBPF)inst_var.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(ISA)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(EBPF)inst_codegen.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(VERIFY)smt_prog.cc $(ISA)inst_var.cc $(SRC)utils.cc $(VERIFY)z3client.cc -o measure/meas_solve_time_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+meas_solve_time_ebpf.out: measure/meas_solve_time_ebpf.cc measure/benchmark_ebpf.cc measure/benchmark_ebpf.h measure/meas_mh_bhv.h measure/meas_mh_bhv.cc meas_solve_time_z3_ebpf.o $(SEARCH)mh_prog.cc $(SEARCH)mh_prog.h $(SEARCH)proposals.cc $(SEARCH)proposals.h $(ISA)prog.cc $(ISA)prog.h $(SEARCH)cost.cc $(SEARCH)cost.h $(SRC)inout.cc $(SRC)inout.h $(EBPF)inst_codegen.h $(EBPF)inst_var.h $(EBPF)inst_var.cc $(ISA)inst_header.h $(ISA)inst_header_basic.h $(EBPF)canonicalize.h $(EBPF)canonicalize.cc $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.cc $(EBPF)inst.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(ISA)inst_var.cc $(ISA)inst_var.h $(SRC)utils.cc $(SRC)utils.h $(VERIFY)z3client.cc $(VERIFY)z3client.h
+	g++ $(EBPF_FLAG) -std=c++11 measure/meas_solve_time_z3_ebpf.o measure/benchmark_ebpf.cc measure/meas_mh_bhv.cc $(ISA)inst.cc $(EBPF)inst.cc $(EBPF)inst_var.cc $(EBPF)canonicalize.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(ISA)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(EBPF)inst_codegen.cc $(VERIFY)validator.cc $(VERIFY)cfg.cc $(VERIFY)smt_prog.cc $(ISA)inst_var.cc $(SRC)utils.cc $(VERIFY)z3client.cc -o measure/meas_solve_time_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 meas_solve_time_z3_ebpf.o: measure/meas_solve_time_ebpf.cc
 	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)measure/meas_solve_time_z3_ebpf.o  -I../z3/src/api -I../z3/src/api/c++ measure/meas_solve_time_ebpf.cc
