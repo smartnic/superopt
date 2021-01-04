@@ -192,13 +192,17 @@ void test2() {
                        };
   remove_nops_check(p3, sizeof(p3) / sizeof(inst), p3_expected, "3");
 
-  inst p4[] = {inst(LDMAPID, 1, 0),
+  inst p4[] = {inst(JA, 3),
+               inst(LDMAPID, 1, 0),
+               inst(),
                inst(),
                inst(EXIT),
               };
-  inst p4_expected[] = {inst(LDMAPID, 1, 0),
+  inst p4_expected[] = {inst(JA, 2),
+                        inst(LDMAPID, 1, 0),
                         inst(),
                         inst(EXIT),
+                        inst(),
                        };
   remove_nops_check(p4, sizeof(p4) / sizeof(inst), p4_expected, "4");
 }

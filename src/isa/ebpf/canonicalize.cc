@@ -54,11 +54,13 @@ void remove_nops(inst* program, int len) {
     int insn_end = max(i, jmp_dis + i);
     int nop_counter = 0;
     for (int j = insn_start; j <= insn_end; j++) {
-      if (program[j]._opcode == LDMAPID) { // ldmapid has two insns, the second one's opcode is nop
-        j++;
-      }
       if (program[j].get_opcode_type() == OP_NOP) {
-        nop_counter++;
+        bool is_real_nop = true;
+        if (j > 0) {
+          // ldmapid has two insns, the second one's opcode is nop
+          if (program[j - 1]._opcode == LDMAPID) is_real_nop = false;
+        }
+        if (is_real_nop) nop_counter++;
       }
     }
     int new_jmp_dis = 0;
