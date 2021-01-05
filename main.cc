@@ -452,12 +452,12 @@ int main(int argc, char* argv[]) {
   } else {
     init_benchmarks(&bm, bm_optis_orig, in_para.bm);
   }
+  cout << "1..." << endl;
   if (! in_para.is_win) {
     int num_examples = 30;
     gen_random_input(inputs, num_examples, -50, 50);
   }
   SERVER_PORT = in_para.server_port;
-  gen_random_input(inputs, -50, 50, in_para.is_win);
   run_mh_sampler(in_para, bm_optis_orig);
   vector<prog*> best_pgms;
   get_best_pgms_from_candidates(best_pgms);
