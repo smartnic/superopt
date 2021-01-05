@@ -2,6 +2,8 @@
 
 using namespace std;
 
+logger_class logger;
+
 void print_test_res(bool res, string test_name) {
   if (res) {
     std::cout << "check " + test_name + " SUCCESS\n";

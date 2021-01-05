@@ -33,4 +33,5 @@ struct input_paras {
   bool disable_prog_eq_cache;
   bool enable_prog_uneq_cache;
   bool is_win;
+  int logger_level;
 };

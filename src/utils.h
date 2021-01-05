@@ -53,3 +53,18 @@ bool is_little_endian();
 // convert uint8_t vector to hex string
 // e.g. addr[2] = {0x1, 0xff}, hex string: "01ff"
 string uint8_t_vec_2_hex_str(const vector<uint8_t>& a);
+
+enum LOGGER_LEVEL {
+  LOGGER_ERROR = 0,
+  LOGGER_DEBUG,
+};
+
+class logger_class {
+ private:
+  int least_print_level = LOGGER_ERROR;
+ public:
+  void set_least_print_level(int level) {least_print_level = level;}
+  bool is_print_level(int level) {return (level <= least_print_level);}
+};
+
+extern logger_class logger;

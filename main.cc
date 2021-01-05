@@ -57,7 +57,8 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
   out << "server_port:" << ip.server_port << endl
       << "disable_prog_eq_cache:" << ip.disable_prog_eq_cache << endl
       << "enable_prog_uneq_cache:" << ip.enable_prog_uneq_cache << endl
-      << "is_win:" << ip.is_win << endl;
+      << "is_win:" << ip.is_win << endl
+      << "logger_level: " << ip.logger_level << endl;
   return out;
 }
 
@@ -245,8 +246,13 @@ string para_p_inst_desc() {
   return s;
 }
 
-string para_port_desc(){
+string para_port_desc() {
   string s = "port number the z3 server and client communicate on";
+  return s;
+}
+
+string para_logger_level_desc() {
+  string s = "least logger level that allows to print: 0(ERROR), 1(DEBUG)";
   return s;
 }
 
@@ -290,7 +296,8 @@ void usage() {
        << endl << "validator related arguments" << endl
        << setw(W) << "--disable_prog_eq_cache: disable the usage of prog_eq_cache" << endl
        << setw(W) << "--enable_prog_uneq_cache: enable the usage of prog_uneq_cache" << endl
-       << setw(W) << "--is_win: enable window program equivalence check" << endl;
+       << setw(W) << "--is_win: enable window program equivalence check" << endl
+       << endl << setw(W) << "--logger_level" << ": " << para_logger_level_desc() << endl;
 }
 
 void set_w_list(vector<double> &list, string s) {
@@ -338,6 +345,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"disable_prog_eq_cache", no_argument, nullptr, 23},
     {"enable_prog_uneq_cache", no_argument, nullptr, 24},
     {"is_win", no_argument, nullptr, 25},
+    {"logger_level", required_argument, nullptr, 26},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -373,6 +381,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 23: in_para.disable_prog_eq_cache = true; break;
       case 24: in_para.enable_prog_uneq_cache = true; break;
       case 25: in_para.is_win = true; break;
+      case 26: in_para.logger_level = stoi(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -432,6 +441,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.disable_prog_eq_cache = false;
   in_para.enable_prog_uneq_cache = false;
   in_para.is_win = false;
+  in_para.logger_level = LOGGER_ERROR;
 }
 
 int main(int argc, char* argv[]) {
@@ -452,12 +462,13 @@ int main(int argc, char* argv[]) {
   } else {
     init_benchmarks(&bm, bm_optis_orig, in_para.bm);
   }
-  cout << "1..." << endl;
   if (! in_para.is_win) {
     int num_examples = 30;
     gen_random_input(inputs, num_examples, -50, 50);
   }
   SERVER_PORT = in_para.server_port;
+  logger.set_least_print_level(in_para.logger_level);
+
   run_mh_sampler(in_para, bm_optis_orig);
   vector<prog*> best_pgms;
   get_best_pgms_from_candidates(best_pgms);
