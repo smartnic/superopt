@@ -38,7 +38,7 @@ void init_benchmark_from_file(inst** bm, const char* insn_file, const char* map_
 #define N16 18
 #define N17 26
 #define N18 24
-#define N19 56
+#define N19 57
 #define N20 38
 #define N21 38
 #define N22 41
