@@ -774,12 +774,10 @@ void gen_random_input(vector<inout_t>& inputs, int n, int64_t reg_min, int64_t r
 }
 
 void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state& iss, int win_start, int win_end) {
-  cout << "gen_random_input_for_win" << endl;
   inputs.clear();
   inputs.resize(n);
   gen_random_input_for_common(inputs, true);
 
-  cout << "gen_random_input_for_common end" << endl;
   // Generate random variables that have been written in precondition
   for (int i = 0; i < inputs.size(); i++) {
     uint64_t stack_bottom = inputs[i].input_simu_r10;
@@ -796,24 +794,20 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
       // inputs[i].input_simu_pkt_ptrs[1] = pkt_start + real_pkt_sz - 1;
       inputs[i].input_simu_pkt_ptrs[1] = pkt_start + mem_t::_layout._pkt_sz - 1;
     }
-    cout << "registers" << endl;
     // 2. Generate registers
     uint64_t max_u64 = 0xffffffffffffffff;
     uint64_t min_u64 = 0;
     for (int reg = 0; reg < iss.reg_state.size(); reg++) {
       if (iss.reg_state[reg].size() == 0) continue;
-      cout << "r" << reg << ":";
       inputs[i].reg_readable[reg] = true;
 
       int max = iss.reg_state[reg].size() - 1;
       int min = 0;
       int sample = random_int(min, max);
-      cout << "sample:" << sample << ",";
       inputs[i].reg_type[reg] = iss.reg_state[reg][sample].type;
 
       int64_t reg_v;
       if (is_ptr(inputs[i].reg_type[reg])) {
-        cout << "type:" << inputs[i].reg_type[reg] << ",";
         if (inputs[i].reg_type[reg] == PTR_TO_STACK) {
           reg_v = stack_top + iss.reg_state[reg][sample].off;
         } else if (inputs[i].reg_type[reg] == PTR_TO_CTX) {
@@ -829,7 +823,6 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
         }
       } else {
         reg_v = random_uint64(min_u64, max_u64);
-        cout << reg << " reg_v: " << reg_v << " ";
       }
       inputs[i].regs[reg] = reg_v;
     }
@@ -841,10 +834,8 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
       for (auto off : it->second) {
         inputs[i].stack_readble[off] = true;
         inputs[i].stack[off] = random_int(0, 0xff);
-        cout << off << ":" << (int)inputs[i].stack[off] << " ";
       }
     }
-    cout << endl;
   }
 
 }

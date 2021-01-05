@@ -221,9 +221,11 @@ double mh_sampler::alpha(prog* curr, prog* next, prog* orig) {
 prog* mh_sampler::mh_next(prog* curr, prog* orig) {
   prog* next = _next_proposal.next_proposal(curr);
   // print each modification
-  for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
-    cout << i << ": ";
-    next->inst_list[i].print();
+  if (logger.is_print_level(LOGGER_DEBUG)) {
+    for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
+      cout << i << ": ";
+      next->inst_list[i].print();
+    }
   }
   // next->canonicalize();
   double uni_sample = unidist_mh(gen_mh);
@@ -310,7 +312,6 @@ void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_
 void mh_sampler::mcmc_iter(int niter, prog* orig,
                            unordered_map<int, vector<prog*> > &prog_freq,
                            bool is_win) {
-  cout << "mh_sampler::mcmc_iter: " << endl;
   prog *curr, *next, *prog_start;
   // curr->canonicalize();
   auto start = NOW;
@@ -322,7 +323,9 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
 
   curr = new prog(*prog_start);
   for (int i = 0; i < niter; i++) {
-    cout << "iter: " << i << endl;
+    if (logger.is_print_level(LOGGER_DEBUG)) {
+      cout << "iter: " << i << endl;
+    }
     if (_next_win.whether_to_reset(i)) {
       pair<int, int> win = _next_win.update_and_get_next_win();
       cout << "set window at iteration " << i << endl;
@@ -384,7 +387,9 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
     }
     curr = next;
     auto end = NOW;
-    cout << "iter_timestamp: " << DUR(start, end) << endl;
+    if (logger.is_print_level(LOGGER_DEBUG)) {
+      cout << "iter_timestamp: " << DUR(start, end) << endl;
+    }
   }
   delete curr;
 }

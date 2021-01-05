@@ -36,13 +36,17 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
 }
 
 void cost::set_examples(const vector<inout_t> &input, prog* orig) {
-  cout << "set_examples" << endl;
+  if (logger.is_print_level(LOGGER_DEBUG)) {
+    cout << "set_examples" << endl;
+  }
   _examples.clear();
   prog_state ps;
   ps.init();
   try {
     for (size_t i = 0; i < input.size(); i++) {
-      cout << i << ": " << input[i] << endl;
+      if (logger.is_print_level(LOGGER_DEBUG)) {
+        cout << i << ": " << input[i] << endl;
+      }
       ps.clear();
       inout_t output;
       output.init();
@@ -336,8 +340,9 @@ double cost::total_prog_cost(prog * orig, int len1, prog * synth, int len2) {
   bool flag = (synth->_error_cost == -1);
   double err_cost = error_cost(orig, len1, synth, len2);
   double per_cost = perf_cost(synth, len2);
-  if (flag)
+  if (flag && logger.is_print_level(LOGGER_DEBUG)) {
     cout << "cost: " << err_cost << " " << per_cost << " "
          << (_w_e * err_cost) + (_w_p * per_cost) << endl;
+  }
   return (_w_e * err_cost) + (_w_p * per_cost);
 }

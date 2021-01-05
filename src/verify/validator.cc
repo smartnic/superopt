@@ -210,7 +210,9 @@ int validator::safety_check(inst* orig, int len, expr& pre, expr& pl, expr& p_sc
   auto t1 = NOW;
   int is_safe = is_smt_valid(smt_safety_chk, mdl_sc);
   auto t2 = NOW;
-  cout << "win" << _is_win << " vld solve safety: " << DUR(t1, t2) << " us" << " " << is_safe << endl;
+  if (logger.is_print_level(LOGGER_DEBUG)) {
+    cout << "win" << _is_win << " vld solve safety: " << DUR(t1, t2) << " us" << " " << is_safe << endl;
+  }
   if (is_safe == 0) {
     gen_counterex(orig, len, mdl_sc, sv, sin, COUNTEREX_safety_check);
     return ILLEGAL_CEX;
@@ -251,7 +253,9 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     canonicalize(synth_prog.inst_list, length_syn);
     if (is_in_prog_cache(synth_prog, _prog_eq_cache)) {
       _count_prog_eq_cache++;
-      cout << "vld synth eq from prog_eq_cache" << endl;
+      if (logger.is_print_level(LOGGER_DEBUG)) {
+        cout << "vld synth eq from prog_eq_cache" << endl;
+      }
       return 1;
     }
   }
@@ -262,8 +266,10 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   if (sc != 1) {
     if ((sc == ILLEGAL_CEX) && _enable_prog_uneq_cache) {
       insert_into_prog_cache(synth_prog_uneq_cache, _prog_uneq_cache);
-      cout << "unequal program insert" << endl;
-      synth_prog_uneq_cache.print();
+      if (logger.is_print_level(LOGGER_DEBUG)) {
+        cout << "unequal program insert" << endl;
+        synth_prog_uneq_cache.print();
+      }
     }
     return sc;
   }
@@ -280,7 +286,9 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   auto t1 = NOW;
   int is_equal = is_smt_valid(smt, mdl);
   auto t2 = NOW;
-  cout << "win" << _is_win << " validator solve eq: " << DUR(t1, t2) << " us" << " " << is_equal << endl;
+  if (logger.is_print_level(LOGGER_DEBUG)) {
+    cout << "win" << _is_win << " validator solve eq: " << DUR(t1, t2) << " us" << " " << is_equal << endl;
+  }
 
   if (is_equal == 0) {
     // cout << is_equal << endl;
@@ -288,8 +296,10 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     gen_counterex(orig, length_orig, mdl, post_sv_synth, smt_input_synth, COUNTEREX_eq_check);
     if (_enable_prog_uneq_cache) {
       insert_into_prog_cache(synth_prog_uneq_cache, _prog_uneq_cache);
-      cout << "unequal program insert" << endl;
-      synth_prog_uneq_cache.print();
+      if (logger.is_print_level(LOGGER_DEBUG)) {
+        cout << "unequal program insert" << endl;
+        synth_prog_uneq_cache.print();
+      }
     }
   } else if ((is_equal == 1) && _enable_prog_eq_cache) {
     // insert the synth into eq_prog_cache if new
