@@ -54,7 +54,7 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
   out << endl;
   out << "p_inst_operand:" << ip.p_inst_operand << endl
       << "p_inst:" << ip.p_inst << endl;
-  out << "server_port:" << ip.server_port << endl;
+  out << "server_port:" << ip.server_port << endl
       << "disable_prog_eq_cache:" << ip.disable_prog_eq_cache << endl
       << "enable_prog_uneq_cache:" << ip.enable_prog_uneq_cache << endl
       << "is_win:" << ip.is_win << endl;
@@ -286,7 +286,7 @@ void usage() {
        << endl << para_next_proposal_desc() << endl
        << setw(W) << "--p_inst_operand arg:" << ": " << para_p_inst_operand_desc() << endl
        << setw(W) << "--p_inst arg" << ": " << para_p_inst_desc() << endl
-       << setw(W) << "--port arg" << ": " << para_port_desc() << endl;
+       << setw(W) << "--port arg" << ": " << para_port_desc() << endl
        << endl << "validator related arguments" << endl
        << setw(W) << "--disable_prog_eq_cache: disable the usage of prog_eq_cache" << endl
        << setw(W) << "--enable_prog_uneq_cache: enable the usage of prog_uneq_cache" << endl
