@@ -169,9 +169,11 @@ void validator::set_orig(inst* orig, int length, int win_start, int win_end) {
     throw (err_msg);
   }
   // if the original program is safe, insert it in the prog_eq cache
-  prog orig_prog(orig);
-  canonicalize(orig_prog.inst_list, length);
-  insert_into_prog_cache(orig_prog, _prog_eq_cache);
+  if (_enable_prog_eq_cache) {
+    prog orig_prog(orig);
+    canonicalize(orig_prog.inst_list, length);
+    insert_into_prog_cache(orig_prog, _prog_eq_cache);
+  }
 }
 
 // calculate and store pre_orig, ps_orign
