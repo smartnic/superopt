@@ -20,6 +20,7 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
                 bool enable_prog_eq_cache, bool enable_prog_uneq_cache, bool is_win) {
   _vld._is_win = is_win;  // enable win eq chk
   smt_var::is_win = is_win;
+  _num_real_orig = orig->num_real_instructions();
   if (! is_win) {
     set_orig(orig, len);
     set_examples(input, orig);
@@ -324,8 +325,7 @@ double cost::perf_cost(prog * synth, int len) {
   if (synth->_perf_cost != -1) return synth->_perf_cost;
   double total_cost;
   if (_strategy_perf == PERF_COST_STRATEGY_LEN) {
-    total_cost =  inst::max_prog_len - _num_real_orig +
-                  synth->num_real_instructions();
+    total_cost = synth->num_real_instructions();
   } else if (_strategy_perf == PERF_COST_STRATEGY_RUNTIME) {
     total_cost = synth->instructions_runtime();
   } else {
