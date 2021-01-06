@@ -49,6 +49,7 @@ class inst_base {
   double get_runtime() const {return 1;}
   bool sample_unmodifiable() const {return false;}
   z3::expr smt_inst_safety_chk(smt_var& sv) const {return Z3_true;}
+  void insert_opcodes_not_gen(unordered_set<int>& opcode_set) const {}
 
   /* Functions class inst should support */
   // inst& operator=(const inst &rhs)

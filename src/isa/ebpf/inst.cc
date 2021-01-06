@@ -536,19 +536,24 @@ void inst::set_jmp_dis(int off) {
 }
 
 void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
-  jmp_set.insert(JA);
-  jmp_set.insert(JEQXC);
-  jmp_set.insert(JEQXY);
-  jmp_set.insert(JGTXC);
-  jmp_set.insert(JGTXY);
-  jmp_set.insert(JNEXC);
-  jmp_set.insert(JNEXY);
-  jmp_set.insert(JSGTXC);
-  jmp_set.insert(JSGTXY);
-  jmp_set.insert(JEQ32XC);
-  jmp_set.insert(JEQ32XY);
-  jmp_set.insert(JNE32XC);
-  jmp_set.insert(JNE32XY);
+  jmp_set.insert(IDX_JA);
+  jmp_set.insert(IDX_JEQXC);
+  jmp_set.insert(IDX_JEQXY);
+  jmp_set.insert(IDX_JGTXC);
+  jmp_set.insert(IDX_JGTXY);
+  jmp_set.insert(IDX_JNEXC);
+  jmp_set.insert(IDX_JNEXY);
+  jmp_set.insert(IDX_JSGTXC);
+  jmp_set.insert(IDX_JSGTXY);
+  jmp_set.insert(IDX_JEQ32XC);
+  jmp_set.insert(IDX_JEQ32XY);
+  jmp_set.insert(IDX_JNE32XC);
+  jmp_set.insert(IDX_JNE32XY);
+}
+
+void inst::insert_opcodes_not_gen(unordered_set<int>& opcode_set) const {
+  opcode_set.insert(IDX_CALL);
+  opcode_set.insert(IDX_LDMAPID);
 }
 
 int inst::inst_output_opcode_type() const {

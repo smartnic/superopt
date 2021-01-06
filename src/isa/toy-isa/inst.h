@@ -162,3 +162,5 @@ class inst: public inst_base {
 };
 
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);
+
+inline int opcode_2_idx(int opcode) {return opcode;}

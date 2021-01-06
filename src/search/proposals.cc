@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cassert>
 #include <unordered_set>
+#include <set>
 #include "proposals.h"
 
 using namespace std;
@@ -31,8 +32,12 @@ int sample_int(int limit) {
  * exceptions of  `excepts`. */
 int sample_int_with_exceptions(int limit, unordered_set<int> &excepts) {
   int val = sample_int(limit - excepts.size());
-  for (auto it = excepts.begin(); it != excepts.end(); it++) {
-    if (*it <= val) val++;
+  set<int> excepts_set;
+  for (auto e : excepts) {
+    excepts_set.insert(e);
+  }
+  for (auto e : excepts_set) {
+    if (e <= val) val++;
   }
   return val;
 }
@@ -111,11 +116,12 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   // exceptions set is used to avoid jumps in the last line of the program
   unordered_set<int> exceptions;
   if (sel_inst_index == inst::max_prog_len - 1) {
-    exceptions = {old_opcode};
+    exceptions = {opcode_2_idx(old_opcode)};
     sel_inst->insert_jmp_opcodes(exceptions);
   } else {
-    exceptions = {old_opcode};
+    exceptions = {opcode_2_idx(old_opcode)};
   }
+  sel_inst->insert_opcodes_not_gen(exceptions);
   int new_opcode_idx = sample_int_with_exceptions(NUM_INSTR - 1, exceptions);
   int new_opcode = sel_inst->get_opcode_by_idx(new_opcode_idx);
   sel_inst->set_as_nop_inst();

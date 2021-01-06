@@ -653,6 +653,7 @@ class inst: public inst_base {
   int get_jmp_dis() const;
   void set_jmp_dis(int off);
   void insert_jmp_opcodes(unordered_set<int>& jmp_set) const;
+  void insert_opcodes_not_gen(unordered_set<int>& opcode_set) const;
   int inst_output_opcode_type() const;
   int inst_output() const;
   bool is_real_inst() const;
