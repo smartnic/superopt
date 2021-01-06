@@ -974,6 +974,9 @@ void inst::regs_to_read(vector<int>& regs) const {
 
 // return -1 if no reg to write, else return reg
 int inst::reg_to_write() const {
+  if (_opcode == NOP) { // NOP is not in eBPF, the bpf_class is the same as BPF_LD
+    return -1;
+  }
   if (_opcode == CALL) {
     return 0; // dst_reg is reg 0
   }
