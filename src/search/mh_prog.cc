@@ -156,25 +156,29 @@ pair<double, double> mh_sampler_restart::next_start_we_wp() {
 /* class mh_sampler_next_proposal start */
 mh_sampler_next_proposal::mh_sampler_next_proposal() {
   set_win(0, inst::max_prog_len - 1);
-  _thr_mod_random_inst_operand = 1.0 / 3.0;
-  _thr_mod_random_inst = 2.0 / 3.0;
+  _thr_mod_random_inst_operand = 1.0 / 4.0;
+  _thr_mod_random_inst = 2.0 / 4.0;
+  _thr_mod_random_inst_as_nop = 3.0 / 4.0;
   cout << "probabilities of mod_random_inst_operand, mod_random_inst, "
        << "mod_random_k_cont_insts are all set as "
-       << 1.0 / 3.0 << endl;
+       << 1.0 / 4.0 << endl;
 }
 
 mh_sampler_next_proposal::~mh_sampler_next_proposal() {}
 
 void mh_sampler_next_proposal::set_probability(
   double p_mod_random_inst_operand,
-  double p_mod_random_inst) {
+  double p_mod_random_inst,
+  double p_mod_random_inst_as_nop) {
   _thr_mod_random_inst_operand = p_mod_random_inst_operand;
   _thr_mod_random_inst = _thr_mod_random_inst_operand + p_mod_random_inst;
+  _thr_mod_random_inst_as_nop = _thr_mod_random_inst + p_mod_random_inst_as_nop;
   cout << "probabilities of mod_random_inst_operand, mod_random_inst, "
-       << "mod_random_k_cont_insts are set as "
-       <<  _thr_mod_random_inst_operand << ", "
+       << "mod_random_inst_as_nop and mod_random_k_cont_insts are set as "
+       << _thr_mod_random_inst_operand << ", "
        << _thr_mod_random_inst - _thr_mod_random_inst_operand << ", "
-       << 1.0 - _thr_mod_random_inst << endl;
+       << _thr_mod_random_inst_as_nop - _thr_mod_random_inst << ", "
+       << 1.0 - _thr_mod_random_inst_as_nop << endl;
 }
 
 void mh_sampler_next_proposal::set_win(int start, int end) {
@@ -190,6 +194,8 @@ prog* mh_sampler_next_proposal::next_proposal(prog* curr) {
     return mod_random_inst_operand(*curr, _win_start, _win_end);
   } else if (uni_sample <= _thr_mod_random_inst) {
     return mod_random_inst(*curr, _win_start, _win_end);
+  } else if (uni_sample <= _thr_mod_random_inst_as_nop) {
+    return mod_random_inst_as_nop(*curr, _win_start, _win_end);
   } else {
     return mod_random_k_cont_insts(*curr, 2, _win_start, _win_end);
   }

@@ -53,7 +53,8 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
   }
   out << endl;
   out << "p_inst_operand:" << ip.p_inst_operand << endl
-      << "p_inst:" << ip.p_inst << endl;
+      << "p_inst:" << ip.p_inst << endl
+      << "p_inst_as_nop:" << ip.p_inst_as_nop << endl;
   out << "server_port:" << ip.server_port << endl
       << "disable_prog_eq_cache:" << ip.disable_prog_eq_cache << endl
       << "enable_prog_uneq_cache:" << ip.enable_prog_uneq_cache << endl
@@ -76,6 +77,7 @@ string gen_file_name_suffix_from_input(const input_paras &in_para) {
   string str_w_p = rm_useless_zero_digits_from_str(to_string(in_para.w_p));
   string str_p_inst_operand = rm_useless_zero_digits_from_str(to_string(in_para.p_inst_operand));
   string str_p_inst = rm_useless_zero_digits_from_str(to_string(in_para.p_inst));
+  string str_p_inst_as_nop = rm_useless_zero_digits_from_str(to_string(in_para.p_inst_as_nop));
   string suffix = "_" + to_string(in_para.bm) +
                   "_" + to_string(in_para.niter) +
                   "_" + to_string(in_para.st_ex) +
@@ -89,6 +91,7 @@ string gen_file_name_suffix_from_input(const input_paras &in_para) {
                   "_" + to_string(in_para.st_start_prog) +
                   "_" + str_p_inst_operand +
                   "_" + str_p_inst +
+                  "_" + str_p_inst_as_nop +
                   ".txt";
   return suffix;
 }
@@ -101,7 +104,8 @@ void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
   mh._restart.set_st_next_start_prog(in_para.st_start_prog);
   mh._restart.set_we_wp_list(in_para.restart_w_e_list, in_para.restart_w_p_list);
   mh._next_proposal.set_probability(in_para.p_inst_operand,
-                                    in_para.p_inst);
+                                    in_para.p_inst,
+                                    in_para.p_inst_as_nop);
   mh._next_win.set_win_lists(in_para.win_s_list, in_para.win_e_list);
   mh._next_win.set_max_num_iter(in_para.reset_win_niter);
   if (in_para.meas_mode) mh.turn_on_measure();
@@ -229,9 +233,10 @@ string para_win_e_list_desc() {
 
 string para_next_proposal_desc() {
   string s = "The next two parameters are about new proposal generation.\n" \
-             "A new proposal has three modification typies: modify a random instrution operand, \n" \
-             "instruction and two continuous instructions. Sum of their probabilities is 1. \n" \
-             "The three probabilities are set by `p_inst_operand` and `p_inst` " \
+             "A new proposal has three modification typies: modify a random instruction operand, \n" \
+             "instruction, two continuous instructions, and modify a random instruction as NOP. \n" \
+             "Sum of their probabilities is 1. \n" \
+             "The four probabilities are set by `p_inst_operand`, `p_inst` and `p_inst_as_nop` " \
              "(`p_two_cont_insts` can be computed)";
   return s;
 }
@@ -243,6 +248,11 @@ string para_p_inst_operand_desc() {
 
 string para_p_inst_desc() {
   string s = "probability of modifying a random instruction (both opcode and operands) for a new proposal";
+  return s;
+}
+
+string para_p_inst_as_nop_desc() {
+  string s = "probability of modifying a random instruction as NOP for a new proposal";
   return s;
 }
 
@@ -292,6 +302,7 @@ void usage() {
        << endl << para_next_proposal_desc() << endl
        << setw(W) << "--p_inst_operand arg:" << ": " << para_p_inst_operand_desc() << endl
        << setw(W) << "--p_inst arg" << ": " << para_p_inst_desc() << endl
+       << setw(W) << "-p_inst_as_nop arg" << ": " << para_p_inst_as_nop_desc() << endl
        << setw(W) << "--port arg" << ": " << para_port_desc() << endl
        << endl << "validator related arguments" << endl
        << setw(W) << "--disable_prog_eq_cache: disable the usage of prog_eq_cache" << endl
@@ -341,11 +352,12 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"win_e_list", required_argument, nullptr, 19},
     {"p_inst_operand", required_argument, nullptr, 20},
     {"p_inst", required_argument, nullptr, 21},
-    {"port", required_argument, nullptr, 22},
-    {"disable_prog_eq_cache", no_argument, nullptr, 23},
-    {"enable_prog_uneq_cache", no_argument, nullptr, 24},
-    {"is_win", no_argument, nullptr, 25},
-    {"logger_level", required_argument, nullptr, 26},
+    {"p_inst_as_nop", required_argument, nullptr, 22},
+    {"port", required_argument, nullptr, 23},
+    {"disable_prog_eq_cache", no_argument, nullptr, 24},
+    {"enable_prog_uneq_cache", no_argument, nullptr, 25},
+    {"is_win", no_argument, nullptr, 26},
+    {"logger_level", required_argument, nullptr, 27},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -377,11 +389,12 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 19: set_win_list(in_para.win_e_list, optarg); break;
       case 20: in_para.p_inst_operand = stod(optarg); break;
       case 21: in_para.p_inst = stod(optarg); break;
-      case 22: in_para.server_port = stoi(optarg); break;
-      case 23: in_para.disable_prog_eq_cache = true; break;
-      case 24: in_para.enable_prog_uneq_cache = true; break;
-      case 25: in_para.is_win = true; break;
-      case 26: in_para.logger_level = stoi(optarg); break;
+      case 22: in_para.p_inst_as_nop = stod(optarg); break;
+      case 23: in_para.server_port = stoi(optarg); break;
+      case 24: in_para.disable_prog_eq_cache = true; break;
+      case 25: in_para.enable_prog_uneq_cache = true; break;
+      case 26: in_para.is_win = true; break;
+      case 27: in_para.logger_level = stoi(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -435,8 +448,9 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.reset_win_niter = in_para.niter;
   in_para.win_s_list = {0};
   in_para.win_e_list = {inst::max_prog_len - 1};
-  in_para.p_inst_operand = 1.0 / 3.0;
-  in_para.p_inst = 1.0 / 3.0;
+  in_para.p_inst_operand = 1.0 / 4.0;
+  in_para.p_inst = 1.0 / 4.0;
+  in_para.p_inst_as_nop = 1.0 / 4.0;
   in_para.server_port = 8002;
   in_para.disable_prog_eq_cache = false;
   in_para.enable_prog_uneq_cache = false;

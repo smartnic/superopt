@@ -68,15 +68,18 @@ class mh_sampler_next_proposal {
   // `_thr_*` variables are used as thresholds when using uniform sample to
   // randomly choose different proposal generating methods. View more details in next_proposal(.)
   // 1. threshold mod_random_inst_operand is the probablity of mod_random_inst_operand
-  // 2. threshold mod_random_inst is sum of the probablities of mod_random_inst_operand
-  // and mod_random_inst
+  // 2. threshold mod_random_inst is sum of the probablities of mod_random_inst_operand and mod_random_inst
+  // 3. threshold mod_random_inst_as_nop is the probablity of mod_random_inst_operand, 
+  //    mod_random_inst and mod_random_inst_as_nop
   double _thr_mod_random_inst_operand;
   double _thr_mod_random_inst;
+  double _thr_mod_random_inst_as_nop;
   int _win_start, _win_end;
   mh_sampler_next_proposal();
   ~mh_sampler_next_proposal();
   void set_probability(double p_mod_random_inst_operand,
-                       double p_mod_random_inst);
+                       double p_mod_random_inst,
+                       double p_mod_random_inst_as_nop);
   void set_win(int start, int end);
   prog* next_proposal(prog* curr);
 };

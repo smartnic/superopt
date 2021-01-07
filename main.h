@@ -29,6 +29,7 @@ struct input_paras {
   vector<int> win_e_list;
   double p_inst_operand;
   double p_inst;
+  double p_inst_as_nop;
   int server_port;
   bool disable_prog_eq_cache;
   bool enable_prog_uneq_cache;
