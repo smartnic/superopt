@@ -995,6 +995,26 @@ int inst::reg_to_write() const {
   return -1;
 }
 
+bool inst::is_mem_inst() const {
+  if (_opcode == NOP) return false;
+  int op_class = BPF_CLASS(_opcode);
+  vector<int> mem_class = {BPF_LDX, BPF_STX, BPF_ST};
+  for (int i = 0; i < mem_class.size(); i++) {
+    if (op_class == mem_class[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int inst::num_sample_mem_opcodes() const {
+  return 0;
+}
+
+int inst::get_mem_opcode_by_sample_idx() const {
+  return 0;
+}
+
 void interpret(inout_t& output, inst * program, int length, prog_state & ps, const inout_t& input) {
 #undef IMM
 #undef OFF

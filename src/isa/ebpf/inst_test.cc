@@ -1648,6 +1648,45 @@ void test12() {
   smt_var::is_win = false;
 }
 
+void test13() {
+  cout << "Test 13: is_mem_inst() test" << endl;
+  vector<bool> is_mem_opcode_expected(NUM_INSTR);
+  for (int i = 0; i < is_mem_opcode_expected.size(); i++) {
+    is_mem_opcode_expected[i] = false;
+  }
+  vector<int> mem_opcodes = {IDX_LDXB,
+                             IDX_STXB,
+                             IDX_LDXH,
+                             IDX_STXH,
+                             IDX_LDXW,
+                             IDX_STXW,
+                             IDX_LDXDW,
+                             IDX_STXDW,
+                             IDX_STB,
+                             IDX_STH,
+                             IDX_STW,
+                             IDX_STDW,
+                             IDX_XADD64,
+                             IDX_XADD32,
+                            };
+  for (int i = 0; i < mem_opcodes.size(); i++) {
+    is_mem_opcode_expected[mem_opcodes[i]] = true;
+  }
+  bool res = true;
+  inst insn = inst();
+  for (int i = 0; i < NUM_INSTR; i++) {
+    insn._opcode = insn.get_opcode_by_idx(i);
+    bool actual = insn.is_mem_inst();
+    if (is_mem_opcode_expected[i] != actual) {
+      cout << "opcode " << inst::opcode_to_str(insn._opcode)
+           << " expected(" << is_mem_opcode_expected[i] << ") != "
+           << "actual(" << actual << ")" << endl;
+      actual = false;
+    }
+  }
+  print_test_res(res, "is_mem_inst()");
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
@@ -1662,6 +1701,7 @@ int main(int argc, char *argv[]) {
     test10();
     test11();
     test12();
+    test13();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

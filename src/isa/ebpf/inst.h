@@ -677,6 +677,11 @@ class inst: public inst_base {
   void regs_to_read(vector<int>& regs) const;
   int reg_to_write() const;
   void regs_cannot_be_ptrs(vector<int>& regs) const;
+
+  // memory sample related
+  bool is_mem_inst() const;
+  int num_sample_mem_opcodes() const;
+  int get_mem_opcode_by_sample_idx() const;
 };
 
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);
