@@ -302,7 +302,7 @@ void usage() {
        << endl << para_next_proposal_desc() << endl
        << setw(W) << "--p_inst_operand arg:" << ": " << para_p_inst_operand_desc() << endl
        << setw(W) << "--p_inst arg" << ": " << para_p_inst_desc() << endl
-       << setw(W) << "-p_inst_as_nop arg" << ": " << para_p_inst_as_nop_desc() << endl
+       << setw(W) << "--p_inst_as_nop arg" << ": " << para_p_inst_as_nop_desc() << endl
        << setw(W) << "--port arg" << ": " << para_port_desc() << endl
        << endl << "validator related arguments" << endl
        << setw(W) << "--disable_prog_eq_cache: disable the usage of prog_eq_cache" << endl
