@@ -46,6 +46,17 @@ int spawn_server() {
   }
 }
 
+void kill_server() {
+  if (pid == 0) return;
+  string cmd = "kill -9 " + to_string(pid);
+  int status = system(cmd.c_str());
+  if ((status != -1) && WIFEXITED(status) && (WEXITSTATUS(status) == 0)) {
+    cout << "kill the z3 solver server successfully" << endl;
+  } else {
+    cout << "kill the z3 solver server failed" << endl;
+  }
+}
+
 string write_problem_to_z3server(string formula) {
   int sock = 0, nread, nchars, total_read;
   struct sockaddr_in serv_addr;

@@ -509,5 +509,9 @@ int main(int argc, char* argv[]) {
   else
     cout << "validator long time: " << dur_sum_long << endl;
   cout << "compiling time: " << DUR(start, end) << " us" << endl;
+
+  // kill z3 solver server after compiling
+  kill_server();
+
   return 0;
 }
