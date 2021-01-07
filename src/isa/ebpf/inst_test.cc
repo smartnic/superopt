@@ -1649,7 +1649,8 @@ void test12() {
 }
 
 void test13() {
-  cout << "Test 13: is_mem_inst() test" << endl;
+  cout << "Test 13: memory sample related tests" << endl;
+  // test is_mem_inst()
   vector<bool> is_mem_opcode_expected(NUM_INSTR);
   for (int i = 0; i < is_mem_opcode_expected.size(); i++) {
     is_mem_opcode_expected[i] = false;
@@ -1681,10 +1682,32 @@ void test13() {
       cout << "opcode " << inst::opcode_to_str(insn._opcode)
            << " expected(" << is_mem_opcode_expected[i] << ") != "
            << "actual(" << actual << ")" << endl;
-      actual = false;
+      res = false;
     }
   }
   print_test_res(res, "is_mem_inst()");
+
+  // vector<int> ldx_sample_opcodes = {LDXB, LDXH, LDXW, LDXDW};
+  // vector<int> stx_sample_opcodes = {STXB, STXH, STXW, STXDW, STB, STH, STW, STDW, XADD64, XADD32};
+  // vector<int> st_sample_opcodes = {STB, STH, STW, STDW};
+  // vector<int> xadd_sample_opcodes = {XADD64, XADD32};
+  // test num_sample_mem_opcodes()
+  vector<int> num_sample_mem_opcodes_expected;
+  num_sample_mem_opcodes_expected = {4, 10, 4, 10, 4, 10, 4, 10, 4, 4, 4, 4, 2, 2};
+  insn = inst();
+  res = true;
+  for (int i = 0; i < mem_opcodes.size(); i++) {
+    insn._opcode = insn.get_opcode_by_idx(mem_opcodes[i]);
+    int act = insn.num_sample_mem_opcodes();
+    int exp = num_sample_mem_opcodes_expected[i];
+    if (act != exp) {
+      cout << "opcode " << inst::opcode_to_str(insn._opcode)
+           << " expected(" << exp << ") != "
+           << "actual(" << act << ")" << endl;
+      res = false;
+    }
+  }
+  print_test_res(res, "num_sample_mem_opcodes()");
 }
 
 int main(int argc, char *argv[]) {

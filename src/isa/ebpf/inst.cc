@@ -1007,7 +1007,43 @@ bool inst::is_mem_inst() const {
   return false;
 }
 
+bool inst::is_ldx_mem() const {
+  unordered_set<int> set = {LDXB, LDXH, LDXW, LDXDW};
+  if (set.find(_opcode) != set.end()) return true;
+  else return false;
+}
+
+bool inst::is_stx_mem() const {
+  unordered_set<int> set = {STXB, STXH, STXW, STXDW};
+  if (set.find(_opcode) != set.end()) return true;
+  else return false;
+}
+
+bool inst::is_st_mem() const {
+  unordered_set<int> set = {STB, STH, STW, STDW};
+  if (set.find(_opcode) != set.end()) return true;
+  else return false;
+}
+
+bool inst::is_xadd() const {
+  unordered_set<int> set = {XADD64, XADD32};
+  if (set.find(_opcode) != set.end()) return true;
+  else return false;
+}
+
+vector<int> ldx_sample_opcodes = {LDXB, LDXH, LDXW, LDXDW};
+vector<int> stx_sample_opcodes = {STXB, STXH, STXW, STXDW, STB, STH, STW, STDW, XADD64, XADD32};
+vector<int> st_sample_opcodes = {STB, STH, STW, STDW};
+vector<int> xadd_sample_opcodes = {XADD64, XADD32};
+
 int inst::num_sample_mem_opcodes() const {
+  if (! is_mem_inst()) return 0;
+
+  if (is_ldx_mem()) return ldx_sample_opcodes.size();
+  else if (is_stx_mem()) return stx_sample_opcodes.size();
+  else if (is_st_mem()) return st_sample_opcodes.size();
+  else if (is_xadd()) return xadd_sample_opcodes.size();
+
   return 0;
 }
 
