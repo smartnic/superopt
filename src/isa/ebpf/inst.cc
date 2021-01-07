@@ -1063,6 +1063,29 @@ int inst::get_mem_opcode_by_sample_idx(int sample_idx) const {
   return 0;
 }
 
+int get_vec_idx(const vector<int>& vec, int val) {
+  for (int i = 0; i < vec.size(); i++) {
+    if (vec[i] == val) return i;
+  }
+  return -1;
+}
+
+int inst::sample_mem_idx(int opcode) const {
+  if (! is_mem_inst()) return -1;
+
+  if (is_ldx_mem()) {
+    return get_vec_idx(ldx_sample_opcodes, opcode);
+  } else if (is_stx_mem()) {
+    return get_vec_idx(stx_sample_opcodes, opcode);
+  } else if (is_st_mem()) {
+    return get_vec_idx(st_sample_opcodes, opcode);
+  } else if (is_xadd()) {
+    return get_vec_idx(xadd_sample_opcodes, opcode);
+  };
+
+  return -1;
+}
+
 void interpret(inout_t& output, inst * program, int length, prog_state & ps, const inout_t& input) {
 #undef IMM
 #undef OFF

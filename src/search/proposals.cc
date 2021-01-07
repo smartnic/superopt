@@ -107,12 +107,42 @@ prog* mod_random_inst_operand(const prog &orig, int win_start, int win_end) {
   return synth;
 }
 
+/* randomly choose a possible opcode to replace the memory old opcode
+ */
+void mod_mem_inst_opcode(prog *orig, unsigned int sel_inst_index) {
+  // 1. check whether it is a memory inst
+  if (! orig->inst_list[sel_inst_index].is_mem_inst()) return;
+  // 2. get number of possible opcodes
+  inst* sel_inst = &orig->inst_list[sel_inst_index];
+  sel_inst->print();
+  int old_opcode = sel_inst->get_opcode();
+  int old_opcode_sample_mem_idx = sel_inst->sample_mem_idx(old_opcode);
+
+  int except = {old_opcode_sample_mem_idx};
+  int num = sel_inst->num_sample_mem_opcodes();
+  int new_mem_opcode_index = sample_int_with_exception(0, num - 1, except); // [0, num)
+  int new_mem_opcode = sel_inst->get_mem_opcode_by_sample_idx(new_mem_opcode_index);
+  // 3. modify opcode
+  sel_inst->set_opcode(new_mem_opcode);
+  sel_inst->print();
+}
+
 void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   assert(sel_inst_index < inst::max_prog_len);
   // TODO: is it wise to sample with exception?
   inst* sel_inst = &orig->inst_list[sel_inst_index];
   if (sel_inst->sample_unmodifiable()) return;
   int old_opcode = sel_inst->get_opcode();
+  if (sel_inst->is_mem_inst()) {
+    // 50% use the same modification as other opcodes, 50% use memory specific modification
+    int num_types = 2;
+    int type = sample_int(num_types - 1); // [0, 1]
+    if (type == 0) {
+      mod_mem_inst_opcode(orig, sel_inst_index);
+      return;
+    }
+  }
+
   // exceptions set is used to avoid jumps in the last line of the program
   unordered_set<int> exceptions;
   if (sel_inst_index == inst::max_prog_len - 1) {

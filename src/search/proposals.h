@@ -13,3 +13,5 @@ prog* mod_random_k_cont_insts(const prog &program, unsigned int k,
                               int win_start = 0, int win_end = inst::max_prog_len - 1);
 prog* mod_random_cont_insts(const prog &program,
                             int win_start = 0, int win_end = inst::max_prog_len - 1);
+prog* mod_random_inst_opcode_width(const prog &program,
+                                   int win_start = 0, int win_end = inst::max_prog_len - 1);

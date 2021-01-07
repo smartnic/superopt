@@ -686,6 +686,7 @@ class inst: public inst_base {
   bool is_mem_inst() const;
   int num_sample_mem_opcodes() const;
   int get_mem_opcode_by_sample_idx(int sample_idx) const;
+  int sample_mem_idx(int opcode) const;
 };
 
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);
