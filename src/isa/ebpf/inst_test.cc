@@ -1741,6 +1741,20 @@ void test13() {
   }
 }
 
+void test14() {
+  cout << "Test 14: test set_unused_operands_default_vals" << endl;
+  inst insn1 = inst(STXH, 1, 4, 5); // *(r1+4) = r5
+  insn1._opcode = STH;
+  inst insn1_expected = inst(STH, 1, 4, 0);
+  insn1.set_unused_operands_default_vals();
+  print_test_res(insn1 == insn1_expected, "STH");
+
+  inst insn2 = inst(NOP, 1, 1, 1, 1);
+  inst insn2_expected = inst(NOP);
+  insn2.set_unused_operands_default_vals();
+  print_test_res(insn2 == insn2_expected, "NOP");
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
@@ -1756,6 +1770,7 @@ int main(int argc, char *argv[]) {
     test11();
     test12();
     test13();
+    test14();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

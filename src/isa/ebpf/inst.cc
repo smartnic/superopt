@@ -1086,6 +1086,24 @@ int inst::sample_mem_idx(int opcode) const {
   return -1;
 }
 
+// set unused operands as 0
+void inst::set_unused_operands_default_vals() {
+  bool dst_reg_flag = false, src_reg_flag = false, imm_flag = false, off_flag = false;
+  for (int i = 0; i < MAX_OP_LEN; i++) {
+    switch (OPTYPE(_opcode, i)) {
+      case OP_DST_REG: dst_reg_flag = true; break;
+      case OP_SRC_REG: src_reg_flag = true; break;
+      case OP_OFF: off_flag = true; break;
+      case OP_IMM: imm_flag = true; break;
+      default: break;
+    }
+  }
+  if (! dst_reg_flag) _dst_reg = 0;
+  if (! src_reg_flag) _src_reg = 0;
+  if (! imm_flag) _imm = 0;
+  if (! off_flag) _off = 0;
+}
+
 void interpret(inout_t& output, inst * program, int length, prog_state & ps, const inout_t& input) {
 #undef IMM
 #undef OFF

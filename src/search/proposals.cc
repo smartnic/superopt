@@ -124,6 +124,7 @@ void mod_mem_inst_opcode(prog *orig, unsigned int sel_inst_index) {
   int new_mem_opcode = sel_inst->get_mem_opcode_by_sample_idx(new_mem_opcode_index);
   // 3. modify opcode
   sel_inst->set_opcode(new_mem_opcode);
+  sel_inst->set_unused_operands_default_vals();
   sel_inst->print();
 }
 
