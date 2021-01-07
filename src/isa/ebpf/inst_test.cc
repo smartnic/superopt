@@ -1708,6 +1708,37 @@ void test13() {
     }
   }
   print_test_res(res, "num_sample_mem_opcodes()");
+
+  // test get_mem_opcode_by_sample_idx
+  cout << "test get_mem_opcode_by_sample_idx" << endl;
+  vector<int> ldx_sample_opcodes = {LDXB, LDXH, LDXW, LDXDW};
+  insn._opcode = LDXB;
+  for (int i = 0; i < ldx_sample_opcodes.size(); i++) {
+    int opcode_exp = ldx_sample_opcodes[i];
+    int opcode_act = insn.get_mem_opcode_by_sample_idx(i);
+    print_test_res(opcode_exp == opcode_act, "ldx " + to_string(i));
+  }
+  vector<int> stx_sample_opcodes = {STXB, STXH, STXW, STXDW, STB, STH, STW, STDW, XADD64, XADD32};
+  insn._opcode = STXB;
+  for (int i = 0; i < stx_sample_opcodes.size(); i++) {
+    int opcode_exp = stx_sample_opcodes[i];
+    int opcode_act = insn.get_mem_opcode_by_sample_idx(i);
+    print_test_res(opcode_exp == opcode_act, "stx " + to_string(i));
+  }
+  vector<int> st_sample_opcodes = {STB, STH, STW, STDW};
+  insn._opcode = STB;
+  for (int i = 0; i < st_sample_opcodes.size(); i++) {
+    int opcode_exp = st_sample_opcodes[i];
+    int opcode_act = insn.get_mem_opcode_by_sample_idx(i);
+    print_test_res(opcode_exp == opcode_act, "st " + to_string(i));
+  }
+  vector<int> xadd_sample_opcodes = {XADD64, XADD32};
+  insn._opcode = XADD64;
+  for (int i = 0; i < xadd_sample_opcodes.size(); i++) {
+    int opcode_exp = xadd_sample_opcodes[i];
+    int opcode_act = insn.get_mem_opcode_by_sample_idx(i);
+    print_test_res(opcode_exp == opcode_act, "xadd " + to_string(i));
+  }
 }
 
 int main(int argc, char *argv[]) {

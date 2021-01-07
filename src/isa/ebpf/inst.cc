@@ -1037,8 +1037,6 @@ vector<int> st_sample_opcodes = {STB, STH, STW, STDW};
 vector<int> xadd_sample_opcodes = {XADD64, XADD32};
 
 int inst::num_sample_mem_opcodes() const {
-  if (! is_mem_inst()) return 0;
-
   if (is_ldx_mem()) return ldx_sample_opcodes.size();
   else if (is_stx_mem()) return stx_sample_opcodes.size();
   else if (is_st_mem()) return st_sample_opcodes.size();
@@ -1047,7 +1045,21 @@ int inst::num_sample_mem_opcodes() const {
   return 0;
 }
 
-int inst::get_mem_opcode_by_sample_idx() const {
+int inst::get_mem_opcode_by_sample_idx(int sample_idx) const {
+  assert(sample_idx >= 0);
+  if (is_ldx_mem()) {
+    assert(sample_idx < ldx_sample_opcodes.size());
+    return ldx_sample_opcodes[sample_idx];
+  } else if (is_stx_mem()) {
+    assert(sample_idx < stx_sample_opcodes.size());
+    return stx_sample_opcodes[sample_idx];
+  } else if (is_st_mem()) {
+    assert(sample_idx < st_sample_opcodes.size());
+    return st_sample_opcodes[sample_idx];
+  } else if (is_xadd()) {
+    assert(sample_idx < xadd_sample_opcodes.size());
+    return xadd_sample_opcodes[sample_idx];
+  };
   return 0;
 }
 
