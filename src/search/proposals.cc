@@ -152,6 +152,11 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   } else {
     exceptions = {opcode_2_idx(old_opcode)};
   }
+  // if window program eq check is used, set jmp opcodes as exceptions,
+  // since window program eq check cannot deal with jmp opcodes
+  if (smt_var::is_win) {
+    sel_inst->insert_jmp_opcodes(exceptions);
+  }
   sel_inst->insert_opcodes_not_gen(exceptions);
   int new_opcode_idx = sample_int_with_exceptions(NUM_INSTR - 1, exceptions);
   int new_opcode = sel_inst->get_opcode_by_idx(new_opcode_idx);
