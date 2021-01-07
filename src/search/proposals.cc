@@ -206,3 +206,15 @@ prog* mod_random_cont_insts(const prog &orig, int win_start, int win_end) {
   int k = sample_int(start_k_value, max_len);
   return mod_random_k_cont_insts(orig, k);
 }
+
+prog* mod_random_inst_as_nop(const prog &orig, int win_start, int win_end) {
+  assert(win_end < inst::max_prog_len);
+  int inst_index = sample_int(win_start, win_end);
+  prog* synth = new prog(orig);
+  synth->reset_vals();
+  synth->inst_list[inst_index].set_as_nop_inst();
+  if (synth->inst_list[inst_index] == orig.inst_list[inst_index]) {
+    synth->set_vals(orig);
+  }
+  return synth;
+}
