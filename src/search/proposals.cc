@@ -114,7 +114,6 @@ void mod_mem_inst_opcode(prog *orig, unsigned int sel_inst_index) {
   if (! orig->inst_list[sel_inst_index].is_mem_inst()) return;
   // 2. get number of possible opcodes
   inst* sel_inst = &orig->inst_list[sel_inst_index];
-  sel_inst->print();
   int old_opcode = sel_inst->get_opcode();
   int old_opcode_sample_mem_idx = sel_inst->sample_mem_idx(old_opcode);
 
@@ -125,7 +124,6 @@ void mod_mem_inst_opcode(prog *orig, unsigned int sel_inst_index) {
   // 3. modify opcode
   sel_inst->set_opcode(new_mem_opcode);
   sel_inst->set_unused_operands_default_vals();
-  sel_inst->print();
 }
 
 void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
