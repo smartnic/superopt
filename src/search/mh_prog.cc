@@ -366,6 +366,7 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
         _cost.set_examples(examples, prog_start);
       }
       clear_prog_freq_dic(prog_freq);
+      insert_into_prog_freq_dic(*prog_start, prog_freq);
     }
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {
