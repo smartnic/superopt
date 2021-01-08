@@ -1071,7 +1071,9 @@ z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
       register_state reg_state = input.reg_state[reg][i];
       if (! is_ptr(reg_state.type)) continue;
       z3::expr pc = input.reg_path_cond(reg, i);
-      int table_id = reg_ptr_type_2_mem_table_type(reg_state.type);
+      int table_type = reg_ptr_type_2_mem_table_type(reg_state.type);
+      assert(table_type != -1);
+      int table_id = sv.mem_var.get_mem_table_id(table_type);
       assert(table_id != -1);
       z3::expr off_expr = to_expr(reg_state.off);
       sv.mem_var.add_ptr(reg_expr, table_id, off_expr, pc);
