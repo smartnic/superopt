@@ -174,11 +174,7 @@ void prog::canonicalize() {
 }
 
 int prog::num_real_instructions() const {
-  int count = 0;
-  for (int i = 0; i < inst::max_prog_len; i++) {
-    count += inst_list[i].is_real_inst();
-  }
-  return count;
+  return ::num_real_instructions(inst_list, inst::max_prog_len);
 }
 
 double prog::instructions_runtime() const {

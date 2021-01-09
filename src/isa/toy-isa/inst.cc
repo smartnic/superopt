@@ -224,6 +224,13 @@ z3::expr inst::smt_set_pre(z3::expr input, smt_var& sv) {
   return f;
 }
 
+int num_real_instructions(const inst* program, int length) {
+  int count = 0;
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    count += program[i].is_real_inst();
+  }
+  return count;
+}
 
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input) {
   /* Input currently is just one integer which will be written into R0. Will

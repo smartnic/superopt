@@ -570,11 +570,6 @@ int inst::inst_output() const {
   }
 }
 
-bool inst::is_real_inst() const {
-  if (_opcode == NOP) return false;
-  return true;
-}
-
 bool inst::is_reg(int op_index) const {
   int op_type = OPTYPE(_opcode, op_index);
   if ((op_type == OP_DST_REG) || (op_type == OP_SRC_REG)) return true;
@@ -1102,6 +1097,17 @@ void inst::set_unused_operands_default_vals() {
   if (! src_reg_flag) _src_reg = 0;
   if (! imm_flag) _imm = 0;
   if (! off_flag) _off = 0;
+}
+
+int num_real_instructions(const inst* program, int length) {
+  int count = length;
+  if (program[0]._opcode == NOP) count--;
+  for (int i = 1; i < length; i++) {
+    if ((program[i - 1]._opcode != LDMAPID) && (program[i]._opcode == NOP)) {
+      count--;
+    }
+  }
+  return count;
 }
 
 void interpret(inout_t& output, inst * program, int length, prog_state & ps, const inout_t& input) {

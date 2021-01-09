@@ -67,7 +67,6 @@ class inst_base {
   void insert_jmp_opcodes(unordered_set<int>& jmp_set) const {RAISE_EXCEPTION("inst::insert_jmp_opcodes");}
   int inst_output_opcode_type() const {RAISE_EXCEPTION("inst::inst_output_opcode_type");}
   int inst_output() const {RAISE_EXCEPTION("inst::inst_output");}
-  bool is_real_inst() const {RAISE_EXCEPTION("inst::is_real_inst");}
   bool is_reg(int op_index) const {RAISE_EXCEPTION("inst::is_reg");}
   // If ISA allows an implicit register, return the register, else return -1
   int implicit_ret_reg() const {RAISE_EXCEPTION("inst::implicit_ret_reg");}
@@ -90,5 +89,6 @@ struct instHash {
 };
 
 /* inst.cc should support */
+// int num_real_instructions(const inst* program, int length);
 // void interpret(inout_t& output, inst* program, int length, prog_state &ps, inout_t& output);
 

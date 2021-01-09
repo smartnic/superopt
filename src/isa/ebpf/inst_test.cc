@@ -1755,8 +1755,31 @@ void test14() {
   print_test_res(insn2 == insn2_expected, "NOP");
 }
 
+void test15() {
+  cout << "Test 15: test the number of program real instructions" << endl;
+  inst p1[] = {inst(MOV64XC, 1, 1),
+               inst(),
+               inst(EXIT),
+              };
+  print_test_res(num_real_instructions(p1, sizeof(p1) / sizeof(inst)) == 2, "1");
+
+  inst p2[] = {inst(),
+               inst(MOV64XC, 1, 1),
+               inst(EXIT),
+              };
+  print_test_res(num_real_instructions(p2, sizeof(p2) / sizeof(inst)) == 2, "2");
+
+  inst p3[] = {inst(LDMAPID, 1, 0),
+               inst(),
+               inst(EXIT),
+              };
+  print_test_res(num_real_instructions(p3, sizeof(p3) / sizeof(inst)) == 3, "3");
+}
+
 int main(int argc, char *argv[]) {
   try {
+    test15();
+    return 0;
     test1();
     test2();
     test3();

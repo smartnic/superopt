@@ -161,6 +161,7 @@ class inst: public inst_base {
   bool is_pgm_end() const;
 };
 
+int num_real_instructions(const inst* program, int length);
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);
 
 inline int opcode_2_idx(int opcode) {return opcode;}

@@ -660,7 +660,6 @@ class inst: public inst_base {
   void insert_opcodes_not_gen(unordered_set<int>& opcode_set) const;
   int inst_output_opcode_type() const;
   int inst_output() const;
-  bool is_real_inst() const;
   bool is_reg(int op_index) const;
   int implicit_ret_reg() const;
   void set_as_nop_inst();
@@ -690,5 +689,6 @@ class inst: public inst_base {
   void set_unused_operands_default_vals();
 };
 
+int num_real_instructions(const inst* program, int length);
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);
 void safety_chk(inst& insn, prog_state& ps);
