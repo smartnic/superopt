@@ -1450,14 +1450,22 @@ void test13() {
 
   win_start = 11;
   win_end = 15;
-  inst rcv_sock4_11_15[prog_len];
-  rcv_sock4_11_15[11] = inst(LDXW, 1, 6, 24);
-  rcv_sock4_11_15[12] = inst();
-  rcv_sock4_11_15[13] = inst(MOV32XC, 8, 0);
-  rcv_sock4_11_15[14] = inst(STXH, 10, -26, 8);
-  rcv_sock4_11_15[15] = inst();
+  for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
+  rcv_sock4_1[11] = inst(LDXW, 1, 6, 24);
+  rcv_sock4_1[12] = inst();
+  rcv_sock4_1[13] = inst(MOV32XC, 8, 0);
+  rcv_sock4_1[14] = inst(STXH, 10, -26, 8);
+  rcv_sock4_1[15] = inst();
   vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_11_15, prog_len) == 1, "rcv-sock4 5");
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 5");
+
+  win_start = 27;
+  win_end = 28;
+  for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
+  rcv_sock4_1[27] = inst();
+  rcv_sock4_1[28] = inst(STXW, 10, -50, 8);
+  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == ILLEGAL_CEX, "rcv-sock4 6");
 
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 
