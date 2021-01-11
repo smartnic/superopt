@@ -1321,6 +1321,11 @@ inout_t::inout_t() {
   reg_readable.resize(NUM_REGS);
   stack_readble.resize(STACK_SIZE);
   reg_type.resize(NUM_REGS);
+  maps_mem.resize(mem_t::maps_number());
+  for (int i = 0; i < maps_mem.size(); i++) {
+    int max_num = mem_t::map_max_entries(i) * mem_t::map_val_sz(i) / NUM_BYTE_BITS;
+    maps_mem[i].resize(max_num);
+  }
 }
 
 // deep copy for vector push back
@@ -1348,6 +1353,13 @@ inout_t::inout_t(const inout_t& rhs) {
   for (int i = 0; i < reg_type.size(); i++) reg_type[i] = rhs.reg_type[i];
   regs = rhs.regs;
   stack = rhs.stack;
+  maps_mem.resize(rhs.maps_mem.size());
+  for (int i = 0; i < maps_mem.size(); i++) {
+    maps_mem[i].resize(rhs.maps_mem[i].size());
+    for (int j = 0; j < maps_mem[i].size(); j++) {
+      maps_mem[i][j] = rhs.maps_mem[i][j];
+    }
+  }
 }
 
 inout_t::~inout_t() {
@@ -1429,6 +1441,11 @@ void inout_t::init() {
   pgm_exit_type = PGM_EXIT_TYPE_default;
   int n_randoms = mem_t::_layout._n_randoms_u32;
   randoms_u32.resize(mem_t::_layout._n_randoms_u32);
+  // maps_mem.resize(mem_t::maps_number());
+  // for (int i = 0; i < maps_mem.size(); i++) {
+  //   int max_num = mem_t::map_max_entries(i) * mem_t::map_val_sz(i);
+  //   maps_mem[i].resize(max_num);
+  // }
 }
 
 void inout_t::operator=(const inout_t &rhs) {
@@ -1548,7 +1565,16 @@ ostream& operator<<(ostream& out, const inout_t& x) {
     out << it.first << ":" << hex << (int)it.second << dec
         << "," << x.stack_readble[it.first] << " ";
   }
-
+  if (smt_var::is_win) {
+    out << " maps memory: ";
+    for (int i = 0; i < x.maps_mem.size(); i++) {
+      out << i << ":";
+      for (int j = 0; j < x.maps_mem[i].size(); j++) {
+        out << hex << setfill('0') << setw(2) << static_cast<int>(x.maps_mem[i][j]) << dec;
+      }
+      out << " ";
+    }
+  }
   return out;
 }
 
@@ -1566,6 +1592,15 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   ps._input_reg_val = input.reg;
   // cp input map
   ps._mem.clear();
+  if (input.is_win) {
+    for (int i = 0; i < input.maps_mem.size(); i++) {
+      int mem_off_s = mem_t::get_mem_off_by_idx_in_map(i, 0);
+      assert(ps._mem._mem_size >= (mem_off_s + input.maps_mem[i].size()));
+      for (int j = 0; j < input.maps_mem[i].size(); j++) {
+        ps._mem._mem[mem_off_s + j] = input.maps_mem[i][j];
+      }
+    }
+  }
   for (int i = 0; i < input.maps.size(); i++) {
     for (auto it = input.maps[i].begin(); it != input.maps[i].end(); it++) {
       ps._mem.update_kv_in_map(i, it->first, it->second);
@@ -1656,10 +1691,19 @@ void update_output_by_ps_win(inout_t& output, const prog_state& ps) {
       }
     }
   }
+  // update map memory
+  for (int i = 0; i < output.maps_mem.size(); i++) {
+    int mem_off_s = mem_t::get_mem_off_by_idx_in_map(i, 0);
+    assert(ps._mem._mem_size > (mem_off_s + output.maps[i].size()));
+    for (int j = 0; j < output.maps_mem[i].size(); j++) {
+      output.maps_mem[i][j] = ps._mem._mem[mem_off_s + j];
+    }
+  }
 }
 
 void update_output_by_ps(inout_t& output, const prog_state& ps) {
   output.clear();
+  output.init();
   if (smt_var::is_win) {
     update_output_by_ps_win(output, ps);
     return;

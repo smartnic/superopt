@@ -512,6 +512,7 @@ class inout_t: public inout_t_base {
   // safety check state variables ends
   unordered_map<int, int64_t> regs;  // for regs
   unordered_map<int, uint8_t> stack; // for stack
+  vector<vector<uint8_t>> maps_mem; // maps memory (for map value in window program eq check)
   inout_t();
   inout_t(const inout_t& rhs); // deep copy for vector push back
   ~inout_t();

@@ -1541,8 +1541,12 @@ void test10() {
 void test11() {
   cout << "Test 11: full interpretation check of window program" << endl;
   mem_t::_layout.clear();
+  smt_var::is_win = true;
   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::set_pkt_sz(512); // pkt sz: 512 bytes
+  mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
+  mem_t::add_map(map_attr(16, 32, 32));
+
   prog_state ps;
   ps.init();
   inout_t input, output, expected;
@@ -1592,6 +1596,42 @@ void test11() {
   expected.reg = 0xff;
   interpret(output, p2, 4, ps, input);
   print_test_res(output == expected, "interpret program 2");
+
+  inst p3[] = {inst(STH, 10, -2, 0xff),
+               inst(LDMAPID, 1, 0),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -2),
+               inst(CALL, BPF_FUNC_map_lookup_elem),
+               inst(JEQXC, 0, 0, 3),
+               inst(LDXB, 1, 0, 0), // insn 6
+               inst(MOV64XY, 0, 1),
+               inst(EXIT),
+               inst(MOV64XC, 0, 0),
+               inst(EXIT),
+              };
+  input.clear();
+  output.clear();
+  expected.clear();
+  input.is_win = true;
+  inout_t::start_insn = 6;
+  inout_t::end_insn = 6;
+  input.reg_readable.resize(NUM_REGS);
+  input.stack_readble.resize(STACK_SIZE);
+  input.reg_type.resize(NUM_REGS);
+  input.reg_readable[10] = true;
+  input.reg_type[10] = PTR_TO_STACK;
+  input.regs[10] = (uint64_t)ps._mem.get_stack_bottom_addr();
+  input.reg_readable[0] = true;
+  input.reg_type[0] = PTR_TO_MAP_VALUE;
+  unsigned int mem_off = mem_t::get_mem_off_by_idx_in_map(0, 0); // map 0, map off: 0
+  input.regs[0] = (uint64_t)ps._mem.get_stack_start_addr() + mem_off;
+  // set map value
+  input.maps_mem[0][0] = 0xff;
+  expected.reg = 0xff;
+  interpret(output, p3, sizeof(p3) / sizeof(inst), ps, input);
+  print_test_res(output == expected, "interpret program 3");
+
+  smt_var::is_win = false;
 }
 
 void test12() {

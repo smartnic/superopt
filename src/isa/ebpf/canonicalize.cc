@@ -888,6 +888,13 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
           if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
             reg_v = pkt_start + iss.reg_state[reg][sample].off;
           }
+        } else if (inputs[i].reg_type[reg] == PTR_TO_MAP_VALUE) {
+          int map_id = iss.reg_state[reg][sample].map_id;
+          int idx_in_map = iss.reg_state[reg][sample].off;
+          assert(map_id >= 0);
+          assert(map_id < mem_t::maps_number);
+          unsigned int mem_off = mem_t::get_mem_off_by_idx_in_map(map_id, idx_in_map);
+          reg_v = stack_top + mem_off;
         }
       } else {
         reg_v = random_uint64(min_u64, max_u64);
