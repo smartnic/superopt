@@ -164,11 +164,7 @@ void inst_static_state::set_reg_state(int reg, register_state rs) {
 void inst_static_state::insert_reg_state(inst_static_state& iss) {
   for (int reg = 0; reg < NUM_REGS; reg++) {
     for (int i = 0; i < iss.reg_state[reg].size(); i++) {
-      int type = iss.reg_state[reg][i].type;
-      int off = iss.reg_state[reg][i].off;
-      int64_t val = iss.reg_state[reg][i].val;
-
-      // search <type, off> in self.reg_state. if it is, no need to insert
+      // search reg_state in self.reg_state. if it is, no need to insert
       bool flag = false;
       for (int j = 0; j < reg_state[reg].size(); j++) {
         if (reg_state[reg][j] == iss.reg_state[reg][i]) {
@@ -332,11 +328,41 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
       }
     }
   } else if (opcode == CALL) {
+    iss.set_reg_state(0, SCALAR_VALUE);
     if (imm == BPF_FUNC_map_lookup_elem) {
-      // todo: need to modify the offset later
-      iss.set_reg_state(0, PTR_TO_MAP_VALUE_OR_NULL, 0);
-    } else {
-      iss.set_reg_state(0, SCALAR_VALUE);
+      // get map id according to r1's value
+      int map_id_reg = 1;
+      vector<int> map_id_list;
+      for (int i = 0; i < iss.reg_state[map_id_reg].size(); i++) {
+        if (iss.reg_state[map_id_reg][i].type != CONST_PTR_TO_MAP) {
+          if (logger.is_print_level(LOGGER_ERROR)) {
+            cout << "ERROR: r1's type is not CONST_PTR_TO_MAP" << endl;
+          }
+          return;
+        } else if (! iss.reg_state[map_id_reg][i].val_flag) {
+          if (logger.is_print_level(LOGGER_ERROR)) {
+            cout << "ERROR: r1 is not a const" << endl;
+          }
+          return;
+        }
+        int map_id = iss.reg_state[map_id_reg][i].val;
+        if ((map_id < 0) || (map_id > mem_t::maps_number())) {
+          if (logger.is_print_level(LOGGER_ERROR)) {
+            cout << "ERROR: map_id " << map_id << " not in [0, # map]" << endl;
+          }
+          return;
+        }
+        map_id_list.push_back(map_id);
+      }
+      // clear register 0's state
+      iss.reg_state[0] = {};
+      for (int i = 0; i < map_id_list.size(); i++) {
+        register_state rs;
+        rs.type = PTR_TO_MAP_VALUE_OR_NULL;
+        rs.map_id = map_id_list[i];
+        rs.off = 0;
+        iss.reg_state[0].push_back(rs);
+      }
     }
   } else if (opcode == LDMAPID) {
     register_state rs;

@@ -290,25 +290,30 @@ struct map_id_pc {
 
 // for static analysis
 // TODO: deal with map later
+// for map value pointer type, map_id + off: specify the map memory
 class register_state {
  public:
   int type;
+  int map_id;
   int off; // memory offset (stack, pkt)
   // bool is_val; // flag of whether `val` is available
   bool val_flag = false; // if `val_flag` is true, `val` is valid
   int64_t val; // register value
   // default values are all 0
-  register_state(int t = 0, int o = 0 , int64_t v = 0, bool vf = false) {
+  register_state(int t = 0, int o = 0 , int64_t v = 0, bool vf = false, int map_index = -1) {
     type = t;
     off = o;
     val = v;
     val_flag = vf;
+    map_id = map_index;
   }
   bool operator==(const register_state &rhs) {
-    return (type == rhs.type) && (off == rhs.off) && (val == rhs.val) && (val_flag == rhs.val_flag);
+    return (type == rhs.type) && (off == rhs.off) &&
+           (val == rhs.val) && (val_flag == rhs.val_flag) &&
+           (map_id == rhs.map_id);
   }
   friend ostream& operator<<(ostream& out, const register_state& x) {
-    out << x.type << "," << x.off << "," << x.val << "," << x.val_flag;
+    out << x.type << "," << x.off << "," << x.val << "," << x.val_flag << "," << x.map_id;
     return out;
   }
 };
@@ -444,6 +449,7 @@ enum REG_TYPE {
   PTR_TO_PKT,
   CONST_PTR_TO_MAP,
   PTR_TO_MAP_VALUE_OR_NULL,
+  PTR_TO_MAP_VALUE,
   MAX_REG_TYPE,
 };
 

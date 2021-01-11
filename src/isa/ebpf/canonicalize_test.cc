@@ -249,6 +249,7 @@ void test3() {
   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::set_pkt_sz(16);
   mem_t::add_map(map_attr(16, 32, 16)); // key_sz = 2 bytes, val_sz = 4 bytes
+  mem_t::add_map(map_attr(16, 32, 16));
 
   inst p1[] = {inst(MOV64XY, 2, 1),
                inst(ADD64XC, 2, 2),
@@ -275,6 +276,46 @@ void test3() {
   expected_insn4_r2_p2.push_back(register_state{PTR_TO_CTX, 0, 0});
   expected_insn4_r2_p2.push_back(register_state{PTR_TO_CTX, 2, 0});
   print_test_res(reg_state_is_equal(expected_insn4_r2_p2, pss.static_state[4].reg_state[2]), "2");
+
+  // test the return value of map lookup
+  inst p3[] = {inst(STH, 10, -2, 0xff),
+               inst(LDMAPID, 1, 1),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -2),
+               inst(CALL, 1),
+               inst(EXIT),
+              };
+  static_analysis(pss, p3, sizeof(p3) / sizeof(inst));
+  // check r0 state before executing insn 5
+  vector<register_state> expected_insn5_r0_p3;
+  register_state rs_p3;
+  rs_p3.type = PTR_TO_MAP_VALUE_OR_NULL;
+  rs_p3.map_id = 1;
+  rs_p3.off = 0;
+  expected_insn5_r0_p3.push_back(rs_p3);
+  print_test_res(reg_state_is_equal(expected_insn5_r0_p3, pss.static_state[5].reg_state[0]), "3");
+
+  inst p4[] = {inst(STH, 10, -2, 0xff),
+               inst(MOV64XC, 1, 5),
+               inst(LDMAPID, 1, 1),
+               inst(JEQXY, 1, 1, 1),
+               inst(LDMAPID, 1, 0),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -2),
+               inst(CALL, 1),
+               inst(EXIT),
+              };
+  static_analysis(pss, p4, sizeof(p4) / sizeof(inst));
+  // check r0 state before executing insn 8
+  vector<register_state> expected_insn8_r0_p4;
+  register_state rs_p4;
+  rs_p4.type = PTR_TO_MAP_VALUE_OR_NULL;
+  rs_p4.map_id = 1;
+  rs_p4.off = 0;
+  expected_insn8_r0_p4.push_back(rs_p4);
+  rs_p4.map_id = 0;
+  expected_insn8_r0_p4.push_back(rs_p4);
+  print_test_res(reg_state_is_equal(expected_insn8_r0_p4, pss.static_state[8].reg_state[0]), "4");
 
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
