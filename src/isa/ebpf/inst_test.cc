@@ -1778,8 +1778,6 @@ void test15() {
 
 int main(int argc, char *argv[]) {
   try {
-    test15();
-    return 0;
     test1();
     test2();
     test3();
@@ -1794,6 +1792,7 @@ int main(int argc, char *argv[]) {
     test12();
     test13();
     test14();
+    test15();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
