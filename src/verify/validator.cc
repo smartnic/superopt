@@ -118,7 +118,7 @@ void validator::smt_pre(expr& pre, unsigned int prog_id, unsigned int num_regs,
     sv_tmp.init(prog_id, 0, num_regs);
     p = p && inst::smt_set_pre(input, sv_tmp);
   } else {
-    sv.init(prog_id, 0, num_regs, true);
+    sv.init(prog_id, 0, num_regs, 1, true);
     p = smt_pgm_set_pre(sv, sin);
   }
   pre = p;

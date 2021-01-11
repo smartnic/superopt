@@ -1409,6 +1409,41 @@ void test13() {
   print_test_res(vld.is_equal_to(p3, 4, p3_1, 4) == 1, "3");
 
   mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
+  inst p4[] = {inst(STH, 10, -2, 0xff),
+               inst(LDMAPID, 1, 0),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -2),
+               inst(CALL, BPF_FUNC_map_lookup_elem),
+               inst(JEQXC, 0, 0, 4),
+               inst(LDXW, 1, 0, 0), // insn 6
+               inst(MOV64XC, 2, 6),
+               inst(ADD64XY, 1, 2),
+               inst(STXW, 0, 0, 1), // insn 9
+               inst(MOV64XC, 0, 0),
+               inst(EXIT),
+              };
+  inst p4_1[] = {inst(STH, 10, -2, 0xff),
+                 inst(LDMAPID, 1, 0),
+                 inst(MOV64XY, 2, 10),
+                 inst(ADD64XC, 2, -2),
+                 inst(CALL, BPF_FUNC_map_lookup_elem),
+                 inst(JEQXC, 0, 0, 4),
+                 inst(), // insn 6
+                 inst(MOV64XC, 2, 6),
+                 inst(XADD32, 0, 0, 2),
+                 inst(), // insn 9
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  int p4_len = sizeof(p4) / sizeof(inst);
+  win_start = 6, win_end = 9;
+  vld.set_orig(p4, p4_len, win_start, win_end);
+  print_test_res(vld.is_equal_to(p4, p4_len, p4, p4_len) == 1, "4.1");
+  print_test_res(vld.is_equal_to(p4, p4_len, p4_1, p4_len) == 1, "4.2");
+
+  mem_t::_layout.clear();
   const int prog_len = 91;
   inst::max_prog_len = prog_len;
   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
@@ -1467,6 +1502,29 @@ void test13() {
   vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
   print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == ILLEGAL_CEX, "rcv-sock4 6");
 
+  win_start = 69;
+  win_end = 71;
+  for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
+  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 7");
+
+  win_start = 69;
+  win_end = 71;
+  for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
+  rcv_sock4_1[69] = inst(LDXDW, 1, 0, 0);
+  rcv_sock4_1[70] = inst(ADD64XC, 1, 2);
+  rcv_sock4_1[71] = inst(STXDW, 0, 0, 1);
+  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 0, "rcv-sock4 8");
+
+  win_start = 69;
+  win_end = 71;
+  for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
+  rcv_sock4_1[69] = inst(MOV64XC, 1, 1);
+  rcv_sock4_1[70] = inst(XADD64, 0, 0, 1);
+  rcv_sock4_1[71] = inst();
+  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 9");
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 
   // test from-network
