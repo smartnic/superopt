@@ -1449,6 +1449,7 @@ void inout_t::init() {
 }
 
 void inout_t::operator=(const inout_t &rhs) {
+  cout << "inout_t::operator= enter" << endl;
   input_simu_pkt_s = rhs.input_simu_pkt_s;
   input_simu_r10 = rhs.input_simu_r10;
   reg = rhs.reg;
@@ -1468,6 +1469,13 @@ void inout_t::operator=(const inout_t &rhs) {
   stack = rhs.stack;
   input_simu_pkt_ptrs[0] = rhs.input_simu_pkt_ptrs[0];
   input_simu_pkt_ptrs[1] = rhs.input_simu_pkt_ptrs[1];
+  if (is_win) {
+    for (int i = 0; i < maps_mem.size(); i++) {
+      for (int j = 0; j < maps_mem[i].size(); j++) {
+        maps_mem[i][j] = rhs.maps_mem[i][j];
+      }
+    }
+  }
 }
 
 bool inout_t::operator==(const inout_t &rhs) const {
@@ -1529,6 +1537,11 @@ bool inout_t::operator==(const inout_t &rhs) const {
     if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
       if (input_simu_pkt_ptrs[0] != rhs.input_simu_pkt_ptrs[0]) return false;
       if (input_simu_pkt_ptrs[1] != rhs.input_simu_pkt_ptrs[1]) return false;
+    }
+    for (int i = 0; i < maps_mem.size(); i++) {
+      for (int j = 0; j < maps_mem[i].size(); j++) {
+        if (maps_mem[i][j] != rhs.maps_mem[i][j]) return false;
+      }
     }
   }
   return true;
@@ -1869,6 +1882,19 @@ void get_cmp_lists_win(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
     for (int i = 0; i < 2; i++) { // 2 pointers
       val_list1.push_back(output1.input_simu_pkt_ptrs[i]);
       val_list2.push_back(output2.input_simu_pkt_ptrs[i]);
+    }
+  }
+  // update map memory
+  assert(output1.maps_mem.size() == output2.maps_mem.size());
+  for (int i = 0; i < output1.maps_mem.size(); i++) {
+    assert(output1.maps_mem[i].size() == output2.maps_mem[i].size());
+    for (int j = 0; j < output1.maps_mem[i].size(); j++) {
+      uint8_t v1 = output1.maps_mem[i][j];
+      uint8_t v2 = output2.maps_mem[i][j];
+      if (v1 != v2) {
+        val_list1.push_back(v1);
+        val_list2.push_back(v2);
+      }
     }
   }
 }
