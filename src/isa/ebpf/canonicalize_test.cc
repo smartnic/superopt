@@ -600,6 +600,51 @@ void test5() {
   mem_t::_layout.clear();
 }
 
+void test6() {
+  cout << "Test 6: test gen_random_input_for_win" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(16);
+  mem_t::add_map(map_attr(16, 32, 16)); // key_sz = 2 bytes, val_sz = 4 bytes
+  mem_t::add_map(map_attr(16, 32, 16));
+
+  inst p1[] = {inst(STB, 10, -1, 0x1),
+               inst(LDMAPID, 1, 0),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -1),
+               inst(CALL, BPF_FUNC_map_lookup_elem),
+               inst(JEQXC, 0, 0, 2),
+               inst(LDXB, 0, 0, 0), // insn 6
+               inst(EXIT),
+               inst(MOV64XC, 0, 0),
+               inst(EXIT),
+              };
+  int win_start = 6, win_end = 6;
+  inout_t::start_insn = win_start;
+  inout_t::end_insn = win_end;
+  smt_var::is_win = true;
+  prog_static_state pss;
+  static_analysis(pss, p1, sizeof(p1) / sizeof(inst));
+  set_up_smt_inout_orig(pss, p1, sizeof(p1) / sizeof(inst), win_start, win_end);
+  int n_inputs = 1;
+  vector<inout_t> inputs;
+  gen_random_input_for_win(inputs, n_inputs, pss.static_state[win_start], win_start, win_end);
+  inout_t output;
+  prog_state ps;
+  ps.init();
+  interpret(output, p1, sizeof(p1) / sizeof(inst), ps, inputs[0]);
+  // check r0
+  int64_t r0_expected = output.maps_mem[0][0];
+  auto it = output.regs.find(0);
+  if (it != output.regs.end()) {
+    int64_t r0_actual = it->second;
+    print_test_res(r0_actual == r0_expected, "1");
+  } else {
+    print_test_res(false, "1");
+  }
+
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
@@ -607,6 +652,7 @@ int main(int argc, char *argv[]) {
     test3();
     test4();
     test5();
+    test6();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

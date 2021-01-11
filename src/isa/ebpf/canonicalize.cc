@@ -821,6 +821,9 @@ void gen_random_input_for_common(vector<inout_t>& inputs, bool is_win) {
 void gen_random_input(vector<inout_t>& inputs, int n, int64_t reg_min, int64_t reg_max) {
   inputs.clear();
   inputs.resize(n);
+  for (int i = 0; i < inputs.size(); i++) {
+    inputs[i].init();
+  }
   gen_random_input_for_common(inputs, false);
   // Generate input register r1
   if (mem_t::_layout._pkt_sz == 0) { // case 1: r1 is not used as pkt address
@@ -844,10 +847,19 @@ void gen_random_input(vector<inout_t>& inputs, int n, int64_t reg_min, int64_t r
 void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state& iss, int win_start, int win_end) {
   inputs.clear();
   inputs.resize(n);
+  for (int i = 0; i < inputs.size(); i++) {
+    inputs[i].init();
+  }
   gen_random_input_for_common(inputs, true);
 
   // Generate random variables that have been written in precondition
   for (int i = 0; i < inputs.size(); i++) {
+    // set random value for maps mem
+    for (int map_id = 0; map_id < inputs[i].maps_mem.size(); map_id++) {
+      for (int j = 0; j < inputs[i].maps_mem[map_id].size(); j++) {
+        inputs[i].maps_mem[map_id][j] = random_int(0, 0xff); // [0, 0xff]
+      }
+    }
     uint64_t stack_bottom = inputs[i].input_simu_r10;
     uint64_t pkt_start = gen_random_pkt_start(stack_bottom);
     uint64_t stack_top = stack_bottom - STACK_SIZE;
@@ -892,7 +904,7 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
           int map_id = iss.reg_state[reg][sample].map_id;
           int idx_in_map = iss.reg_state[reg][sample].off;
           assert(map_id >= 0);
-          assert(map_id < mem_t::maps_number);
+          assert(map_id < mem_t::maps_number());
           unsigned int mem_off = mem_t::get_mem_off_by_idx_in_map(map_id, idx_in_map);
           reg_v = stack_top + mem_off;
         }

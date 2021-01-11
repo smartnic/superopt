@@ -1694,7 +1694,7 @@ void update_output_by_ps_win(inout_t& output, const prog_state& ps) {
   // update map memory
   for (int i = 0; i < output.maps_mem.size(); i++) {
     int mem_off_s = mem_t::get_mem_off_by_idx_in_map(i, 0);
-    assert(ps._mem._mem_size > (mem_off_s + output.maps[i].size()));
+    assert(ps._mem._mem_size >= (mem_off_s + output.maps_mem[i].size()));
     for (int j = 0; j < output.maps_mem[i].size(); j++) {
       output.maps_mem[i][j] = ps._mem._mem[mem_off_s + j];
     }
