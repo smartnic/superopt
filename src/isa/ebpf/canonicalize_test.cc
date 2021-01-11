@@ -317,6 +317,62 @@ void test3() {
   expected_insn8_r0_p4.push_back(rs_p4);
   print_test_res(reg_state_is_equal(expected_insn8_r0_p4, pss.static_state[8].reg_state[0]), "4");
 
+  inst p5[] = {inst(STH, 10, -2, 0xff),
+               inst(LDMAPID, 1, 1),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -2),
+               inst(CALL, 1),
+               inst(JEQXC, 0, 0, 2),
+               inst(LDXB, 0, 0, 0), // insn 6
+               inst(EXIT),
+               inst(MOV64XC, 0, 2), // insn 8
+               inst(EXIT),
+              };
+  static_analysis(pss, p5, sizeof(p5) / sizeof(inst));
+  // check r0 state before executing insn 6 and 8
+  vector<register_state> expected_insn6_r0_p5;
+  vector<register_state> expected_insn8_r0_p5;
+  register_state rs_p5_1;
+  rs_p5_1.type = PTR_TO_MAP_VALUE;
+  rs_p5_1.map_id = 1;
+  rs_p5_1.off = 0;
+  expected_insn6_r0_p5.push_back(rs_p5_1);
+  register_state rs_p5_2;
+  rs_p5_2.type = SCALAR_VALUE;
+  rs_p5_2.val_flag = true;
+  rs_p5_2.val = 0;
+  expected_insn8_r0_p5.push_back(rs_p5_2);
+  print_test_res(reg_state_is_equal(expected_insn6_r0_p5, pss.static_state[6].reg_state[0]), "5.1");
+  print_test_res(reg_state_is_equal(expected_insn8_r0_p5, pss.static_state[8].reg_state[0]), "5.2");
+
+  inst p6[] = {inst(STH, 10, -2, 0xff),
+               inst(LDMAPID, 1, 1),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -2),
+               inst(CALL, 1),
+               inst(MOV64XY, 1, 0),
+               inst(),
+               inst(JEQXC, 1, 0, 3),
+               inst(ADD64XC, 1, 1), // insn 8
+               inst(LDXB, 0, 1, 0), // insn 9
+               inst(EXIT),
+               inst(MOV64XC, 0, 2),
+               inst(EXIT),
+              };
+  static_analysis(pss, p6, sizeof(p6) / sizeof(inst));
+  // check r1 state before executing insn 8 and 9
+  vector<register_state> expected_insn8_r1_p6;
+  vector<register_state> expected_insn9_r1_p6;
+  register_state rs_p6;
+  rs_p6.type = PTR_TO_MAP_VALUE;
+  rs_p6.map_id = 1;
+  rs_p6.off = 0;
+  expected_insn8_r1_p6.push_back(rs_p6);
+  rs_p6.off = 1;
+  expected_insn9_r1_p6.push_back(rs_p6);
+  print_test_res(reg_state_is_equal(expected_insn8_r1_p6, pss.static_state[8].reg_state[1]), "6.1");
+  print_test_res(reg_state_is_equal(expected_insn9_r1_p6, pss.static_state[9].reg_state[1]), "6.2");
+
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
                  inst(STH, 10, -8, 0xff),

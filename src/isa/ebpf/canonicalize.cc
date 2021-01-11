@@ -274,6 +274,43 @@ static void intersection_live_var(inst_static_state& iss, inst_static_state& iss
   }
 }
 
+// update dst_reg's state if insn is JEQXC dst_reg 0 offset, and dst_reg's type == `map value or NULL`
+// after JEQXC, dst_reg is either `map value`(for not_jmp, i.e., next insn)
+// or `NULL`(for jmp, i.e., next insn + offset)
+void type_const_inference_inst_JEQXC(inst_static_state& iss, inst& insn, bool not_jmp) {
+  if (insn._opcode != JEQXC) return;
+  int dst_reg = insn._dst_reg;
+  int imm = insn._imm;
+  if (imm != 0) return;
+  // check dst_reg's type
+  for (int i = 0; i < iss.reg_state[dst_reg].size(); i++) {
+    int type = iss.reg_state[dst_reg][i].type;
+    if (type == PTR_TO_MAP_VALUE_OR_NULL) {
+      register_state rs;
+      if (not_jmp) {
+        rs.type = PTR_TO_MAP_VALUE;
+        rs.map_id = iss.reg_state[dst_reg][i].map_id;
+        rs.off = iss.reg_state[dst_reg][i].off;
+      } else {
+        rs.type = SCALAR_VALUE;
+        rs.val_flag = true;
+        rs.val = 0;
+      }
+      // update register state
+      iss.reg_state[dst_reg][i] = rs;
+    }
+  }
+}
+
+void type_const_inference_inst_block_start(inst_static_state& iss, int cur_insn,
+    int block_in_insn_id, inst& block_in_insn) {
+  bool not_jmp = false;
+  if ((block_in_insn_id + 1) == cur_insn) {// not jmp
+    not_jmp = true;
+  }
+  type_const_inference_inst_JEQXC(iss, block_in_insn, not_jmp);
+}
+
 // After executing the insn, update register type in inst_static_state
 void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   int opcode_type = insn.get_opcode_type();
@@ -399,7 +436,12 @@ void type_const_inference_pgm(prog_static_state& pss, inst* program, int len) {
     // get the block initial states by merging incoming states from `bss`
     for (int j = 0; j < g.nodes_in[block].size(); j++) { // root block does not have incoming blocks
       int block_in = g.nodes_in[block][j];
-      ss[block_s].insert_reg_state(bss[block_in]);
+      inst_static_state iss;
+      iss = bss[block_in];
+      int block_in_insn = g.nodes[block_in]._end;
+      type_const_inference_inst_block_start(iss, block_s, block_in_insn, program[block_in_insn]);
+      // ss[block_s].insert_reg_state(bss[block_in]);
+      ss[block_s].insert_reg_state(iss);
     }
     // process the block from the first block insn
     for (int j = block_s; j < block_e; j++) {

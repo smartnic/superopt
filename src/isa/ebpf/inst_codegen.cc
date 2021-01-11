@@ -1046,7 +1046,7 @@ int mem_table_type_2_reg_ptr_type(int mem_table_type) {
 }
 
 bool is_ptr(int type) {
-  vector<int> ptr_array = {PTR_TO_STACK, PTR_TO_CTX, PTR_TO_PKT};
+  vector<int> ptr_array = {PTR_TO_STACK, PTR_TO_CTX, PTR_TO_PKT, PTR_TO_MAP_VALUE};
   for (int i = 0; i < ptr_array.size(); i++) {
     if (type == ptr_array[i]) {
       return true;
