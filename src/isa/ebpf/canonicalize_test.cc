@@ -282,7 +282,7 @@ void test3() {
                inst(LDMAPID, 1, 1),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -2),
-               inst(CALL, 1),
+               inst(CALL, BPF_FUNC_map_lookup_elem),
                inst(EXIT),
               };
   static_analysis(pss, p3, sizeof(p3) / sizeof(inst));
@@ -302,7 +302,7 @@ void test3() {
                inst(LDMAPID, 1, 0),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -2),
-               inst(CALL, 1),
+               inst(CALL, BPF_FUNC_map_lookup_elem),
                inst(EXIT),
               };
   static_analysis(pss, p4, sizeof(p4) / sizeof(inst));
@@ -321,7 +321,7 @@ void test3() {
                inst(LDMAPID, 1, 1),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -2),
-               inst(CALL, 1),
+               inst(CALL, BPF_FUNC_map_lookup_elem),
                inst(JEQXC, 0, 0, 2),
                inst(LDXB, 0, 0, 0), // insn 6
                inst(EXIT),
@@ -349,7 +349,7 @@ void test3() {
                inst(LDMAPID, 1, 1),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -2),
-               inst(CALL, 1),
+               inst(CALL, BPF_FUNC_map_lookup_elem),
                inst(MOV64XY, 1, 0),
                inst(),
                inst(JEQXC, 1, 0, 3),
