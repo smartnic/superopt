@@ -1575,6 +1575,7 @@ void counterex_urt_2_input_map_mem_win(inout_t& input, z3::model & mdl, smt_var&
   vector<pair< uint64_t, uint8_t>> mem_addr_val;
   bool stack_null_off_chk = false; // map memory for win prog eq check is offset-record in the table
   get_mem_from_mdl(mem_addr_val, mdl, sv, mem_id, stack_null_off_chk);
+  assert(map_id < input.maps_mem.size());
   int map_sz = input.maps_mem[map_id].size();
 
   for (int i = 0; i < mem_addr_val.size(); i++) {

@@ -1441,11 +1441,11 @@ void inout_t::init() {
   pgm_exit_type = PGM_EXIT_TYPE_default;
   int n_randoms = mem_t::_layout._n_randoms_u32;
   randoms_u32.resize(mem_t::_layout._n_randoms_u32);
-  // maps_mem.resize(mem_t::maps_number());
-  // for (int i = 0; i < maps_mem.size(); i++) {
-  //   int max_num = mem_t::map_max_entries(i) * mem_t::map_val_sz(i);
-  //   maps_mem[i].resize(max_num);
-  // }
+  maps_mem.resize(mem_t::maps_number());
+  for (int i = 0; i < maps_mem.size(); i++) {
+    int max_num = mem_t::map_max_entries(i) * mem_t::map_val_sz(i) / NUM_BYTE_BITS;
+    maps_mem[i].resize(max_num);
+  }
 }
 
 void inout_t::operator=(const inout_t &rhs) {

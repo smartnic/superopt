@@ -1,6 +1,7 @@
 #include <iostream>
 #include "../../src/utils.h"
 #include "../../src/isa/ebpf/inst.h"
+#include "../../measure/benchmark_ebpf.h"
 #include "validator.h"
 #include "z3client.h"
 
@@ -1443,6 +1444,26 @@ void test13() {
   vld.set_orig(p4, p4_len, win_start, win_end);
   print_test_res(vld.is_equal_to(p4, p4_len, p4, p4_len) == 1, "4.1");
   print_test_res(vld.is_equal_to(p4, p4_len, p4_1, p4_len) == 1, "4.2");
+
+  // test xdp_exception
+  mem_t::_layout.clear();
+  const int xdp_exp_len = N16;
+  inst::max_prog_len = xdp_exp_len;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(32);
+  mem_t::add_map(map_attr(32, 64, N16));
+  inst xdp_exp[xdp_exp_len];
+  for (int i = 0; i < xdp_exp_len; i++) xdp_exp[i] = bm16[i];
+
+  inst xdp_exp_1[xdp_exp_len];
+  win_start = 12;
+  win_end = 14;
+  for (int i = 0; i < xdp_exp_len; i++) xdp_exp_1[i] = xdp_exp[i];
+  xdp_exp_1[12] = inst();
+  xdp_exp_1[13] = inst();
+  xdp_exp_1[14] = inst(XADD64, 0, 0, 1);
+  vld.set_orig(xdp_exp, xdp_exp_len, win_start, win_end);
+  print_test_res(vld.is_equal_to(xdp_exp, xdp_exp_len, xdp_exp_1, xdp_exp_len) == 1, "xdp_exception 1");
 
   mem_t::_layout.clear();
   const int prog_len = 91;
