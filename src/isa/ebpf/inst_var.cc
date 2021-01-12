@@ -1798,6 +1798,31 @@ uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int
       throw (err_msg);
     }
   }
+  if (smt_var::is_win) {
+    if (reg_type == PTR_TO_MAP_VALUE) {
+      bool flag = true;
+      string err_msg = "";
+      int n_maps = mem_t::maps_number();
+      if (n_maps > 0) {
+        uint64_t maps_s = mem.get_simu_mem_start_addr() + mem_t::get_mem_off_by_idx_in_map(0, 0);
+        int n_bytes = mem_t::map_max_entries(n_maps - 1) * mem_t::map_val_sz(n_maps - 1) / NUM_BYTE_BITS;
+        uint64_t maps_e = maps_s + n_bytes;
+        if ((simu_addr >= maps_s) && (simu_addr <= maps_e)) {
+          return (simu_addr + sr.real_r10 - sr.simu_r10);
+        } else {
+          flag = false;
+          err_msg = "addr not in map region, convert simu_addr to real_addr fail";
+        }
+      } else {
+        flag = false;
+        err_msg = "there is no maps, convert simu_addr to real_addr fail";
+      }
+
+      if (! flag) {
+        throw (err_msg);
+      }
+    }
+  }
   if ((simu_addr >= mem.get_simu_mem_start_addr()) &&
       (simu_addr <= mem.get_simu_mem_end_addr())) {
     return (simu_addr + sr.real_r10 - sr.simu_r10);
