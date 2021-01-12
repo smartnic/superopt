@@ -1468,7 +1468,7 @@ void inout_t::operator=(const inout_t &rhs) {
   stack = rhs.stack;
   input_simu_pkt_ptrs[0] = rhs.input_simu_pkt_ptrs[0];
   input_simu_pkt_ptrs[1] = rhs.input_simu_pkt_ptrs[1];
-  if (is_win) {
+  if (smt_var::is_win) {
     for (int i = 0; i < maps_mem.size(); i++) {
       for (int j = 0; j < maps_mem[i].size(); j++) {
         maps_mem[i][j] = rhs.maps_mem[i][j];

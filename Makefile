@@ -62,6 +62,12 @@ cost_test.out: $(SEARCH)cost.cc cost_z3.o $(SEARCH)cost.h $(SRC)inout.h $(SRC)in
 cost_z3.o: $(SEARCH)cost_test.cc
 	$(CXX) $(TOY_ISA_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(SEARCH)cost_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(SEARCH)cost_test.cc
 
+cost_test_ebpf.out: cost_z3_ebpf.o $(SEARCH)cost.cc $(SEARCH)cost.h $(ISA)prog.cc $(ISA)prog.h $(SRC)inout.cc $(SRC)inout.h $(EBPF)inst_codegen.h $(EBPF)inst_codegen.cc $(EBPF)canonicalize.h $(EBPF)canonicalize.cc $(ISA)inst_header.h $(ISA)inst_header_basic.h $(ISA)inst.cc $(ISA)inst.h $(EBPF)inst.cc $(EBPF)inst.h  $(EBPF)inst_var.cc $(EBPF)inst_var.h $(VERIFY)validator.cc $(VERIFY)validator.h $(VERIFY)z3client.cc $(VERIFY)z3client.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(VERIFY)smt_prog.cc $(VERIFY)smt_prog.h $(ISA)inst_var.cc $(ISA)inst_var.h $(SRC)utils.cc $(SRC)utils.h measure/benchmark_ebpf.h measure/benchmark_ebpf.cc
+	g++ $(EBPF_FLAG) -std=c++11 $(SEARCH)cost_z3_ebpf.o $(ISA)inst.cc $(EBPF)inst.cc $(EBPF)inst_var.cc $(ISA)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(EBPF)inst_codegen.cc $(EBPF)canonicalize.cc $(VERIFY)validator.cc $(VERIFY)z3client.cc $(VERIFY)cfg.cc $(VERIFY)smt_prog.cc $(ISA)inst_var.cc $(SRC)utils.cc measure/benchmark_ebpf.cc -o $(SEARCH)cost_test_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+
+cost_z3_ebpf.o: $(SEARCH)cost_test_ebpf.cc
+	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(SEARCH)cost_z3_ebpf.o  -I../z3/src/api -I../z3/src/api/c++ $(SEARCH)cost_test_ebpf.cc
+
 prog_test.out: prog_z3.o $(ISA)prog.cc $(TOY_ISA)inst_codegen.h $(TOY_ISA)inst_var.h $(TOY_ISA)inst_var.cc $(ISA)inst_header.h $(ISA)inst_header_basic.h $(ISA)inst.cc $(ISA)inst.h $(TOY_ISA)inst.h $(TOY_ISA)inst.cc $(TOY_ISA)inst_var.h $(TOY_ISA)inst_var.cc $(ISA)prog.h $(SRC)utils.h $(SRC)utils.cc $(ISA)inst_var.cc $(ISA)inst_var.h
 	g++ $(TOY_ISA_FLAG) -std=c++11 $(ISA)prog_z3.o $(ISA)prog.cc $(ISA)inst.cc $(TOY_ISA)inst.cc $(TOY_ISA)inst_var.cc $(SRC)utils.cc $(ISA)inst_var.cc -o $(ISA)prog_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
@@ -125,8 +131,8 @@ smt_var_test.out: smt_var_z3.o $(SRC)utils.cc $(SRC)utils.h $(ISA)inst_var.cc $(
 smt_var_z3.o: $(VERIFY)smt_var_test.cc
 	$(CXX) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(VERIFY)smt_var_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(VERIFY)smt_var_test.cc
 
-canonicalize_test_ebpf.out: canonicalize_z3_ebpf.o $(EBPF)canonicalize.cc $(EBPF)canonicalize.h $(EBPF)inst.cc $(EBPF)inst.h $(EBPF)bpf.h $(SRC)utils.cc $(SRC)utils.h $(EBPF)inst_codegen.cc $(EBPF)inst_codegen.h $(EBPF)inst_var.cc $(EBPF)inst_var.h $(ISA)inst.cc $(ISA)inst.h $(ISA)inst_var.cc $(ISA)inst_var.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(ISA)inst_header_basic.h
-	g++ $(EBPF_FLAG) -std=c++11 -fvisibility=hidden $(EBPF)canonicalize_z3_ebpf.o $(EBPF)canonicalize.cc $(EBPF)inst.cc $(SRC)utils.cc $(EBPF)inst_codegen.cc $(EBPF)inst_var.cc $(ISA)inst.cc $(ISA)inst_var.cc $(VERIFY)cfg.cc -o $(EBPF)canonicalize_test_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+canonicalize_test_ebpf.out: canonicalize_z3_ebpf.o $(EBPF)canonicalize.cc $(EBPF)canonicalize.h $(EBPF)inst.cc $(EBPF)inst.h $(EBPF)bpf.h $(SRC)utils.cc $(SRC)utils.h $(EBPF)inst_codegen.cc $(EBPF)inst_codegen.h $(EBPF)inst_var.cc $(EBPF)inst_var.h $(ISA)inst.cc $(ISA)inst.h $(ISA)inst_var.cc $(ISA)inst_var.h $(VERIFY)cfg.cc $(VERIFY)cfg.h $(ISA)inst_header_basic.h measure/benchmark_ebpf.h measure/benchmark_ebpf.cc
+	g++ $(EBPF_FLAG) -std=c++11 -fvisibility=hidden $(EBPF)canonicalize_z3_ebpf.o $(EBPF)canonicalize.cc $(EBPF)inst.cc $(SRC)utils.cc $(EBPF)inst_codegen.cc $(EBPF)inst_var.cc $(ISA)inst.cc $(ISA)inst_var.cc $(VERIFY)cfg.cc measure/benchmark_ebpf.cc -o $(EBPF)canonicalize_test_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 canonicalize_z3_ebpf.o: $(EBPF)canonicalize_test.cc
 	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(EBPF)canonicalize_z3_ebpf.o  -I../z3/src/api -I../z3/src/api/c++ $(EBPF)canonicalize_test.cc

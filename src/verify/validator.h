@@ -6,6 +6,7 @@
 #include "../../src/isa/inst_header.h"
 #include "../../src/isa/prog.h"
 #include "smt_prog.h"
+#include "z3client.h"
 
 using namespace z3;
 
