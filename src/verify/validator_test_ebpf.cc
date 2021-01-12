@@ -2,6 +2,7 @@
 #include "../../src/utils.h"
 #include "../../src/isa/ebpf/inst.h"
 #include "validator.h"
+#include "z3client.h"
 
 using namespace z3;
 
@@ -1651,6 +1652,18 @@ void test14() {
   rcv_sock4_1[7] = inst(RSH64XC, 1, 7);
   chk_counterex_by_vld_to_interpreter_win(rcv_sock4, prog_len, rcv_sock4_1, prog_len, win_start, win_end, "rcv_sock4 1");
 
+  win_start = 69;
+  win_end = 71;
+  for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
+  rcv_sock4_1[69] = inst(MOV64XC, 1, 2);
+  rcv_sock4_1[70] = inst(XADD64, 0, 0, 1);
+  rcv_sock4_1[71] = inst();
+  chk_counterex_by_vld_to_interpreter_win(rcv_sock4, prog_len, rcv_sock4_1, prog_len, win_start, win_end, "rcv_sock4 2.1");
+  rcv_sock4_1[69] = inst(LDXDW, 1, 0, 0);
+  rcv_sock4_1[70] = inst(ADD64XC, 1, 2);
+  rcv_sock4_1[71] = inst(STXDW, 0, 0, 1);
+  chk_counterex_by_vld_to_interpreter_win(rcv_sock4, prog_len, rcv_sock4_1, prog_len, win_start, win_end, "rcv_sock4 2.2");
+
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 }
 
@@ -1712,6 +1725,7 @@ int main() {
     test13();
     test14();
     test15();
+    kill_server();
   } catch (const string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

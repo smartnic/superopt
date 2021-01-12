@@ -1104,6 +1104,8 @@ z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
         }
       } else if (reg_state.type == PTR_TO_PKT) {
         f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_pkt_start_addr() + off_expr));
+      } else if (reg_state.type == PTR_TO_MAP_VALUE) {
+        f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_map_start_addr(reg_state.map_id) + off_expr));
       }
       // cout << reg_expr << " " << table_id << " " << off_expr << endl;
     }
@@ -1569,6 +1571,20 @@ void counterex_urt_2_input_map(inout_t& input, z3::model & mdl, smt_var& sv, int
   }
 }
 
+void counterex_urt_2_input_map_mem_win(inout_t& input, z3::model & mdl, smt_var& sv, int mem_id, int map_id) {
+  vector<pair< uint64_t, uint8_t>> mem_addr_val;
+  bool stack_null_off_chk = false; // map memory for win prog eq check is offset-record in the table
+  get_mem_from_mdl(mem_addr_val, mdl, sv, mem_id, stack_null_off_chk);
+  int map_sz = input.maps_mem[map_id].size();
+
+  for (int i = 0; i < mem_addr_val.size(); i++) {
+    uint64_t off = mem_addr_val[i].first;
+    uint8_t val = mem_addr_val[i].second;
+    assert(off < map_sz);
+    input.maps_mem[map_id][off] = val;
+  }
+}
+
 // set input memory, for now, set pkt
 // 1. get mem_addr_val list according to the pkt mem urt;
 // 2. traverse mem_addr_val list, if the addr is in input memory address range, update "input"
@@ -1661,7 +1677,11 @@ void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model & mdl, smt_v
   for (int i = 0; i < mem_t::maps_number(); i++) {
     int mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_map, i);
     assert(mem_id != -1);
-    counterex_urt_2_input_map(input, mdl, sv, mem_id, i);
+    if (! smt_var::is_win) {
+      counterex_urt_2_input_map(input, mdl, sv, mem_id, i);
+    } else {
+      counterex_urt_2_input_map_mem_win(input, mdl, sv, mem_id, i);
+    }
   }
 }
 

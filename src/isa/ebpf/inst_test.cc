@@ -1627,10 +1627,15 @@ void test11() {
   input.regs[0] = (uint64_t)ps._mem.get_stack_start_addr() + mem_off;
   // set map value
   input.maps_mem[0][0] = 0xff;
-  expected.reg = 0xff;
+  smt_output::post_prog_r.regs.insert(1);// add 0 as window output
   interpret(output, p3, sizeof(p3) / sizeof(inst), ps, input);
-  print_test_res(output == expected, "interpret program 3");
-
+  auto it = output.regs.find(1);
+  if (it == output.regs.end()) {
+      print_test_res(false, "interpret program 3");
+  } else {
+      print_test_res(it->second == input.maps_mem[0][0], "interpret program 3");    
+  }
+  smt_output::post_prog_r.clear();
   smt_var::is_win = false;
 }
 

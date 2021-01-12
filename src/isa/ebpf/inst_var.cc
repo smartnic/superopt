@@ -1449,7 +1449,6 @@ void inout_t::init() {
 }
 
 void inout_t::operator=(const inout_t &rhs) {
-  cout << "inout_t::operator= enter" << endl;
   input_simu_pkt_s = rhs.input_simu_pkt_s;
   input_simu_r10 = rhs.input_simu_r10;
   reg = rhs.reg;
@@ -1597,8 +1596,8 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
   // cout << input << endl;
   if (! input.is_win) ps.init_safety_chk();
   else ps.init_safety_chk(input.reg_readable, input.stack_readble, input.reg_type);
+  ps._regs[10] = input.input_simu_r10;
   if (! input.is_win) {
-    ps._regs[10] = input.input_simu_r10;
     // cp input register
     ps._regs[1] = input.reg;
   }
