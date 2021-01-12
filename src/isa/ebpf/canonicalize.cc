@@ -908,6 +908,8 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
           unsigned int mem_off = mem_t::get_mem_off_by_idx_in_map(map_id, idx_in_map);
           reg_v = stack_top + mem_off;
         }
+      } else if (iss.reg_state[reg][sample].val_flag) { // deal with constant
+        reg_v = iss.reg_state[reg][sample].val;
       } else {
         reg_v = random_uint64(min_u64, max_u64);
       }

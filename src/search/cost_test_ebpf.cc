@@ -43,8 +43,25 @@ void test1() {
   mem_t::_layout._n_randoms_u32 = 1;
   smt_var::init_static_variables();
 
-  print_test_res(get_error_cost(p1, p2, win_start, win_end) == 0, "1");
+  print_test_res(get_error_cost(p1, p2, win_start, win_end) == 0, "rcv_sock4 1");
   mem_t::_layout.clear();
+
+  // xdp_exception
+  const int xdp_exp_len = N16;
+  inst::max_prog_len = xdp_exp_len;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(32);
+  mem_t::add_map(map_attr(32, 64, N16));
+  inst xdp_exp[xdp_exp_len];
+  inst xdp_exp_1[xdp_exp_len];
+  for (int i = 0; i < xdp_exp_len; i++) xdp_exp[i] = bm16[i];
+  for (int i = 0; i < xdp_exp_len; i++) xdp_exp_1[i] = xdp_exp[i];
+  win_start = 12;
+  win_end = 14;
+  xdp_exp_1[12] = inst();
+  xdp_exp_1[13] = inst();
+  xdp_exp_1[14] = inst(XADD64, 0, 0, 1);
+  print_test_res(get_error_cost(xdp_exp, xdp_exp_1, win_start, win_end) == 0, "xdp_exception 1");
 }
 
 int main() {
