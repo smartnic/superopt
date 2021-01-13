@@ -1244,7 +1244,7 @@ inst rcv_sock4[91] = {inst(191, 1, 6, 0, 0),
                      };
 
 void test12() {
-  cout << "1. counter-example from cilium rcv-sock4" << endl;
+  cout << "test 12: counter-example from cilium rcv-sock4" << endl;
   const int pgm_len = 91;
   mem_t::_layout.clear();
   inst::max_prog_len = 91;
@@ -1465,6 +1465,15 @@ void test13() {
   vld.set_orig(xdp_exp, xdp_exp_len, win_start, win_end);
   print_test_res(vld.is_equal_to(xdp_exp, xdp_exp_len, xdp_exp_1, xdp_exp_len) == 1, "xdp_exception 1");
 
+  win_start = 12;
+  win_end = 14;
+  for (int i = 0; i < xdp_exp_len; i++) xdp_exp_1[i] = xdp_exp[i];
+  xdp_exp_1[12] = inst();
+  xdp_exp_1[13] = inst();
+  xdp_exp_1[14] = inst(XADD32, 0, 0, 1);
+  vld.set_orig(xdp_exp, xdp_exp_len, win_start, win_end);
+  print_test_res(vld.is_equal_to(xdp_exp, xdp_exp_len, xdp_exp_1, xdp_exp_len) == 0, "xdp_exception 2");
+
   mem_t::_layout.clear();
   const int prog_len = 91;
   inst::max_prog_len = prog_len;
@@ -1632,6 +1641,24 @@ void test14() {
   win_end = 2;
   chk_counterex_by_vld_to_interpreter_win(p2, 5, p2_2, 5, win_start, win_end, "2");
 
+  // test xdp_exception
+  mem_t::_layout.clear();
+  const int xdp_exp_len = N16;
+  inst::max_prog_len = xdp_exp_len;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(32);
+  mem_t::add_map(map_attr(32, 64, N16));
+  inst xdp_exp[xdp_exp_len];
+  for (int i = 0; i < xdp_exp_len; i++) xdp_exp[i] = bm16[i];
+  inst xdp_exp_1[xdp_exp_len];
+  win_start = 12;
+  win_end = 14;
+  for (int i = 0; i < xdp_exp_len; i++) xdp_exp_1[i] = xdp_exp[i];
+  xdp_exp_1[12] = inst();
+  xdp_exp_1[13] = inst();
+  xdp_exp_1[14] = inst(XADD32, 0, 0, 1);
+  chk_counterex_by_vld_to_interpreter_win(xdp_exp, xdp_exp_len, xdp_exp_1, xdp_exp_len,
+                                          win_start, win_end, "xdp_exception 1");
   // test from-network
   mem_t::_layout.clear();
   const int prog_len_fn = 38;

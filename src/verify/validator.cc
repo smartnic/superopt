@@ -35,8 +35,6 @@ validator::~validator() {}
 
 void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv_synth, smt_input& sin_synth, int counterex_type) {
   _last_counterex.clear();
-  _last_counterex.input.init();
-  _last_counterex.output.init();
   // func counterex_2_input_mem will clear input
   // TODO: update input.reg in counterex_2_input_mem(.)
   if (counterex_type == COUNTEREX_eq_check) {

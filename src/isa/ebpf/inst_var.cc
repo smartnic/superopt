@@ -1805,8 +1805,9 @@ uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int
       int n_maps = mem_t::maps_number();
       if (n_maps > 0) {
         uint64_t maps_s = mem.get_simu_mem_start_addr() + mem_t::get_mem_off_by_idx_in_map(0, 0);
-        int n_bytes = mem_t::map_max_entries(n_maps - 1) * mem_t::map_val_sz(n_maps - 1) / NUM_BYTE_BITS;
-        uint64_t maps_e = maps_s + n_bytes;
+        uint64_t last_map_s = mem.get_simu_mem_start_addr() + mem_t::get_mem_off_by_idx_in_map(n_maps - 1, 0);
+        int last_map_sz = mem_t::map_max_entries(n_maps - 1) * mem_t::map_val_sz(n_maps - 1) / NUM_BYTE_BITS;
+        uint64_t maps_e = last_map_s + last_map_sz - 1;
         if ((simu_addr >= maps_s) && (simu_addr <= maps_e)) {
           return (simu_addr + sr.real_r10 - sr.simu_r10);
         } else {

@@ -444,11 +444,11 @@ z3::expr addr_in_addrs(z3::expr a, vector<z3::expr>& is_valid_list, vector<z3::e
 }
 
 // pkt address only in mem_p1 wt => pkt address in mem_p1 urt && same value in wt and urt
-z3::expr pkt_addr_in_one_wt(smt_var& sv1, smt_var& sv2) {
+z3::expr array_mem_addr_in_one_wt(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_table_type, int map_id) {
   z3::expr f = Z3_true;
-  if (mem_t::_layout._pkt_sz == 0) return f;
-  int id1 = sv1.mem_var.get_mem_table_id(MEM_TABLE_pkt);
-  int id2 = sv2.mem_var.get_mem_table_id(MEM_TABLE_pkt);
+  if (mem_sz == 0) return f;
+  int id1 = sv1.mem_var.get_mem_table_id(mem_table_type, map_id);
+  int id2 = sv2.mem_var.get_mem_table_id(mem_table_type, map_id);
   assert(id1 != -1);
   assert(id2 != -1);
   smt_wt& wt1 = sv1.mem_var._mem_tables[id1]._wt;
@@ -627,8 +627,8 @@ z3::expr smt_array_mem_eq_chk(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_ta
   }
   // case 2: pkt address in one of wts
   // f = f && pkt_addr_in_one_wt(sv1, sv2) && pkt_addr_in_one_wt(sv2, sv1);
-  z3::expr f1 = pkt_addr_in_one_wt(sv1, sv2);
-  z3::expr f2 = pkt_addr_in_one_wt(sv2, sv1);
+  z3::expr f1 = array_mem_addr_in_one_wt(sv1, sv2, mem_sz, mem_table_type, map_id);
+  z3::expr f2 = array_mem_addr_in_one_wt(sv2, sv1, mem_sz, mem_table_type, map_id);
   z3::expr pkt_eq = sv1.update_is_valid();
   z3::expr pkt_eq1 = sv1.update_is_valid();
   z3::expr pkt_eq2 = sv1.update_is_valid();
@@ -938,7 +938,7 @@ z3::expr smt_map_set_same_input(smt_var& sv1, smt_var& sv2) {
     } else {
       // map table can only be modified by function call,
       // assume there is no function call in window program eq check
-      int max_num = mem_t::map_max_entries(map_id) * mem_t::map_val_sz(map_id);
+      int max_num = mem_t::map_max_entries(map_id) * mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
       f = f && smt_array_mem_set_same_input(sv1, sv2, max_num, MEM_TABLE_map, map_id);
     }
   }
@@ -953,7 +953,7 @@ z3::expr smt_map_eq_chk(smt_var& sv1, smt_var& sv2) {
     } else {
       // map table can only be modified by function call,
       // assume there is no function call in window program eq check
-      int max_num = mem_t::map_max_entries(map_id) * mem_t::map_val_sz(map_id);
+      int max_num = mem_t::map_max_entries(map_id) * mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
       f = f && smt_array_mem_eq_chk(sv1, sv2, max_num, MEM_TABLE_map, smt_var::is_win, map_id);
     }
   }
@@ -1721,6 +1721,7 @@ void counterex_2_input_mem(inout_t& input, z3::model & mdl,
                            smt_var& sv1, smt_var& sv2,
                            smt_input& sin1, smt_input& sin2) {
   input.clear();
+  input.init();
   input.set_pkt_random_val();
   // update input memory for executing path condition later
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv2, sin2);
@@ -1735,6 +1736,7 @@ void counterex_2_input_mem(inout_t& input, z3::model & mdl,
 // make sure sv1 is for the original program
 void counterex_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt_input& sin) {
   input.clear();
+  input.init();
   input.set_pkt_random_val();
   counterex_urt_2_input_mem_for_one_sv(input, mdl, sv, sin);
   counterex_2_input_regs(input, mdl, sv, sin);
