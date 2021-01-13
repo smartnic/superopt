@@ -1581,7 +1581,12 @@ void counterex_urt_2_input_map_mem_win(inout_t& input, z3::model & mdl, smt_var&
   for (int i = 0; i < mem_addr_val.size(); i++) {
     uint64_t off = mem_addr_val[i].first;
     uint8_t val = mem_addr_val[i].second;
-    assert(off < map_sz);
+    // todo: add the map value off check in the safety check
+    if (off >= map_sz) {
+      string err_msg = "off >= map_sz";
+      throw err_msg;
+    }
+    // assert(off < map_sz);
     input.maps_mem[map_id][off] = val;
   }
 }
