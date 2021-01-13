@@ -1486,17 +1486,18 @@ void test13() {
   smt_var::init_static_variables();
   win_start = 4;
   win_end = 7;
-  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  validator vld_rcv_sock4(rcv_sock4, prog_len, enable_win, win_start, win_end);
+  // vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
   inst rcv_sock4_1[prog_len];
   for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
   rcv_sock4_1[6] = inst();
   rcv_sock4_1[7] = inst();
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 1");
+  print_test_res(vld_rcv_sock4.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 1");
 
   win_start = 5;
   win_end = 7;
-  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 2");
+  vld_rcv_sock4.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld_rcv_sock4.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 2");
 
   win_start = 27;
   win_end = 30;
@@ -1511,8 +1512,8 @@ void test13() {
   rcv_sock4_1[14] = inst(STXH, 10, -26, 0);
   rcv_sock4_1[15] = inst(OR64XY, 9, 0);
   rcv_sock4_1[16] = inst(STXH, 10, -28, 1);
-  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == -1, "rcv-sock4 4");
+  vld_rcv_sock4.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld_rcv_sock4.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == -1, "rcv-sock4 4");
 
   win_start = 11;
   win_end = 15;
@@ -1522,22 +1523,22 @@ void test13() {
   rcv_sock4_1[13] = inst(MOV32XC, 8, 0);
   rcv_sock4_1[14] = inst(STXH, 10, -26, 8);
   rcv_sock4_1[15] = inst();
-  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 5");
+  vld_rcv_sock4.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld_rcv_sock4.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 5");
 
   win_start = 27;
   win_end = 28;
   for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
   rcv_sock4_1[27] = inst();
   rcv_sock4_1[28] = inst(STXW, 10, -50, 8);
-  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == ILLEGAL_CEX, "rcv-sock4 6");
+  vld_rcv_sock4.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld_rcv_sock4.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == ILLEGAL_CEX, "rcv-sock4 6");
 
   win_start = 69;
   win_end = 71;
   for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
-  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 7");
+  vld_rcv_sock4.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld_rcv_sock4.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 7");
 
   win_start = 69;
   win_end = 71;
@@ -1545,8 +1546,8 @@ void test13() {
   rcv_sock4_1[69] = inst(LDXDW, 1, 0, 0);
   rcv_sock4_1[70] = inst(ADD64XC, 1, 2);
   rcv_sock4_1[71] = inst(STXDW, 0, 0, 1);
-  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 0, "rcv-sock4 8");
+  vld_rcv_sock4.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld_rcv_sock4.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 0, "rcv-sock4 8");
 
   win_start = 69;
   win_end = 71;
@@ -1554,8 +1555,8 @@ void test13() {
   rcv_sock4_1[69] = inst(MOV64XC, 1, 1);
   rcv_sock4_1[70] = inst(XADD64, 0, 0, 1);
   rcv_sock4_1[71] = inst();
-  vld.set_orig(rcv_sock4, prog_len, win_start, win_end);
-  print_test_res(vld.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 9");
+  vld_rcv_sock4.set_orig(rcv_sock4, prog_len, win_start, win_end);
+  print_test_res(vld_rcv_sock4.is_equal_to(rcv_sock4, prog_len, rcv_sock4_1, prog_len) == 1, "rcv-sock4 9");
   inst::max_prog_len = TEST_PGM_MAX_LEN;
 
   // test from-network
