@@ -457,7 +457,17 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.is_win = false;
   in_para.logger_level = LOGGER_ERROR;
 }
-
+int write_insns_to_file(prog* current_program) 
+{
+  char* output_file = "test.insns";
+  FILE* output_file_fp = fopen(output_file, "w");
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    inst in = current_program->inst_list[i];
+    struct bpf_insn insn = { in._opcode, in._src_reg, in._dst_reg, in._off, in._imm };
+    fwrite(&insn, sizeof(bpf_insn), 1, output_file_fp);
+  }
+  fclose(output_file_fp);
+}
 int main(int argc, char* argv[]) {
   dur_sum = 0;
   dur_sum_long = 0;
@@ -495,6 +505,7 @@ int main(int argc, char* argv[]) {
   for (auto p : best_pgms) {
     cout << "cost: " << p->_error_cost << " " <<  p->_perf_cost << endl;
     p->print();
+    write_insns_to_file(p);
     for (int i = 0; i < inst::max_prog_len; i++) {
       cout << p->inst_list[i].get_bytecode_str() << "," << endl;
     }
@@ -515,3 +526,5 @@ int main(int argc, char* argv[]) {
 
   return 0;
 }
+
+
