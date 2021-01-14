@@ -1066,7 +1066,8 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
       inst::max_prog_len = N0;
-      mem_t::set_pgm_input_type(PGM_INPUT_constant);
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
       *bm = bm0;
       bm_optis_orig.push_back(bm_opti00);
       bm_optis_orig.push_back(bm_opti01);
@@ -1075,13 +1076,15 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       break;
     case 1:
       inst::max_prog_len = N1;
-      mem_t::set_pgm_input_type(PGM_INPUT_constant);
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
       *bm = bm1;
       bm_optis_orig.push_back(bm_opti10);
       break;
     case 2:
       inst::max_prog_len = N2;
-      mem_t::set_pgm_input_type(PGM_INPUT_constant);
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
       mem_t::add_map(map_attr(8, 8, N2));
       *bm = bm2;
       bm_optis_orig.push_back(bm_opti20);
@@ -1097,7 +1100,8 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       break;
     case 4:
       inst::max_prog_len = N4;
-      mem_t::set_pgm_input_type(PGM_INPUT_constant);
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
       *bm = bm4;
       bm_optis_orig.push_back(bm_opti40);
       break;
@@ -1110,13 +1114,15 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       break;
     case 6:
       inst::max_prog_len = N6;
-      mem_t::set_pgm_input_type(PGM_INPUT_constant);
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
       *bm = bm6;
       bm_optis_orig.push_back(bm_opti60);
       break;
     case 7:
       inst::max_prog_len = N7;
-      mem_t::set_pgm_input_type(PGM_INPUT_constant);
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
       *bm = bm7;
       bm_optis_orig.push_back(bm_opti70);
       break;
@@ -1141,7 +1147,8 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       break;
     case 11:
       inst::max_prog_len = N11;
-      mem_t::set_pgm_input_type(PGM_INPUT_constant);
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
       mem_t::add_map(map_attr(32, 32, N11));
       *bm = bm11;
       break;
@@ -1189,7 +1196,8 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       break;
     case 18:
       inst::max_prog_len = N18;
-      mem_t::set_pgm_input_type(PGM_INPUT_constant);
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
       mem_t::add_map(map_attr(32, 32, N18));
       *bm = bm18;
       break;
