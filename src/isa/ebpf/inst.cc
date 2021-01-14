@@ -1452,6 +1452,8 @@ out:
 
 // 1. BPF_ST is illegal if src_reg type is PTR_TO_CTX
 void safety_chk(inst & insn, prog_state & ps) {
+  if (insn._opcode == NOP) return;
+
   int op_class = BPF_CLASS(insn._opcode);
   if (op_class == BPF_ST) {
     int dst_reg_type = ps.get_reg_type(insn._dst_reg);
