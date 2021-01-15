@@ -17,7 +17,7 @@ double get_error_cost(inst* p1, inst* p2, int win_start, int win_end) {
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
   prog_static_state pss;
   static_analysis(pss, p1, inst::max_prog_len);
-  int num_examples = 1;
+  int num_examples = 30;
   vector<inout_t> examples;
   gen_random_input_for_win(examples, num_examples, pss.static_state[win_start], win_start, win_end);
   c.set_examples(examples, &prog1);
@@ -62,6 +62,27 @@ void test1() {
   xdp_exp_1[13] = inst();
   xdp_exp_1[14] = inst(XADD64, 0, 0, 1);
   print_test_res(get_error_cost(xdp_exp, xdp_exp_1, win_start, win_end) == 0, "xdp_exception 1");
+  mem_t::_layout.clear();
+
+  // xdp_pktcntr, bm24
+  const int xdp_pkt_len = N24;
+  inst::max_prog_len = xdp_pkt_len;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(68);
+  mem_t::add_map(map_attr(32, 32, N24));
+  mem_t::add_map(map_attr(32, 64, N24));
+  inst xdp_pkt[xdp_pkt_len];
+  inst xdp_pkt_1[xdp_pkt_len];
+  for (int i = 0; i < xdp_pkt_len; i++) xdp_pkt[i] = bm24[i];
+  for (int i = 0; i < xdp_pkt_len; i++) xdp_pkt_1[i] = xdp_pkt[i];
+  win_start = 17;
+  win_end = 19;
+  xdp_pkt_1[17] = inst();
+  xdp_pkt_1[18] = inst(MOV32XC, 1, 1);
+  xdp_pkt_1[19] = inst(XADD64, 0, 0, 1);
+  print_test_res(get_error_cost(xdp_pkt, xdp_pkt_1, win_start, win_end) == 0, "xdp_pktcntr 1");
+
+  mem_t::_layout.clear();
 }
 
 int main() {
