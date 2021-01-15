@@ -459,13 +459,18 @@ void set_default_para_vals(input_paras & in_para) {
 }
 int write_insns_to_file(prog* current_program) 
 {
-  char* output_file = "test.insns";
+  const char* output_file = "output.insns";
   FILE* output_file_fp = fopen(output_file, "w");
   for (int i = 0; i < inst::max_prog_len; i++) {
-    inst in = current_program->inst_list[i];
-    struct bpf_insn insn = { in._opcode, in._src_reg, in._dst_reg, in._off, in._imm };
+    inst t_insn = current_program->inst_list[i];
+    struct bpf_insn insn = { (uint8_t)t_insn._opcode, 
+                             (uint8_t)t_insn._src_reg, 
+                             (uint8_t)t_insn._dst_reg, 
+                             t_insn._off, 
+                             t_insn._imm };
     fwrite(&insn, sizeof(bpf_insn), 1, output_file_fp);
   }
+
   fclose(output_file_fp);
 }
 int main(int argc, char* argv[]) {
@@ -523,7 +528,6 @@ int main(int argc, char* argv[]) {
 
   // kill z3 solver server after compiling
   kill_server();
-
   return 0;
 }
 
