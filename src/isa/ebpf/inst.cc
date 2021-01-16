@@ -272,6 +272,7 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(LSH64XY)
       MAPPER(RSH64XC)
       MAPPER(RSH64XY)
+      MAPPER(NEG64)
       MAPPER(MOV64XC)
       MAPPER(MOV64XY)
       MAPPER(ARSH64XC)
@@ -647,6 +648,7 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     case LSH64XY: return predicate_lsh(CURDST, CURSRC_L6, NEWDST);
     case RSH64XC: return predicate_rsh(CURDST, IMM, NEWDST);
     case RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
+    case NEG64: return predicate_mov(NEWDST, -CURDST);
     case MOV64XC: return predicate_mov(IMM, NEWDST);
     case MOV64XY: sv.mem_var.add_ptr(NEWDST, CURSRC, ZERO_ADDR_OFF_EXPR, path_cond); return predicate_mov(CURSRC, NEWDST);
     case ARSH64XC: return predicate_arsh(CURDST, IMM, NEWDST);
@@ -787,6 +789,7 @@ int opcode_2_idx(int opcode) {
     case LSH64XY: return IDX_LSH64XY;
     case RSH64XC: return IDX_RSH64XC;
     case RSH64XY: return IDX_RSH64XY;
+    case NEG64: return IDX_NEG64;
     case MOV64XC: return IDX_MOV64XC;
     case MOV64XY: return IDX_MOV64XY;
     case ARSH64XC: return IDX_ARSH64XC;
@@ -905,6 +908,7 @@ void inst::regs_to_read(vector<int>& regs) const {
     case LSH64XY:  regs = {_dst_reg, _src_reg}; return;
     case RSH64XC:  regs = {_dst_reg}; return;
     case RSH64XY:  regs = {_dst_reg, _src_reg}; return;
+    case NEG64:    regs = {_dst_reg}; return;
     case MOV64XC:  return;
     case MOV64XY:  regs = {_src_reg}; return;
     case ARSH64XC: regs = {_dst_reg}; return;
@@ -1195,6 +1199,7 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_LSH64XY]  = && INSN_LSH64XY,
     [IDX_RSH64XC]  = && INSN_RSH64XC,
     [IDX_RSH64XY]  = && INSN_RSH64XY,
+    [IDX_NEG64]    = && INSN_NEG64,
     [IDX_MOV64XC]  = && INSN_MOV64XC,
     [IDX_MOV64XY]  = && INSN_MOV64XY,
     [IDX_ARSH64XC] = && INSN_ARSH64XC,
@@ -1282,6 +1287,11 @@ INSN_NOP:
     CONT;
   ALU_UNARY(MOV, mov)
 #undef ALU_UNARY
+
+INSN_NEG64:
+  ps.reg_safety_chk(DST_ID, vector<int> {DST_ID});
+  DST = compute_mov(-DST);
+  CONT;
 
 #define ALU_BINARY(OPCODE, OP)                                     \
   INSN_##OPCODE##64XC:                                             \
@@ -1490,6 +1500,7 @@ void inst::regs_cannot_be_ptrs(vector<int>& regs) const {
     case LSH64XY:  regs = {_dst_reg, _src_reg}; return;
     case RSH64XC:  regs = {_dst_reg}; return;
     case RSH64XY:  regs = {_dst_reg, _src_reg}; return;
+    case NEG64:    regs = {_dst_reg}; return;
     case MOV64XC:  return;
     case MOV64XY:  return;
     case ARSH64XC: regs = {_dst_reg}; return;

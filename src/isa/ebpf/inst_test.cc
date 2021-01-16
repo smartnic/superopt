@@ -288,6 +288,12 @@ inst instructions34[5] = {inst(CALL, BPF_FUNC_get_prandom_u32),
                           inst(EXIT),
                          };
 
+// test neg64
+inst instructions35[] = {inst(MOV64XC, 0, 5),
+                         inst(NEG64, 0),
+                         inst(EXIT),
+                        };
+
 void test1() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
@@ -550,6 +556,12 @@ void test1() {
   expected.reg = (uint64_t)input.randoms_u32[0] + (uint64_t)input.randoms_u32[1];
   interpret(output, instructions34, 5, ps, input);
   print_test_res(output == expected, "interpret BPF_FUNC_get_prandom_u32");
+
+  input.clear();
+  expected.clear();
+  expected.reg = -5;
+  interpret(output, instructions35, sizeof(instructions35) / sizeof(inst), ps, input);
+  print_test_res(output == expected, "interpret NEG64");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output, bool flag = false) {
@@ -695,6 +707,13 @@ void test2() {
 
   insn = inst(MOV32XY, 0, 1);
   SMT_CHECK_XY(0xffffffff00000000, 0x0123456789abcdef, 0x89abcdef, "smt MOV32XY");
+
+  insn = inst(NEG64, 0);
+  SMT_CHECK_XC(0x0, 0x0, "smt NEG64");
+  SMT_CHECK_XC(-1, 1, "smt NEG64");
+  SMT_CHECK_XC(1, -1, "smt NEG64");
+  return;
+
 
   insn = inst(LSH64XC, 0, 63);
   SMT_CHECK_XC(0xffffffffffffffff, 0x8000000000000000, "smt LSH64XC");
@@ -1633,9 +1652,9 @@ void test11() {
   interpret(output, p3, sizeof(p3) / sizeof(inst), ps, input);
   auto it = output.regs.find(1);
   if (it == output.regs.end()) {
-      print_test_res(false, "interpret program 3");
+    print_test_res(false, "interpret program 3");
   } else {
-      print_test_res(it->second == input.maps_mem[0][0], "interpret program 3");    
+    print_test_res(it->second == input.maps_mem[0][0], "interpret program 3");
   }
   smt_output::post_prog_r.clear();
   smt_var::is_win = false;
