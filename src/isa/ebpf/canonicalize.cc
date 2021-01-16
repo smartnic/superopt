@@ -609,6 +609,28 @@ void live_analysis_inst(live_variables& live_var, vector<vector<register_state>>
   }
 }
 
+// ebpf program exits explicitly by EXIT or BPF_FUNC_tail_call
+int get_block_exit_type(inst* program, int block_s, int block_e) {
+  for (int i = block_e; i >= block_s; i--) {
+    if (program[i]._opcode == EXIT) return PGM_EXIT_TYPE_default;
+    else if ((program[i]._opcode == CALL) && (program[i]._imm == BPF_FUNC_tail_call)) {
+      return PGM_EXIT_TYPE_tail_call;
+    }
+  }
+  // todo: maybe need to add an error here
+  return PGM_EXIT_TYPE_default;
+}
+
+void live_analysis_pgm_add_reg_output(inst_static_state& iss, int pgm_exit_type) {
+  if (pgm_exit_type == PGM_EXIT_TYPE_tail_call) {
+    iss.insert_live_reg(1);
+    iss.insert_live_reg(2);
+    iss.insert_live_reg(3);
+  } else {
+    iss.insert_live_reg(0);
+  }
+}
+
 // compute ss.live_var, ss.live_var[i] stores the live variables after executing insn i
 void live_analysis_pgm(prog_static_state& pss, inst* program, int len) {
   vector<inst_static_state>& ss = pss.static_state;
@@ -629,7 +651,8 @@ void live_analysis_pgm(prog_static_state& pss, inst* program, int len) {
 
     // get the block initial live variables by merging outgoing live variables or from output
     if (g.nodes_out[block].size() == 0) { // from output (r0 + pkt)
-      ss[block_e].insert_live_reg(0); // r0
+      int pgm_exit_type = get_block_exit_type(program, block_s, block_e);
+      live_analysis_pgm_add_reg_output(ss[block_e], pgm_exit_type);
       int pgm_input_type = mem_t::get_pgm_input_type();
       if (pgm_input_type == PGM_INPUT_pkt) {
         for (int j = 0; j < mem_t::_layout._pkt_sz; j++) { // pkt

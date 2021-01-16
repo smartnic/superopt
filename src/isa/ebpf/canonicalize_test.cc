@@ -445,6 +445,26 @@ void test3() {
   }
   print_test_res(live_var_is_equal(expected_insn0_p24, pss.static_state[0].live_var), "4");
 
+  inst p2_5[] = {inst(LDMAPID, 2, 1),
+                 inst(MOV64XC, 3, 0),
+                 inst(CALL, BPF_FUNC_tail_call),
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  static_analysis(pss, p2_5, sizeof(p2_5) / sizeof(inst));
+  // live variable after executing insn 0
+  live_variables expected_insn0_p25, expected_insn2_p25;
+  expected_insn0_p25.regs = {1, 2};
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    expected_insn0_p25.mem[PTR_TO_CTX].insert(i);
+  }
+  expected_insn2_p25.regs = {1, 2, 3};
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    expected_insn2_p25.mem[PTR_TO_CTX].insert(i);
+  }
+  print_test_res(live_var_is_equal(expected_insn0_p25, pss.static_state[0].live_var), "5.1");
+  print_test_res(live_var_is_equal(expected_insn2_p25, pss.static_state[2].live_var), "5.2");
+
   cout << "3.3 test register constant inference" << endl;
   inst p3_1[] = {inst(MOV64XC, 1, 5),
                  inst(MOV64XY, 2, 1),
