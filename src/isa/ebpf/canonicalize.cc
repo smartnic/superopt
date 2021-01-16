@@ -311,6 +311,42 @@ void type_const_inference_inst_block_start(inst_static_state& iss, int cur_insn,
   type_const_inference_inst_JEQXC(iss, block_in_insn, not_jmp);
 }
 
+void type_const_inference_inst_BPF_FUNC_map_lookup_elem(inst_static_state& iss, inst& insn) {
+  // get map id according to r1's value
+  int map_id_reg = 1;
+  vector<int> map_id_list;
+  for (int i = 0; i < iss.reg_state[map_id_reg].size(); i++) {
+    if (iss.reg_state[map_id_reg][i].type != CONST_PTR_TO_MAP) {
+      if (logger.is_print_level(LOGGER_ERROR)) {
+        cout << "ERROR: r1's type is not CONST_PTR_TO_MAP" << endl;
+      }
+      return;
+    } else if (! iss.reg_state[map_id_reg][i].val_flag) {
+      if (logger.is_print_level(LOGGER_ERROR)) {
+        cout << "ERROR: r1 is not a const" << endl;
+      }
+      return;
+    }
+    int map_id = iss.reg_state[map_id_reg][i].val;
+    if ((map_id < 0) || (map_id > mem_t::maps_number())) {
+      if (logger.is_print_level(LOGGER_ERROR)) {
+        cout << "ERROR: map_id " << map_id << " not in [0, # map]" << endl;
+      }
+      return;
+    }
+    map_id_list.push_back(map_id);
+  }
+  // clear register 0's state
+  iss.reg_state[0] = {};
+  for (int i = 0; i < map_id_list.size(); i++) {
+    register_state rs;
+    rs.type = PTR_TO_MAP_VALUE_OR_NULL;
+    rs.map_id = map_id_list[i];
+    rs.off = 0;
+    iss.reg_state[0].push_back(rs);
+  }
+}
+
 // After executing the insn, update register type in inst_static_state
 void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   int opcode_type = insn.get_opcode_type();
@@ -366,41 +402,7 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
     }
   } else if (opcode == CALL) {
     iss.set_reg_state(0, SCALAR_VALUE);
-    if (imm == BPF_FUNC_map_lookup_elem) {
-      // get map id according to r1's value
-      int map_id_reg = 1;
-      vector<int> map_id_list;
-      for (int i = 0; i < iss.reg_state[map_id_reg].size(); i++) {
-        if (iss.reg_state[map_id_reg][i].type != CONST_PTR_TO_MAP) {
-          if (logger.is_print_level(LOGGER_ERROR)) {
-            cout << "ERROR: r1's type is not CONST_PTR_TO_MAP" << endl;
-          }
-          return;
-        } else if (! iss.reg_state[map_id_reg][i].val_flag) {
-          if (logger.is_print_level(LOGGER_ERROR)) {
-            cout << "ERROR: r1 is not a const" << endl;
-          }
-          return;
-        }
-        int map_id = iss.reg_state[map_id_reg][i].val;
-        if ((map_id < 0) || (map_id > mem_t::maps_number())) {
-          if (logger.is_print_level(LOGGER_ERROR)) {
-            cout << "ERROR: map_id " << map_id << " not in [0, # map]" << endl;
-          }
-          return;
-        }
-        map_id_list.push_back(map_id);
-      }
-      // clear register 0's state
-      iss.reg_state[0] = {};
-      for (int i = 0; i < map_id_list.size(); i++) {
-        register_state rs;
-        rs.type = PTR_TO_MAP_VALUE_OR_NULL;
-        rs.map_id = map_id_list[i];
-        rs.off = 0;
-        iss.reg_state[0].push_back(rs);
-      }
-    }
+    if (imm == BPF_FUNC_map_lookup_elem) type_const_inference_inst_BPF_FUNC_map_lookup_elem(iss, insn);
   } else if (opcode == LDMAPID) {
     register_state rs;
     rs.type = CONST_PTR_TO_MAP;
