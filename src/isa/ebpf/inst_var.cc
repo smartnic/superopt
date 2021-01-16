@@ -1959,7 +1959,7 @@ void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
   if (output_type == PGM_EXIT_TYPE_default) {
     val_list1.push_back(output1.reg);
     val_list2.push_back(output2.reg);
-  } else if (output_type == MAP_TYPE_prog_array) {
+  } else if (output_type == PGM_EXIT_TYPE_tail_call) {
     // MAP_TYPE_prog_array does not need to check registers
     // reference: github.com/torvalds/linux/blob/cb95712138ec5e480db5160b41172bbc6f6494cc/include/uapi/linux/bpf.h#L874
     // The same stack frame is used (but values on stack and in registers for the
