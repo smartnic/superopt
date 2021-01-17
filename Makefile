@@ -165,7 +165,7 @@ run_tests:
 	./measure/meas_time.out
 	./measure/meas_mh_bhv_test.out
 
-ebpf_tests: main_ebpf.out z3server.out inst_codegen_test_ebpf.out prog_test_ebpf.out ebpf_inst_test.out validator_test_ebpf.out cfg_test_ebpf.out canonicalize_test_ebpf.out
+ebpf_tests: main_ebpf.out z3server.out cost_test_ebpf.out inst_codegen_test_ebpf.out prog_test_ebpf.out ebpf_inst_test.out validator_test_ebpf.out cfg_test_ebpf.out canonicalize_test_ebpf.out
 
 run_ebpf_tests:
 	make ebpf_tests
