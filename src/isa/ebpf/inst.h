@@ -57,7 +57,7 @@ enum OPCODE_IDX {
   // Byteswap
   IDX_LE,
   IDX_BE,
-  // LDDW: ldmapid/mov128xc
+  // LDDW: ldmapid/movdwxc
   IDX_LDDW,
   // Memory
   IDX_LDXB,
@@ -687,9 +687,9 @@ class inst: public inst_base {
   static z3::expr smt_set_pre(z3::expr input, smt_var& sv);
   bool is_cfg_basic_block_end() const;
   bool is_pgm_end() const;
-  // for lddw opcode, instruction is either ldmapid or mov128xc
+  // for lddw opcode, instruction is either ldmapid or movdwxc
   bool is_ldmapid() const;
-  bool is_mov128xc() const;
+  bool is_movdwxc() const;
 
   string get_bytecode_str() const;
   void regs_to_read(vector<int>& regs) const;

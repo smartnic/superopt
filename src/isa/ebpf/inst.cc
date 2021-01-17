@@ -147,7 +147,7 @@ int32_t inst::get_max_imm() const {
     case BE: return MAX_TYPES_IMM_ENDIAN;
     case LDDW:
       if (is_ldmapid()) return mem_t::maps_number() - 1;
-      else return 0; // todo: deal with mov128xc
+      else return 0; // todo: deal with movdwxc
     case CALL: return MAX_CALL_IMM;
     default: cout << "Error: no imm in instruction: ";
       print();
@@ -689,7 +689,7 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
       }
     case LDDW:
       if (is_ldmapid()) return predicate_ldmapid(IMM, NEWDST, sv, block);
-      else return Z3_true; // todo: deal with mov128xc
+      else return Z3_true; // todo: deal with movdwxc
     case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
     case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
     case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
@@ -895,7 +895,7 @@ bool inst::is_ldmapid() const {
   else return false;
 }
 
-bool inst::is_mov128xc() const {
+bool inst::is_movdwxc() const {
   if ((_opcode == LDDW) && (_src_reg == 0)) return true;
   else return false;
 }
@@ -1420,7 +1420,7 @@ INSN_LDINDH:
 INSN_LDDW:
   ps.reg_safety_chk(DST_ID);
   if (insn->is_ldmapid()) DST = compute_ldmapid(IMM);
-  else {} // deal with mov128xc
+  else {} // deal with movdwxc
   CONT;
 
 INSN_JA:
