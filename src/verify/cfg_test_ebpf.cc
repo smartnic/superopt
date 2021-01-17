@@ -37,7 +37,7 @@ inst instructions3[6] = {inst(STXB, 10, -1, 1),
 
 // test tail call
 inst instructions4[6] = {inst(MOV64XY, 1, 1),
-                         inst(LDMAPID, 2, 0),
+                         INSN_LDMAPID(2, 0),
                          inst(MOV64XC, 3, 1),
                          inst(CALL, BPF_FUNC_tail_call),
                          inst(MOV64XC, 0, 0xff),

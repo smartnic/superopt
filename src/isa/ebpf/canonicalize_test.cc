@@ -34,7 +34,7 @@ void test1() {
   inst p3[] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                inst(STXB, 10, -1, 1),
-               inst(LDMAPID, 1, 0), // r1 = map_id (0)
+               INSN_LDMAPID(1, 0), // r1 = map_id (0)
                inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                inst(ADD64XC, 2, -1),
                inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -46,7 +46,7 @@ void test1() {
   inst expected_prog3[] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                            inst(STXB, 10, -1, 1),
-                           inst(LDMAPID, 1, 0), // r1 = map_id (0)
+                           INSN_LDMAPID(1, 0), // r1 = map_id (0)
                            inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -193,13 +193,13 @@ void test2() {
   remove_nops_check(p3, sizeof(p3) / sizeof(inst), p3_expected, "3");
 
   inst p4[] = {inst(JA, 3),
-               inst(LDMAPID, 1, 0),
+               INSN_LDMAPID(1, 0),
                inst(),
                inst(),
                inst(EXIT),
               };
   inst p4_expected[] = {inst(JA, 2),
-                        inst(LDMAPID, 1, 0),
+                        INSN_LDMAPID(1, 0),
                         inst(),
                         inst(EXIT),
                         inst(),
@@ -279,7 +279,7 @@ void test3() {
 
   // test the return value of map lookup
   inst p3[] = {inst(STH, 10, -2, 0xff),
-               inst(LDMAPID, 1, 1),
+               INSN_LDMAPID(1, 1),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -2),
                inst(CALL, BPF_FUNC_map_lookup_elem),
@@ -297,9 +297,9 @@ void test3() {
 
   inst p4[] = {inst(STH, 10, -2, 0xff),
                inst(MOV64XC, 1, 5),
-               inst(LDMAPID, 1, 1),
+               INSN_LDMAPID(1, 1),
                inst(JEQXY, 1, 1, 1),
-               inst(LDMAPID, 1, 0),
+               INSN_LDMAPID(1, 0),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -2),
                inst(CALL, BPF_FUNC_map_lookup_elem),
@@ -318,7 +318,7 @@ void test3() {
   print_test_res(reg_state_is_equal(expected_insn8_r0_p4, pss.static_state[8].reg_state[0]), "4");
 
   inst p5[] = {inst(STH, 10, -2, 0xff),
-               inst(LDMAPID, 1, 1),
+               INSN_LDMAPID(1, 1),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -2),
                inst(CALL, BPF_FUNC_map_lookup_elem),
@@ -346,7 +346,7 @@ void test3() {
   print_test_res(reg_state_is_equal(expected_insn8_r0_p5, pss.static_state[8].reg_state[0]), "5.2");
 
   inst p6[] = {inst(STH, 10, -2, 0xff),
-               inst(LDMAPID, 1, 1),
+               INSN_LDMAPID(1, 1),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -2),
                inst(CALL, BPF_FUNC_map_lookup_elem),
@@ -376,7 +376,7 @@ void test3() {
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
                  inst(STH, 10, -8, 0xff),
-                 inst(LDMAPID, 1, 0),
+                 INSN_LDMAPID(1, 0),
                  inst(MOV64XY, 2, 10),
                  inst(ADD64XC, 2, -8),
                  inst(CALL, BPF_FUNC_map_lookup_elem),
@@ -445,7 +445,7 @@ void test3() {
   }
   print_test_res(live_var_is_equal(expected_insn0_p24, pss.static_state[0].live_var), "4");
 
-  inst p2_5[] = {inst(LDMAPID, 2, 1),
+  inst p2_5[] = {INSN_LDMAPID(2, 1),
                  inst(MOV64XC, 3, 0),
                  inst(CALL, BPF_FUNC_tail_call),
                  inst(MOV64XC, 0, 0),
@@ -538,7 +538,7 @@ void test4() {
   test_safety_check(p1_2, sizeof(p1_2) / sizeof(inst), false, "2");
 
   inst p1_3[] = {inst(STB, 10, -1, 0x1),
-                 inst(LDMAPID, 1, 0),
+                 INSN_LDMAPID(1, 0),
                  inst(MOV64XY, 2, 10),
                  inst(ADD64XC, 2, -1),
                  inst(CALL, BPF_FUNC_map_lookup_elem),
@@ -629,7 +629,7 @@ void test6() {
   mem_t::add_map(map_attr(16, 32, 16));
 
   inst p1[] = {inst(STB, 10, -1, 0x1),
-               inst(LDMAPID, 1, 0),
+               INSN_LDMAPID(1, 0),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -1),
                inst(CALL, BPF_FUNC_map_lookup_elem),

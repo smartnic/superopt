@@ -65,7 +65,7 @@ void meas_solve_time_of_rcv_sock4() {
   meas_solve_time_delta_n_times(rcv_sock4, p1, 12, 4, "p1", vld);
 
   inst p2[] = {inst(NOP),
-               inst(LDMAPID, 8, 0),
+               INSN_LDMAPID(8, 0),
                inst(STXH, 10, -26, 8),
                inst(JGTXC, 2, -5, 7),
               };

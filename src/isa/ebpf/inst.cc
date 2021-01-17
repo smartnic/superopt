@@ -145,7 +145,9 @@ int32_t inst::get_max_imm() const {
     case ARSH32XC: return MAX_IMM_SH32;
     case LE:
     case BE: return MAX_TYPES_IMM_ENDIAN;
-    case LDMAPID: return mem_t::maps_number() - 1;
+    case LDDW:
+      if (is_ldmapid()) return mem_t::maps_number() - 1;
+      else return 0; // todo: deal with mov128xc
     case CALL: return MAX_CALL_IMM;
     default: cout << "Error: no imm in instruction: ";
       print();
@@ -195,7 +197,9 @@ int32_t inst::get_min_imm() const {
     case ARSH32XC:
     case LE:
     case BE: return 0;
-    case LDMAPID: return 0;
+    case LDDW:
+      if (is_ldmapid()) return 0;
+      else return 0;  // todo: deal with mv128xc
     case CALL: return 0;
     default: cout << "Error: no imm in instruction: ";
       print();
@@ -293,7 +297,7 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(ARSH32XY)
       MAPPER(LE)
       MAPPER(BE)
-      MAPPER(LDMAPID)
+      MAPPER(LDDW)
       MAPPER(LDXB)
       MAPPER(STXB)
       MAPPER(LDXH)
@@ -554,7 +558,7 @@ void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
 
 void inst::insert_opcodes_not_gen(unordered_set<int>& opcode_set) const {
   opcode_set.insert(IDX_CALL);
-  opcode_set.insert(IDX_LDMAPID);
+  opcode_set.insert(IDX_LDDW);
 }
 
 int inst::inst_output_opcode_type() const {
@@ -683,7 +687,9 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
         default: cout << "Error: imm " << imm << " is not 16, 32, 64" << endl;
           return string_to_expr("false");
       }
-    case LDMAPID: return predicate_ldmapid(IMM, NEWDST, sv, block);
+    case LDDW:
+      if (is_ldmapid()) return predicate_ldmapid(IMM, NEWDST, sv, block);
+      else return Z3_true; // todo: deal with mov128xc
     case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
     case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
     case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
@@ -810,7 +816,7 @@ int opcode_2_idx(int opcode) {
     case ARSH32XY: return IDX_ARSH32XY;
     case LE: return IDX_LE;
     case BE: return IDX_BE;
-    case LDMAPID: return IDX_LDMAPID;
+    case LDDW: return IDX_LDDW;
     case LDXB: return IDX_LDXB;
     case STXB: return IDX_STXB;
     case LDXH: return IDX_LDXH;
@@ -884,13 +890,23 @@ bool inst::is_pgm_end() const {
   return false;
 }
 
+bool inst::is_ldmapid() const {
+  if ((_opcode == LDDW) && (_src_reg == 1)) return true;
+  else return false;
+}
+
+bool inst::is_mov128xc() const {
+  if ((_opcode == LDDW) && (_src_reg == 0)) return true;
+  else return false;
+}
+
 string inst::get_bytecode_str() const {
   string str = ("{"
                 + to_string(_opcode) + ", " + to_string(_dst_reg) + ", "
                 + to_string(_src_reg) + ", " + to_string(_off) + ", "
                 + to_string(_imm)
                 + "}");
-  if (_opcode == LDMAPID) str += ",{0, 0, 0, 0, 0}";
+  if (is_ldmapid()) str += ",{0, 0, 0, 0, 0}";
   return str;
 }
 
@@ -929,7 +945,7 @@ void inst::regs_to_read(vector<int>& regs) const {
     case ARSH32XY: regs = {_dst_reg, _src_reg}; return;
     case LE:       regs = {_dst_reg}; return;
     case BE:       regs = {_dst_reg}; return;
-    case LDMAPID:  return;
+    case LDDW:     return;
     case LDXB:     regs = {_src_reg}; return;
     case STXB:     regs = {_dst_reg, _src_reg}; return;
     case LDXH:     regs = {_src_reg}; return;
@@ -1107,7 +1123,7 @@ int num_real_instructions(const inst* program, int length) {
   int count = length;
   if (program[0]._opcode == NOP) count--;
   for (int i = 1; i < length; i++) {
-    if ((program[i - 1]._opcode != LDMAPID) && (program[i]._opcode == NOP)) {
+    if ((program[i - 1]._opcode != LDDW) && (program[i]._opcode == NOP)) {
       count--;
     }
   }
@@ -1220,7 +1236,7 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_ARSH32XY] = && INSN_ARSH32XY,
     [IDX_LE]       = && INSN_LE,
     [IDX_BE]       = && INSN_BE,
-    [IDX_LDMAPID]  = && INSN_LDMAPID,
+    [IDX_LDDW]     = && INSN_LDDW,
     [IDX_LDXB]     = && INSN_LDXB,
     [IDX_STXB]     = && INSN_STXB,
     [IDX_LDXH]     = && INSN_LDXH,
@@ -1401,9 +1417,10 @@ INSN_LDINDH:
   BYTESWAP(BE, be)
 #undef BYTESWAP
 
-INSN_LDMAPID:
+INSN_LDDW:
   ps.reg_safety_chk(DST_ID);
-  DST = compute_ldmapid(IMM);
+  if (insn->is_ldmapid()) DST = compute_ldmapid(IMM);
+  else {} // deal with mov128xc
   CONT;
 
 INSN_JA:
@@ -1521,7 +1538,7 @@ void inst::regs_cannot_be_ptrs(vector<int>& regs) const {
     case ARSH32XY: regs = {_dst_reg, _src_reg}; return;
     case LE:       regs = {_dst_reg}; return;
     case BE:       regs = {_dst_reg}; return;
-    case LDMAPID:  return;
+    case LDDW:     return;
     case LDXB:     return;
     case STXB:     regs = {_src_reg}; return; // assume ptr cannot be stored in memory
     case LDXH:     return;

@@ -57,8 +57,8 @@ void remove_nops(inst* program, int len) {
       if (program[j].get_opcode_type() == OP_NOP) {
         bool is_real_nop = true;
         if (j > 0) {
-          // ldmapid has two insns, the second one's opcode is nop
-          if (program[j - 1]._opcode == LDMAPID) is_real_nop = false;
+          // LDDW has two insns, the second one's opcode is nop
+          if (program[j - 1]._opcode == LDDW) is_real_nop = false;
         }
         if (is_real_nop) nop_count++;
       }
@@ -77,7 +77,7 @@ void remove_nops(inst* program, int len) {
     bool is_nop = false;
     if (program[i].get_opcode_type() == OP_NOP) {
       if (i > 0) {
-        if (program[i - 1]._opcode != LDMAPID) {
+        if (program[i - 1]._opcode != LDDW) { // LDDW contains two insns
           is_nop = true;
         }
       }
@@ -403,7 +403,7 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   } else if (opcode == CALL) {
     iss.set_reg_state(0, SCALAR_VALUE);
     if (imm == BPF_FUNC_map_lookup_elem) type_const_inference_inst_BPF_FUNC_map_lookup_elem(iss, insn);
-  } else if (opcode == LDMAPID) {
+  } else if (insn.is_ldmapid()) {
     register_state rs;
     rs.type = CONST_PTR_TO_MAP;
     rs.val = insn._imm;

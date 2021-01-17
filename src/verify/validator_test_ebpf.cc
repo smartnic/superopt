@@ -241,7 +241,7 @@ void test3() {
   inst p1[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = k1
                  inst(STXB, 10, -1, 1),
-                 inst(LDMAPID, 1, 0), // r1 = map_id (0)
+                 INSN_LDMAPID(1, 0), // r1 = map_id (0)
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -256,7 +256,7 @@ void test3() {
   inst p11[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
-                  inst(LDMAPID, 1, 0), // r1 = map_id (0)
+                  INSN_LDMAPID(1, 0), // r1 = map_id (0)
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -272,7 +272,7 @@ void test3() {
   inst p2[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(LDMAPID, 1, 0), // r1 = map_id (0)
+                 INSN_LDMAPID(1, 0), // r1 = map_id (0)
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -287,7 +287,7 @@ void test3() {
   inst p21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
-                  inst(LDMAPID, 1, 0), // r1 = map_id (0)
+                  INSN_LDMAPID(1, 0), // r1 = map_id (0)
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -303,7 +303,7 @@ void test3() {
   // r0 = *(lookup &k m), where k = 0x11, v = L8(input)
   inst p3[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                 inst(STXB, 10, -1, 1),
-                inst(LDMAPID, 1, 0), // r1 = map_id (0)
+                INSN_LDMAPID(1, 0), // r1 = map_id (0)
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                 inst(ADD64XC, 2, -1),
                 inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
@@ -316,7 +316,7 @@ void test3() {
   inst p4[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(LDMAPID, 1, 0), // r1 = 0
+                 INSN_LDMAPID(1, 0), // r1 = 0
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -329,7 +329,7 @@ void test3() {
                 };
   inst p41[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(LDMAPID, 1, 0), // r1 = map0
+                 INSN_LDMAPID(1, 0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v1
@@ -343,7 +343,7 @@ void test3() {
   inst p5[12] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, k1), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(LDMAPID, 1, map0), // r1 = map0
+                 INSN_LDMAPID(1, map0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -357,7 +357,7 @@ void test3() {
   inst p51[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, k1), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
-                  inst(LDMAPID, 1, map0), // r1 = map0
+                  INSN_LDMAPID(1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -372,7 +372,7 @@ void test3() {
   // if k1 in map0, map0[k1]+=1, output=0
   inst p6[12] = {inst(MOV64XC, 1, k1),
                  inst(STXB, 10, -1, 1), // *(r10-1) = k1
-                 inst(LDMAPID, 1, map0), // r1 = map0
+                 INSN_LDMAPID(1, map0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2 = (r10-1)
                  inst(ADD64XC, 2, -1),
                  inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = &v = lookup k1 map0
@@ -386,7 +386,7 @@ void test3() {
   // r0 = *(lookup &k1 m0)
   inst p61[16] = {inst(MOV64XC, 1, k1),
                   inst(STXB, 10, -1, 1), // *(r10-1) = k1
-                  inst(LDMAPID, 1, map0), // r1 = map0
+                  INSN_LDMAPID(1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2 = (r10-1)
                   inst(ADD64XC, 2, -1),
                   inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = &v = lookup k1 map0
@@ -394,7 +394,7 @@ void test3() {
                   inst(LDXB, 1, 0, 0), // r1 = v
                   inst(ADD64XC, 1, 1), // r1 += 1
                   inst(STXB, 10, -2, 1), // *(r10-2) = r1
-                  inst(LDMAPID, 1, map0), // r1 = map0
+                  INSN_LDMAPID(1, map0), // r1 = map0
                   inst(MOV64XY, 3, 10), // r3 = r10-2
                   inst(ADD64XC, 3, -2),
                   inst(CALL, BPF_FUNC_map_update_elem),
@@ -414,15 +414,15 @@ void test3() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3 = r10-1
                  inst(ADD64XC, 3, -1),
-                 inst(LDMAPID, 1, map0), // r1 = map0
+                 INSN_LDMAPID(1, map0), // r1 = map0
                  inst(CALL, BPF_FUNC_map_update_elem), // map0[1] = 1
                  inst(MOV64XY, 3, 10), // r3 = r10-2
                  inst(ADD64XC, 3, -2),
-                 inst(LDMAPID, 1, map2), // r1 = map2
+                 INSN_LDMAPID(1, map2), // r1 = map2
                  inst(CALL, BPF_FUNC_map_update_elem), // map2[1] = 2
-                 inst(LDMAPID, 1, map0), // r1 = map0, // 13
+                 INSN_LDMAPID(1, map0), // r1 = map0, // 13
                  inst(JGTXY, 10, 9, 1),
-                 inst(LDMAPID, 1, map2), // r1 = map2
+                 INSN_LDMAPID(1, map2), // r1 = map2
                  inst(CALL, BPF_FUNC_map_lookup_elem),
                  inst(JEQXC, 0, 0, 1),
                  inst(LDXB, 0, 0, 0),
@@ -436,11 +436,11 @@ void test3() {
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3 = r10-1
                   inst(ADD64XC, 3, -1),
-                  inst(LDMAPID, 1, map0), // r1 = map0
+                  INSN_LDMAPID(1, map0), // r1 = map0
                   inst(CALL, BPF_FUNC_map_update_elem), // map0[1] = 1
                   inst(MOV64XY, 3, 10), // r3 = r10-2
                   inst(ADD64XC, 3, -2),
-                  inst(LDMAPID, 1, map2), // r1 = map2
+                  INSN_LDMAPID(1, map2), // r1 = map2
                   inst(CALL, BPF_FUNC_map_update_elem), // map2[1] = 2
                   inst(MOV64XC, 0, 1),
                   inst(JGTXY, 10, 9, 1),
@@ -453,7 +453,7 @@ void test3() {
   inst p8[16] = {inst(STB, 10, -2, 0),
                  inst(MOV64XC, 1, k1), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(LDMAPID, 1, map0), // r1 = map0
+                 INSN_LDMAPID(1, map0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -470,7 +470,7 @@ void test3() {
   inst p81[16] = {inst(STB, 10, -2, 1),
                   inst(MOV64XC, 1, k1), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
-                  inst(LDMAPID, 1, map0), // r1 = map0
+                  INSN_LDMAPID(1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -491,7 +491,7 @@ void test3() {
   inst p9[9] = {inst(STH, 10, -2, 1), // k = 1
                 inst(MOV64XY, 2, 10),
                 inst(ADD64XC, 2, -2),
-                inst(LDMAPID, map1),
+                INSN_LDMAPID(1, map1),
                 inst(CALL, BPF_FUNC_map_lookup_elem),
                 inst(JEQXC, 0, 0, 1),
                 inst(STB, 0, 0, 1), // set map1[1][0] = 0, not modify map1[1][1...3]
@@ -573,7 +573,7 @@ void test4() {
   inst p1[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, k1), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
-                 inst(LDMAPID, 1, map0), // r1 = map0
+                 INSN_LDMAPID(1, map0), // r1 = map0
                  inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -589,7 +589,7 @@ void test4() {
   inst p11[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, k1), // *addr_k = k1
                   inst(STXB, 10, -1, 1),
-                  inst(LDMAPID, 1, map0), // r1 = map0
+                  INSN_LDMAPID(1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -626,7 +626,7 @@ void test4() {
                   inst(STXB, 10, -2, 1),
                   inst(MOV64XC, 1, k1), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
-                  inst(LDMAPID, 1, map0), // r1 = map0
+                  INSN_LDMAPID(1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -649,7 +649,7 @@ void test4() {
   // p2: r0 = map1[k1] if k1 in map1, else r0 = 0
   inst p2[9] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
                 inst(STXH, 10, -2, 1),
-                inst(LDMAPID, 1, map1), // r1 = map1
+                INSN_LDMAPID(1, map1), // r1 = map1
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 2
                 inst(ADD64XC, 2, -2),
                 inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v1
@@ -664,7 +664,7 @@ void test4() {
   // p22: r0 = map1[k1] if map1[k1] == v1, else r0 = 0
   inst p22[11] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
                   inst(STXH, 10, -2, 1),
-                  inst(LDMAPID, 1, map1), // r1 = map1
+                  INSN_LDMAPID(1, map1), // r1 = map1
                   inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 2
                   inst(ADD64XC, 2, -2),
                   inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v1
@@ -680,7 +680,7 @@ void test4() {
   // r0 = 0xfffffffe if k1 not in map0, else r0 = 0; del map0[k1]
   inst p3[7] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
                 inst(STXB, 10, -1, 1),
-                inst(LDMAPID, 1, map0), // r1 = map0
+                INSN_LDMAPID(1, map0), // r1 = map0
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                 inst(ADD64XC, 2, -1),
                 inst(CALL, BPF_FUNC_map_delete_elem),
@@ -695,7 +695,7 @@ void test4() {
   // r0 = 1 if k1 in map0, else r0 = 0
   inst p4[9] = {inst(MOV64XC, 1, k1), // *addr_k = 0x11
                 inst(STXB, 10, -1, 1),
-                inst(LDMAPID, 1, map0), // r1 = map0
+                INSN_LDMAPID(1, map0), // r1 = map0
                 inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                 inst(ADD64XC, 2, -1),
                 inst(CALL, BPF_FUNC_map_lookup_elem),
@@ -976,48 +976,48 @@ void test8() {
   mem_t::set_pkt_sz(16);
   inst p1[6] = {inst(MOV64XC, 0, 0),
                 inst(MOV64XY, 1, 1),
-                inst(LDMAPID, 2, 0),
+                INSN_LDMAPID(2, 0),
                 inst(MOV64XC, 3, 1),
                 inst(CALL, BPF_FUNC_tail_call),
                 inst(EXIT),
                };
   inst p1_1[6] = {inst(MOV64XC, 0, 1), // r0 = 1
                   inst(MOV64XY, 1, 1),
-                  inst(LDMAPID, 2, 0),
+                  INSN_LDMAPID(2, 0),
                   inst(MOV64XC, 3, 1),
                   inst(CALL, BPF_FUNC_tail_call),
                   inst(EXIT),
                  };
   inst p1_2[5] = {inst(MOV64XC, 0, 0),
                   inst(MOV64XY, 1, 1),
-                  inst(LDMAPID, 2, 0),
+                  INSN_LDMAPID(2, 0),
                   inst(MOV64XC, 3, 1),
                   inst(EXIT),
                  };
   inst p1_3[6] = {inst(MOV64XC, 0, 0),
                   inst(MOV64XY, 1, 1),
-                  inst(LDMAPID, 2, 0),
+                  INSN_LDMAPID(2, 0),
                   inst(MOV64XC, 3, 2), // r3 = 2
                   inst(CALL, BPF_FUNC_tail_call),
                   inst(EXIT),
                  };
   inst p1_4[6] = {inst(MOV64XC, 0, 0),
                   inst(MOV64XY, 1, 0), // r1 = r0 = 1
-                  inst(LDMAPID, 2, 0),
+                  INSN_LDMAPID(2, 0),
                   inst(MOV64XC, 3, 1),
                   inst(CALL, BPF_FUNC_tail_call),
                   inst(EXIT),
                  };
   inst p1_5[6] = {inst(MOV64XC, 0, 0),
                   inst(MOV64XY, 1, 1),
-                  inst(LDMAPID, 2, 1), // r2 = map1
+                  INSN_LDMAPID(2, 1), // r2 = map1
                   inst(MOV64XC, 3, 1),
                   inst(CALL, BPF_FUNC_tail_call),
                   inst(EXIT),
                  };
   inst p1_6[8] = {inst(MOV64XC, 0, 0),
                   inst(MOV64XY, 1, 1),
-                  inst(LDMAPID, 2, 0),
+                  INSN_LDMAPID(2, 0),
                   inst(MOV64XC, 3, 1),
                   inst(JEQXC, 10, 514, 1),
                   inst(CALL, BPF_FUNC_tail_call),
@@ -1026,7 +1026,7 @@ void test8() {
                  };
   inst p1_7[7] = {inst(MOV64XC, 0, 0),
                   inst(MOV64XY, 1, 1),
-                  inst(LDMAPID, 2, 0),
+                  INSN_LDMAPID(2, 0),
                   inst(MOV64XC, 3, 1),
                   inst(JEQXC, 10, 514, 1),
                   inst(CALL, BPF_FUNC_tail_call),
@@ -1034,7 +1034,7 @@ void test8() {
                  };
   inst p1_8[8] = {inst(MOV64XC, 0, 1),
                   inst(MOV64XY, 1, 1),
-                  inst(LDMAPID, 2, 0),
+                  INSN_LDMAPID(2, 0),
                   inst(MOV64XC, 3, 0),
                   inst(JEQXC, 10, 514, 1),
                   inst(MOV64XC, 3, 1),
@@ -1169,7 +1169,7 @@ inst rcv_sock4[91] = {inst(191, 1, 6, 0, 0),
                       inst(107, 1, 10, -28, 0),
                       inst(191, 10, 2, 0, 0),
                       inst(7, 0, 2, 0, -40),
-                      inst(LDMAPID, 1, 0),
+                      INSN_LDMAPID(1, 0),
                       inst(0, 0, 0, 0),
                       inst(133, 0, 0, 0, 1),
                       inst(191, 0, 7, 0, 0),
@@ -1184,7 +1184,7 @@ inst rcv_sock4[91] = {inst(191, 1, 6, 0, 0),
                       inst(22, 0, 1, 10, 0),
                       inst(191, 10, 2, 0, 0),
                       inst(7, 0, 2, 0, -56),
-                      inst(LDMAPID, 1, 1),
+                      INSN_LDMAPID(1, 1),
                       inst(0, 0, 0, 0),
                       inst(133, 0, 0, 0, 1),
                       inst(21, 0, 0, 2, 0),
@@ -1194,7 +1194,7 @@ inst rcv_sock4[91] = {inst(191, 1, 6, 0, 0),
                       inst(107, 1, 10, -52, 0),
                       inst(191, 10, 2, 0, 0),
                       inst(7, 0, 2, 0, -56),
-                      inst(LDMAPID, 1, 1),
+                      INSN_LDMAPID(1, 1),
                       inst(0, 0, 0, 0),
                       inst(133, 0, 0, 0, 1),
                       inst(21, 0, 0, 5, 0),
@@ -1205,7 +1205,7 @@ inst rcv_sock4[91] = {inst(191, 1, 6, 0, 0),
                       inst(30, 1, 2, 20, 0),
                       inst(191, 10, 2, 0, 0),
                       inst(7, 0, 2, 0, -40),
-                      inst(LDMAPID, 1, 0),
+                      INSN_LDMAPID(1, 0),
                       inst(0, 0, 0, 0),
                       inst(133, 0, 0, 0, 3),
                       inst(183, 0, 6, 0, 0),
@@ -1215,7 +1215,7 @@ inst rcv_sock4[91] = {inst(191, 1, 6, 0, 0),
                       inst(123, 1, 10, -24, 0),
                       inst(191, 10, 2, 0, 0),
                       inst(7, 0, 2, 0, -24),
-                      inst(LDMAPID, 1, 2),
+                      INSN_LDMAPID(1, 2),
                       inst(0, 0, 0, 0),
                       inst(133, 0, 0, 0, 1),
                       inst(21, 0, 0, 9, 0),
@@ -1235,7 +1235,7 @@ inst rcv_sock4[91] = {inst(191, 1, 6, 0, 0),
                       inst(7, 0, 2, 0, -24),
                       inst(191, 10, 3, 0, 0),
                       inst(7, 0, 3, 0, -16),
-                      inst(LDMAPID, 1, 2),
+                      INSN_LDMAPID(1, 2),
                       inst(0, 0, 0, 0),
                       inst(180, 0, 4, 0, 0),
                       inst(133, 0, 0, 0, 2),
@@ -1279,7 +1279,7 @@ void test12() {
                        inst(RSH32XC, 8, 22),
                       };
   chk_counterex_by_vld_to_interpreter_delta(rcv_sock4, p_unsafe_4, 12, 4, "1.4", COUNTEREX_safety_check);
-  inst p_unsafe_5[] = {inst(LDMAPID, 0, 0),
+  inst p_unsafe_5[] = {INSN_LDMAPID(0, 0),
                        inst(LDXW, 8, 10, -1),
                        inst(STXH, 10, -26, 8),
                        inst(JEQ32XC, 8, -40, 33),
@@ -1338,7 +1338,7 @@ inst from_network[38] = {inst(180, 0, 2, 0, 0),
                          inst(123, 1, 10, -24, 0),
                          inst(191, 10, 2, 0, 0),
                          inst(7, 0, 2, 0, -24),
-                         inst(24, 0, 1, 0, 0), // ldmapid r1 = 0
+                         inst(24, 1, 1, 0, 0), // ldmapid r1 = 0
                          inst(0, 0, 0, 0, 0),
                          inst(133, 0, 0, 0, 1),
                          inst(21, 0, 0, 7, 0),
@@ -1356,7 +1356,7 @@ inst from_network[38] = {inst(180, 0, 2, 0, 0),
                          inst(7, 0, 2, 0, -24),
                          inst(191, 10, 3, 0, 0),
                          inst(7, 0, 3, 0, -16),
-                         inst(24, 0, 1, 0, 0), // ldmapid r1 = 0
+                         inst(24, 1, 1, 0, 0), // ldmapid r1 = 0
                          inst(0, 0, 0, 0),
                          inst(180, 0, 4, 0, 0),
                          inst(133, 0, 0, 0, 2),
@@ -1414,7 +1414,7 @@ void test13() {
   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
   mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
   inst p4[] = {inst(STH, 10, -2, 0xff),
-               inst(LDMAPID, 1, 0),
+               INSN_LDMAPID(1, 0),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -2),
                inst(CALL, BPF_FUNC_map_lookup_elem),
@@ -1427,7 +1427,7 @@ void test13() {
                inst(EXIT),
               };
   inst p4_1[] = {inst(STH, 10, -2, 0xff),
-                 inst(LDMAPID, 1, 0),
+                 INSN_LDMAPID(1, 0),
                  inst(MOV64XY, 2, 10),
                  inst(ADD64XC, 2, -2),
                  inst(CALL, BPF_FUNC_map_lookup_elem),
@@ -1507,7 +1507,7 @@ void test13() {
   win_start = 12;
   win_end = 16;
   for (int i = 0; i < prog_len; i++) rcv_sock4_1[i] = rcv_sock4[i];
-  rcv_sock4_1[12] = inst(LDMAPID, 0, 0);
+  rcv_sock4_1[12] = INSN_LDMAPID(0, 0);
   rcv_sock4_1[13] = inst(MOV64XC, 9, 10);
   rcv_sock4_1[14] = inst(STXH, 10, -26, 0);
   rcv_sock4_1[15] = inst(OR64XY, 9, 0);

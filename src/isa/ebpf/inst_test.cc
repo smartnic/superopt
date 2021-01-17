@@ -148,7 +148,7 @@ inst instructions20[3] = {inst(STXH, 10, -2, 1),
 inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                            inst(STXB, 10, -1, 1),
-                           inst(LDMAPID, 1, 0), // r1 = map_id (0)
+                           INSN_LDMAPID(1, 0), // r1 = map_id (0)
                            inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -163,7 +163,7 @@ inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
 inst instructions22[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                            inst(STXB, 10, -1, 1),
-                           inst(LDMAPID, 1, 0), // r1 = map_id (0)
+                           INSN_LDMAPID(1, 0), // r1 = map_id (0)
                            inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
@@ -178,7 +178,7 @@ inst instructions22[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
 // r0 = *(lookup &k m), where k = 0x11, v = L8(input)
 inst instructions23[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                           inst(STXB, 10, -1, 1),
-                          inst(LDMAPID, 1, 0), // r1 = map_id (0)
+                          INSN_LDMAPID(1, 0), // r1 = map_id (0)
                           inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
                           inst(ADD64XC, 2, -1),
                           inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
@@ -712,8 +712,6 @@ void test2() {
   SMT_CHECK_XC(0x0, 0x0, "smt NEG64");
   SMT_CHECK_XC(-1, 1, "smt NEG64");
   SMT_CHECK_XC(1, -1, "smt NEG64");
-  return;
-
 
   insn = inst(LSH64XC, 0, 63);
   SMT_CHECK_XC(0xffffffffffffffff, 0x8000000000000000, "smt LSH64XC");
@@ -1032,7 +1030,7 @@ void test3() {
                   inst(ARSH32XY, 3, 1),
                   inst(LE, 3, 16),
                   inst(BE, 3, 16),
-                  inst(LDMAPID, 1, 2),
+                  INSN_LDMAPID(1, 2),
                   inst(LDXB, 1, 10, -4),
                   inst(STXB, 10, -4, 1),
                   inst(LDXH, 1, 10, -4),
@@ -1095,7 +1093,7 @@ void test3() {
              "{204, 3, 1, 0, 0},"\
              "{212, 3, 0, 0, 16},"\
              "{220, 3, 0, 0, 16},"\
-             "{24, 1, 0, 0, 2},{0, 0, 0, 0, 0},"\
+             "{24, 1, 1, 0, 2},{0, 0, 0, 0, 0},"\
              "{113, 1, 10, -4, 0},"\
              "{115, 10, 1, -4, 0},"\
              "{105, 1, 10, -4, 0},"\
@@ -1128,7 +1126,7 @@ void test3() {
              "{133, 0, 0, 0, 1},"\
              "{149, 0, 0, 0, 0},";
   prog_bytecode = "";
-  for (int i = 0; i < NUM_INSTR - 1; i++) {
+  for (int i = 0; i < NUM_INSTR - 2; i++) { // exclude NOP
     prog_bytecode += prog2[i].get_bytecode_str() + ",";
   }
   print_test_res(prog_bytecode == expected, "ebpf bytecode 2");
@@ -1440,7 +1438,7 @@ void test9() {
   expected.init();
   input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
   inst p1[6] = {inst(MOV64XY, 1, 1),
-                inst(LDMAPID, 2, 0),
+                INSN_LDMAPID(2, 0),
                 inst(MOV64XC, 3, 1), // Jump to map[1] program
                 inst(CALL, BPF_FUNC_tail_call), // in the current implementation, this is an exit insn
                 inst(MOV64XC, 0, 0xff),
@@ -1451,7 +1449,7 @@ void test9() {
   expected.pgm_exit_type = PGM_EXIT_TYPE_tail_call;
   print_test_res(output1 == expected, "tail call 1.1");
   inst p1_1[5] = {inst(MOV64XY, 1, 1),
-                  inst(LDMAPID, 2, 0),
+                  INSN_LDMAPID(2, 0),
                   inst(MOV64XC, 3, 1), // Jump to map[1] program
                   inst(CALL, BPF_FUNC_tail_call), // in the current implementation, this is an exit insn
                   inst(EXIT),
@@ -1619,7 +1617,7 @@ void test11() {
   print_test_res(output == expected, "interpret program 2");
 
   inst p3[] = {inst(STH, 10, -2, 0xff),
-               inst(LDMAPID, 1, 0),
+               INSN_LDMAPID(1, 0),
                inst(MOV64XY, 2, 10),
                inst(ADD64XC, 2, -2),
                inst(CALL, BPF_FUNC_map_lookup_elem),
@@ -1835,7 +1833,7 @@ void test15() {
               };
   print_test_res(num_real_instructions(p2, sizeof(p2) / sizeof(inst)) == 2, "2");
 
-  inst p3[] = {inst(LDMAPID, 1, 0),
+  inst p3[] = {INSN_LDMAPID(1, 0),
                inst(),
                inst(EXIT),
               };
