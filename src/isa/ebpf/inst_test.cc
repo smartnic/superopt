@@ -294,6 +294,11 @@ inst instructions35[] = {inst(MOV64XC, 0, 5),
                          inst(EXIT),
                         };
 
+// test movdwxc
+inst instructions36[] = {INSN_MOVDWXC(0, 0x1234567890),
+                         inst(EXIT),
+                        };
+
 void test1() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
@@ -562,6 +567,14 @@ void test1() {
   expected.reg = -5;
   interpret(output, instructions35, sizeof(instructions35) / sizeof(inst), ps, input);
   print_test_res(output == expected, "interpret NEG64");
+
+
+  input.clear();
+  expected.clear();
+  expected.reg = 0x1234567890;
+  convert_bpf_pgm_to_superopt_pgm(instructions36, sizeof(instructions36) / sizeof(inst));
+  interpret(output, instructions36, sizeof(instructions36) / sizeof(inst), ps, input);
+  print_test_res(output == expected, "interpret MOVDWXC");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output, bool flag = false) {
@@ -780,6 +793,11 @@ void test2() {
   if (is_le) expected = 0xefcdab8967452301;
   else expected = 0x0123456789abcdef;
   SMT_CHECK_XC(0x0123456789abcdef, expected, "smt BE64");
+
+  inst insns_movdwxc[2] = {INSN_MOVDWXC(0, 0x1234567890)};
+  convert_bpf_pgm_to_superopt_pgm(insns_movdwxc, 2);
+  insn = insns_movdwxc[0];
+  SMT_CHECK_XC(0, 0x1234567890, "smt MOVDWXC") // does not care about the input
 
 #define SMT_JMP_CHECK_XC(dst_input, bool_expected, test_name)                        \
   smt = z3::implies(CURDST == to_expr((int64_t)dst_input), insn.smt_inst_jmp(sv));   \
@@ -1840,6 +1858,68 @@ void test15() {
   print_test_res(num_real_instructions(p3, sizeof(p3) / sizeof(inst)) == 3, "3");
 }
 
+bool same_programs(inst* p1, int len1, inst* p2, int len2) {
+  if (len1 != len2) return false;
+  bool is_equal = true;
+  for (int i = 0; i < len1; i++) {
+    is_equal &= (p1[i] == p2[i]);
+  }
+  return is_equal;
+}
+
+void test16() {
+  cout << "Test 16: test conversion between bpf and superopt program" << endl;
+  inst p1[] = {INSN_MOVDWXC(1, 0x00000001ffffffff),
+               inst(MOV64XC, 0, 0),
+               inst(EXIT),
+              };
+  int p1_len = sizeof(p1) / sizeof(inst);
+  convert_bpf_pgm_to_superopt_pgm(p1, p1_len);
+  inst p1_exp[] = {inst(LDDW, 1, 0),
+                   inst(),
+                   inst(MOV64XC, 0, 0),
+                   inst(EXIT),
+                  };
+  p1_exp[0]._imm = 0;
+  p1_exp[0]._imm64 = 0x00000001ffffffff;
+  int p1_exp_len = sizeof(p1_exp) / sizeof(inst);
+  print_test_res(same_programs(p1, p1_len, p1_exp, p1_exp_len), "1.1");
+
+  convert_superopt_pgm_to_bpf_pgm(p1, p1_len);
+  inst p1_exp2[] = {inst(LDDW, 0, 1, 0, 0xffffffff),
+                    inst(0, 0, 0, 0, 0x1),
+                    inst(MOV64XC, 0, 0),
+                    inst(EXIT),
+                   };
+  int p1_exp2_len = sizeof(p1_exp2) / sizeof(inst);
+  print_test_res(same_programs(p1, p1_len, p1_exp2, p1_exp2_len), "1.2");
+
+  // inst(int opcode, int32_t src_reg, int32_t dst_reg, int16_t off, int32_t imm) {
+  inst p2[] = {INSN_LDMAPID(1, 0),
+               inst(),
+               inst(MOV64XC, 0, 0),
+               inst(EXIT),
+              };
+  int p2_len = sizeof(p2) / sizeof(inst);
+  convert_bpf_pgm_to_superopt_pgm(p2, p2_len);
+  inst p2_exp[] = {inst(LDDW, 1, 1, 0, 0), // set src_reg as 1
+                   inst(),
+                   inst(MOV64XC, 0, 0),
+                   inst(EXIT),
+                  };
+  int p2_exp_len = sizeof(p2_exp) / sizeof(inst);
+  print_test_res(same_programs(p2, p2_len, p2_exp, p2_exp_len), "2.1");
+
+  convert_superopt_pgm_to_bpf_pgm(p2, p2_len);
+  inst p2_exp2[] = {inst(LDDW, 1, 1, 0, 0),
+                    inst(),
+                    inst(MOV64XC, 0, 0),
+                    inst(EXIT),
+                   };
+  int p2_exp2_len = sizeof(p1_exp2) / sizeof(inst);
+  print_test_res(same_programs(p2, p2_len, p2_exp2, p2_exp2_len), "2.2");
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
@@ -1857,6 +1937,7 @@ int main(int argc, char *argv[]) {
     test13();
     test14();
     test15();
+    test16();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

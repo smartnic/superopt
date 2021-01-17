@@ -612,6 +612,10 @@ static const int optable[NUM_INSTR] = {
 // todo: extend ldmapid to two insns
 #define INSN_LDMAPID(dst_reg, map_id) inst(LDDW, 1, dst_reg, 0, map_id)
 
+#define INSN_MOVDWXC(dst_reg, imm64) \
+  inst(LDDW, 0, dst_reg, 0, uint32_t(imm64)),\
+  inst(0, 0, 0, 0, imm64 >> 32)
+
 class inst: public inst_base {
  private:
   void set_off(int op_value);
@@ -638,12 +642,15 @@ class inst: public inst_base {
   int32_t _src_reg;
   int32_t _imm;
   int16_t _off;
+  uint64_t _imm64; // this is for LDDW, _imm64 = _imm(insn1) | (_imm(insn2) << 32)
+
   inst(int opcode, int32_t src_reg, int32_t dst_reg, int16_t off, int32_t imm) {
     _opcode  = opcode;
     _dst_reg = dst_reg;
     _src_reg = src_reg;
     _imm = imm;
     _off = off;
+    _imm64 = 0;
   }
   inst(int opcode = NOP, int32_t arg1 = 0, int32_t arg2 = 0, int32_t arg3 = 0);
   void set_imm(int op_value);
@@ -707,3 +714,6 @@ class inst: public inst_base {
 int num_real_instructions(const inst* program, int length);
 void interpret(inout_t& output, inst* program, int length, prog_state &ps, const inout_t& input);
 void safety_chk(inst& insn, prog_state& ps);
+
+void convert_bpf_pgm_to_superopt_pgm(inst* program, int length);
+void convert_superopt_pgm_to_bpf_pgm(inst* program, int length);

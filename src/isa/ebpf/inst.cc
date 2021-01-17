@@ -19,6 +19,7 @@ inst::inst(int opcode, int32_t arg1, int32_t arg2, int32_t arg3) {
   _src_reg = 0;
   _imm = 0;
   _off = 0;
+  _imm64 = 0;
   for (int i = 0; i < MAX_OP_LEN; i++) {
     switch (OPTYPE(opcode, i)) {
       case OP_DST_REG: _dst_reg = arg[i]; break;
@@ -335,6 +336,15 @@ string inst::opcode_to_str(int opcode) {
 #undef MAPPER
 
 void inst::print() const {
+  if (_opcode == LDDW) {
+    if (is_ldmapid()) cout << "LDMAPID " << _dst_reg << " " << _imm << endl;
+    else if (is_movdwxc()) {
+      cout << "MOVDWXC " << _dst_reg << " " << _imm64 << endl;
+    } else {
+      cout << "unknown opcode" << endl;
+    }
+    return;
+  }
   cout << opcode_to_str(_opcode);
   for (int i = 0; i < get_num_operands(); i++) {
     cout << " " << get_operand(i);
@@ -471,6 +481,7 @@ inst& inst::operator=(const inst & rhs) {
   _src_reg = rhs._src_reg;
   _off = rhs._off;
   _imm = rhs._imm;
+  _imm64 = rhs._imm64;
   return *this;
 }
 
@@ -479,7 +490,8 @@ bool inst::operator==(const inst &x) const {
           (_dst_reg == x._dst_reg) &&
           (_src_reg == x._src_reg) &&
           (_off == x._off) &&
-          (_imm == x._imm));
+          (_imm == x._imm) &&
+          (_imm64 == x._imm64));
 }
 
 int32_t inst::get_max_sample_dst_reg() const {
@@ -591,6 +603,7 @@ void inst::set_as_nop_inst() {
   _src_reg = 0;
   _off = 0;
   _imm = 0;
+  _imm64 = 0;
 }
 
 // z3 64-bit bv
@@ -598,6 +611,7 @@ void inst::set_as_nop_inst() {
 #define CURDST curDst
 #define CURSRC curSrc
 #define IMM to_expr(imm)
+#define IMM64 to_expr(imm64)
 #define OFF to_expr(off)
 #define CURDST_L32 (CURDST & to_expr((int64_t)0xffffffff))
 #define CURSRC_L32 (CURSRC & to_expr((int64_t)0xffffffff))
@@ -638,6 +652,7 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     newDst = sv.update_reg_var(_dst_reg);
   }
   int64_t imm = (int64_t)_imm;
+  uint64_t imm64 = _imm64;
   int64_t off = (int64_t)_off;
   z3::expr path_cond = sv.mem_var.get_block_path_cond(block);
   // todo: move the track of pointers in predicate functions
@@ -689,7 +704,7 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
       }
     case LDDW:
       if (is_ldmapid()) return predicate_ldmapid(IMM, NEWDST, sv, block);
-      else return Z3_true; // todo: deal with movdwxc
+      else return predicate_mov(IMM64, NEWDST); // todo: deal with movdwxc
     case LDXB: return predicate_ld8(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
     case LDXH: return predicate_ld16(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
     case LDXW: return predicate_ld32(CURSRC, OFF, sv, NEWDST, block, enable_addr_off, is_win);
@@ -1117,6 +1132,7 @@ void inst::set_unused_operands_default_vals() {
   if (! src_reg_flag) _src_reg = 0;
   if (! imm_flag) _imm = 0;
   if (! off_flag) _off = 0;
+  if (_opcode != LDDW) _imm64 = 0;
 }
 
 int num_real_instructions(const inst* program, int length) {
@@ -1132,6 +1148,7 @@ int num_real_instructions(const inst* program, int length) {
 
 void interpret(inout_t& output, inst * program, int length, prog_state & ps, const inout_t& input) {
 #undef IMM
+#undef IMM64
 #undef OFF
 #undef MEM
 #undef R0
@@ -1147,6 +1164,7 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
 #define DST ps._regs[insn->_dst_reg]
 #define SRC ps._regs[insn->_src_reg]
 #define IMM (int64_t)insn->_imm
+#define IMM64 insn->_imm64
 #define DST_L32 L32(DST)
 #define SRC_L32 L32(SRC)
 #define IMM_L32 insn->_imm
@@ -1420,7 +1438,7 @@ INSN_LDINDH:
 INSN_LDDW:
   ps.reg_safety_chk(DST_ID);
   if (insn->is_ldmapid()) DST = compute_ldmapid(IMM);
-  else {} // deal with movdwxc
+  else DST = compute_mov(IMM64); // deal with movdwxc
   CONT;
 
 INSN_JA:
@@ -1572,5 +1590,38 @@ void inst::regs_cannot_be_ptrs(vector<int>& regs) const {
     case EXIT: return;
 
     default: cout << "unknown opcode" << endl;
+  }
+}
+
+// combine two instructions if the opcode is LDDW,
+// compute imm64 and set it in the first instruction,
+// set the second insn as NOP
+void convert_bpf_pgm_to_superopt_pgm(inst* program, int length) {
+  for (int i = 0; i < length; i++) {
+    if (program[i]._opcode == LDDW) {
+      assert(i + 1 < length);
+      uint64_t imm32_1 = L32(program[i]._imm);
+      uint64_t imm32_2 = L32(program[i + 1]._imm);
+      uint64_t imm64 = imm32_1 | (imm32_2 << 32);
+      program[i]._imm = 0;
+      program[i + 1]._imm = 0;
+      program[i]._imm64 = imm64;
+      i++;
+    }
+  }
+}
+
+void convert_superopt_pgm_to_bpf_pgm(inst* program, int length) {
+  for (int i = 0; i < length; i++) {
+    if (program[i]._opcode == LDDW) {
+      assert(i + 1 < length);
+      uint64_t imm64 = program[i]._imm64;
+      uint32_t imm32_1 = L32(imm64);
+      uint32_t imm32_2 = L32(imm64 >> 32);
+      program[i]._imm64 = 0;
+      program[i]._imm = imm32_1;
+      program[i + 1]._imm = imm32_2;
+      i++;
+    }
   }
 }
