@@ -409,6 +409,12 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
     rs.val = insn._imm;
     rs.val_flag = true;
     iss.set_reg_state(dst_reg, rs);
+  } else if (insn.is_movdwxc()) {
+    register_state rs;
+    rs.type = SCALAR_VALUE;
+    rs.val = insn._imm64;
+    rs.val_flag = true;
+    iss.set_reg_state(dst_reg, rs);
   } else {
     iss.set_reg_state(dst_reg, SCALAR_VALUE);
   }

@@ -507,6 +507,15 @@ void test3() {
   expected_insn4_r2_p33.push_back(register_state{SCALAR_VALUE, 0, 5, true});
   expected_insn4_r2_p33.push_back(register_state{SCALAR_VALUE, 0, 9, true});
   print_test_res(reg_state_is_equal(expected_insn4_r2_p33, pss.static_state[4].reg_state[2]), "3.2");
+
+  inst p3_4[] = {INSN_MOVDWXC(0, 0x1234567890),
+                 inst(EXIT),
+                };
+  convert_bpf_pgm_to_superopt_pgm(p3_4, sizeof(p3_4) / sizeof(inst));
+  static_analysis(pss, p3_4, sizeof(p3_4) / sizeof(inst));
+  vector<register_state> expected_insn1_r0_p34;
+  expected_insn1_r0_p34.push_back(register_state{SCALAR_VALUE, 0, 0x1234567890, true});
+  print_test_res(reg_state_is_equal(expected_insn1_r0_p34, pss.static_state[0].reg_state[0]), "4.1");
 }
 
 // expected_safe is either true for safe or false for unsafe
