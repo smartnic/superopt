@@ -131,7 +131,7 @@ void remove_nops_check(inst* prog, int len, inst* expected_prog, string test_nam
   remove_nops(prog, len);
   bool is_equal = true;
   for (int i = 0; i < len; i++) {
-    is_equal = (prog[i] == expected_prog[i]);
+    is_equal &= (prog[i] == expected_prog[i]);
   }
   print_test_res(is_equal, test_name);
 }
@@ -157,12 +157,12 @@ void test2() {
                inst(NOP),
                inst(EXIT),
               };
-  inst p2_expected[] = {inst(JA, 0),
+  inst p2_expected[] = {inst(JA, 1),
                         inst(MOV64XC, 1, 0),
                         inst(EXIT),
-                        inst(NOP),
                         inst(JA, 0),
                         inst(EXIT),
+                        inst(NOP),
                         inst(NOP),
                         inst(NOP),
                        };
@@ -182,7 +182,7 @@ void test2() {
   inst p3_expected[] = {inst(MOV64XC, 1, 0),
                         inst(JEQXC, 1, 2, 1),
                         inst(MOV64XC, 1, 0),
-                        inst(JA, 1),
+                        inst(JA, 0),
                         inst(EXIT),
                         inst(JA, -2),
                         inst(),
