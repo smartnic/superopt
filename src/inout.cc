@@ -15,8 +15,15 @@ inout::inout(const inout_t& in, const inout_t& out) {
 }
 
 void inout::set_in_out(const inout_t& _input, const inout_t& _output) {
+  input.init();
+  output.init();
   input = _input;
   output = _output;
+}
+
+void inout::operator=(const inout &rhs) {
+  input = rhs.input;
+  output = rhs.output;
 }
 
 void inout::clear() {
@@ -43,7 +50,7 @@ examples::~examples() {}
 void examples::insert(const inout& ex) {
   inout io;
   _exs.push_back(io);
-  _exs[_exs.size() - 1].set_in_out(ex.input, ex.output);
+  _exs[size() - 1].set_in_out(ex.input, ex.output);
 }
 
 void examples::clear() {

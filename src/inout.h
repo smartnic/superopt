@@ -17,6 +17,7 @@ class inout {
   inout(const inout_t& in, const inout_t& out);
   void set_in_out(const inout_t& in, const inout_t& out);
   void clear();
+  void operator=(const inout &rhs);
   friend ostream& operator<< (ostream& out, const inout &_inout);
   friend ostream& operator<< (ostream& out, const vector<inout> &_inout_vec);
 };

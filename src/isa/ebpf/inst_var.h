@@ -503,8 +503,6 @@ class inout_t: public inout_t_base {
   // pseudo random values for BPF_FUNC_get_prandom_u32, prog_state get these values form get from input
   vector<uint32_t> randoms_u32;
   bool is_win = false;
-  static int start_insn;
-  static int end_insn;
   // safety check state variables starts
   vector<bool> reg_readable;
   vector<bool> stack_readble;
@@ -513,6 +511,8 @@ class inout_t: public inout_t_base {
   unordered_map<int, int64_t> regs;  // for regs
   unordered_map<int, uint8_t> stack; // for stack
   vector<vector<uint8_t>> maps_mem; // maps memory (for map value in window program eq check)
+  static int start_insn;
+  static int end_insn;
   inout_t();
   inout_t(const inout_t& rhs); // deep copy for vector push back
   ~inout_t();

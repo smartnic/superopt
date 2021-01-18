@@ -1468,6 +1468,7 @@ void inout_t::operator=(const inout_t &rhs) {
   stack = rhs.stack;
   input_simu_pkt_ptrs[0] = rhs.input_simu_pkt_ptrs[0];
   input_simu_pkt_ptrs[1] = rhs.input_simu_pkt_ptrs[1];
+  input_simu_pkt_ptrs_s = rhs.input_simu_pkt_ptrs_s;
   if (smt_var::is_win) {
     for (int i = 0; i < maps_mem.size(); i++) {
       for (int j = 0; j < maps_mem[i].size(); j++) {
@@ -1551,6 +1552,7 @@ bool inout_t::operator==(const inout_t &rhs) const {
 ostream& operator<<(ostream& out, const inout_t& x) {
   out << "is_win:" << x.is_win << " ";
   out << hex << "simu_r10:" << x.input_simu_r10 << dec << " ";
+  out << hex << "input_simu_pkt_ptrs_s: " << x.input_simu_pkt_ptrs_s << dec << " ";
   out << hex << "reg:" << x.reg << " " << dec;
   for (int i = 0; i < x.maps.size(); i++) {
     out << "map " << i << ": ";

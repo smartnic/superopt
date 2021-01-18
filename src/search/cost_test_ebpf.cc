@@ -81,7 +81,35 @@ void test1() {
   xdp_pkt_1[18] = inst(MOV32XC, 1, 1);
   xdp_pkt_1[19] = inst(XADD64, 0, 0, 1);
   print_test_res(get_error_cost(xdp_pkt, xdp_pkt_1, win_start, win_end) == 0, "xdp_pktcntr 1");
+  mem_t::_layout.clear();
 
+  // test PGM_INPUT_pkt_ptrs
+  const int p3_len = 8;
+  inst::max_prog_len = p3_len;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+  mem_t::set_pkt_sz(32);
+  mem_t::add_map(map_attr(32, 64, p3_len));
+  inst p3[] = {inst(LDXW, 3, 1, 4),
+               inst(LDXW, 2, 1, 0),
+               inst(LDXB, 4, 2, 12), // insn 2
+               inst(LDXB, 5, 2, 13),
+               inst(LSH64XC, 5, 8),
+               inst(OR64XY, 5, 4),   // insn 5
+               inst(MOV64XY, 0, 5),
+               inst(EXIT),
+              };
+  inst p3_1[] = {inst(LDXW, 3, 1, 4),
+                 inst(LDXW, 2, 1, 0),
+                 inst(LDXB, 4, 2, 12),
+                 inst(LDXB, 5, 2, 13),
+                 inst(LSH64XC, 5, 8),
+                 inst(LDXH, 5, 2, 12),
+                 inst(MOV64XY, 0, 5),
+                 inst(EXIT),
+                };
+  win_start = 2;
+  win_end = 5;
+  print_test_res(get_error_cost(p3, p3_1, win_start, win_end) == 0, "PGM_INPUT_pkt_ptrs");
   mem_t::_layout.clear();
 }
 
