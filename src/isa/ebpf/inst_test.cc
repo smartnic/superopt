@@ -299,6 +299,20 @@ inst instructions36[] = {INSN_MOVDWXC(0, 0x1234567890),
                          inst(EXIT),
                         };
 
+// test JGEXC/JGEXY
+inst instructions37[] = {inst(MOV64XC, 1, 1),
+                         inst(JGEXC, 1, 1, 2),
+                         inst(MOV64XC, 0, 0),
+                         inst(EXIT),
+                         inst(MOV64XC, 0, 1),
+                         inst(JGEXC, 1, 0, 2),
+                         inst(MOV64XC, 0, 0),
+                         inst(EXIT),
+                         inst(MOV64XC, 0, 1),
+                         inst(EXIT),
+                        };
+
+
 void test1() {
   mem_t::_layout.clear();
   mem_t::add_map(map_attr(8, 8, 512));
@@ -575,6 +589,12 @@ void test1() {
   convert_bpf_pgm_to_superopt_pgm(instructions36, sizeof(instructions36) / sizeof(inst));
   interpret(output, instructions36, sizeof(instructions36) / sizeof(inst), ps, input);
   print_test_res(output == expected, "interpret MOVDWXC");
+
+  input.clear();
+  expected.clear();
+  expected.reg = 1;
+  interpret(output, instructions37, sizeof(instructions37) / sizeof(inst), ps, input);
+  print_test_res(output == expected, "interpret JGEXC/JGEXY");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output, bool flag = false) {
@@ -830,6 +850,17 @@ void test2() {
   insn = inst(JGTXY, 0, 1, 1);
   SMT_JMP_CHECK_XY(0xffffffffffffffff, 0x7fffffffffffffff, true, "smt JGTXY 1");
 
+  insn = inst(JGEXY, 0, 1, 1);
+  SMT_JMP_CHECK_XY(0xffffffffffffffff, 0xffffffffffffffff, true, "smt JGEXY 1");
+  SMT_JMP_CHECK_XY(0x2, 0x1, true, "smt JGEXY 2");
+  SMT_JMP_CHECK_XY(0x1, 0x2, false, "smt JGEXY 3");
+
+  insn = inst(JGEXC, 0, 1, 1);
+  SMT_JMP_CHECK_XC(0, false, "smt JGEXC 1");
+  SMT_JMP_CHECK_XC(-1, true, "smt JGEXC 2");
+  SMT_JMP_CHECK_XC(1, true, "smt JGEXC 3");
+  SMT_JMP_CHECK_XC(2, true, "smt JGEXC 4");
+
   insn = inst(JNEXC, 0, -1, 1);
   SMT_JMP_CHECK_XC(1, true, "smt JNEXC 1");
 
@@ -1070,6 +1101,8 @@ void test3() {
                   inst(JEQXY, 3, 1, 2),
                   inst(JGTXC, 3, 1, 2),
                   inst(JGTXY, 3, 1, 2),
+                  inst(JGEXC, 3, 1, 2),
+                  inst(JGEXY, 3, 1, 2),
                   inst(JNEXC, 3, 1, 2),
                   inst(JNEXY, 3, 1, 2),
                   inst(JSGTXC, 3, 1, 2),
@@ -1133,6 +1166,8 @@ void test3() {
              "{29, 3, 1, 2, 0},"\
              "{37, 3, 0, 2, 1},"\
              "{45, 3, 1, 2, 0},"\
+             "{53, 3, 0, 2, 1},"\
+             "{61, 3, 1, 2, 0},"\
              "{85, 3, 0, 2, 1},"\
              "{93, 3, 1, 2, 0},"\
              "{101, 3, 0, 2, 1},"\

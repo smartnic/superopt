@@ -323,6 +323,8 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(JEQXY)
       MAPPER(JGTXC)
       MAPPER(JGTXY)
+      MAPPER(JGEXC)      
+      MAPPER(JGEXY)
       MAPPER(JNEXC)
       MAPPER(JNEXY)
       MAPPER(JSGTXC)
@@ -561,6 +563,8 @@ void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
   jmp_set.insert(IDX_JEQXY);
   jmp_set.insert(IDX_JGTXC);
   jmp_set.insert(IDX_JGTXY);
+  jmp_set.insert(IDX_JGEXC);
+  jmp_set.insert(IDX_JGEXY);
   jmp_set.insert(IDX_JNEXC);
   jmp_set.insert(IDX_JNEXY);
   jmp_set.insert(IDX_JSGTXC);
@@ -741,6 +745,8 @@ z3::expr inst::smt_inst_jmp(smt_var & sv) const {
     case JEQXY: return (CURDST == CURSRC);
     case JGTXC: return (ugt(CURDST, IMM));
     case JGTXY: return (ugt(CURDST, CURSRC));
+    case JGEXC: return (uge(CURDST, IMM));
+    case JGEXY: return (uge(CURDST, CURSRC));
     case JNEXC: return (CURDST != IMM);
     case JNEXY: return (CURDST != CURSRC);
     case JSGTXC: return (CURDST > IMM);
@@ -856,6 +862,8 @@ int opcode_2_idx(int opcode) {
     case JEQXY: return IDX_JEQXY;
     case JGTXC: return IDX_JGTXC;
     case JGTXY: return IDX_JGTXY;
+    case JGEXC: return IDX_JGEXC;
+    case JGEXY: return IDX_JGEXY;
     case JNEXC: return IDX_JNEXC;
     case JNEXY: return IDX_JNEXY;
     case JSGTXC: return IDX_JSGTXC;
@@ -983,8 +991,10 @@ void inst::regs_to_read(vector<int>& regs) const {
     case JA:       return;
     case JEQXC:    regs = {_dst_reg}; return;
     case JEQXY:    regs = {_dst_reg, _src_reg}; return;
-    case JGTXC:    return;
+    case JGTXC:    regs = {_dst_reg}; return;
     case JGTXY:    regs = {_dst_reg, _src_reg}; return;
+    case JGEXC:    regs = {_dst_reg}; return;    
+    case JGEXY:    regs = {_dst_reg, _src_reg}; return;
     case JNEXC:    regs = {_dst_reg}; return;
     case JNEXY:    regs = {_dst_reg, _src_reg}; return;
     case JSGTXC:   regs = {_dst_reg}; return;
@@ -1279,6 +1289,8 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_JEQXY]    = && INSN_JEQXY,
     [IDX_JGTXC]    = && INSN_JGTXC,
     [IDX_JGTXY]    = && INSN_JGTXY,
+    [IDX_JGEXC]    = && INSN_JGEXC,
+    [IDX_JGEXY]    = && INSN_JGEXY,
     [IDX_JNEXC]    = && INSN_JNEXC,
     [IDX_JNEXY]    = && INSN_JNEXY,
     [IDX_JSGTXC]   = && INSN_JSGTXC,
@@ -1471,6 +1483,7 @@ INSN_JA:
   CONT;
   COND_JMP(JEQ, ==, UDST, USRC, UIMM)
   COND_JMP(JGT,  >, UDST, USRC, UIMM)
+  COND_JMP(JGE, >=, UDST, USRC, UIMM)
   COND_JMP(JNE, !=, UDST, USRC, UIMM)
   COND_JMP(JSGT, >, DST, SRC, IMM)
 #undef COND_JMP
@@ -1579,8 +1592,10 @@ void inst::regs_cannot_be_ptrs(vector<int>& regs) const {
     case JA:       return;
     case JEQXC:    regs = {_dst_reg}; return;
     case JEQXY:    regs = {_dst_reg, _src_reg}; return;
-    case JGTXC:    return;
+    case JGTXC:    regs = {_dst_reg}; return;
     case JGTXY:    regs = {_dst_reg, _src_reg}; return;
+    case JGEXC:    regs = {_dst_reg}; return;
+    case JGEXY:    regs = {_dst_reg, _src_reg}; return;
     case JNEXC:    regs = {_dst_reg}; return;
     case JNEXY:    regs = {_dst_reg, _src_reg}; return;
     case JSGTXC:   regs = {_dst_reg}; return;
