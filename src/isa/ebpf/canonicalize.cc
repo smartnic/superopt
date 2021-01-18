@@ -710,7 +710,9 @@ void safety_chk_insn(inst& insn, const vector<vector<register_state>>& reg_state
       unordered_set<int> ptrs = {PTR_TO_CTX, PTR_TO_STACK, PTR_TO_MAP_VALUE_OR_NULL};
       if (ptrs.find(type) == ptrs.end()) continue;
       // `JEQXC r 0` is legal if r.type == PTR_TO_MAP_VALUE_OR_NULL
-      if ((type == PTR_TO_MAP_VALUE_OR_NULL) && (insn._opcode == JEQXC) && (insn._imm == 0)) {
+      if ((type == PTR_TO_MAP_VALUE_OR_NULL) &&
+          ((insn._opcode == JEQXC) || (insn._opcode == JNEXC)) &&
+          (insn._imm == 0)) {
         continue;
       }
       string err_msg = "illegal pointer operation of r" + to_string(reg);
