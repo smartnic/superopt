@@ -288,9 +288,9 @@ inst instructions34[5] = {inst(CALL, BPF_FUNC_get_prandom_u32),
                           inst(EXIT),
                          };
 
-// test neg64
+// test neg64XC
 inst instructions35[] = {inst(MOV64XC, 0, 5),
-                         inst(NEG64, 0),
+                         inst(NEG64XC, 0),
                          inst(EXIT),
                         };
 
@@ -566,7 +566,7 @@ void test1() {
   expected.clear();
   expected.reg = -5;
   interpret(output, instructions35, sizeof(instructions35) / sizeof(inst), ps, input);
-  print_test_res(output == expected, "interpret NEG64");
+  print_test_res(output == expected, "interpret NEG64XC");
 
 
   input.clear();
@@ -721,10 +721,10 @@ void test2() {
   insn = inst(MOV32XY, 0, 1);
   SMT_CHECK_XY(0xffffffff00000000, 0x0123456789abcdef, 0x89abcdef, "smt MOV32XY");
 
-  insn = inst(NEG64, 0);
-  SMT_CHECK_XC(0x0, 0x0, "smt NEG64");
-  SMT_CHECK_XC(-1, 1, "smt NEG64");
-  SMT_CHECK_XC(1, -1, "smt NEG64");
+  insn = inst(NEG64XC, 0);
+  SMT_CHECK_XC(0x0, 0x0, "smt NEG64XC 1");
+  SMT_CHECK_XC(-1, 1, "smt NEG64XC 2");
+  SMT_CHECK_XC(1, -1, "smt NEG64XC 3");
 
   insn = inst(LSH64XC, 0, 63);
   SMT_CHECK_XC(0xffffffffffffffff, 0x8000000000000000, "smt LSH64XC");
