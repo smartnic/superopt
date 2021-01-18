@@ -323,7 +323,7 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(JEQXY)
       MAPPER(JGTXC)
       MAPPER(JGTXY)
-      MAPPER(JGEXC)      
+      MAPPER(JGEXC)
       MAPPER(JGEXY)
       MAPPER(JNEXC)
       MAPPER(JNEXY)
@@ -993,7 +993,7 @@ void inst::regs_to_read(vector<int>& regs) const {
     case JEQXY:    regs = {_dst_reg, _src_reg}; return;
     case JGTXC:    regs = {_dst_reg}; return;
     case JGTXY:    regs = {_dst_reg, _src_reg}; return;
-    case JGEXC:    regs = {_dst_reg}; return;    
+    case JGEXC:    regs = {_dst_reg}; return;
     case JGEXY:    regs = {_dst_reg, _src_reg}; return;
     case JNEXC:    regs = {_dst_reg}; return;
     case JNEXY:    regs = {_dst_reg, _src_reg}; return;
