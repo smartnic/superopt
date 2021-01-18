@@ -6,6 +6,8 @@
 
 using namespace std;
 
+bool from_old_bpf_loader = false;
+
 inst bm0[N0] = {inst(MOV64XC, 0, 0x1),  /* mov64 r0, 0x1 */
                 inst(ADD64XY, 0, 0),  /* add64 r0, r0 */
                 inst(EXIT),  /* exit, return r0 */
@@ -856,8 +858,8 @@ inst bm25[N25] = {inst(97, 1, 2, 4, 0),
 struct bpf_insn {
 
   uint8_t opcode;
-  uint8_t src_reg: 4;
   uint8_t dst_reg: 4;
+  uint8_t src_reg: 4;
   short off;
   int imm;
 };
@@ -993,6 +995,11 @@ void read_insns(inst** bm, const char* insn_file) {
   bpf_insn input;
   // read file contents till end of file
   while (fread(&input, sizeof(bpf_insn), 1, fp)) {
+    if (from_old_bpf_loader) { // swap dst_reg and src_reg
+      uint8_t tmp = input.src_reg;
+      input.src_reg = input.dst_reg;
+      input.dst_reg = tmp;
+    }
     inst curr_inst((int)input.opcode,
                    (int32_t)input.src_reg,
                    (int32_t)input.dst_reg,
@@ -1000,6 +1007,7 @@ void read_insns(inst** bm, const char* insn_file) {
                    (int32_t)input.imm);
     insn_vec.push_back(curr_inst);
   }
+
   *bm = new inst[insn_vec.size()];
   for (int i = 0; i < insn_vec.size(); i++) {
     (*bm)[i] = insn_vec[i];

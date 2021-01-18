@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "../src/isa/ebpf/inst.h"
+extern bool from_old_bpf_loader;
 
 using namespace std;
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id);
