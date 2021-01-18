@@ -6,8 +6,6 @@
 
 using namespace std;
 
-bool from_old_bpf_loader = false;
-
 inst bm0[N0] = {inst(MOV64XC, 0, 0x1),  /* mov64 r0, 0x1 */
                 inst(ADD64XY, 0, 0),  /* add64 r0, r0 */
                 inst(EXIT),  /* exit, return r0 */
@@ -995,11 +993,6 @@ void read_insns(inst** bm, const char* insn_file) {
   bpf_insn input;
   // read file contents till end of file
   while (fread(&input, sizeof(bpf_insn), 1, fp)) {
-    if (from_old_bpf_loader) { // swap dst_reg and src_reg
-      uint8_t tmp = input.src_reg;
-      input.src_reg = input.dst_reg;
-      input.dst_reg = tmp;
-    }
     inst curr_inst((int)input.opcode,
                    (int32_t)input.src_reg,
                    (int32_t)input.dst_reg,

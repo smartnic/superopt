@@ -35,5 +35,4 @@ struct input_paras {
   bool enable_prog_uneq_cache;
   bool is_win;
   int logger_level;
-  bool from_old_bpf_loader;
 };
