@@ -43,7 +43,10 @@ void cost::set_examples(const vector<inout_t> &input, prog* orig) {
   _examples.clear();
   prog_state ps;
   ps.init();
-  vector<inout> examples(input.size());
+  // reserve 100 elements to ensure _examples._exs won't need to be reallocated
+  // this solves the issue of elements' values being changed without writing them.
+  _examples._exs.reserve(100);
+  _examples._exs.resize(input.size());
   try {
     for (size_t i = 0; i < input.size(); i++) {
       if (logger.is_print_level(LOGGER_DEBUG)) {
@@ -54,17 +57,12 @@ void cost::set_examples(const vector<inout_t> &input, prog* orig) {
       output.init();
       // Assume original program can pass the interpreter
       orig->interpret(output, ps, input[i]);
-      inout example;
-      examples[i].set_in_out(input[i], output);
+      _examples._exs[i].set_in_out(input[i], output);
     }
   } catch (const string err_msg) {
     cout << "ERROR: set_examples: ";
     cerr << err_msg << endl;
     throw (err_msg);
-  }
-  _examples._exs.resize(examples.size());
-  for (int i = 0; i < examples.size(); i++) {
-    _examples._exs[i] = examples[i];
   }
 }
 
