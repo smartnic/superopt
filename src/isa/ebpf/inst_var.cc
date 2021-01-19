@@ -1696,6 +1696,9 @@ void update_output_by_ps_win(inout_t& output, const prog_state& ps) {
 
   // 4. update pkt_ptrs if input type is PGM_INPUT_pkt_ptrs
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    output.input_simu_pkt_ptrs[0] = ps._mem._pkt_ptrs[0];
+    output.input_simu_pkt_ptrs[1] = ps._mem._pkt_ptrs[1];
+
     it = post_r.mem.find(PTR_TO_CTX);
     if (it != post_r.mem.end()) {
       const unordered_set<int>& offs = it->second;
