@@ -200,13 +200,13 @@ void mem_t::add_map(map_attr m_attr) {
   _layout._maps_start.push_back(start_mem_off);
 }
 
-//void mem_t::add_reloc_idx(int insn_idx) {
-//  _reloc_indices.push_back(insn_idx);
-//}
-//
-//void mem_t::add_reloc_desc(struct reloc_desc reloc) {
-//  _reloc_data.push_back(reloc);
-//}
+void mem_t::add_reloc_idx(int insn_idx) {
+  _layout._reloc_indices.push_back(insn_idx);
+}
+
+void mem_t::add_reloc_desc(struct reloc_desc reloc) {
+  _layout._reloc_data.push_back(reloc);
+}
 
 unsigned int mem_t::map_key_sz(int map_id) {
   if (map_id >= maps_number()) {

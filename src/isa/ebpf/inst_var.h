@@ -54,6 +54,8 @@ class mem_layout {
   unsigned int _stack_start = 0;
   vector<map_attr> _maps_attr;
   vector<unsigned int> _maps_start;
+  vector<int> _reloc_indices;
+  vector<struct reloc_desc> _reloc_data;
   unsigned int _pkt_sz = 0; // means no pkt, unit: byte
   unsigned int _skb_max_sz = 0;
   unsigned int _n_randoms_u32 = 0; // number of random values(BPF_FUNC_get_prandom_u32) in the original program
@@ -93,8 +95,6 @@ class mem_t {
   uint8_t *_pkt = nullptr;
   uint8_t *_skb = nullptr; // skb data
   vector<map_t> _maps;
-  static vector<int> _reloc_indices;
-  static vector<struct reloc_desc> _reloc_data;
   static mem_layout _layout;
   uint64_t _simu_mem_s = 0;
   uint64_t _simu_pkt_s = 0; // used when pgm input type is PGM_INPUT_pkt
@@ -105,8 +105,8 @@ class mem_t {
   mem_t();
   ~mem_t();
   static void add_map(map_attr m_attr);
-//  static void add_reloc_idx(int insn_idx);
-//  static void add_reloc_desc(struct reloc_desc reloc);
+  static void add_reloc_idx(int insn_idx);
+  static void add_reloc_desc(struct reloc_desc reloc);
   static void set_pkt_sz(unsigned int sz) {_layout._pkt_sz = sz;}
   static void set_skb_max_sz(unsigned int sz) {_layout._skb_max_sz = sz;}
   static void set_pgm_input_type(int type) {_layout._pgm_input_type = type;}
