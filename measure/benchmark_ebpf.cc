@@ -926,6 +926,15 @@ map_attr extract_attrs_from_map(string str) {
                   inst::max_prog_len);
 }
 
+struct reloc_desc extract_reloc_data(string str) {
+  unordered_map<string, int> attr_map;
+  parse_str(attr_map, str);
+  return { (uint8_t)attr_map["type"], 
+           (uint32_t)attr_map["insn_idx"],
+           (uint32_t)attr_map["map_idx"],
+           (uint32_t)attr_map["sym_off"] };
+}
+
 void read_desc(const char* desc_file) {
 
   FILE* fp;
@@ -959,11 +968,10 @@ void read_desc(const char* desc_file) {
 void read_maps(const char* map_file) {
 
   FILE* fp;
-
-  fp = fopen(map_file, "r");
   char* line = NULL;
   size_t len = 0;
 
+  fp = fopen(map_file, "r");
   if (fp == NULL) {
     std::cerr << "Error: BPF map file could not be opened" << std::endl;
     exit(1);
@@ -976,6 +984,24 @@ void read_maps(const char* map_file) {
          << "v_sz: " << mp.val_sz / NUM_BYTE_BITS << " bytes, "
          << "max_num: " << mp.max_entries << endl;
     mem_t::add_map(mp);
+  }
+  fclose(fp);
+}
+
+void read_reloc(const char* reloc_file) {
+  FILE *fp;
+  char* line = NULL;
+  size_t len = 0;
+  fp = fopen(reloc_file, "r");
+  if (fp == NULL) {
+    std::cerr << "Error: relocations file could not be opened" << std::endl;
+    std::exit(1);
+  } 
+  while (getline(&line, &len, fp) != -1) {
+    string reloc_line(line);
+    struct reloc_desc reloc_data = extract_reloc_data(line);
+//    mem_t::add_reloc_desc(reloc_data);
+//    mem_t::add_reloc_idx(reloc_data.insn_idx);
   }
   fclose(fp);
 }
@@ -1051,7 +1077,8 @@ void setup(inst** bm) {
 }
 
 void init_benchmark_from_file(inst** bm, const char* insn_file,
-                              const char* map_file, const char* desc_file) {
+                              const char* map_file, const char* desc_file,
+                              const char* reloc_file) {
   // call insns first to set the max_pgm_len;
   // init benchmark, set max_pgm_len
   read_insns(bm, insn_file);
@@ -1059,6 +1086,8 @@ void init_benchmark_from_file(inst** bm, const char* insn_file,
   read_maps(map_file);
   // set program input type, packet size
   read_desc(desc_file);
+  // Set relocation data from ELF
+  read_reloc(reloc_file);
   setup(bm);
 }
 

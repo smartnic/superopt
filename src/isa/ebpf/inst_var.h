@@ -93,6 +93,8 @@ class mem_t {
   uint8_t *_pkt = nullptr;
   uint8_t *_skb = nullptr; // skb data
   vector<map_t> _maps;
+  static vector<int> _reloc_indices;
+  static vector<struct reloc_desc> _reloc_data;
   static mem_layout _layout;
   uint64_t _simu_mem_s = 0;
   uint64_t _simu_pkt_s = 0; // used when pgm input type is PGM_INPUT_pkt
@@ -103,6 +105,8 @@ class mem_t {
   mem_t();
   ~mem_t();
   static void add_map(map_attr m_attr);
+//  static void add_reloc_idx(int insn_idx);
+//  static void add_reloc_desc(struct reloc_desc reloc);
   static void set_pkt_sz(unsigned int sz) {_layout._pkt_sz = sz;}
   static void set_skb_max_sz(unsigned int sz) {_layout._skb_max_sz = sz;}
   static void set_pgm_input_type(int type) {_layout._pgm_input_type = type;}
@@ -530,6 +534,13 @@ class inout_t: public inout_t_base {
   // not update input_simu_r10 which is only used for input
   bool operator==(const inout_t &rhs) const;
   friend ostream& operator<<(ostream& out, const inout_t& x);
+};
+
+struct reloc_desc {
+  uint8_t type;
+  uint32_t insn_idx;
+  uint32_t map_idx;
+  uint32_t sym_off;
 };
 
 struct simu_real {

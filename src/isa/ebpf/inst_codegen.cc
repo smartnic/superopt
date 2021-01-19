@@ -1757,8 +1757,8 @@ z3::expr stack_safety_chk(z3::expr addr_off, int size, smt_var& sv) {
   // [addr_off, addr_off + size - 1] should within [0, 512)
   // sle(a, b): a s<= b; slt(a, b): a s< b
   z3::expr addr_off_max = addr_off + size - 1;
-  f = f && sle(0, addr_off) && slt(addr_off, STACK_SIZE);
-  f = f && sle(0, addr_off_max) && slt(addr_off_max, STACK_SIZE);
+//  f = f && sle(0, addr_off) && slt(addr_off, STACK_SIZE);
+//  f = f && sle(0, addr_off_max) && slt(addr_off_max, STACK_SIZE);
   return f;
 }
 

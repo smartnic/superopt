@@ -11,6 +11,7 @@ struct input_paras {
   string bytecode;
   string map;
   string desc;
+  string reloc;
   double w_e;
   double w_p;
   bool meas_mode;
