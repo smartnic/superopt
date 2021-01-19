@@ -17,7 +17,7 @@ double get_error_cost(inst* p1, inst* p2, int win_start, int win_end) {
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
   prog_static_state pss;
   static_analysis(pss, p1, inst::max_prog_len);
-  int num_examples = 30;
+  int num_examples = 0;
   vector<inout_t> examples;
   gen_random_input_for_win(examples, num_examples, pss.static_state[win_start], win_start, win_end);
   c.set_examples(examples, &prog1);
@@ -110,6 +110,69 @@ void test1() {
   win_start = 2;
   win_end = 5;
   print_test_res(get_error_cost(p3, p3_1, win_start, win_end) == 0, "PGM_INPUT_pkt_ptrs");
+  mem_t::_layout.clear();
+
+
+  inst p4[] = {inst(LDXW, 2, 1, 4),
+               inst(LDXW, 8, 1, 0),
+               inst(MOV64XC, 1, 0),
+               inst(STXW, 10, -4, 1),
+               inst(STXW, 10, -8, 1),
+               inst(MOV64XC, 7, 1),
+               inst(MOV64XY, 1, 8),
+               inst(ADD64XC, 1, 14),
+               inst(JGTXY, 1, 2, 32),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -4),
+               INSN_LDMAPID(1, 0),
+               inst(NOP),
+               inst(CALL, 1),
+               inst(MOV64XY, 6, 0),
+               inst(JEQXC, 6, 0, 25),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -8),
+               INSN_LDMAPID(1, 1),
+               inst(NOP),
+               inst(CALL, 1),
+               inst(JEQXC, 0, 0, 3),
+               inst(LDXDW, 1, 0, 0),
+               inst(ADD64XC, 1, 1),
+               inst(STXDW, 0, 0, 1),
+               inst(LDXH, 1, 8, 0),
+               inst(LDXH, 2, 8, 6),
+               inst(STXH, 8, 0, 2),
+               inst(LDXH, 2, 8, 8),
+               inst(LDXH, 3, 8, 2),
+               inst(STXH, 8, 8, 3),
+               inst(STXH, 8, 2, 2),
+               inst(LDXH, 2, 8, 10),
+               inst(LDXH, 3, 8, 4),
+               inst(STXH, 8, 10, 3),
+               inst(STXH, 8, 6, 1),
+               inst(STXH, 8, 4, 2),
+               inst(LDXW, 1, 6, 0),
+               inst(MOV64XC, 2, 0),
+               inst(CALL, 23),
+               inst(MOV64XY, 7, 0),
+               inst(MOV64XY, 0, 7),
+               inst(EXIT),
+              };
+
+  const int p4_len = sizeof(p4) / sizeof(inst);
+  inst::max_prog_len = p4_len;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+  mem_t::set_pkt_sz(64);
+  mem_t::add_map(map_attr(32, 32, p4_len));
+  mem_t::add_map(map_attr(32, 64, p4_len));
+  inst p4_1[p4_len];
+  for (int i = 0; i < p4_len; i++) p4_1[i] = p4[i];
+  win_start = 2;
+  win_end = 4;
+  p4_1[2] = inst();
+  p4_1[3] = inst();
+  p4_1[4] = inst(STDW, 10, -8, 0);
+  double error_cost = get_error_cost(p4, p4_1, win_start, win_end);
+  cout << "error_cost: " << error_cost << endl;
   mem_t::_layout.clear();
 }
 
