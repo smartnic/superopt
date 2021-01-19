@@ -17,7 +17,7 @@ double get_error_cost(inst* p1, inst* p2, int win_start, int win_end) {
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
   prog_static_state pss;
   static_analysis(pss, p1, inst::max_prog_len);
-  int num_examples = 0;
+  int num_examples = 30;
   vector<inout_t> examples;
   gen_random_input_for_win(examples, num_examples, pss.static_state[win_start], win_start, win_end);
   c.set_examples(examples, &prog1);
@@ -109,7 +109,7 @@ void test1() {
                 };
   win_start = 2;
   win_end = 5;
-  print_test_res(get_error_cost(p3, p3_1, win_start, win_end) == 0, "PGM_INPUT_pkt_ptrs");
+  print_test_res(get_error_cost(p3, p3_1, win_start, win_end) == 0, "PGM_INPUT_pkt_ptrs 1");
   mem_t::_layout.clear();
 
 
@@ -171,8 +171,7 @@ void test1() {
   p4_1[2] = inst();
   p4_1[3] = inst();
   p4_1[4] = inst(STDW, 10, -8, 0);
-  double error_cost = get_error_cost(p4, p4_1, win_start, win_end);
-  cout << "error_cost: " << error_cost << endl;
+  print_test_res(get_error_cost(p4, p4_1, win_start, win_end) == 0, "PGM_INPUT_pkt_ptrs 2");
   mem_t::_layout.clear();
 }
 
