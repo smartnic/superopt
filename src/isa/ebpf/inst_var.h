@@ -537,10 +537,10 @@ class inout_t: public inout_t_base {
 };
 
 struct reloc_desc {
-  uint8_t type;
-  uint32_t insn_idx;
-  uint32_t map_idx;
-  uint32_t sym_off;
+  int type;
+  int insn_idx;
+  int map_idx;
+  int sym_off;
 };
 
 struct simu_real {

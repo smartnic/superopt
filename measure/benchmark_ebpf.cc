@@ -929,10 +929,10 @@ map_attr extract_attrs_from_map(string str) {
 struct reloc_desc extract_reloc_data(string str) {
   unordered_map<string, int> attr_map;
   parse_str(attr_map, str);
-  return { (uint8_t)attr_map["type"], 
-           (uint32_t)attr_map["insn_idx"],
-           (uint32_t)attr_map["map_idx"],
-           (uint32_t)attr_map["sym_off"] };
+  return { attr_map["type"], 
+           attr_map["insn_idx"],
+           attr_map["map_idx"],
+           attr_map["sym_off"] };
 }
 
 void read_desc(const char* desc_file) {
