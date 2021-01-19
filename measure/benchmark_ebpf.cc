@@ -1000,8 +1000,8 @@ void read_reloc(const char* reloc_file) {
   while (getline(&line, &len, fp) != -1) {
     string reloc_line(line);
     struct reloc_desc reloc_data = extract_reloc_data(line);
-//    mem_t::add_reloc_desc(reloc_data);
-//    mem_t::add_reloc_idx(reloc_data.insn_idx);
+    mem_t::add_reloc_desc(reloc_data);
+    mem_t::add_reloc_idx(reloc_data.insn_idx);
   }
   fclose(fp);
 }
