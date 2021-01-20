@@ -196,3 +196,33 @@ size_t progHash::operator()(const prog &x) const {
   }
   return hval;
 }
+
+top_k_progs::top_k_progs(unsigned int k_val) {
+  assert(k_val > 0);
+  k = k_val;
+}
+
+top_k_progs::~top_k_progs() {
+  for (auto it = progs.begin(); it != progs.end(); it++) {
+    delete it->second;   // release each prog's space
+  }
+}
+
+void top_k_progs::insert(prog* p) {
+  if (p->_error_cost != 0) return;
+  if (progs.size() < k) {
+    prog* p_copy = new prog(*p);
+    progs[p->_perf_cost] = p_copy;
+  } else {
+    assert(progs.size() != 0);
+    auto it = progs.begin();
+    int max = it->first;
+    if (p->_perf_cost >= max) return;
+
+    delete it->second;
+    progs.erase(it);
+
+    prog* p_copy = new prog(*p);
+    progs[p->_perf_cost] = p_copy;
+  }
+}

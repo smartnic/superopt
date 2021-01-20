@@ -37,7 +37,7 @@ void test1() {
   prog p21(insts21);
   prog p22(insts22);
   p21.canonicalize();
-  print_test_res(p21 == p22, "canonicalize 2");  
+  print_test_res(p21 == p22, "canonicalize 2");
 
   // test when r1 is not used, r1 can be used in register renaming
   inst insts31[7] = {inst(MOV64XC, 3, 0x1),
@@ -59,10 +59,51 @@ void test1() {
   prog p31(insts31);
   prog p32(insts32);
   p31.canonicalize();
-  print_test_res(p31 == p32, "canonicalize 3"); 
+  print_test_res(p31 == p32, "canonicalize 3");
+}
+
+void test2() {
+  cout << "test2: test top_k_progs" << endl;
+  top_k_progs topk_progs(1);
+  inst p1[inst::max_prog_len];
+  vector<prog*> progs(10);
+  for (int i = 0; i < progs.size(); i++) {
+    progs[i] = new prog(p1);
+    progs[i]->_error_cost = 0;
+    progs[i]->_perf_cost = i + 10;
+  }
+  for (int i = 0; i < progs.size(); i++) {
+    topk_progs.insert(progs[i]);
+  }
+  bool res = (topk_progs.progs.size() == 1);
+  res &= (topk_progs.progs.begin()->first == 10);
+  print_test_res(res, "1");
+
+  top_k_progs topk_progs2(3);
+  for (int i = 0; i < progs.size(); i++) {
+    progs[i]->_error_cost = 0;
+    progs[i]->_perf_cost = 20 - i;
+  }
+  progs[9]->_error_cost = 1;
+  progs[5]->_perf_cost = 4;
+  progs[6]->_perf_cost = 5;
+  for (int i = 0; i < progs.size(); i++) {
+    topk_progs2.insert(progs[i]);
+  }
+  vector<int> expected = {12, 5, 4};
+  vector<int> actual;
+  for (auto it : topk_progs2.progs) {
+    actual.push_back(it.first);
+  }
+  res = (topk_progs2.progs.size() == 3);
+  for (int i = 0; i < expected.size(); i++) {
+    res &= (expected[i] == actual[i]);
+  }
+  print_test_res(res, "2");
 }
 
 int main() {
   test1();
+  test2();
   return 0;
 }

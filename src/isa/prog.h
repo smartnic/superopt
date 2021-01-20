@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include "../../src/utils.h"
 #include "../../src/isa/inst_header.h"
 
@@ -37,4 +38,17 @@ class prog {
 
 struct progHash {
   size_t operator()(const prog &x) const;
+};
+
+// top_k_progs: performance cost top k programs with zero error cost
+// make sure k >= 1
+class top_k_progs {
+ private:
+  unsigned int k;
+ public:
+  // `greater` makes progs in descending order of keys
+  map<int, prog*, greater<int> > progs;
+  top_k_progs(unsigned int k_val);
+  ~top_k_progs();
+  void insert(prog* p); // insert p if p is one of top k
 };
