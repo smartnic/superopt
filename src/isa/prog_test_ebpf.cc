@@ -77,7 +77,11 @@ void test2() {
   }
   bool res = (topk_progs.progs.size() == 1);
   res &= (topk_progs.progs.begin()->first == 10);
-  print_test_res(res, "1");
+  print_test_res(res, "1.1");
+  // check `topk_progs.progs` won't be modified if modify `progs`
+  progs[0]->_error_cost = 1;
+  res = (topk_progs.progs.begin()->second->_error_cost == 0);
+  print_test_res(res, "1.2");
 
   top_k_progs topk_progs2(3);
   for (int i = 0; i < progs.size(); i++) {
@@ -100,6 +104,24 @@ void test2() {
     res &= (expected[i] == actual[i]);
   }
   print_test_res(res, "2");
+
+  top_k_progs topk_progs3(3);
+  progs[0]->_error_cost = 0; progs[0]->_perf_cost = 3;
+  progs[1]->_error_cost = 1; progs[1]->_perf_cost = 2;
+  progs[2]->_error_cost = 0; progs[2]->_perf_cost = 4;
+  for (int i = 0; i <= 2; i++) {
+    topk_progs3.insert(progs[i]);
+  }
+  expected = {4, 3};
+  actual = {};
+  for (auto it : topk_progs3.progs) {
+    actual.push_back(it.first);
+  }
+  res = (topk_progs3.progs.size() == 2);
+  for (int i = 0; i < expected.size(); i++) {
+    res &= (expected[i] == actual[i]);
+  }
+  print_test_res(res, "3");
 }
 
 int main() {
