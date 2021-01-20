@@ -472,9 +472,11 @@ void get_mem_write_offs(unordered_map<int, unordered_set<int>>& mem_write_offs,
     case STH:
     case STXH: write_sz = 2; break;
     case STW:
-    case STXW: write_sz = 4; break;
+    case STXW:
+    case XADD32: write_sz = 4; break;
     case STDW:
-    case STXDW: write_sz = 8; break;
+    case STXDW:
+    case XADD64: write_sz = 8; break;
     default: return;
   }
 
@@ -527,7 +529,9 @@ void get_mem_read_offs(unordered_map<int, unordered_set<int>>& mem_read_offs,
   switch (insn._opcode) {
     case LDXB: regs_sz.push_back({insn._src_reg, 1}); break;
     case LDXH: regs_sz.push_back({insn._src_reg, 2}); break;
+    case XADD32:
     case LDXW: regs_sz.push_back({insn._src_reg, 4}); break;
+    case XADD64:
     case LDXDW: regs_sz.push_back({insn._src_reg, 8}); break;
     case CALL: get_mem_read_regs_and_read_sz_from_helper(regs_sz, reg_state, insn); break;
     default: return;
@@ -594,6 +598,7 @@ void live_analysis_inst(live_variables& live_var, vector<vector<register_state>>
   bool is_mem_read = false;
   // update map later
   if (insn._opcode == CALL) is_mem_read = true; // map helpers will read from stack
+  if ((insn._opcode == XADD32) || (insn._opcode == XADD64)) is_mem_read = true;
   if (op_class == BPF_LDX) is_mem_read = true;
   if (is_mem_read) {
     unordered_map<int, unordered_set<int>> mem_read_offs;
