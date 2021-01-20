@@ -788,6 +788,7 @@ z3::expr inst::smt_inst_safety_chk(smt_var & sv) const {
   z3::expr curDst = sv.get_cur_reg_var(_dst_reg);
   int64_t imm = (int64_t)_imm;
   int64_t off = (int64_t)_off;
+  z3::expr f = Z3_true;
 
   switch (_opcode) {
     case LDXB: return safety_chk_ldx(CURSRC, OFF, 1, sv);
@@ -802,6 +803,10 @@ z3::expr inst::smt_inst_safety_chk(smt_var & sv) const {
     case STH: return safety_chk_st(CURDST, OFF, 2, sv);
     case STW: return safety_chk_st(CURDST, OFF, 4, sv);
     case STDW: return safety_chk_st(CURDST, OFF, 8, sv);
+    case XADD32: f = safety_chk_ldx(CURDST, OFF, 4, sv);
+      return (f && safety_chk_stx(CURDST, OFF, 4, sv));
+    case XADD64: f = safety_chk_ldx(CURDST, OFF, 8, sv);
+      return (f && safety_chk_stx(CURDST, OFF, 8, sv));
     default: return Z3_true; // mean no constraints
   }
 }

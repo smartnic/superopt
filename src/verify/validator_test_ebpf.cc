@@ -1822,6 +1822,7 @@ int main() {
     kill_server();
   } catch (const string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
+    kill_server();
   }
 
 
