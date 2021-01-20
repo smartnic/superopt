@@ -329,7 +329,7 @@ void set_win_list(vector<int> &list, string s) {
 }
 
 bool parse_input(int argc, char* argv[], input_paras &in_para) {
-  const char* const short_opts = "hmnk:";
+  const char* const short_opts = "hmn:k:";
   static struct option long_opts[] = {
     {"path_out", required_argument, nullptr, 0},
     {"bm", required_argument, nullptr, 1},
@@ -397,7 +397,6 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 25: in_para.enable_prog_uneq_cache = true; break;
       case 26: in_para.is_win = true; break;
       case 27: in_para.logger_level = stoi(optarg); break;
-      case 28: in_para.k = stoi(optarg); break;
       case '?': usage(); return false;
     }
   }
