@@ -315,9 +315,8 @@ void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_
   restart.print();
 }
 
-void mh_sampler::mcmc_iter(int niter, prog* orig,
-                           unordered_map<int, vector<prog*> > &prog_freq,
-                           bool is_win) {
+void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool is_win) {
+  topk_progs.clear();
   // best is the program with zero error cost and minimum performance cost in MC
   prog *curr, *next, *prog_start, *best;
   // curr->canonicalize();
@@ -329,8 +328,8 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
   cout << "original program's perf cost: " << prog_start->_perf_cost << endl;
 
   best = new prog(*prog_start);
-
   curr = new prog(*prog_start);
+  topk_progs.insert(curr);
   for (int i = 0; i < niter; i++) {
     if (logger.is_print_level(LOGGER_DEBUG)) {
       cout << "iter: " << i << endl;
@@ -406,12 +405,13 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
       _meas_data.insert_program(i, *curr);
     }
     curr = next;
+    topk_progs.insert(curr);
+
     auto end = NOW;
     if (logger.is_print_level(LOGGER_DEBUG)) {
       cout << "iter_timestamp: " << DUR(start, end) << endl;
     }
   }
-  insert_into_prog_freq_dic(*best, prog_freq);
   delete curr;
 }
 

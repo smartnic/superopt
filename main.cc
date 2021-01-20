@@ -25,7 +25,6 @@ string FILE_CONFIG = "config";
 
 inst* bm;
 vector<inout_t> inputs;
-std::unordered_map<int, vector<prog*> > prog_dic;
 
 ostream& operator<<(ostream& out, const input_paras& ip) {
   out << "meas_mode:" << ip.meas_mode << endl
@@ -96,7 +95,7 @@ string gen_file_name_suffix_from_input(const input_paras &in_para) {
   return suffix;
 }
 
-void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
+void run_mh_sampler(top_k_progs& topk_progs, input_paras &in_para, vector<inst*> &bm_optis_orig) {
   cout << "run_mh_sampler..." << endl;
   mh_sampler mh;
   mh._restart.set_st_when_to_restart(in_para.st_when_to_restart,
@@ -119,7 +118,7 @@ void run_mh_sampler(input_paras &in_para, vector<inst*> &bm_optis_orig) {
                 in_para.enable_prog_uneq_cache,
                 in_para.is_win);
   try {
-    mh.mcmc_iter(in_para.niter, &orig, prog_dic, in_para.is_win);
+    mh.mcmc_iter(topk_progs, in_para.niter, &orig, in_para.is_win);
   } catch (string err_msg) {
     cout << err_msg << endl;
   }
@@ -402,7 +401,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
 }
 
 // best programs are programs with the smallest performance cost among zero-error-cost programs
-void get_best_pgms_from_candidates(vector<prog*>& best_pgms) {
+void get_best_pgms_from_candidates(vector<prog*>& best_pgms, unordered_map<int, vector<prog*> >& prog_dic) {
   double min_perf_cost = numeric_limits<double>::max();
   // get the minimum performance cost with zero error cost
   for (auto& element : prog_dic) {
@@ -483,24 +482,22 @@ int main(int argc, char* argv[]) {
   SERVER_PORT = in_para.server_port;
   logger.set_least_print_level(in_para.logger_level);
 
-  run_mh_sampler(in_para, bm_optis_orig);
-  vector<prog*> best_pgms;
-  get_best_pgms_from_candidates(best_pgms);
+  unsigned int k = 1;
+  top_k_progs topk_progs(k);
+  run_mh_sampler(topk_progs, in_para, bm_optis_orig);
   if (in_para.bm_from_file) {
     delete[] bm;
   }
   auto end = NOW;
 
   cout << "Best program(s): " << endl;
-  for (auto p : best_pgms) {
+  for (auto it : topk_progs.progs) {
+    prog* p = it.second.second;
     cout << "cost: " << p->_error_cost << " " <<  p->_perf_cost << endl;
     p->print();
     for (int i = 0; i < inst::max_prog_len; i++) {
       cout << p->inst_list[i].get_bytecode_str() << "," << endl;
     }
-  }
-  for (auto p : best_pgms) {
-    delete p;
   }
 
   cout << "validator time: " << dur_sum << endl;

@@ -69,7 +69,7 @@ class mh_sampler_next_proposal {
   // randomly choose different proposal generating methods. View more details in next_proposal(.)
   // 1. threshold mod_random_inst_operand is the probablity of mod_random_inst_operand
   // 2. threshold mod_random_inst is sum of the probablities of mod_random_inst_operand and mod_random_inst
-  // 3. threshold mod_random_inst_as_nop is the probablity of mod_random_inst_operand, 
+  // 3. threshold mod_random_inst_as_nop is the probablity of mod_random_inst_operand,
   //    mod_random_inst and mod_random_inst_as_nop
   double _thr_mod_random_inst_operand;
   double _thr_mod_random_inst;
@@ -118,7 +118,5 @@ class mh_sampler {
   prog* mh_next(prog* curr, prog* orig);
   void turn_on_measure();
   void turn_off_measure();
-  void mcmc_iter(int niter, prog* orig,
-                 unordered_map<int, vector<prog*> > &prog_freq,
-                 bool is_win = false);
+  void mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool is_win = false);
 };
