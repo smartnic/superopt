@@ -51,4 +51,5 @@ class top_k_progs {
   top_k_progs(unsigned int k_val);
   ~top_k_progs();
   void insert(prog* p); // insert p if p is one of top k
+  void clear();
 };

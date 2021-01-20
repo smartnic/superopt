@@ -203,9 +203,7 @@ top_k_progs::top_k_progs(unsigned int k_val) {
 }
 
 top_k_progs::~top_k_progs() {
-  for (auto it = progs.begin(); it != progs.end(); it++) {
-    delete it->second;   // release each prog's space
-  }
+  progs.clear();
 }
 
 void top_k_progs::insert(prog* p) {
@@ -225,4 +223,11 @@ void top_k_progs::insert(prog* p) {
     prog* p_copy = new prog(*p);
     progs[p->_perf_cost] = p_copy;
   }
+}
+
+void top_k_progs::clear() {
+  for (auto it = progs.begin(); it != progs.end(); it++) {
+    delete it->second;   // release each prog's space
+  }
+  progs.clear();
 }
