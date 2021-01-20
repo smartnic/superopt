@@ -1591,7 +1591,7 @@ void counterex_urt_2_input_map_mem_win(inout_t& input, z3::model & mdl, smt_var&
   }
 }
 
-// set input memory, for now, set pkt
+// set input memory, for now, set pkt, stack(for window program eq check)
 // 1. get mem_addr_val list according to the pkt mem urt;
 // 2. traverse mem_addr_val list, if the addr is in input memory address range, update "input"
 void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt_input& sin) {
