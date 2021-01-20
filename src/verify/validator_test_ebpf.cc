@@ -1748,10 +1748,55 @@ void test15() {
 
   cout << "15.2: counter-example from window program equivalence check" << endl;
   win_start = 0; win_end = 4;
-  chk_counterex_by_vld_to_interpreter_win(p1, 5, p1_1, 5, win_start, win_end, "1");
+  chk_counterex_by_vld_to_interpreter_win(p1, 5, p1_1, 5, win_start, win_end, "1.1");
 
   win_start = 2; win_end = 3;
-  chk_counterex_by_vld_to_interpreter_win(p1, 5, p1_1, 5, win_start, win_end, "2");
+  chk_counterex_by_vld_to_interpreter_win(p1, 5, p1_1, 5, win_start, win_end, "1.2");
+
+  // a window start when optimizing simple_fw xdp_map_access
+  inst p2[] = {inst(LDXW, 2, 1, 4),
+               inst(LDXW, 1, 1, 0),
+               inst(NOP),
+               inst(NOP),
+               inst(MOV64XC, 3, 1),
+               inst(STXDW, 10, -16, 3),
+               inst(ADD64XC, 1, 14),
+               inst(JGTXY, 1, 2, 20),
+               inst(MOV64XC, 1, 23),
+               inst(STXH, 10, -8, 1),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -8),
+               INSN_LDMAPID(1, 0),
+               inst(NOP),
+               inst(CALL, 1),
+               inst(JEQXC, 0, 0, 4),
+               inst(LDXDW, 1, 0, 0),
+               inst(ADD64XC, 1, 1),
+               inst(STXDW, 0, 0, 1),
+               inst(JA, 8),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -8),
+               inst(MOV64XY, 3, 10),
+               inst(ADD64XC, 3, -16),
+               INSN_LDMAPID(1, 0),
+               inst(NOP),
+               inst(MOV64XC, 4, 0),
+               inst(CALL, 2),
+               inst(MOV64XC, 0, 1),
+               inst(EXIT),
+              };
+  win_start = 8; win_end = 9;
+  mem_t::_layout.clear();
+  const int p2_len = sizeof(p2) / sizeof(inst);
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+  mem_t::set_pkt_sz(64);
+  mem_t::add_map(map_attr(8, 64, p2_len));
+  inst p2_1[p2_len];
+  for (int i = 0; i < p2_len; i++) p2_1[i] = p2[i];
+  p2_1[8] = inst(MOV64XC, 1, 23);
+  p2_1[9] = inst(XADD32, 10, -8, 1);
+  chk_counterex_by_vld_to_interpreter_win(p2, p2_len, p2_1, p2_len, win_start, win_end, "2.1");
+  mem_t::_layout.clear();
 }
 
 int main() {
