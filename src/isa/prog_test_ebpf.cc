@@ -80,7 +80,7 @@ void test2() {
   print_test_res(res, "1.1");
   // check `topk_progs.progs` won't be modified if modify `progs`
   progs[0]->_error_cost = 1;
-  res = (topk_progs.progs.begin()->second->_error_cost == 0);
+  res = (topk_progs.progs.begin()->second.second->_error_cost == 0);
   print_test_res(res, "1.2");
 
   top_k_progs topk_progs2(3);
@@ -94,12 +94,12 @@ void test2() {
   for (int i = 0; i < progs.size(); i++) {
     topk_progs2.insert(progs[i]);
   }
-  vector<int> expected = {12, 5, 4};
+  vector<int> expected = {20};
   vector<int> actual;
   for (auto it : topk_progs2.progs) {
     actual.push_back(it.first);
   }
-  res = (topk_progs2.progs.size() == 3);
+  res = (topk_progs2.progs.size() == 1);
   for (int i = 0; i < expected.size(); i++) {
     res &= (expected[i] == actual[i]);
   }
@@ -109,6 +109,10 @@ void test2() {
   progs[0]->_error_cost = 0; progs[0]->_perf_cost = 3;
   progs[1]->_error_cost = 1; progs[1]->_perf_cost = 2;
   progs[2]->_error_cost = 0; progs[2]->_perf_cost = 4;
+  // modify programs to make them different
+  progs[0]->inst_list[0] = inst(MOV64XC, 0, 0);
+  progs[1]->inst_list[1] = inst(MOV64XC, 0, 0);
+  progs[2]->inst_list[2] = inst(MOV64XC, 0, 0);
   for (int i = 0; i <= 2; i++) {
     topk_progs3.insert(progs[i]);
   }

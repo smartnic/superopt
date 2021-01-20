@@ -206,28 +206,48 @@ top_k_progs::~top_k_progs() {
   progs.clear();
 }
 
+// check whether program p is in the progs
+bool top_k_progs::can_find(prog* p) {
+  int ph = progHash()(*p);
+  for (auto it2 : progs) {
+    int h = it2.second.first;
+    if (ph == h) { // further check whether two programs are the same
+      if (*p == *(it2.second.second)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void top_k_progs::insert_without_check(prog* p) {
+  prog* p_copy = new prog(*p);
+  int ph = progHash()(*p);
+  progs[p->_perf_cost] = make_pair(ph, p_copy);
+}
+
 void top_k_progs::insert(prog* p) {
   if (p->_error_cost != 0) return;
-  if (progs.size() < k) {
-    prog* p_copy = new prog(*p);
-    progs[p->_perf_cost] = p_copy;
+  if (progs.size() < k) { // check whether this program is in the progs
+    if (can_find(p)) return;
+    insert_without_check(p);
   } else {
     assert(progs.size() != 0);
     auto it = progs.begin();
     int max = it->first;
     if (p->_perf_cost >= max) return;
+    if (can_find(p)) return;
 
-    delete it->second;
+    delete it->second.second;
     progs.erase(it);
 
-    prog* p_copy = new prog(*p);
-    progs[p->_perf_cost] = p_copy;
+    insert_without_check(p);
   }
 }
 
 void top_k_progs::clear() {
   for (auto it = progs.begin(); it != progs.end(); it++) {
-    delete it->second;   // release each prog's space
+    delete it->second.second;   // release each prog's space
   }
   progs.clear();
 }
