@@ -6,6 +6,7 @@ using namespace std;
 
 struct input_paras {
   int niter;
+  unsigned int k;
   int bm;
   bool bm_from_file;
   string bytecode;

@@ -27,14 +27,15 @@ inst* bm;
 vector<inout_t> inputs;
 
 ostream& operator<<(ostream& out, const input_paras& ip) {
-  out << "meas_mode:" << ip.meas_mode << endl
+  out << "niter:" << ip.niter << endl
+      << "k:" << ip.k << endl
+      << "meas_mode:" << ip.meas_mode << endl
       << "path_out:" << ip.path_out << endl
       << "bm:" << ip.bm << endl
       << "bm_from_file: " << ip.bm_from_file << ", "
       << "bytecode: " << ip.bytecode << ", "
       << "map: " << ip.map << ", "
       << "desc: " << ip.desc << endl
-      << "niter:" << ip.niter << endl
       << "w_e:" << ip.w_e << endl
       << "w_p:" << ip.w_p << endl
       << "st_ex:" << ip.st_ex << endl
@@ -274,6 +275,7 @@ void usage() {
        << left // set setw(.) as left-aligned
        << setw(W) << "-h" << ": display usage" << endl
        << setw(W) << "-n arg" << ": number of iterations" << endl
+       << setw(W) << "-k arg" << ": number of top programs" << endl
        << setw(W) << "-m" << ": turn on measurement" << endl
        << setw(W) << "--path_out arg" << ": output file path" << endl
        << endl << para_bm_desc() << endl
@@ -327,7 +329,7 @@ void set_win_list(vector<int> &list, string s) {
 }
 
 bool parse_input(int argc, char* argv[], input_paras &in_para) {
-  const char* const short_opts = "hmn:";
+  const char* const short_opts = "hmnk:";
   static struct option long_opts[] = {
     {"path_out", required_argument, nullptr, 0},
     {"bm", required_argument, nullptr, 1},
@@ -366,6 +368,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 'h': usage(); return false;
       case 'm': in_para.meas_mode = true; break;
       case 'n': in_para.niter = stoi(optarg); break;
+      case 'k': in_para.k = stoi(optarg); break;
       case 0: in_para.path_out = optarg; break;
       case 1: in_para.bm = stoi(optarg); break;
       case 2: in_para.bm_from_file = true; break;
@@ -394,6 +397,7 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 25: in_para.enable_prog_uneq_cache = true; break;
       case 26: in_para.is_win = true; break;
       case 27: in_para.logger_level = stoi(optarg); break;
+      case 28: in_para.k = stoi(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -433,6 +437,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.bytecode = "";
   in_para.desc = "";
   in_para.niter = 10;
+  in_para.k = 1;
   in_para.w_e = 1.0;
   in_para.w_p = 0.0;
   in_para.st_ex = ERROR_COST_STRATEGY_ABS;
@@ -482,8 +487,7 @@ int main(int argc, char* argv[]) {
   SERVER_PORT = in_para.server_port;
   logger.set_least_print_level(in_para.logger_level);
 
-  unsigned int k = 1;
-  top_k_progs topk_progs(k);
+  top_k_progs topk_progs(in_para.k);
   run_mh_sampler(topk_progs, in_para, bm_optis_orig);
   if (in_para.bm_from_file) {
     delete[] bm;
