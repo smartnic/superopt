@@ -318,7 +318,8 @@ void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_
 void mh_sampler::mcmc_iter(int niter, prog* orig,
                            unordered_map<int, vector<prog*> > &prog_freq,
                            bool is_win) {
-  prog *curr, *next, *prog_start;
+  // best is the program with zero error cost and minimum performance cost in MC
+  prog *curr, *next, *prog_start, *best;
   // curr->canonicalize();
   auto start = NOW;
   prog_start = new prog(*orig);
@@ -326,6 +327,8 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
   prog_start->_error_cost = 0;
   _cost.perf_cost(prog_start, inst::max_prog_len);
   cout << "original program's perf cost: " << prog_start->_perf_cost << endl;
+
+  best = new prog(*prog_start);
 
   curr = new prog(*prog_start);
   for (int i = 0; i < niter; i++) {
@@ -336,14 +339,13 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
       pair<int, int> win = _next_win.update_and_get_next_win();
       cout << "set window at iteration " << i << endl;
       _next_proposal.set_win(win.first, win.second);
-      // get the best program in the current window and
-      // set this program as the start program for the new window
-      prog* best = get_best_pgm_from_pgm_dic(prog_freq);
-      if (best != nullptr) {
-        if (prog_start != best) {
-          delete prog_start;
-          prog_start = new prog(*best);
-        }
+      // update prog_start to best and
+      // set prog_start as the start program for the new window
+      // prog* best = get_best_pgm_from_pgm_dic(prog_freq);
+      assert(best != nullptr);
+      if (prog_start != best) {
+        delete prog_start;
+        prog_start = new prog(*best);
       }
       if (curr != prog_start) {
         delete curr;
@@ -365,8 +367,8 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
         gen_random_input_for_win(examples, num_examples, pss.static_state[win.first], win.first, win.second);
         _cost.set_examples(examples, prog_start);
       }
-      clear_prog_freq_dic(prog_freq);
-      insert_into_prog_freq_dic(*prog_start, prog_freq);
+      // clear_prog_freq_dic(prog_freq);
+      // insert_into_prog_freq_dic(*prog_start, prog_freq);
     }
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {
@@ -383,8 +385,19 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
     }
     // sample one program
     next = mh_next(curr, prog_start);
+    // update best by next
+    if ((next->_error_cost == 0) && (next->_perf_cost < best->_perf_cost)) {
+      cout << "find a better program at " << i
+           << " cost: " << next->_error_cost << " " << next->_perf_cost << endl;
+      for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
+        cout << i << ": ";
+        next->inst_list[i].print();
+      }
+      delete best;
+      best = new prog(*next);
+    }
     // insert the next program into frequency dictionary of programs
-    insert_into_prog_freq_dic(*next, prog_freq);
+    // insert_into_prog_freq_dic(*next, prog_freq);
     // update measurement data and update current program with the next program
     if (curr != next) {
       delete curr;
@@ -398,6 +411,7 @@ void mh_sampler::mcmc_iter(int niter, prog* orig,
       cout << "iter_timestamp: " << DUR(start, end) << endl;
     }
   }
+  insert_into_prog_freq_dic(*best, prog_freq);
   delete curr;
 }
 
