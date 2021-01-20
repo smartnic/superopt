@@ -308,7 +308,7 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
       (num_successful_ex == (int)_examples._exs.size())) {
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
-    cout << "counterexample: " << endl;
+    cout << "counterexample " << _examples.size() << ":" << endl;
     cout << _vld._last_counterex.input << endl;
     cout << _vld._last_counterex.output << endl;
   }
