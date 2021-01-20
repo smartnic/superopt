@@ -495,8 +495,9 @@ int main(int argc, char* argv[]) {
   auto end = NOW;
 
   cout << "Best program(s): " << endl;
-  for (auto it : topk_progs.progs) {
-    prog* p = it.second.second;
+  // rbegin() returns to the last value of map
+  for (auto it = topk_progs.progs.rbegin(); it != topk_progs.progs.rend(); it++) {
+    prog* p = it->second.second;
     cout << "cost: " << p->_error_cost << " " <<  p->_perf_cost << endl;
     p->print();
     for (int i = 0; i < inst::max_prog_len; i++) {
