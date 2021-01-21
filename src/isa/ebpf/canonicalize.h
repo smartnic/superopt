@@ -6,9 +6,10 @@
 
 using namespace std;
 
-void canonicalize(inst* program, int len);
-
 void remove_nops(inst* program, int len);
+
+void canonicalize(inst* program, int len);
+void set_nops_as_JA0(inst* program, int len);
 
 class inst_static_state {
  public:

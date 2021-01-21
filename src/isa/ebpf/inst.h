@@ -626,8 +626,8 @@ static const int optable[NUM_INSTR] = {
 #define INSN_LDMAPID(dst_reg, map_id) inst(LDDW, 1, dst_reg, 0, map_id)
 
 #define INSN_MOVDWXC(dst_reg, imm64) \
-  inst(LDDW, 0, dst_reg, 0, uint32_t(imm64)),\
-  inst(0, 0, 0, 0, imm64 >> 32)
+  inst(LDDW, 0, dst_reg, 0, uint32_t(uint64_t(imm64))),\
+  inst(0, 0, 0, 0, uint64_t(imm64) >> 32)
 
 class inst: public inst_base {
  private:

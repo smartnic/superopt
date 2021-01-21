@@ -2,12 +2,17 @@
 #include "../../../src/utils.h"
 #include "canonicalize.h"
 
+bool are_same_progs(inst* p1, int len1, inst* p2, int len2) {
+  if (len1 != len2) return false;
+  for (int i = 0; i < len1; i++) {
+    if (! (p1[i] == p2[i])) return false;
+  }
+  return true;
+}
+
 void canonicalize_check(inst* prog, int len, inst* expected_prog, string test_name) {
   canonicalize(prog, len);
-  bool is_equal = true;
-  for (int i = 0; i < len; i++) {
-    is_equal = (prog[i] == expected_prog[i]);
-  }
+  bool is_equal = are_same_progs(prog, len, expected_prog, len);
   print_test_res(is_equal, test_name);
 }
 
@@ -118,7 +123,7 @@ void test1() {
   inst expected_prog2_2[] = {inst(MOV64XC, 0, 3),
                              inst(MOV64XC, 2, 1),
                              inst(JEQXY, 1, 2, 3),
-                             inst(ADD64XC, 1, 1),
+                             inst(ADD64XC, 3, 1),
                              inst(MOV64XY, 0, 3),
                              inst(EXIT),
                              inst(EXIT),
@@ -205,6 +210,16 @@ void test2() {
                         inst(),
                        };
   remove_nops_check(p4, sizeof(p4) / sizeof(inst), p4_expected, "4");
+
+  inst p5[] = {inst(),
+               inst(MOV64XC, 0, 1),
+               inst(EXIT),
+              };
+  inst p5_expected[] = {inst(MOV64XC, 0, 1),
+                        inst(EXIT),
+                        inst(),
+                       };
+  remove_nops_check(p5, sizeof(p5) / sizeof(inst), p5_expected, "5");
 }
 
 bool reg_state_is_equal(vector<register_state>& x, vector<register_state>& y) {
@@ -515,7 +530,7 @@ void test3() {
   static_analysis(pss, p3_4, sizeof(p3_4) / sizeof(inst));
   vector<register_state> expected_insn1_r0_p34;
   expected_insn1_r0_p34.push_back(register_state{SCALAR_VALUE, 0, 0x1234567890, true});
-  print_test_res(reg_state_is_equal(expected_insn1_r0_p34, pss.static_state[0].reg_state[0]), "4.1");
+  print_test_res(reg_state_is_equal(expected_insn1_r0_p34, pss.static_state[1].reg_state[0]), "4.1");
 }
 
 // expected_safe is either true for safe or false for unsafe
@@ -674,6 +689,42 @@ void test6() {
 
 }
 
+void test7() {
+  cout << "Test 7: test set nops as JA 0 instructions" << endl;
+  inst p1[] = {inst(),
+               inst(MOV64XC, 0, 1),
+               inst(EXIT),
+              };
+  inst p1_exp[] = {inst(JA, 0),
+                   inst(MOV64XC, 0, 1),
+                   inst(EXIT),
+                  };
+  set_nops_as_JA0(p1, 3);
+  print_test_res(are_same_progs(p1, 3, p1_exp, 3), "1");
+
+  inst p2[] = {INSN_LDMAPID(1, 0),
+               inst(),
+               inst(),
+               inst(MOV64XC, 0, 0),
+               inst(EXIT),
+              };
+  inst p2_exp[] = {INSN_LDMAPID(1, 0),
+                   inst(),
+                   inst(JA, 0),
+                   inst(MOV64XC, 0, 0),
+                   inst(EXIT),
+                  };
+  set_nops_as_JA0(p2, 5);
+  print_test_res(are_same_progs(p2, 5, p2_exp, 5), "2");
+
+  inst p3[] = {INSN_MOVDWXC(0, 1),
+               inst(MOV64XC, 0, 0),
+               inst(EXIT),
+              };
+  set_nops_as_JA0(p3, 4);
+  print_test_res(are_same_progs(p3, 4, p3, 4), "3");
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
@@ -682,6 +733,7 @@ int main(int argc, char *argv[]) {
     test4();
     test5();
     test6();
+    test7();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

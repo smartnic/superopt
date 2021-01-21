@@ -7,6 +7,24 @@
 default_random_engine gen_ebpf_cano;
 uniform_real_distribution<double> unidist_ebpf_cano(0.0, 1.0);
 
+// if an instruction is real NOP, set it as JA 0
+void set_nops_as_JA0(inst* program, int len) {
+  inst insn_JA0 = inst(JA, 0);
+  for (int i = 0; i < len; i++) {
+    bool is_nop = false;
+    if (program[i].get_opcode_type() == OP_NOP) {
+      is_nop = true;
+      if (i > 0) {
+        if (program[i - 1]._opcode == LDDW) { // LDDW contains two insns
+          is_nop = false;
+        }
+      }
+    }
+    if (! is_nop) continue;
+    program[i] = insn_JA0;
+  }
+}
+
 void canonicalize_prog_without_branch(unordered_set<int>& live_regs,
                                       inst* program, int start, int end,
                                       const unordered_set<int>& initial_live_regs) {
@@ -76,9 +94,10 @@ void remove_nops(inst* program, int len) {
   for (int i = 0; i < len; i++) {
     bool is_nop = false;
     if (program[i].get_opcode_type() == OP_NOP) {
+      is_nop = true;
       if (i > 0) {
-        if (program[i - 1]._opcode != LDDW) { // LDDW contains two insns
-          is_nop = true;
+        if (program[i - 1]._opcode == LDDW) { // LDDW contains two insns
+          is_nop = false;
         }
       }
     }
