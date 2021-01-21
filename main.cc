@@ -460,22 +460,24 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.is_win = false;
   in_para.logger_level = LOGGER_ERROR;
 }
-int write_insns_to_file(prog* current_program) 
-{
+
+void write_insns_to_file(prog* current_program) {
   const char* output_file = "output.insns";
   FILE* output_file_fp = fopen(output_file, "w");
   for (int i = 0; i < inst::max_prog_len; i++) {
     inst t_insn = current_program->inst_list[i];
-    struct bpf_insn insn = { (uint8_t)t_insn._opcode, 
-                             (uint8_t)t_insn._src_reg, 
-                             (uint8_t)t_insn._dst_reg, 
-                             t_insn._off, 
-                             t_insn._imm };
+    struct bpf_insn insn = {(uint8_t)t_insn._opcode,
+             (uint8_t)t_insn._dst_reg,
+             (uint8_t)t_insn._src_reg,
+             t_insn._off,
+             t_insn._imm
+    };
     fwrite(&insn, sizeof(bpf_insn), 1, output_file_fp);
   }
 
   fclose(output_file_fp);
 }
+
 int main(int argc, char* argv[]) {
   dur_sum = 0;
   dur_sum_long = 0;
