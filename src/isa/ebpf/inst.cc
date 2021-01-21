@@ -932,12 +932,19 @@ bool inst::is_movdwxc() const {
 }
 
 string inst::get_bytecode_str() const {
+
   string str = ("{"
                 + to_string(_opcode) + ", " + to_string(_dst_reg) + ", "
                 + to_string(_src_reg) + ", " + to_string(_off) + ", "
                 + to_string(_imm)
                 + "}");
-  if (is_ldmapid()) str += ",{0, 0, 0, 0, 0}";
+  if (is_movdwxc()) {
+    str = ("{"
+           + to_string(_opcode) + ", " + to_string(_dst_reg) + ", "
+           + to_string(_src_reg) + ", " + to_string(_off) + ", "
+           + to_string((uint32_t)_imm)
+           + "}");
+  }
   return str;
 }
 

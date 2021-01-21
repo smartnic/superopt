@@ -496,6 +496,7 @@ int main(int argc, char* argv[]) {
   } else {
     init_benchmarks(&bm, bm_optis_orig, in_para.bm);
   }
+  convert_bpf_pgm_to_superopt_pgm(bm, inst::max_prog_len);
   if (! in_para.is_win) {
     int num_examples = 30;
     gen_random_input(inputs, num_examples, -50, 50);
@@ -515,6 +516,7 @@ int main(int argc, char* argv[]) {
   for (auto it = topk_progs.progs.rbegin(); it != topk_progs.progs.rend(); it++) {
     prog* p = it->second.second;
     cout << "cost: " << p->_error_cost << " " <<  p->_perf_cost << endl;
+    convert_superopt_pgm_to_bpf_pgm(p->inst_list, inst::max_prog_len);
     p->print();
     write_insns_to_file(p);
     for (int i = 0; i < inst::max_prog_len; i++) {
