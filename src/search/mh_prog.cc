@@ -340,7 +340,6 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
       _next_proposal.set_win(win.first, win.second);
       // update prog_start to best and
       // set prog_start as the start program for the new window
-      // prog* best = get_best_pgm_from_pgm_dic(prog_freq);
       assert(best != nullptr);
       if (prog_start != best) {
         delete prog_start;
@@ -366,8 +365,6 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
         gen_random_input_for_win(examples, num_examples, pss.static_state[win.first], win.first, win.second);
         _cost.set_examples(examples, prog_start);
       }
-      // clear_prog_freq_dic(prog_freq);
-      // insert_into_prog_freq_dic(*prog_start, prog_freq);
     }
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {
@@ -395,8 +392,6 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
       delete best;
       best = new prog(*next);
     }
-    // insert the next program into frequency dictionary of programs
-    // insert_into_prog_freq_dic(*next, prog_freq);
     // update measurement data and update current program with the next program
     if (curr != next) {
       delete curr;
