@@ -6,3 +6,4 @@
 *.xlsx
 *.insns
 *.desc
+*.bpf_insns

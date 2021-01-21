@@ -493,6 +493,17 @@ void write_desc_to_file(prog* current_program, string prefix_name) {
   fout.close();
 }
 
+void write_bpf_insns_to_file(prog* current_program, string prefix_name) {
+  string output_file = prefix_name + ".bpf_insns";
+  ofstream fout;
+  fout.open(output_file, ios::out | ios::trunc);
+  int real_len = num_real_instructions(current_program->inst_list, inst::max_prog_len);
+  for (int i = 0; i < real_len; i++) {
+    fout << current_program->inst_list[i].get_bytecode_str() << "," << endl;
+  }
+  fout.close();
+}
+
 void write_optimized_prog_to_file(prog* current_program, int id, string path_out) {
   // create path_out if not exist
   if (access(path_out.c_str(), 0) != 0) {
@@ -501,9 +512,16 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
       return;
     }
   }
+  convert_superopt_pgm_to_bpf_pgm(current_program->inst_list, inst::max_prog_len);
+  prog* p_bpf_insns = new prog(*current_program);
+
   string prefix_name = path_out + "output" + to_string(id);
+  set_nops_as_JA0(current_program->inst_list, inst::max_prog_len);
   write_desc_to_file(current_program, prefix_name);
   write_insns_to_file(current_program, prefix_name);
+
+  remove_nops(p_bpf_insns->inst_list, inst::max_prog_len);
+  write_bpf_insns_to_file(p_bpf_insns, prefix_name);
 }
 
 int main(int argc, char* argv[]) {
@@ -545,8 +563,6 @@ int main(int argc, char* argv[]) {
   for (auto it = topk_progs.progs.rbegin(); it != topk_progs.progs.rend(); it++) {
     prog* p = it->second.second;
     cout << "program " << prog_id  << " cost: " << p->_error_cost << " " << p->_perf_cost << endl;
-    set_nops_as_JA0(p->inst_list, inst::max_prog_len);
-    convert_superopt_pgm_to_bpf_pgm(p->inst_list, inst::max_prog_len);
     write_optimized_prog_to_file(p, prog_id, in_para.path_out);
     prog_id++;
     // for (int i = 0; i < inst::max_prog_len; i++) {
