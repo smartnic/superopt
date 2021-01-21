@@ -341,21 +341,29 @@ string inst::opcode_to_str(int opcode) {
 #undef MAPPER
 
 void inst::print() const {
-  if (_opcode == LDDW) {
-    if (is_ldmapid()) cout << "LDMAPID " << _dst_reg << " " << _imm << endl;
-    else if (is_movdwxc()) {
-      cout << "MOVDWXC " << _dst_reg << " " << _imm64 << endl;
-    } else {
-      cout << "unknown opcode" << endl;
-    }
-    return;
-  }
-  cout << opcode_to_str(_opcode);
-  for (int i = 0; i < get_num_operands(); i++) {
-    cout << " " << get_operand(i);
-  }
-  cout << endl;
+  cout << *this;
 }
+
+ostream& operator<<(ostream& out, const inst& insn) {
+  if (insn._opcode == LDDW) {
+    if (insn.is_ldmapid()) out << "LDMAPID " << insn._dst_reg << " " << insn._imm << endl;
+    else if (insn.is_movdwxc()) {
+      out << "MOVDWXC " << insn._dst_reg << " " << insn._imm64 << endl;
+    } else {
+      out << "unknown opcode: "
+          << insn._opcode << " " << insn._dst_reg << " " << insn._src_reg << " "
+          << insn._off << " " << insn._imm << endl;
+    }
+    return out;
+  }
+  out << insn.opcode_to_str(insn._opcode);
+  for (int i = 0; i < insn.get_num_operands(); i++) {
+    out << " " << insn.get_operand(i);
+  }
+  out << endl;
+  return out;
+}
+
 
 // get_canonical_reg_list return the registers that can be modified
 vector<int> inst::get_canonical_reg_list() const {

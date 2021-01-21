@@ -1,5 +1,7 @@
 #include <iostream>
 #include <fstream>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unordered_map>
 #include <algorithm>
 #include <unordered_set>
@@ -430,7 +432,7 @@ void get_best_pgms_from_candidates(vector<prog*>& best_pgms, unordered_map<int, 
 
 void set_default_para_vals(input_paras & in_para) {
   in_para.meas_mode = false;
-  in_para.path_out = "measure/";
+  in_para.path_out = "output/";
   in_para.bm = 0;
   in_para.bm_from_file = false;
   in_para.bytecode = "";
@@ -461,9 +463,9 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.logger_level = LOGGER_ERROR;
 }
 
-void write_insns_to_file(prog* current_program) {
-  const char* output_file = "output.insns";
-  FILE* output_file_fp = fopen(output_file, "w");
+void write_insns_to_file(prog* current_program, string prefix_name) {
+  string output_file = prefix_name + ".insns";
+  FILE* output_file_fp = fopen(output_file.c_str(), "w");
   for (int i = 0; i < inst::max_prog_len; i++) {
     inst t_insn = current_program->inst_list[i];
     struct bpf_insn insn = {(uint8_t)t_insn._opcode,
@@ -478,6 +480,32 @@ void write_insns_to_file(prog* current_program) {
   fclose(output_file_fp);
 }
 
+// readable code + perf_cost
+void write_desc_to_file(prog* current_program, string prefix_name) {
+  string output_file = prefix_name + ".desc";
+  ofstream fout;
+  fout.open(output_file, ios::out | ios::trunc);
+  fout << "perf_cost: " << current_program->_perf_cost << endl;
+  fout << "readable program: " << endl;
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    fout << i << ": " << current_program->inst_list[i];
+  }
+  fout.close();
+}
+
+void write_optimized_prog_to_file(prog* current_program, int id, string path_out) {
+  // create path_out if not exist
+  if (access(path_out.c_str(), 0) != 0) {
+    if (mkdir(path_out.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
+      cout << "ERROR: mkdir path_out " << path_out << " failed" << endl;
+      return;
+    }
+  }
+  string prefix_name = path_out + "output" + to_string(id);
+  write_desc_to_file(current_program, prefix_name);
+  write_insns_to_file(current_program, prefix_name);
+}
+
 int main(int argc, char* argv[]) {
   dur_sum = 0;
   dur_sum_long = 0;
@@ -487,7 +515,7 @@ int main(int argc, char* argv[]) {
   if (! parse_input(argc, argv, in_para)) return 0;
 
   cout << in_para;
-  store_config_to_file(in_para);
+  // store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
   auto start = NOW;
   if (in_para.bm_from_file) {
@@ -513,15 +541,17 @@ int main(int argc, char* argv[]) {
 
   cout << "Best program(s): " << endl;
   // rbegin() returns to the last value of map
+  int prog_id = 0;
   for (auto it = topk_progs.progs.rbegin(); it != topk_progs.progs.rend(); it++) {
     prog* p = it->second.second;
-    cout << "cost: " << p->_error_cost << " " <<  p->_perf_cost << endl;
+    cout << "program " << prog_id  << " cost: " << p->_error_cost << " " << p->_perf_cost << endl;
+    set_nops_as_JA0(p->inst_list, inst::max_prog_len);
     convert_superopt_pgm_to_bpf_pgm(p->inst_list, inst::max_prog_len);
-    p->print();
-    write_insns_to_file(p);
-    for (int i = 0; i < inst::max_prog_len; i++) {
-      cout << p->inst_list[i].get_bytecode_str() << "," << endl;
-    }
+    write_optimized_prog_to_file(p, prog_id, in_para.path_out);
+    prog_id++;
+    // for (int i = 0; i < inst::max_prog_len; i++) {
+    //   cout << p->inst_list[i].get_bytecode_str() << "," << endl;
+    // }
   }
 
   cout << "validator time: " << dur_sum << endl;

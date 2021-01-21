@@ -678,6 +678,7 @@ class inst: public inst_base {
   static string opcode_to_str(int);
   static string swap_byte_to_str(int opcode, int imm);
   void print() const;
+  friend ostream& operator<<(ostream& out, const inst& insn);
   vector<int> get_canonical_reg_list() const;
   static vector<int> get_isa_canonical_reg_list();
   static void add_sample_imm(const vector<int32_t>& nums);
