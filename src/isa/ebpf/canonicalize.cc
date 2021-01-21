@@ -461,10 +461,25 @@ void type_const_inference_pgm(prog_static_state& pss, inst* program, int len) {
     unsigned int block_s = g.nodes[block]._start;
     unsigned int block_e = g.nodes[block]._end;
     // get the block initial states by merging incoming states from `bss`
+    // note: only set regsiters that are set in all incoming branches
+    unordered_set<int> regs_can_be_set;
+    for (int i = 0; i < NUM_REGS; i++) regs_can_be_set.insert(i);
+    for (int j = 0; j < g.nodes_in[block].size(); j++) {
+      int block_in = g.nodes_in[block][j];
+      for (int r = 0; r < NUM_REGS; r++) {
+        if (bss[block_in].reg_state[r].size() == 0) regs_can_be_set.erase(r);
+      }
+    }
     for (int j = 0; j < g.nodes_in[block].size(); j++) { // root block does not have incoming blocks
       int block_in = g.nodes_in[block][j];
       inst_static_state iss;
       iss = bss[block_in];
+      // erase the regsiters whose flags_num != g.nodes_in[block].size()
+      for (int r = 0; r < NUM_REGS; r++) {
+        if (regs_can_be_set.find(r) == regs_can_be_set.end()) {
+          iss.reg_state[r] = {};
+        }
+      }
       int block_in_insn = g.nodes[block_in]._end;
       type_const_inference_inst_block_start(iss, block_s, block_in_insn, program[block_in_insn]);
       // ss[block_s].insert_reg_state(bss[block_in]);

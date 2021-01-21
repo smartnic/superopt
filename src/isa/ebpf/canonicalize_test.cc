@@ -615,6 +615,16 @@ void test5() {
   expected_insn2_r3_p3.push_back(register_state{SCALAR_VALUE});
   print_test_res(reg_state_is_equal(expected_insn2_r3_p3, pss.static_state[2].reg_state[3]), "3.2");
 
+  // p4: before executing EXIT, reg 0 does not have states, since one incoming branch does not have r0 state
+  inst p4[] = {inst(LDXW, 1, 1, 0),
+               inst(JA, 1),
+               inst(MOV64XC, 0, 1),
+               inst(EXIT),
+              };
+  static_analysis(pss, p4, sizeof(p4) / sizeof(inst));
+  vector<register_state> expected_insn3_r0_p4;
+  print_test_res(reg_state_is_equal(expected_insn3_r0_p4, pss.static_state[3].reg_state[0]), "4");
+
   cout << "5.2 safety check" << endl;
   test_safety_check(p1, sizeof(p1) / sizeof(inst), true, "1");
   test_safety_check(p2, sizeof(p2) / sizeof(inst), true, "2");
