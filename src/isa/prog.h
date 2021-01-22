@@ -3,7 +3,6 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
-#include <map>
 #include "../../src/utils.h"
 #include "../../src/isa/inst_header.h"
 
@@ -42,17 +41,21 @@ struct progHash {
 
 // top_k_progs: performance cost top k different programs with zero error cost
 // make sure k >= 1
+// assume k is a small number
 class top_k_progs {
  private:
+  double max_perf_cost;
+  int max_perf_cost_id;
   unsigned int k;
   bool can_find(prog* p);
   void insert_without_check(prog* p);
  public:
   // `greater` makes progs in descending order of keys
   // key: perf cost, value.first: prog hash value, value.second: prog pointer
-  map<int, pair<int, prog*>, greater<int> > progs;
+  vector<prog*> progs;
   top_k_progs(unsigned int k_val);
   ~top_k_progs();
   void insert(prog* p); // insert p if p is one of top k
   void clear();
+  void sort();
 };

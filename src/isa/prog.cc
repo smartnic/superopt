@@ -201,21 +201,23 @@ top_k_progs::top_k_progs(unsigned int k_val) {
   assert(k_val > 0);
   k = k_val;
   cout << "[top_k_progs] set k = " << k << endl;
+  max_perf_cost = numeric_limits<double>::max();
+  max_perf_cost_id = -1;
 }
 
 top_k_progs::~top_k_progs() {
   progs.clear();
+  max_perf_cost = numeric_limits<double>::max();
+  max_perf_cost_id = -1;
 }
 
 // check whether program p is in the progs
 bool top_k_progs::can_find(prog* p) {
-  int ph = progHash()(*p);
-  for (auto it2 : progs) {
-    int h = it2.second.first;
-    if (ph == h) { // further check whether two programs are the same
-      if (*p == *(it2.second.second)) {
-        return true;
-      }
+  for (int i = 0; i < progs.size(); i++) {
+    if (progs[i]->_perf_cost != p->_perf_cost) continue;
+    // further check whether two programs are the same
+    if (*(progs[i]) == *p) {
+      return true;
     }
   }
   return false;
@@ -223,8 +225,20 @@ bool top_k_progs::can_find(prog* p) {
 
 void top_k_progs::insert_without_check(prog* p) {
   prog* p_copy = new prog(*p);
-  int ph = progHash()(*p);
-  progs[p->_perf_cost] = make_pair(ph, p_copy);
+  if (progs.size() < k) progs.push_back(p_copy);
+  else {
+    delete progs[max_perf_cost_id];
+    progs[max_perf_cost_id] = p_copy;
+  }
+
+  max_perf_cost = progs[0]->_perf_cost;
+  max_perf_cost_id = 0;
+  for (int i = 1; i < progs.size(); i++) {
+    if (progs[i]->_perf_cost > max_perf_cost) {
+      max_perf_cost = progs[i]->_perf_cost;
+      max_perf_cost_id = i;
+    }
+  }
 }
 
 void top_k_progs::insert(prog* p) {
@@ -234,21 +248,32 @@ void top_k_progs::insert(prog* p) {
     insert_without_check(p);
   } else {
     assert(progs.size() != 0);
-    auto it = progs.begin();
-    int max = it->first;
-    if (p->_perf_cost >= max) return;
+    if (p->_perf_cost >= max_perf_cost) return;
     if (can_find(p)) return;
-
-    delete it->second.second;
-    progs.erase(it);
-
     insert_without_check(p);
   }
 }
 
 void top_k_progs::clear() {
-  for (auto it = progs.begin(); it != progs.end(); it++) {
-    delete it->second.second;   // release each prog's space
+  for (int i = 0; i < progs.size(); i++)  {
+    delete progs[i];   // release each prog's space
   }
   progs.clear();
+}
+
+bool top_k_progs_sort_function(prog* x, prog* y) {
+  return (x->_perf_cost < y->_perf_cost);
+}
+
+void top_k_progs::sort() {
+  if (progs.size() == 0) return;
+  ::sort(progs.begin(), progs.end(), top_k_progs_sort_function);
+  max_perf_cost = progs[0]->_perf_cost;
+  max_perf_cost_id = 0;
+  for (int i = 1; i < progs.size(); i++) {
+    if (progs[i]->_perf_cost > max_perf_cost) {
+      max_perf_cost = progs[i]->_perf_cost;
+      max_perf_cost_id = i;
+    }
+  }
 }

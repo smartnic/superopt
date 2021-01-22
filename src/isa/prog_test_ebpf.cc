@@ -62,70 +62,76 @@ void test1() {
   print_test_res(p31 == p32, "canonicalize 3");
 }
 
+bool check_top_k_progs_res(vector<double> perf_costs, top_k_progs& topk_progs) {
+  if (perf_costs.size() != topk_progs.progs.size()) return false;
+  topk_progs.sort();
+  for (int i = 0; i < topk_progs.progs.size(); i++) {
+    if (topk_progs.progs[i]->_error_cost != 0) return false;
+    if (topk_progs.progs[i]->_perf_cost != perf_costs[i]) return false;
+  }
+  return true;
+}
+
 void test2() {
   cout << "test2: test top_k_progs" << endl;
-  top_k_progs topk_progs(1);
+  top_k_progs topk_progs1(1), topk_progs2(3);
   inst p1[inst::max_prog_len];
-  vector<prog*> progs(10);
-  for (int i = 0; i < progs.size(); i++) {
-    progs[i] = new prog(p1);
-    progs[i]->_error_cost = 0;
-    progs[i]->_perf_cost = i + 10;
-  }
-  for (int i = 0; i < progs.size(); i++) {
-    topk_progs.insert(progs[i]);
-  }
-  bool res = (topk_progs.progs.size() == 1);
-  res &= (topk_progs.progs.begin()->first == 10);
-  print_test_res(res, "1.1");
-  // check `topk_progs.progs` won't be modified if modify `progs`
-  progs[0]->_error_cost = 1;
-  res = (topk_progs.progs.begin()->second.second->_error_cost == 0);
-  print_test_res(res, "1.2");
+  prog* pgm = new prog(p1);
+  pgm->_error_cost = 0;
+  pgm->_perf_cost = 1.25;
 
-  top_k_progs topk_progs2(3);
-  for (int i = 0; i < progs.size(); i++) {
-    progs[i]->_error_cost = 0;
-    progs[i]->_perf_cost = 20 - i;
-  }
-  progs[9]->_error_cost = 1;
-  progs[5]->_perf_cost = 4;
-  progs[6]->_perf_cost = 5;
-  for (int i = 0; i < progs.size(); i++) {
-    topk_progs2.insert(progs[i]);
-  }
-  vector<int> expected = {20};
-  vector<int> actual;
-  for (auto it : topk_progs2.progs) {
-    actual.push_back(it.first);
-  }
-  res = (topk_progs2.progs.size() == 1);
-  for (int i = 0; i < expected.size(); i++) {
-    res &= (expected[i] == actual[i]);
-  }
-  print_test_res(res, "2");
+  topk_progs1.insert(pgm);
+  topk_progs2.insert(pgm);
+  vector<double> perf_costs_1, perf_costs_2;
+  perf_costs_1 = {1.25};
+  perf_costs_2 = {1.25};
+  print_test_res(check_top_k_progs_res(perf_costs_1, topk_progs1), "1.1");
+  print_test_res(check_top_k_progs_res(perf_costs_2, topk_progs2), "1.2");
 
-  top_k_progs topk_progs3(3);
-  progs[0]->_error_cost = 0; progs[0]->_perf_cost = 3;
-  progs[1]->_error_cost = 1; progs[1]->_perf_cost = 2;
-  progs[2]->_error_cost = 0; progs[2]->_perf_cost = 4;
-  // modify programs to make them different
-  progs[0]->inst_list[0] = inst(MOV64XC, 0, 0);
-  progs[1]->inst_list[1] = inst(MOV64XC, 0, 0);
-  progs[2]->inst_list[2] = inst(MOV64XC, 0, 0);
-  for (int i = 0; i <= 2; i++) {
-    topk_progs3.insert(progs[i]);
-  }
-  expected = {4, 3};
-  actual = {};
-  for (auto it : topk_progs3.progs) {
-    actual.push_back(it.first);
-  }
-  res = (topk_progs3.progs.size() == 2);
-  for (int i = 0; i < expected.size(); i++) {
-    res &= (expected[i] == actual[i]);
-  }
-  print_test_res(res, "3");
+  topk_progs1.insert(pgm);
+  topk_progs2.insert(pgm);
+  print_test_res(check_top_k_progs_res(perf_costs_1, topk_progs1), "2.1");
+  print_test_res(check_top_k_progs_res(perf_costs_2, topk_progs2), "2.2");
+
+  pgm->inst_list[0] = inst(MOV64XC, 0, 0);
+  pgm->_error_cost = 0;
+  pgm->_perf_cost = 1.25;
+  topk_progs1.insert(pgm);
+  topk_progs2.insert(pgm);
+  perf_costs_1 = {1.25};
+  perf_costs_2 = {1.25, 1.25};
+  print_test_res(check_top_k_progs_res(perf_costs_1, topk_progs1), "3.1");
+  print_test_res(check_top_k_progs_res(perf_costs_2, topk_progs2), "3.2");
+
+  pgm->inst_list[1] = inst(MOV64XC, 0, 1);
+  pgm->_error_cost = 1;
+  pgm->_perf_cost = 1.25;
+  topk_progs1.insert(pgm);
+  topk_progs2.insert(pgm);
+  perf_costs_1 = {1.25};
+  perf_costs_2 = {1.25, 1.25};
+  print_test_res(check_top_k_progs_res(perf_costs_1, topk_progs1), "4.1");
+  print_test_res(check_top_k_progs_res(perf_costs_2, topk_progs2), "4.2");
+
+  pgm->inst_list[2] = inst(MOV64XC, 1, 0);
+  pgm->_error_cost = 0;
+  pgm->_perf_cost = 1.37;
+  topk_progs1.insert(pgm);
+  topk_progs2.insert(pgm);
+  perf_costs_1 = {1.25};
+  perf_costs_2 = {1.25, 1.25, 1.37};
+  print_test_res(check_top_k_progs_res(perf_costs_1, topk_progs1), "5.1");
+  print_test_res(check_top_k_progs_res(perf_costs_2, topk_progs2), "5.2");
+
+  pgm->inst_list[3] = inst(MOV64XC, 1, 0);
+  pgm->_error_cost = 0;
+  pgm->_perf_cost = 0.81;
+  topk_progs1.insert(pgm);
+  topk_progs2.insert(pgm);
+  perf_costs_1 = {0.81};
+  perf_costs_2 = {0.81, 1.25, 1.25};
+  print_test_res(check_top_k_progs_res(perf_costs_1, topk_progs1), "6.1");
+  print_test_res(check_top_k_progs_res(perf_costs_2, topk_progs2), "6.2");
 }
 
 int main() {
