@@ -4,7 +4,8 @@
 
 using namespace std;
 
-struct input_paras {
+class input_paras {
+ public:
   int niter;
   unsigned int k;
   int bm;
@@ -39,8 +40,8 @@ struct input_paras {
 };
 struct bpf_insn {
   uint8_t opcode;
-  uint8_t dst_reg:4;
-  uint8_t src_reg:4;
+  uint8_t dst_reg: 4;
+  uint8_t src_reg: 4;
   short off;
   int imm;
 };

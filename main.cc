@@ -334,7 +334,7 @@ void set_win_list(vector<int> &list, string s) {
 bool parse_input(int argc, char* argv[], input_paras &in_para) {
   const char* const short_opts = "hmn:k:";
   static struct option long_opts[] = {
-    {"path_out", required_argument, nullptr, 0},
+    {"path_res", required_argument, nullptr, 0},
     {"bm", required_argument, nullptr, 1},
     {"bm_from_file", no_argument, nullptr, 2},
     {"bytecode", required_argument, nullptr, 3},
@@ -365,8 +365,9 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
+  int opt_idx = 0;
   while ((opt = getopt_long(argc, argv, short_opts,
-                            long_opts, nullptr)) != -1) {
+                            long_opts, &opt_idx)) != -1) {
     switch (opt) {
       case 'h': usage(); return false;
       case 'm': in_para.meas_mode = true; break;
