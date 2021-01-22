@@ -422,6 +422,10 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   } else if (opcode == CALL) {
     iss.set_reg_state(0, SCALAR_VALUE);
     if (imm == BPF_FUNC_map_lookup_elem) type_const_inference_inst_BPF_FUNC_map_lookup_elem(iss, insn);
+    // set r1 - r5 unreadable, i.e., clear their states
+    for (int r = 1; r <= 5; r++) {
+      iss.reg_state[r] = {};
+    }
   } else if (insn.is_ldmapid()) {
     register_state rs;
     rs.type = CONST_PTR_TO_MAP;

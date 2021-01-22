@@ -388,6 +388,28 @@ void test3() {
   print_test_res(reg_state_is_equal(expected_insn8_r1_p6, pss.static_state[8].reg_state[1]), "6.1");
   print_test_res(reg_state_is_equal(expected_insn9_r1_p6, pss.static_state[9].reg_state[1]), "6.2");
 
+  // test r1-r5 are set unreadable after function call
+  inst p7[] = {inst(MOV64XC, 1, 0),
+               inst(MOV64XC, 2, 0),
+               inst(MOV64XC, 3, 0),
+               inst(MOV64XC, 4, 0),
+               inst(MOV64XC, 5, 0),
+               inst(CALL, BPF_FUNC_get_prandom_u32), // insn 5
+               inst(EXIT), // insn 6
+              };
+  static_analysis(pss, p7, sizeof(p7) / sizeof(inst));
+  bool p7_res = true;
+  // check r1-r5 state before executing insn 5 and 6
+  for (int r = 1; r <= 5; r++) {
+    p7_res &= (pss.static_state[5].reg_state[r].size() == 1);
+  }
+  print_test_res(p7_res, "7.1");
+  p7_res = true;
+  for (int r = 1; r <= 5; r++) {
+    p7_res &= (pss.static_state[6].reg_state[r].size() == 0);
+  }
+  print_test_res(p7_res, "7.2");
+
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
                  inst(STH, 10, -8, 0xff),
