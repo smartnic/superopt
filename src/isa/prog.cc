@@ -224,6 +224,9 @@ bool top_k_progs::can_find(prog* p) {
 }
 
 void top_k_progs::insert_without_check(prog* p) {
+  if (logger.is_print_level(LOGGER_DEBUG)) {
+    cout << "insert a new program in top_k_progs" << endl;
+  }
   prog* p_copy = new prog(*p);
   if (progs.size() < k) progs.push_back(p_copy);
   else {

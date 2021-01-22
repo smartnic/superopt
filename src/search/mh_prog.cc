@@ -331,7 +331,6 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
   curr = new prog(*prog_start);
   topk_progs.insert(prog_start);
   if (topk_progs.progs.size() == 0) cout << "ERROR: not able to insert original program" << endl;
-  else cout << "insert original program in topk_progs" << endl;
 
   for (int i = 0; i < niter; i++) {
     if (logger.is_print_level(LOGGER_DEBUG)) {

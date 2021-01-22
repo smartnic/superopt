@@ -560,13 +560,12 @@ int main(int argc, char* argv[]) {
   auto end = NOW;
 
   cout << "Best program(s): " << endl;
+  topk_progs.sort();
   // rbegin() returns to the last value of map
-  int prog_id = 0;
-  for (auto it = topk_progs.progs.rbegin(); it != topk_progs.progs.rend(); it++) {
-    prog* p = it->second.second;
-    cout << "program " << prog_id  << " cost: " << p->_error_cost << " " << p->_perf_cost << endl;
-    write_optimized_prog_to_file(p, prog_id, in_para.path_out);
-    prog_id++;
+  for (int i = 0; i < topk_progs.progs.size(); i++) {
+    prog* p = topk_progs.progs[i];
+    cout << "program " << i  << " cost: " << p->_error_cost << " " << p->_perf_cost << endl;
+    write_optimized_prog_to_file(p, i, in_para.path_out);
   }
 
   cout << "validator time: " << dur_sum << endl;
