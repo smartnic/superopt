@@ -173,6 +173,33 @@ void test1() {
   p4_1[4] = inst(STDW, 10, -8, 0);
   print_test_res(get_error_cost(p4, p4_1, win_start, win_end) == 0, "PGM_INPUT_pkt_ptrs 2");
   mem_t::_layout.clear();
+
+  inst p5[] = {inst(MOV64XY, 6, 1),
+               inst(MOV64XC, 1, 0),
+               inst(CALL, BPF_FUNC_get_prandom_u32),
+               inst(MOV64XC, 2, 0),
+               inst(STXDW, 10, -8, 2),
+               inst(LDXDW, 0, 10, -8),
+               inst(EXIT),
+              };
+  inst p5_1[] = {inst(MOV64XY, 6, 1),
+                 inst(MOV64XC, 1, 0),
+                 inst(CALL, BPF_FUNC_get_prandom_u32),
+                 inst(MOV64XC, 2, 0),
+                 inst(STXDW, 10, -8, 1), // src_reg from 2 to 1
+                 inst(LDXDW, 0, 10, -8),
+                 inst(EXIT),
+                };
+  const int p5_len = sizeof(p5) / sizeof(inst);
+  inst::max_prog_len = p5_len;
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(32);
+  win_start = 3;
+  win_end = 5;
+  double err =  get_error_cost(p5, p5_1, win_start, win_end);
+  print_test_res(get_error_cost(p5, p5_1, win_start, win_end) == ERROR_COST_MAX, "p5");
+
+  mem_t::_layout.clear();
 }
 
 int main() {

@@ -12,6 +12,8 @@ extern int dur_sum;
 extern int dur_sum_long;
 extern int n_sum_long;
 
+#define ERROR_COST_MAX 100000
+
 #define ERROR_COST_STRATEGY_ABS 0
 #define ERROR_COST_STRATEGY_POP 1
 #define ERROR_COST_STRATEGY_EQ1 0

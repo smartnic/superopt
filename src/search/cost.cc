@@ -8,7 +8,6 @@
 int dur_sum;
 int dur_sum_long;
 int n_sum_long;
-#define ERROR_COST_MAX 100000
 
 cost::cost() {}
 
