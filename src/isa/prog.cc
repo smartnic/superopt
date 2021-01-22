@@ -200,6 +200,7 @@ size_t progHash::operator()(const prog &x) const {
 top_k_progs::top_k_progs(unsigned int k_val) {
   assert(k_val > 0);
   k = k_val;
+  cout << "[top_k_progs] set k = " << k << endl;
 }
 
 top_k_progs::~top_k_progs() {
