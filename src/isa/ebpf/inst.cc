@@ -1636,7 +1636,7 @@ void inst::regs_cannot_be_ptrs(vector<int>& regs) const {
 // set the second insn as NOP
 void convert_bpf_pgm_to_superopt_pgm(inst* program, int length) {
   for (int i = 0; i < length; i++) {
-    if (program[i]._opcode == LDDW) {
+    if (program[i].is_movdwxc()) {
       assert(i + 1 < length);
       uint64_t imm32_1 = L32(program[i]._imm);
       uint64_t imm32_2 = L32(program[i + 1]._imm);
@@ -1651,7 +1651,7 @@ void convert_bpf_pgm_to_superopt_pgm(inst* program, int length) {
 
 void convert_superopt_pgm_to_bpf_pgm(inst* program, int length) {
   for (int i = 0; i < length; i++) {
-    if (program[i]._opcode == LDDW) {
+    if (program[i].is_movdwxc()) {
       assert(i + 1 < length);
       uint64_t imm64 = program[i]._imm64;
       uint32_t imm32_1 = L32(imm64);
