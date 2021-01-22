@@ -270,7 +270,7 @@ bool top_k_progs_sort_function(prog* x, prog* y) {
 
 void top_k_progs::sort() {
   if (progs.size() == 0) return;
-  ::sort(progs.begin(), progs.end(), top_k_progs_sort_function);
+  std::sort(progs.begin(), progs.end(), top_k_progs_sort_function);
   max_perf_cost = progs[0]->_perf_cost;
   max_perf_cost_id = 0;
   for (int i = 1; i < progs.size(); i++) {

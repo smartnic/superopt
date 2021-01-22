@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
 #include "../../src/utils.h"
 #include "../../src/isa/inst_header.h"
 
