@@ -567,9 +567,6 @@ int main(int argc, char* argv[]) {
     cout << "program " << prog_id  << " cost: " << p->_error_cost << " " << p->_perf_cost << endl;
     write_optimized_prog_to_file(p, prog_id, in_para.path_out);
     prog_id++;
-    // for (int i = 0; i < inst::max_prog_len; i++) {
-    //   cout << p->inst_list[i].get_bytecode_str() << "," << endl;
-    // }
   }
 
   cout << "validator time: " << dur_sum << endl;
