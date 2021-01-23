@@ -1894,6 +1894,7 @@ void get_cmp_lists_win(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
     int reg = it1->first;
     auto it2 = output2.regs.find(reg);
     assert(it2 != output2.regs.end()); // all register in V_post_r are in output
+    if (it1->second == it2->second) continue;
     val_list1.push_back(it1->second);
     val_list2.push_back(it2->second);
   }
@@ -1902,16 +1903,21 @@ void get_cmp_lists_win(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
     int off = it1->first;
     auto it2 = output2.stack.find(off);
     assert(it2 != output2.stack.end()); // all stack offs in V_post_r are in output
+    if (it1->second == it2->second) continue;
     val_list1.push_back(it1->second);
     val_list2.push_back(it2->second);
   }
   // update pkt
-  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list1.push_back(output1.pkt[i]);
-  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) val_list2.push_back(output2.pkt[i]);
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    if (output1.pkt[i] == output2.pkt[i]) continue;
+    val_list1.push_back(output1.pkt[i]);
+    val_list2.push_back(output2.pkt[i]);
+  }
   // update pkt_ptrs if PGM_INPUT_pkt_ptrs
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     for (int i = 0; i < 2; i++) { // 2 pointers
+      if (output1.input_simu_pkt_ptrs[i] == output2.input_simu_pkt_ptrs[i]) continue;
       val_list1.push_back(output1.input_simu_pkt_ptrs[i]);
       val_list2.push_back(output2.input_simu_pkt_ptrs[i]);
     }
