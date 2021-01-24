@@ -317,8 +317,32 @@ void type_const_inference_inst_JEQXC(inst_static_state& iss, inst& insn, bool no
       }
       // update register state
       iss.reg_state[dst_reg][i] = rs;
+    } else if (type == PTR_TO_MAP_OR_NULL) {
+      register_state rs;
+      if (not_jmp) {
+        rs.type = CONST_PTR_TO_MAP;
+        // todo: val i.e.(map id = 2) is set for katran balancer_kern
+        rs.val = 2;
+        rs.val_flag = true;
+        iss.set_reg_state(dst_reg, rs);
+      } else {
+        rs.type = SCALAR_VALUE;
+        rs.val_flag = true;
+        rs.val = 0;
+      }
+      // update register state
+      iss.reg_state[dst_reg][i] = rs;
     }
+
   }
+}
+
+void type_const_inference_inst_JNEXC(inst_static_state& iss, inst& insn, bool not_jmp) {
+  if (insn._opcode != JNEXC) return;
+  inst insn_jeq = insn;
+  insn_jeq._opcode = JEQXC;
+  not_jmp = ! not_jmp;
+  type_const_inference_inst_JEQXC(iss, insn_jeq, not_jmp);
 }
 
 void type_const_inference_inst_block_start(inst_static_state& iss, int cur_insn,
@@ -328,6 +352,7 @@ void type_const_inference_inst_block_start(inst_static_state& iss, int cur_insn,
     not_jmp = true;
   }
   type_const_inference_inst_JEQXC(iss, block_in_insn, not_jmp);
+  type_const_inference_inst_JNEXC(iss, block_in_insn, not_jmp);
 }
 
 void type_const_inference_inst_BPF_FUNC_map_lookup_elem(inst_static_state& iss, inst& insn) {
@@ -361,6 +386,9 @@ void type_const_inference_inst_BPF_FUNC_map_lookup_elem(inst_static_state& iss, 
     register_state rs;
     rs.type = PTR_TO_MAP_VALUE_OR_NULL;
     rs.map_id = map_id_list[i];
+    if (mem_t::map_type(rs.map_id) == MAP_TYPE_array_of_maps) {
+      rs.type = PTR_TO_MAP_OR_NULL;
+    }
     rs.off = 0;
     iss.reg_state[0].push_back(rs);
   }
@@ -548,7 +576,10 @@ void get_mem_read_regs_and_read_sz_from_helper(vector<pair<int, int> >& regs_sz,
 
   } else if (func_id == BPF_FUNC_map_update_elem) {
     for (int i = 0; i < reg_state[1].size(); i++) { // r1 points to map id
-      assert(reg_state[1][i].type == CONST_PTR_TO_MAP);
+      // assert(reg_state[1][i].type == CONST_PTR_TO_MAP);
+      if (reg_state[1][i].type != CONST_PTR_TO_MAP) {
+        return;
+      }
       assert(reg_state[1][i].val_flag);
       int map_id = reg_state[1][i].val;
       int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;

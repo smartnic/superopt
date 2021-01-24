@@ -486,7 +486,8 @@ double inst::get_runtime() const {
   auto found = _runtime.find(str);
   if (found == _runtime.end()) {
     string err_msg = string("Error: cannot get runtime of ") + str;
-    throw (err_msg);
+    return 1; // return the default cost 1
+    // throw (err_msg);
   }
   return found->second;
 }
