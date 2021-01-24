@@ -1032,7 +1032,7 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
 
     // 3. Generte stack, use live_variable info
     // live_var is the live vars after executing this insn, what we want is before
-    live_variables live_vars_before;
+    live_variables live_vars_before = iss.live_var;
     live_analysis_inst(live_vars_before, iss.reg_state, insn);
     auto it = live_vars_before.mem.find(PTR_TO_STACK);
     if (it != live_vars_before.mem.end()) {
