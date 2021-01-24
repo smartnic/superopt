@@ -355,6 +355,7 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
            << prog_start->_error_cost << " " << prog_start-> _perf_cost << "):" << endl;
       prog_start->print();
       if (is_win) { // reset validator original program
+        init_sample_range(&prog_start->inst_list[win.first], (win.second - win.first + 1));
         inout_t::start_insn = win.first;
         inout_t::end_insn = win.second;
         static_safety_check_pgm(prog_start->inst_list, inst::max_prog_len);

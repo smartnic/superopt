@@ -1019,36 +1019,8 @@ void read_insns(inst** bm, const char* insn_file) {
 }
 
 void setup(inst** bm) {
-  // init sample immediate numbers and offsets
-  vector<int32_t> imms;
-  vector<int16_t> offs;
-  for (int i = 0; i < inst::max_prog_len; i++) {
-    if (! (*bm)[i].is_movdwxc()) imms.push_back((*bm)[i]._imm);
-    if (smt_var::is_win) {
-      // for win eq, do not add jmp offs
-      int opcode_type = (*bm)[i].get_opcode_type();
-      if ((opcode_type != OP_UNCOND_JMP) && (opcode_type != OP_COND_JMP)) {
-        offs.push_back((*bm)[i]._off);
-      }
-    } else {
-      offs.push_back((*bm)[i]._off);
-    }
-  }
-  inst::add_sample_imm(imms);
-  inst::add_sample_off(offs);
-  cout << "sample_neg_imms: ";
-  for (int i = 0; i < inst::_sample_neg_imms.size(); i++)
-    cout << inst::_sample_neg_imms[i] << " ";
-  cout << endl << "sample_pos_imms: ";
-  for (int i = 0; i < inst::_sample_pos_imms.size(); i++)
-    cout << inst::_sample_pos_imms[i] << " ";
-  cout << endl << "sample_neg_offs: ";
-  for (int i = 0; i < inst::_sample_neg_offs.size(); i++)
-    cout << inst::_sample_neg_offs[i] << " ";
-  cout << endl << "sample_pos_offs: ";
-  for (int i = 0; i < inst::_sample_pos_offs.size(); i++)
-    cout << inst::_sample_pos_offs[i] << " ";
-  cout << endl;
+  // for window eq, init sample range when there is a new window in mh_prog.c
+  if (! smt_var::is_win) init_sample_range(*bm, inst::max_prog_len);
   // update number of BPF_FUNC_get_prandom_u32
   unsigned int n_randoms_u32 = 0;
   for (int i = 0; i < inst::max_prog_len; i++) {

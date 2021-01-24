@@ -434,6 +434,13 @@ void inst::add_sample_off(const vector<int16_t>& nums) {
   }
 }
 
+void inst::clear_sample_imm_off() {
+  _sample_neg_imms = {};
+  _sample_pos_imms = {};
+  _sample_neg_offs = {};
+  _sample_pos_offs = {};
+}
+
 // read runtime from inst.runtime
 void inst::init_runtime() {
   ifstream file("./src/isa/ebpf/inst.runtime");
@@ -1669,4 +1676,38 @@ void convert_superopt_pgm_to_bpf_pgm(inst* program, int length) {
       i++;
     }
   }
+}
+
+void init_sample_range(inst* program, int len) {
+  // init sample immediate numbers and offsets
+  vector<int32_t> imms;
+  vector<int16_t> offs;
+  for (int i = 0; i < len; i++) {
+    if (! program[i].is_movdwxc()) imms.push_back(program[i]._imm);
+    if (smt_var::is_win) {
+      // for win eq, do not add jmp offs
+      int opcode_type = program[i].get_opcode_type();
+      if ((opcode_type != OP_UNCOND_JMP) && (opcode_type != OP_COND_JMP)) {
+        offs.push_back(program[i]._off);
+      }
+    } else {
+      offs.push_back(program[i]._off);
+    }
+  }
+  inst::clear_sample_imm_off();
+  inst::add_sample_imm(imms);
+  inst::add_sample_off(offs);
+  cout << "sample_neg_imms: ";
+  for (int i = 0; i < inst::_sample_neg_imms.size(); i++)
+    cout << inst::_sample_neg_imms[i] << " ";
+  cout << endl << "sample_pos_imms: ";
+  for (int i = 0; i < inst::_sample_pos_imms.size(); i++)
+    cout << inst::_sample_pos_imms[i] << " ";
+  cout << endl << "sample_neg_offs: ";
+  for (int i = 0; i < inst::_sample_neg_offs.size(); i++)
+    cout << inst::_sample_neg_offs[i] << " ";
+  cout << endl << "sample_pos_offs: ";
+  for (int i = 0; i < inst::_sample_pos_offs.size(); i++)
+    cout << inst::_sample_pos_offs[i] << " ";
+  cout << endl;
 }

@@ -686,6 +686,7 @@ class inst: public inst_base {
   static vector<int> get_isa_canonical_reg_list();
   static void add_sample_imm(const vector<int32_t>& nums);
   static void add_sample_off(const vector<int16_t>& nums);
+  static void clear_sample_imm_off();
   static void init_runtime();
   double get_runtime() const;
   int32_t get_max_operand_val(int op_index, int inst_index = 0) const;
@@ -734,3 +735,5 @@ void safety_chk(inst& insn, prog_state& ps);
 
 void convert_bpf_pgm_to_superopt_pgm(inst* program, int length);
 void convert_superopt_pgm_to_bpf_pgm(inst* program, int length);
+// init sample immediate numbers and offsets
+void init_sample_range(inst* program, int len);
