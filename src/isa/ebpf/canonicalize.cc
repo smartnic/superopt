@@ -813,6 +813,23 @@ void static_safety_check_pgm(inst* program, int len) {
   }
 }
 
+void static_safety_check_win(inst* win_prog, int win_start, int win_end, prog_static_state& pss_orig) {
+  int win_len = win_end - win_start + 1;
+  // 1. compute ss_win according to the ss_orig and the window program
+  vector<inst_static_state> ss_win(win_len); // [win_start, win_end]
+  // get the initial reg state from pss_orig `win_start`
+  ss_win[0].reg_state = pss_orig.static_state[win_start].reg_state;
+  // todo: extended for window program with branches
+  // update reg_state of win_program from insn 1 to len, reg_state: before executing insn
+  for (int i = 0; i < win_len - 1; i++) {
+    ss_win[i + 1].reg_state = ss_win[i].reg_state;
+    type_const_inference_inst(ss_win[i + 1], win_prog[i + win_start]);
+  }
+  for (int i = 0; i < win_len; i++) {
+    safety_chk_insn(win_prog[i + win_start], ss_win[i].reg_state);
+  }
+}
+
 // update the original program's pre-condition and post-condition
 void set_up_smt_inout_orig(prog_static_state& pss, inst* program, int len, int win_start, int win_end) {
   vector<inst_static_state>& ss = pss.static_state;

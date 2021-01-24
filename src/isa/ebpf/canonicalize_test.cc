@@ -567,6 +567,25 @@ void test_safety_check(inst* program, int len, bool expected_safe, string test_n
   print_test_res(is_succ, test_name);
 }
 
+void test_safety_check_win(inst* program, int len,
+                           int win_start, int win_end,
+                           bool expected_safe, string test_name) {
+  prog_static_state pss;
+  pss.static_state.resize(len + 1);
+  pss.g.gen_graph(program, len);
+  topo_sort_for_graph(pss.dag, pss.g);
+  type_const_inference_pgm(pss, program, len);
+
+  bool is_succ = false;
+  try {
+    static_safety_check_win(program, win_start, win_end, pss);
+    if (expected_safe) is_succ = true;
+  } catch (string err_msg) {
+    if (! expected_safe) is_succ = true;
+  }
+  print_test_res(is_succ, test_name);
+}
+
 void test4() {
   cout << "Test 4: program static safety check" << endl;
   cout << "4.1 illegal pointer operations" << endl;
@@ -577,11 +596,13 @@ void test4() {
                  inst(EXIT),
                 };
   test_safety_check(p1_1, sizeof(p1_1) / sizeof(inst), false, "1");
+  test_safety_check_win(p1_1, sizeof(p1_1) / sizeof(inst), 0, 0, false, "1.1");
 
   inst p1_2[] = {inst(AND64XC, 1),
                  inst(EXIT),
                 };
   test_safety_check(p1_2, sizeof(p1_2) / sizeof(inst), false, "2");
+  test_safety_check_win(p1_2, sizeof(p1_2) / sizeof(inst), 0, 0, false, "2.1");
 
   inst p1_3[] = {inst(STB, 10, -1, 0x1),
                  INSN_LDMAPID(1, 0),
@@ -595,7 +616,9 @@ void test4() {
                  inst(EXIT),
                 };
   test_safety_check(p1_3, sizeof(p1_3) / sizeof(inst), true, "3");
-
+  test_safety_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 6, 6, true, "3.1");
+  test_safety_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 8, 8, true, "3.2");
+  test_safety_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 5, 5, true, "3.3");
 }
 
 void test5() {

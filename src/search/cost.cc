@@ -212,7 +212,13 @@ bool is_win_legal(inst* orig, int len1, inst* synth, int len2,
 double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   try {
-    static_safety_check_pgm(synth->inst_list, len2);
+    if (! smt_var::is_win) {
+      static_safety_check_pgm(synth->inst_list, len2);
+    } else {
+      static_safety_check_win(synth->inst_list,
+                              inout_t::start_insn, inout_t::end_insn,
+                              _vld._pss_orig);
+    }
   } catch (const string err_msg) {
     synth->set_error_cost(ERROR_COST_MAX);
     return ERROR_COST_MAX;
