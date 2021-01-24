@@ -1023,8 +1023,16 @@ void setup(inst** bm) {
   vector<int32_t> imms;
   vector<int16_t> offs;
   for (int i = 0; i < inst::max_prog_len; i++) {
-    imms.push_back((*bm)[i]._imm);
-    offs.push_back((*bm)[i]._off);
+    if (! (*bm)[i].is_movdwxc()) imms.push_back((*bm)[i]._imm);
+    if (smt_var::is_win) {
+      // for win eq, do not add jmp offs
+      int opcode_type = (*bm)[i].get_opcode_type();
+      if ((opcode_type != OP_UNCOND_JMP) && (opcode_type != OP_COND_JMP)) {
+        offs.push_back((*bm)[i]._off);
+      }
+    } else {
+      offs.push_back((*bm)[i]._off);
+    }
   }
   inst::add_sample_imm(imms);
   inst::add_sample_off(offs);

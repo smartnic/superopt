@@ -537,6 +537,8 @@ int main(int argc, char* argv[]) {
   cout << in_para;
   // store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
+  // todo: a temporary way to set up win eq check flag
+  smt_var::is_win = in_para.is_win;
   auto start = NOW;
   if (in_para.bm_from_file) {
     init_benchmark_from_file(&bm, in_para.bytecode.c_str(),
