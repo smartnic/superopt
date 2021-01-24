@@ -559,7 +559,14 @@ void get_mem_read_regs_and_read_sz_from_helper(vector<pair<int, int> >& regs_sz,
       regs_sz.push_back({2, k_sz}); // r2 points to the key stored on stack
       regs_sz.push_back({3, v_sz}); // r3 points to the value stored on stack
     }
-
+  } else if (func_id == BPF_FUNC_fib_lookup) {
+    // todo: assume only one state for r2 and r3
+    assert(reg_state[2].size() > 0);
+    assert(reg_state[3].size() > 0);
+    assert(is_ptr(reg_state[2][0].type));
+    assert(reg_state[3][0].val_flag);
+    int sz = reg_state[3][0].val;
+    regs_sz.push_back({2, sz});
   }
 }
 

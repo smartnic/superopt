@@ -256,11 +256,14 @@ string inst::func_to_str(int func_id) {
       MAPPER(map_lookup_elem)
       MAPPER(map_update_elem)
       MAPPER(map_delete_elem)
-      MAPPER(tail_call)
+      MAPPER(ktime_get_ns)
       MAPPER(get_prandom_u32)
+      MAPPER(get_smp_processor_id)
+      MAPPER(tail_call)
       MAPPER(redirect)
       MAPPER(xdp_adjust_head)
       MAPPER(redirect_map)
+      MAPPER(fib_lookup)
     default: return "unknown function id";
   }
 }
@@ -1028,11 +1031,14 @@ void inst::regs_to_read(vector<int>& regs) const {
         case BPF_FUNC_map_lookup_elem: regs = {1, 2}; return;
         case BPF_FUNC_map_update_elem: regs = {1, 2, 3}; return;
         case BPF_FUNC_map_delete_elem: regs = {1, 2}; return;
-        case BPF_FUNC_tail_call: regs = {1, 2, 3}; return;
+        case BPF_FUNC_ktime_get_ns: return;
         case BPF_FUNC_get_prandom_u32: return;
+        case BPF_FUNC_get_smp_processor_id: return;
+        case BPF_FUNC_tail_call: regs = {1, 2, 3}; return;
         case BPF_FUNC_redirect: regs = {1, 2}; return;
         case BPF_FUNC_xdp_adjust_head: regs = {1, 2}; return;
         case BPF_FUNC_redirect_map: regs = {1, 2, 3}; return;
+        case BPF_FUNC_fib_lookup: regs = {1, 2, 3, 4}; return;
         default: cout << "Error: unknown function id " << _imm << endl; return;
       }
     case EXIT: return;
