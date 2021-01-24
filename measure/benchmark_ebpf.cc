@@ -921,9 +921,16 @@ int extract_max_pkt_sz(string str) {
 map_attr extract_attrs_from_map(string str) {
   unordered_map<string, int> attr_map;
   parse_str(attr_map, str);
+  int prog_type = attr_map["type"];
+  if (prog_type == BPF_MAP_TYPE_ARRAY_OF_MAPS) {
+    prog_type = MAP_TYPE_array_of_maps;
+  } else {
+    prog_type = MAP_TYPE_prog_array;
+  }
   return map_attr(attr_map["key_size"] * NUM_BYTE_BITS,
                   attr_map["value_size"] * NUM_BYTE_BITS,
-                  inst::max_prog_len);
+                  inst::max_prog_len,
+                  prog_type);
 }
 
 void read_desc(const char* desc_file) {
@@ -974,7 +981,8 @@ void read_maps(const char* map_file) {
     map_attr mp = extract_attrs_from_map(str);
     cout << "add map " << "k_sz: " << mp.key_sz / NUM_BYTE_BITS << " bytes, "
          << "v_sz: " << mp.val_sz / NUM_BYTE_BITS << " bytes, "
-         << "max_num: " << mp.max_entries << endl;
+         << "max_num: " << mp.max_entries << ", "
+         << "type: " << mp.map_type << endl;
     mem_t::add_map(mp);
   }
   fclose(fp);

@@ -24,6 +24,7 @@ static constexpr int NUM_REGS = 11;
 enum MAP_TYPE {
   MAP_TYPE_default = 0,
   MAP_TYPE_prog_array, // MAP_TYPE_prog_array == **BPF_MAP_TYPE_PROG_ARRAY**
+  MAP_TYPE_array_of_maps, // MAP_TYPE_array_of_maps == **MAP_TYPE_ARRAY_OF_MAPS**
 };
 
 struct map_attr { // map attribute
@@ -32,10 +33,10 @@ struct map_attr { // map attribute
   unsigned int max_entries;
   unsigned int map_type;
   map_attr(unsigned int k_sz, unsigned int v_sz, unsigned int n_entries = 0,
-           unsigned int m_type = MAP_TYPE_default) {
+           unsigned int m_type = MAP_TYPE_prog_array) {
     key_sz = k_sz; val_sz = v_sz;
     max_entries = n_entries;
-    map_type = MAP_TYPE_prog_array;
+    map_type = m_type;
   }
 };
 ostream& operator<<(ostream& out, const map_attr& m_attr);

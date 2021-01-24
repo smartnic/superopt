@@ -445,7 +445,6 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
 
 // compute ss.reg_state, ss.reg_state[i] stores the register states before executing insn i
 void type_const_inference_pgm(prog_static_state& pss, inst* program, int len) {
-  cout << "[type_const_inference_pgm]" << endl;
   assert(pss.dag.size() >= 1);
   vector<inst_static_state>& ss = pss.static_state;
   graph& g = pss.g;
@@ -492,8 +491,6 @@ void type_const_inference_pgm(prog_static_state& pss, inst* program, int len) {
     }
     // process the block from the first block insn
     for (int j = block_s; j < block_e; j++) {
-      cout << j << ": ";
-      program[j].print();
       ss[j + 1].reg_state = ss[j].reg_state; // copy the previous state
       type_const_inference_inst(ss[j + 1], program[j]); // update state according to the insn
     }
@@ -753,7 +750,6 @@ void static_analysis(prog_static_state& pss, inst* program, int len) {
 }
 
 void safety_chk_insn(inst& insn, const vector<vector<register_state>>& reg_state) {
-  cout << "[safety_chk_insn] " << insn;
   vector<int> not_ptr_regs;
   insn.regs_cannot_be_ptrs(not_ptr_regs);
   for (int i = 0; i < not_ptr_regs.size(); i++) {
