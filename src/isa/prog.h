@@ -33,6 +33,7 @@ class prog {
   void canonicalize();
   int num_real_instructions() const;
   double instructions_runtime() const;
+  double instructions_runtime(int insn_s, int insn_e) const;
   void interpret(inout_t& output, prog_state &ps, const inout_t& input) const;
 };
 

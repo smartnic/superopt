@@ -185,6 +185,14 @@ double prog::instructions_runtime() const {
   return runtime;
 }
 
+double prog::instructions_runtime(int insn_s, int insn_e) const {
+  double runtime = 0;
+  for (int i = insn_s; i <= insn_e; i++) {
+    runtime += inst_list[i].get_runtime();
+  }
+  return runtime;
+}
+
 void prog::interpret(inout_t& output, prog_state &ps, const inout_t& input) const {
   return ::interpret(output, inst_list, inst::max_prog_len, ps, input);
 }

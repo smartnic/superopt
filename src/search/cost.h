@@ -26,6 +26,9 @@ extern int n_sum_long;
 
 class cost {
  private:
+  // perf_cost_base_win is a cache of perf cost of all program instrcutions except window instructions
+  // perf_csot = perf_cost_base_win + perf_cost of window
+  double _perf_cost_base_win = 0; // -1 means not set
   int _num_real_orig;
   double get_ex_error_cost(inout_t& output1, inout_t& output2);
   int get_avg_value(int ex_set_size);
@@ -34,6 +37,7 @@ class cost {
                               int avg_value);
   double get_ex_error_cost_from_val_lists_abs(vector<reg_t>& val_list1, vector<reg_t>& val_list2);
   double get_ex_error_cost_from_val_lists_pop(vector<reg_t>& val_list1, vector<reg_t>& val_list2);
+  void set_perf_cost_base_win(prog* orig, int len, int win_start, int win_end);
  public:
   validator _vld;
   examples _examples;
@@ -56,7 +60,7 @@ class cost {
   void set_examples(const vector<inout_t> &input, prog* orig);
   void set_orig(prog* orig, int len, int win_start = 0, int win_end = inst::max_prog_len);
   double error_cost(prog* orig, int len1, prog* synth, int len2);
-  double perf_cost(prog* synth, int len);
+  double perf_cost(prog* synth, int len, bool set_win = false);
   double total_prog_cost(prog* orig, int len1, prog* synth, int len2);
 };
 

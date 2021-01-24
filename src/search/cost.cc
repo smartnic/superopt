@@ -75,6 +75,9 @@ void cost::set_orig(prog* orig, int len, int win_start, int win_end) {
     return;
   }
   _num_real_orig = orig->num_real_instructions();
+  if (smt_var::is_win) {
+    set_perf_cost_base_win(orig, len, win_start, win_end);
+  }
 }
 
 unsigned int pop_count_outputs(reg_t output1, reg_t output2) {
@@ -319,13 +322,39 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   return total_cost;
 }
 
-double cost::perf_cost(prog * synth, int len) {
+void cost::set_perf_cost_base_win(prog* orig, int len, int win_start, int win_end) {
+  double cost = 0;
+  if (_strategy_perf == PERF_COST_STRATEGY_LEN) {
+    double orig_cost = orig->num_real_instructions();
+    double win_cost = num_real_instructions(&orig->inst_list[win_start], win_end - win_start + 1);
+    cost = orig_cost - win_cost;
+  } else if (_strategy_perf == PERF_COST_STRATEGY_RUNTIME) {
+    double orig_cost = orig->instructions_runtime();
+    double win_cost = orig->instructions_runtime(win_start, win_end);
+    cost = orig_cost - win_cost;
+  }
+  _perf_cost_base_win = cost;
+  cout << "[cost] perf_cost_base_win: " << _perf_cost_base_win << endl;
+}
+
+double cost::perf_cost(prog* synth, int len, bool set_win) {
   if (synth->_perf_cost != -1) return synth->_perf_cost;
   double total_cost;
   if (_strategy_perf == PERF_COST_STRATEGY_LEN) {
-    total_cost = synth->num_real_instructions();
+    if (smt_var::is_win && set_win) {
+      total_cost = _perf_cost_base_win;
+      total_cost += num_real_instructions(&synth->inst_list[inout_t::start_insn],
+                                          inout_t::end_insn - inout_t::start_insn + 1);
+    } else {
+      total_cost = synth->num_real_instructions();
+    }
   } else if (_strategy_perf == PERF_COST_STRATEGY_RUNTIME) {
-    total_cost = synth->instructions_runtime();
+    if (smt_var::is_win && set_win) {
+      total_cost = _perf_cost_base_win;
+      total_cost += synth->instructions_runtime(inout_t::start_insn, inout_t::end_insn);
+    } else {
+      total_cost = synth->instructions_runtime();
+    }
   } else {
     string err_msg = "ERROR: no performance cost strategy matches.";
     throw (err_msg);
@@ -337,7 +366,7 @@ double cost::perf_cost(prog * synth, int len) {
 double cost::total_prog_cost(prog * orig, int len1, prog * synth, int len2) {
   bool flag = (synth->_error_cost == -1);
   double err_cost = error_cost(orig, len1, synth, len2);
-  double per_cost = perf_cost(synth, len2);
+  double per_cost = perf_cost(synth, len2, true);
   if (flag && logger.is_print_level(LOGGER_DEBUG)) {
     cout << "cost: " << err_cost << " " << per_cost << " "
          << (_w_e * err_cost) + (_w_p * per_cost) << endl;
