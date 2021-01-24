@@ -1323,8 +1323,9 @@ inout_t::inout_t() {
   reg_type.resize(NUM_REGS);
   maps_mem.resize(mem_t::maps_number());
   for (int i = 0; i < maps_mem.size(); i++) {
-    int max_num = mem_t::map_max_entries(i) * mem_t::map_val_sz(i) / NUM_BYTE_BITS;
-    maps_mem[i].resize(max_num);
+    // int max_num = mem_t::map_max_entries(i) * mem_t::map_val_sz(i) / NUM_BYTE_BITS;
+    int num = mem_t::map_val_sz(i) / NUM_BYTE_BITS;
+    maps_mem[i].resize(num);
   }
 }
 
@@ -1443,8 +1444,9 @@ void inout_t::init() {
   randoms_u32.resize(mem_t::_layout._n_randoms_u32);
   maps_mem.resize(mem_t::maps_number());
   for (int i = 0; i < maps_mem.size(); i++) {
-    int max_num = mem_t::map_max_entries(i) * mem_t::map_val_sz(i) / NUM_BYTE_BITS;
-    maps_mem[i].resize(max_num);
+    // int max_num = mem_t::map_max_entries(i) * mem_t::map_val_sz(i) / NUM_BYTE_BITS;
+    int num = mem_t::map_val_sz(i) / NUM_BYTE_BITS;
+    maps_mem[i].resize(num);
   }
 }
 
@@ -1809,16 +1811,15 @@ uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int
       string err_msg = "";
       int n_maps = mem_t::maps_number();
       if (n_maps > 0) {
-        uint64_t maps_s = mem.get_simu_mem_start_addr() + mem_t::get_mem_off_by_idx_in_map(0, 0);
-        uint64_t last_map_s = mem.get_simu_mem_start_addr() + mem_t::get_mem_off_by_idx_in_map(n_maps - 1, 0);
-        int last_map_sz = mem_t::map_max_entries(n_maps - 1) * mem_t::map_val_sz(n_maps - 1) / NUM_BYTE_BITS;
-        uint64_t maps_e = last_map_s + last_map_sz - 1;
-        if ((simu_addr >= maps_s) && (simu_addr <= maps_e)) {
-          return (simu_addr + sr.real_r10 - sr.simu_r10);
-        } else {
-          flag = false;
-          err_msg = "addr not in map region, convert simu_addr to real_addr fail";
+        for (int map_id = 0; map_id < mem_t::maps_number(); map_id++) {
+          uint64_t map_s = mem.get_simu_mem_start_addr() + mem_t::get_mem_off_by_idx_in_map(map_id, 0);
+          uint64_t map_e = mem.get_simu_mem_start_addr() + mem_t::get_mem_off_by_idx_in_map(map_id, 1);
+          if ((simu_addr >= map_s) && (simu_addr <= map_e)) {
+            return (simu_addr + sr.real_r10 - sr.simu_r10);
+          }
         }
+        flag = false;
+        err_msg = "addr not in map region, convert simu_addr to real_addr fail";
       } else {
         flag = false;
         err_msg = "there is no maps, convert simu_addr to real_addr fail";
