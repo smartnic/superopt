@@ -958,7 +958,7 @@ void gen_random_input(vector<inout_t>& inputs, int n, int64_t reg_min, int64_t r
   }
 }
 
-void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state& iss, int win_start, int win_end) {
+void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state& iss, inst& insn, int win_start, int win_end) {
   inputs.clear();
   inputs.resize(n);
   for (int i = 0; i < inputs.size(); i++) {
@@ -1031,9 +1031,11 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state&
     }
 
     // 3. Generte stack, use live_variable info
-    // todo: do we need to compute and use precondition memory write
-    auto it = iss.live_var.mem.find(PTR_TO_STACK);
-    if (it != iss.live_var.mem.end()) {
+    // live_var is the live vars after executing this insn, what we want is before
+    live_variables live_vars_before;
+    live_analysis_inst(live_vars_before, iss.reg_state, insn);
+    auto it = live_vars_before.mem.find(PTR_TO_STACK);
+    if (it != live_vars_before.mem.end()) {
       for (auto off : it->second) {
         inputs[i].stack_readble[off] = true;
         inputs[i].stack[off] = random_int(0, 0xff);

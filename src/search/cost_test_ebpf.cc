@@ -19,7 +19,9 @@ double get_error_cost(inst* p1, inst* p2, int win_start, int win_end) {
   static_analysis(pss, p1, inst::max_prog_len);
   int num_examples = 30;
   vector<inout_t> examples;
-  gen_random_input_for_win(examples, num_examples, pss.static_state[win_start], win_start, win_end);
+  gen_random_input_for_win(examples, num_examples,
+                           pss.static_state[win_start], p1[win_start],
+                           win_start, win_end);
   c.set_examples(examples, &prog1);
   return c.error_cost(&prog1, inst::max_prog_len, &prog2, inst::max_prog_len);
 }

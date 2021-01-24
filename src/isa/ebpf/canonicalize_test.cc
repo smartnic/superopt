@@ -704,7 +704,7 @@ void test6() {
   set_up_smt_inout_orig(pss, p1, sizeof(p1) / sizeof(inst), win_start, win_end);
   int n_inputs = 1;
   vector<inout_t> inputs;
-  gen_random_input_for_win(inputs, n_inputs, pss.static_state[win_start], win_start, win_end);
+  gen_random_input_for_win(inputs, n_inputs, pss.static_state[win_start], p1[win_start], win_start, win_end);
   inout_t output;
   prog_state ps;
   ps.init();
