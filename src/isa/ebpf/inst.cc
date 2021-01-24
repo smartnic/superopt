@@ -594,6 +594,10 @@ void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
   jmp_set.insert(IDX_JNE32XY);
 }
 
+void inst::insert_exit_opcodes(unordered_set<int>& set) const {
+  set.insert(EXIT);
+}
+
 void inst::insert_opcodes_not_gen(unordered_set<int>& opcode_set) const {
   opcode_set.insert(IDX_CALL);
   opcode_set.insert(IDX_LDDW);

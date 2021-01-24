@@ -213,15 +213,6 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   try {
     static_safety_check_pgm(synth->inst_list, len2);
-    if (smt_var::is_win) {
-      bool is_n_one_block = is_win_legal(orig->inst_list, len1, synth->inst_list, len2,
-                                         inout_t::start_insn, inout_t::end_insn);
-      // cout << "is_n_one_block: " << is_n_one_block << endl;
-      if (! is_n_one_block) {
-        synth->set_error_cost(ERROR_COST_MAX);
-        return ERROR_COST_MAX;
-      }
-    }
   } catch (const string err_msg) {
     synth->set_error_cost(ERROR_COST_MAX);
     return ERROR_COST_MAX;

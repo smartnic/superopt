@@ -361,11 +361,14 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
         static_safety_check_pgm(prog_start->inst_list, inst::max_prog_len);
         _cost.set_orig(prog_start, inst::max_prog_len, win.first, win.second);
         // clear the test cases and generate new test cases
-        prog_static_state pss;
-        static_analysis(pss, prog_start->inst_list, inst::max_prog_len);
+        // prog_static_state pss;
+        // static_analysis(pss, prog_start->inst_list, inst::max_prog_len);
         int num_examples = 30;
         vector<inout_t> examples;
-        gen_random_input_for_win(examples, num_examples, pss.static_state[win.first], prog_start->inst_list[win.first], win.first, win.second);
+        gen_random_input_for_win(examples, num_examples,
+                                 _cost._vld._pss_orig.static_state[win.first],
+                                 prog_start->inst_list[win.first],
+                                 win.first, win.second);
         _cost.set_examples(examples, prog_start);
       }
     }
