@@ -335,7 +335,7 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(JNE32XY)
       MAPPER(CALL)
       MAPPER(EXIT)
-    default: return "unknown opcode";
+    default: return "unknown opcode: " + to_string(opcode);
   }
 }
 #undef MAPPER
@@ -887,7 +887,7 @@ int opcode_2_idx(int opcode) {
     case JNE32XY: return IDX_JNE32XY;
     case CALL: return IDX_CALL;
     case EXIT: return IDX_EXIT;
-    default: cout << "unknown opcode" << endl; return 0;
+    default: /* cout << "unknown opcode" << endl; */ return 0;
   }
 }
 
@@ -1036,7 +1036,7 @@ void inst::regs_to_read(vector<int>& regs) const {
         default: cout << "Error: unknown function id " << _imm << endl; return;
       }
     case EXIT: return;
-    default: cout << "unknown opcode" << endl;
+    default: return; /* cout << "unknown opcode" << endl; */
   }
 }
 
@@ -1594,13 +1594,13 @@ void inst::regs_cannot_be_ptrs(vector<int>& regs) const {
     case BE:       regs = {_dst_reg}; return;
     case LDDW:     return;
     case LDXB:     return;
-    case STXB:     regs = {_src_reg}; return; // assume ptr cannot be stored in memory
+    case STXB:     return; // STX: assume ptr can be stored in memory
     case LDXH:     return;
-    case STXH:     regs = {_src_reg}; return;
+    case STXH:     return; // STX: assume ptr can be stored in memory
     case LDXW:     return;
-    case STXW:     regs = {_src_reg}; return;
+    case STXW:     return; // STX: assume ptr can be stored in memory
     case LDXDW:    return;
-    case STXDW:    regs = {_src_reg}; return;
+    case STXDW:    return; // STX: assume ptr can be stored in memory
     case STB:      return;
     case STH:      return;
     case STW:      return;
@@ -1627,7 +1627,7 @@ void inst::regs_cannot_be_ptrs(vector<int>& regs) const {
     case CALL: return;
     case EXIT: return;
 
-    default: cout << "unknown opcode" << endl;
+    default: return;// cout << "unknown opcode" << endl;
   }
 }
 
