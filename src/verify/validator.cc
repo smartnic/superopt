@@ -11,6 +11,8 @@ using namespace z3;
 default_random_engine gen_vld;
 uniform_real_distribution<double> unidist_vld(0.0, 1.0);
 
+bool validator::enable_z3server = true;
+
 /* class validator start */
 validator::validator() {
   _last_counterex.input.init();
@@ -77,29 +79,49 @@ int validator::is_smt_valid(expr& smt, model& mdl) {
   // cout << "is_smt_valid" << endl;
   // Compared to the default tactic, 'bv' tactic is faster
   // for z3 check when processing bit vector
-  tactic t = tactic(smt_c, "bv");
-  solver s = t.mk_solver();
-  s.add(!smt);
-  // cout << "About to invoke z3client\n";
-  string res = write_problem_to_z3server(s.to_smt2());
-  // cout << "Received result from z3server: \n" << res << endl;
-  if (res.compare("unsat") == 0)
-    return 1;
-  else if (res.compare("unknown") == 0)
-    return -1;
-  else if (res.compare(0, 1, "(") == 0) {
-    /* We've received a serialized version of a Z3 model. Extract a
-     * model object from this. */
-    solver s1(smt_c);
-    s1.from_string(res.c_str());
-    auto is_sat = s1.check();
-    assert (is_sat == z3::sat);
-    mdl = s1.get_model();
-    return 0;
+  if (validator::enable_z3server) {
+    tactic t = tactic(smt_c, "bv");
+    solver s = t.mk_solver();
+    s.add(!smt);
+    // cout << "About to invoke z3client\n";
+    string res = write_problem_to_z3server(s.to_smt2());
+    // cout << "Received result from z3server: \n" << res << endl;
+    if (res.compare("unsat") == 0)
+      return 1;
+    else if (res.compare("unknown") == 0)
+      return -1;
+    else if (res.compare(0, 1, "(") == 0) {
+      /* We've received a serialized version of a Z3 model. Extract a
+       * model object from this. */
+      solver s1(smt_c);
+      s1.from_string(res.c_str());
+      auto is_sat = s1.check();
+      assert (is_sat == z3::sat);
+      mdl = s1.get_model();
+      return 0;
+    } else {
+      cout << "z3 solver client received unexpected output: '"
+           << res << "'\n";
+      return -1;
+    }
   } else {
-    cout << "z3 solver client received unexpected output: '"
-         << res << "'\n";
-    return -1;
+    z3::tactic t = z3::tactic(smt_c, "bv");
+    z3::solver s = t.mk_solver();
+    Z3_set_ast_print_mode(s.ctx(), Z3_PRINT_SMTLIB2_COMPLIANT);
+    s.add(!smt);
+    // cout << "Running the solver..." << endl;
+    switch (s.check()) {
+      case z3::unsat: {
+        return 1;
+      }
+      case z3::sat: {
+        mdl = s.get_model();
+        return 0;
+      }
+      case z3::unknown: {
+        return -1;
+      }
+    }
   }
 }
 

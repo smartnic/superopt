@@ -16,7 +16,52 @@ using namespace std;
 
 int loop_times = 1;
 
-void meas_solve_time_delta(inst* p, inst* delta, int start, int len, validator& vld) {
+void meas_solve_time_delta(inst* p, inst* p_new, validator& vld) {
+  // measure the solving time of equivalence check formula
+  auto t1 = NOW;
+  for (int i = 0; i < loop_times; i++) {
+    vld.is_equal_to(p, inst::max_prog_len, p_new, inst::max_prog_len);
+  }
+  auto t2 = NOW;
+  cout << "is_equal_to: " << (DUR(t1, t2) / loop_times) << " us" << endl;
+}
+
+// win prpgram + off-based mutilple memory tables
+void measure_win_prog_off_based_multi_table(inst* p, inst* p_new, int win_start, int len) {
+  cout << "win prpgram + off-based mutilple memory tables......" << endl;
+  validator::enable_z3server = false;
+  bool enable_win = true;
+  smt_var::enable_addr_off = true;
+  int win_end = win_start + len - 1;
+  validator vld(p, inst::max_prog_len, enable_win, win_start, win_end);
+  vld._enable_prog_eq_cache = false;
+  meas_solve_time_delta(p, p_new, vld);
+}
+
+// full program + off-based multiple memory tables
+void measure_full_prog_off_based_multi_table(inst* p, inst* p_new) {
+  cout << "full program + off-based multiple memory tables......" << endl;
+  validator::enable_z3server = false;
+  smt_var::enable_addr_off = true;
+  validator vld(p, inst::max_prog_len);
+  vld._enable_prog_eq_cache = false;
+  meas_solve_time_delta(p, p_new, vld);
+}
+
+// full program + addr-based multiple memory tables
+void measure_full_prog_addr_based_multi_table(inst* p, inst* p_new) {
+  validator::enable_z3server = false;
+  smt_var::enable_addr_off = false;
+  validator vld(p, inst::max_prog_len);
+  vld._enable_prog_eq_cache = false;
+  meas_solve_time_delta(p, p_new, vld);
+  smt_var::enable_addr_off = true;
+}
+
+void meas_solve_time_delta_n_times(inst* p, inst* delta, int start, int len,
+                                   string test_name) {
+  cout << "starting " << test_name << endl;
+
   // Generate a new program according to the program p and delta program
   inst p_new[inst::max_prog_len];
   for (int i = 0; i < inst::max_prog_len; i++) {
@@ -25,17 +70,9 @@ void meas_solve_time_delta(inst* p, inst* delta, int start, int len, validator& 
   for (int i = 0; i < len; i++) {
     p_new[i + start] = delta[i];
   }
-
-  // measure the solving time of equivalence check formula
-  vld.is_equal_to(p, inst::max_prog_len, p_new, inst::max_prog_len);
-}
-
-void meas_solve_time_delta_n_times(inst* p, inst* delta, int start, int len,
-                                   string test_name, validator& vld) {
-  cout << "starting " << test_name << endl;
-  for (int i = 0; i < loop_times; i++) {
-    meas_solve_time_delta(p, delta, start, len, vld);
-  }
+  measure_win_prog_off_based_multi_table(p, p_new, start, len);
+  measure_full_prog_off_based_multi_table(p, p_new);
+  measure_full_prog_addr_based_multi_table(p, p_new);
 }
 
 void meas_solve_time_of_rcv_sock4() {
@@ -55,26 +92,22 @@ void meas_solve_time_of_rcv_sock4() {
   unsigned int n_randoms_u32 = 1;
   mem_t::_layout._n_randoms_u32 = n_randoms_u32;
   smt_var::init_static_variables();
-  // Set rcv_sock4 as the original program in the validator
-  validator vld(rcv_sock4, inst::max_prog_len);
-  inst p1[] = {inst(MOV32XC, 9, 32),
-               inst(MOV32XC, 8, -4),
-               inst(STW, 10, -28, 4),
-               inst(ARSH64XC, 8, 58),
-              };
-  meas_solve_time_delta_n_times(rcv_sock4, p1, 12, 4, "p1", vld);
 
-  inst p2[] = {inst(NOP),
-               INSN_LDMAPID(8, 0),
+  inst p1[] = {inst(LDXW, 1, 6, 24),
+               inst(),
+               inst(MOV32XC, 8, 0),
                inst(STXH, 10, -26, 8),
-               inst(JGTXC, 2, -5, 7),
+               inst(),
               };
-  meas_solve_time_delta_n_times(rcv_sock4, p2, 12, 4, "p2", vld);
+
+  meas_solve_time_delta_n_times(rcv_sock4, p1, 11, 5, "p1");
 }
 
 int main(int argc, char* argv[]) {
   if (argc > 1) {
     loop_times = atoi(argv[1]);
   }
+  logger.set_least_print_level(LOGGER_DEBUG);
   meas_solve_time_of_rcv_sock4();
+  kill_server();
 }

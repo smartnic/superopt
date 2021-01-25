@@ -48,6 +48,7 @@ class validator {
   bool is_in_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache, bool print = false);
   void insert_into_prog_cache(prog& pgm, unordered_map<int, vector<prog*> >& prog_cache);
  public:
+  static bool enable_z3server;
   // pre_: input formula of program: setting register 0 in basic block 0 as input[prog_id]
   // or the input variable of FOL formula as input[prog_id]
   expr _pre_orig = string_to_expr("true");
