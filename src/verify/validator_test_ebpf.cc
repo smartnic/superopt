@@ -12,10 +12,14 @@ using namespace z3;
 void eq_check(inst* p1, int len1, inst* p2, int len2, int expected, string test_name) {
   validator vld(p1, len1);
   vld._enable_prog_eq_cache = false;
+  smt_var::enable_addr_off = true;
   print_test_res(vld.is_equal_to(p1, len1, p2, len2) == expected, test_name);
-  // smt_var::enable_addr_off = false;
-  // print_test_res(vld.is_equal_to(p1, len1, p2, len2) == expected, test_name);
-  // smt_var::enable_addr_off = true;
+
+  smt_var::enable_addr_off = false;
+  validator vld_addr(p1, len1);
+  vld_addr._enable_prog_eq_cache = false;
+  print_test_res(vld_addr.is_equal_to(p1, len1, p2, len2) == expected, test_name);
+  smt_var::enable_addr_off = true;
 }
 
 void win_eq_check(inst* p1, int len1, inst* p2, int len2, int win_start, int win_end,
@@ -220,16 +224,18 @@ void test2() {
 
   // test concrete execution of multiple memory tables
   // different addrs from different path conditions
-  inst p7[8] = {inst(STXB, 10, -1, 1),
-                inst(STXB, 10, -2, 2),
-                inst(MOV64XY, 3, 10),
-                inst(ADD64XC, 3, -1),
-                inst(JGTXY, 1, 2, 1), // if r1 > r2, jmp 1
-                inst(ADD64XC, 3, -1),
-                inst(LDXB, 0, 3, 0),
-                inst(EXIT),
-               };
-  eq_check(p7, 8, p7, 8, 1, "p7 == p7");
+  inst p7[10] = {inst(MOV64XC, 1, 2),
+                 inst(MOV64XC, 2, 1),
+                 inst(STXB, 10, -1, 1),
+                 inst(STXB, 10, -2, 2),
+                 inst(MOV64XY, 3, 10),
+                 inst(ADD64XC, 3, -1),
+                 inst(JGTXY, 1, 2, 1), // if r1 > r2, jmp 1
+                 inst(ADD64XC, 3, -1),
+                 inst(LDXB, 0, 3, 0),
+                 inst(EXIT),
+                };
+  eq_check(p7, 10, p7, 10, 1, "p7 == p7");
 }
 
 void test3() {
