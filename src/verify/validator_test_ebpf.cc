@@ -10,16 +10,29 @@ using namespace z3;
 #define TEST_PGM_MAX_LEN 25
 
 void eq_check(inst* p1, int len1, inst* p2, int len2, int expected, string test_name) {
-  validator vld(p1, len1);
-  vld._enable_prog_eq_cache = false;
+  // offset-based + multiple memory table, multiple map table
+  smt_var::enable_multi_map_tables = true;
   smt_var::enable_addr_off = true;
-  print_test_res(vld.is_equal_to(p1, len1, p2, len2) == expected, test_name);
+  validator vld1(p1, len1);
+  vld1._enable_prog_eq_cache = false;
+  print_test_res(vld1.is_equal_to(p1, len1, p2, len2) == expected, test_name);
 
+  // addr-based + multiple memory table, multiple map table
+  smt_var::enable_multi_map_tables = true;
   smt_var::enable_addr_off = false;
-  validator vld_addr(p1, len1);
-  vld_addr._enable_prog_eq_cache = false;
-  print_test_res(vld_addr.is_equal_to(p1, len1, p2, len2) == expected, test_name);
+  validator vld2(p1, len1);
+  vld2._enable_prog_eq_cache = false;
+  print_test_res(vld2.is_equal_to(p1, len1, p2, len2) == expected, test_name);
   smt_var::enable_addr_off = true;
+
+  // addr-based + multiple memory table, single map table
+  smt_var::enable_multi_map_tables = false;
+  smt_var::enable_addr_off = false;
+  validator vld3(p1, len1);
+  vld3._enable_prog_eq_cache = false;
+  print_test_res(vld3.is_equal_to(p1, len1, p2, len2) == expected, test_name);
+  smt_var::enable_addr_off = true;
+  smt_var::enable_multi_map_tables = true;
 }
 
 void win_eq_check(inst* p1, int len1, inst* p2, int len2, int win_start, int win_end,

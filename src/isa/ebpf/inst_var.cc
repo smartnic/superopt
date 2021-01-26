@@ -8,6 +8,7 @@ vector<vector<register_state>> smt_input::reg_state;
 live_variables smt_output::post_prog_r;
 vector<z3::expr> smt_var::randoms_u32;
 bool smt_var::enable_addr_off = true;
+bool smt_var::enable_multi_map_tables = true;
 bool smt_var::is_win = false;
 int inout_t::start_insn = 0;
 int inout_t::end_insn = 0;
@@ -895,11 +896,19 @@ void smt_var::add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond) {
 void smt_var::get_map_id(vector<int>& map_ids, vector<z3::expr>& path_conds, z3::expr e) {
   map_ids.clear();
   path_conds.clear();
-  auto found = expr_map_id.find(e.id());
-  if (found == expr_map_id.end()) return;
-  for (int i = 0; i < found->second.size(); i++) {
-    map_ids.push_back(found->second[i].map_id);
-    path_conds.push_back(found->second[i].path_cond);
+  if (smt_var::enable_multi_map_tables) {
+    auto found = expr_map_id.find(e.id());
+    if (found == expr_map_id.end()) return;
+    for (int i = 0; i < found->second.size(); i++) {
+      map_ids.push_back(found->second[i].map_id);
+      path_conds.push_back(found->second[i].path_cond);
+    }
+  } else {
+    for (int map_id = 0; map_id < mem_t::maps_number(); map_id++) {
+      map_ids.push_back(map_id);
+      z3::expr cond = (e == to_expr((int64_t)map_id));
+      path_conds.push_back(cond);
+    }
   }
 }
 

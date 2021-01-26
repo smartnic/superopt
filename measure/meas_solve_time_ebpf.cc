@@ -32,10 +32,11 @@ void meas_solve_time_delta(inst* p, inst* p_new, validator& vld) {
   cout << "is_equal_to: " << (DUR(t1, t2) / loop_times) << " us" << endl;
 }
 
-// win program + off-based mutilple memory tables
+// win program + off-based mutilple memory tables + multiple map tables
 void measure_win_prog_off_based_multi_table(inst* p, inst* p_new, int win_start, int win_end) {
-  cout << "win program + off-based mutilple memory tables......" << endl;
+  cout << "win program + off-based mutilple memory tables + multiple map tables......" << endl;
   validator::enable_z3server = false;
+  smt_var::enable_multi_map_tables = true;
   bool enable_win = true;
   smt_var::enable_addr_off = true;
   validator vld(p, inst::max_prog_len, enable_win, win_start, win_end);
@@ -43,10 +44,11 @@ void measure_win_prog_off_based_multi_table(inst* p, inst* p_new, int win_start,
   meas_solve_time_delta(p, p_new, vld);
 }
 
-// full program + off-based multiple memory tables
+// full program + off-based multiple memory tables + multiple map tables
 void measure_full_prog_off_based_multi_table(inst* p, inst* p_new) {
-  cout << "full program + off-based multiple memory tables......" << endl;
+  cout << "full program + off-based multiple memory tables + multiple map tables......" << endl;
   validator::enable_z3server = false;
+  smt_var::enable_multi_map_tables = true;
   smt_var::enable_addr_off = true;
   smt_var::is_win = false;
   validator vld(p, inst::max_prog_len);
@@ -54,10 +56,24 @@ void measure_full_prog_off_based_multi_table(inst* p, inst* p_new) {
   meas_solve_time_delta(p, p_new, vld);
 }
 
-// full program + addr-based multiple memory tables
+// full program + addr-based multiple memory tables + multiple map tables
 void measure_full_prog_addr_based_multi_table(inst* p, inst* p_new) {
-  cout << "full program + addr-based multiple memory tables......" << endl;
+  cout << "full program + addr-based multiple memory tables + multiple map tables......" << endl;
   validator::enable_z3server = false;
+  smt_var::enable_multi_map_tables = true;
+  smt_var::enable_addr_off = false;
+  smt_var::is_win = false;
+  validator vld(p, inst::max_prog_len);
+  vld._enable_prog_eq_cache = false;
+  meas_solve_time_delta(p, p_new, vld);
+  smt_var::enable_addr_off = true;
+}
+
+// full program + addr-based multiple memory tables + single map table
+void measure_full_prog_addr_based_single_map_table(inst* p, inst* p_new) {
+  cout << "full program + addr-based multiple memory tables + single map table......" << endl;
+  validator::enable_z3server = false;
+  smt_var::enable_multi_map_tables = false;
   smt_var::enable_addr_off = false;
   smt_var::is_win = false;
   validator vld(p, inst::max_prog_len);
@@ -70,7 +86,8 @@ void meas_solve_time_delta_n_times(inst* p, inst* delta, int start, int end,
                                    string test_name,
                                    bool test1 = true,
                                    bool test2 = true,
-                                   bool test3 = true) {
+                                   bool test3 = true,
+                                   bool test4 = true) {
   cout << "starting " << test_name << " " << start << "," << end << " " << (end - start + 1) << endl;
 
   // Generate a new program according to the program p and delta program
@@ -84,6 +101,7 @@ void meas_solve_time_delta_n_times(inst* p, inst* delta, int start, int end,
   if (test1) measure_win_prog_off_based_multi_table(p, p_new, start, end);
   if (test2) measure_full_prog_off_based_multi_table(p, p_new);
   if (test3) measure_full_prog_addr_based_multi_table(p, p_new);
+  if (test4) measure_full_prog_addr_based_single_map_table(p, p_new);
 }
 
 void meas_solve_time_of_cilium_recvmsg4() {
@@ -144,14 +162,14 @@ void meas_solve_time_of_katran_xdp_balancer() {
   inst p1[] = {inst(),
                inst(STB, 9, 22, 64),
               };
-  meas_solve_time_delta_n_times(bm, p1, 47, 48, "p1", true, false, false);
+  meas_solve_time_delta_n_times(bm, p1, 47, 48, "p1", true, false, false, false);
 
   inst p2[] = {inst(),
                inst(STB, 9, 54, 129),
                inst(),
                inst(STB, 9, 21, 64),
               };
-  meas_solve_time_delta_n_times(bm, p2, 136, 139, "p2", true, false, false);
+  meas_solve_time_delta_n_times(bm, p2, 136, 139, "p2", true, false, false, false);
 
   inst p3[] = {inst(LDXW, 1, 9, 0),
                inst(STXW, 9, 6, 1),
@@ -160,7 +178,7 @@ void meas_solve_time_of_katran_xdp_balancer() {
                inst(),
                inst(),
               };
-  meas_solve_time_delta_n_times(bm, p3, 185, 190, "p3", true, false, false);
+  meas_solve_time_delta_n_times(bm, p3, 185, 190, "p3", true, false, false, false);
 }
 
 void meas_solve_time_of_xdp_exception() {
