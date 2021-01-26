@@ -12,7 +12,7 @@ void set_nops_as_JA0(inst* program, int len) {
   inst insn_JA0 = inst(JA, 0);
   for (int i = 0; i < len; i++) {
     bool is_nop = false;
-    if (program[i].get_opcode_type() == OP_NOP) {
+    if (program[i]._opcode == NOP) {
       is_nop = true;
       if (i > 0) {
         if (program[i - 1]._opcode == LDDW) { // LDDW contains two insns
@@ -72,7 +72,7 @@ void remove_nops(inst* program, int len) {
     int insn_end = max(i, jmp_dis + i);
     int nop_count = 0;
     for (int j = insn_start; j <= insn_end; j++) {
-      if (program[j].get_opcode_type() == OP_NOP) {
+      if (program[j]._opcode == NOP) {
         bool is_real_nop = true;
         if (j > 0) {
           // LDDW has two insns, the second one's opcode is nop
@@ -93,7 +93,7 @@ void remove_nops(inst* program, int len) {
   int next_new_insn = 0;
   for (int i = 0; i < len; i++) {
     bool is_nop = false;
-    if (program[i].get_opcode_type() == OP_NOP) {
+    if (program[i]._opcode == NOP) {
       is_nop = true;
       if (i > 0) {
         if (program[i - 1]._opcode == LDDW) { // LDDW contains two insns
