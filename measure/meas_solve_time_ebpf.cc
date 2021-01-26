@@ -67,7 +67,10 @@ void measure_full_prog_addr_based_multi_table(inst* p, inst* p_new) {
 }
 
 void meas_solve_time_delta_n_times(inst* p, inst* delta, int start, int end,
-                                   string test_name) {
+                                   string test_name,
+                                   bool test1 = true,
+                                   bool test2 = true,
+                                   bool test3 = true) {
   cout << "starting " << test_name << " " << start << "," << end << " " << (end - start + 1) << endl;
 
   // Generate a new program according to the program p and delta program
@@ -78,9 +81,9 @@ void meas_solve_time_delta_n_times(inst* p, inst* delta, int start, int end,
   for (int i = 0; i < end - start + 1; i++) {
     p_new[i + start] = delta[i];
   }
-  measure_win_prog_off_based_multi_table(p, p_new, start, end);
-  measure_full_prog_off_based_multi_table(p, p_new);
-  measure_full_prog_addr_based_multi_table(p, p_new);
+  if (test1) measure_win_prog_off_based_multi_table(p, p_new, start, end);
+  if (test2) measure_full_prog_off_based_multi_table(p, p_new);
+  if (test3) measure_full_prog_addr_based_multi_table(p, p_new);
 }
 
 void meas_solve_time_of_cilium_recvmsg4() {
@@ -127,6 +130,37 @@ void meas_solve_time_of_cilium_from_network() {
                inst(),
               };
   meas_solve_time_delta_n_times(bm, p2, 31, 36, "p2");
+}
+
+void meas_solve_time_of_katran_xdp_balancer() {
+  set_up_enviornment();
+  inst* bm;
+  vector<inst*> optis_progs;
+  string bm_name = path_prefix + "katran/balancer_kern_xdp-balancer";
+  init_benchmark_from_file(&bm, (bm_name + ".insns").c_str(),
+                           (bm_name + ".maps").c_str(), (bm_name + ".desc").c_str());
+
+  cout << "benchmark: katran, xdp-balancer" << endl;
+  inst p1[] = {inst(),
+               inst(STB, 9, 22, 64),
+              };
+  meas_solve_time_delta_n_times(bm, p1, 47, 48, "p1", true, false, false);
+
+  inst p2[] = {inst(),
+               inst(STB, 9, 54, 129),
+               inst(),
+               inst(STB, 9, 21, 64),
+              };
+  meas_solve_time_delta_n_times(bm, p2, 136, 139, "p2", true, false, false);
+
+  inst p3[] = {inst(LDXW, 1, 9, 0),
+               inst(STXW, 9, 6, 1),
+               inst(LDXH, 1, 9, 4),
+               inst(STXH, 9, 10, 1),
+               inst(),
+               inst(),
+              };
+  meas_solve_time_delta_n_times(bm, p3, 185, 190, "p3", true, false, false);
 }
 
 void meas_solve_time_of_xdp_exception() {
@@ -218,5 +252,6 @@ int main(int argc, char* argv[]) {
   meas_solve_time_of_xdp_cpumap_enqueue();
   meas_solve_time_of_cilium_from_network();
   meas_solve_time_of_cilium_recvmsg4();
+  meas_solve_time_of_katran_xdp_balancer();
   return 0;
 }
