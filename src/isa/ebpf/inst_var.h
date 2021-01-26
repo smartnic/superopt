@@ -393,6 +393,7 @@ class smt_var: public smt_var_base {
   // todo: enable_addr_off and is_win are not suitable to be `static`
   static bool enable_addr_off;
   static bool enable_multi_map_tables;
+  static bool enable_multi_mem_tables;
   static bool is_win;
   smt_var();
   // 1. Convert prog_id and node_id into _name, that is string([prog_id]_[node_id])

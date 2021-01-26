@@ -9,6 +9,7 @@ live_variables smt_output::post_prog_r;
 vector<z3::expr> smt_var::randoms_u32;
 bool smt_var::enable_addr_off = true;
 bool smt_var::enable_multi_map_tables = true;
+bool smt_var::enable_multi_mem_tables = true;
 bool smt_var::is_win = false;
 int inout_t::start_insn = 0;
 int inout_t::end_insn = 0;
@@ -601,25 +602,37 @@ z3::expr smt_mem::get_and_update_addr_v_next(int map_id) {
 void smt_mem::get_mem_ptr_info(vector<int>& table_ids, vector<mem_ptr_info>& ptr_info_list, z3::expr ptr_expr) {
   table_ids.clear();
   ptr_info_list.clear();
-  for (int i = 0; i < _mem_tables.size(); i++) {
-    if (! _mem_tables[i].is_ptr_in_ptrs(ptr_expr)) continue;
-    mem_ptr_info ptr_info = _mem_tables[i].get_ptr_info(ptr_expr);
-    table_ids.push_back(i);
+  if (smt_var::enable_multi_mem_tables) {
+    for (int i = 0; i < _mem_tables.size(); i++) {
+      if (! _mem_tables[i].is_ptr_in_ptrs(ptr_expr)) continue;
+      mem_ptr_info ptr_info = _mem_tables[i].get_ptr_info(ptr_expr);
+      table_ids.push_back(i);
+      ptr_info_list.push_back(ptr_info);
+    }
+  } else {
+    // assume there is only one memory table
+    table_ids.push_back(0);
+    // does not care about the off for a single table, since addr-based memory table is used
+    mem_ptr_info ptr_info(Z3_true);
     ptr_info_list.push_back(ptr_info);
   }
 }
 
 int smt_mem::get_mem_table_id(int type, int map_id) {
-  int not_found_flag = -1;
-  for (int i = 0; i < _mem_tables.size(); i++) {
-    // check type
-    if (_mem_tables[i]._type == type) {
-      if (type != MEM_TABLE_map) return i;
-      // check map_id
-      if (_mem_tables[i]._map_id == map_id) return i;
+  if (smt_var::enable_multi_mem_tables) {
+    int not_found_flag = -1;
+    for (int i = 0; i < _mem_tables.size(); i++) {
+      // check type
+      if (_mem_tables[i]._type == type) {
+        if (type != MEM_TABLE_map) return i;
+        // check map_id
+        if (_mem_tables[i]._map_id == map_id) return i;
+      }
     }
+    return not_found_flag;
+  } else {
+    return 0; // assume there is only one memory table
   }
-  return not_found_flag;
 }
 
 int smt_mem::get_type(int mem_table_id) {

@@ -229,6 +229,10 @@ void validator::insert_into_prog_cache(prog& pgm, unordered_map<int, vector<prog
 }
 
 int validator::safety_check(inst* orig, int len, expr& pre, expr& pl, expr& p_sc, smt_var& sv, smt_input& sin) {
+  if (! smt_var::enable_multi_mem_tables) {
+    // todo: safety check of a single mem table has not been implemented, so skip here
+    return 1;
+  }
   expr smt_safety_chk = implies(pre && pl, p_sc);
   model mdl_sc(smt_c);
   auto t1 = NOW;

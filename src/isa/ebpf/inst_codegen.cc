@@ -207,7 +207,8 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
       } else {
         is_input_mem_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt));
       }
-      if (is_input_mem_table) {
+      if (is_input_mem_table && smt_var::enable_multi_mem_tables) {
+        // todo: safety check of a single mem table has not been implemented, so skip here
         string err_msg = "BPF_ST stores into PTR_TO_CTX reg is not allowed";
         throw (err_msg);
       }
@@ -237,7 +238,7 @@ z3::expr predicate_st_n_bytes(int n, z3::expr in, z3::expr addr, smt_var& sv,
   z3::expr f = string_to_expr("true");
   for (int i = 0; i < n; i++) {
     f = f && predicate_st_byte(in.extract(8 * i + 7, 8 * i), addr, to_expr(i, 64),
-                               sv, block, cond, enable_addr_off);
+                               sv, block, cond, false, enable_addr_off);
   }
   return f;
 }
@@ -309,8 +310,10 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
     f_found_in_wt_after_i = f_found_in_wt_after_i || f_same;
   }
   // stack does not have urt
-  if ((table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) && (! is_win)) {
-    return f;
+  if (smt_var::smt_var::enable_multi_mem_tables) {
+    if ((table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) && (! is_win)) {
+      return f;
+    }
   }
   // add constrains on the element(a, out)
   smt_wt& urt = sv.mem_var._mem_tables[table_id]._urt;

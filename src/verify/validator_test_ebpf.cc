@@ -12,6 +12,7 @@ using namespace z3;
 void eq_check(inst* p1, int len1, inst* p2, int len2, int expected, string test_name) {
   // offset-based + multiple memory table, multiple map table
   smt_var::enable_multi_map_tables = true;
+  smt_var::enable_multi_mem_tables = true;
   smt_var::enable_addr_off = true;
   validator vld1(p1, len1);
   vld1._enable_prog_eq_cache = false;
@@ -19,6 +20,7 @@ void eq_check(inst* p1, int len1, inst* p2, int len2, int expected, string test_
 
   // addr-based + multiple memory table, multiple map table
   smt_var::enable_multi_map_tables = true;
+  smt_var::enable_multi_mem_tables = true;
   smt_var::enable_addr_off = false;
   validator vld2(p1, len1);
   vld2._enable_prog_eq_cache = false;
@@ -27,12 +29,34 @@ void eq_check(inst* p1, int len1, inst* p2, int len2, int expected, string test_
 
   // addr-based + multiple memory table, single map table
   smt_var::enable_multi_map_tables = false;
+  smt_var::enable_multi_mem_tables = true;
   smt_var::enable_addr_off = false;
   validator vld3(p1, len1);
   vld3._enable_prog_eq_cache = false;
   print_test_res(vld3.is_equal_to(p1, len1, p2, len2) == expected, test_name);
   smt_var::enable_addr_off = true;
   smt_var::enable_multi_map_tables = true;
+
+  // addr-based + single memory table, multi map table
+  smt_var::enable_multi_map_tables = true;
+  smt_var::enable_multi_mem_tables = false;
+  smt_var::enable_addr_off = false;
+  validator vld4(p1, len1);
+  vld4._enable_prog_eq_cache = false;
+  print_test_res(vld4.is_equal_to(p1, len1, p2, len2) == expected, test_name);
+  smt_var::enable_addr_off = true;
+  smt_var::enable_multi_mem_tables = true;
+
+  // addr-based + single memory table, single map table
+  smt_var::enable_multi_map_tables = false;
+  smt_var::enable_multi_mem_tables = false;
+  smt_var::enable_addr_off = false;
+  validator vld5(p1, len1);
+  vld5._enable_prog_eq_cache = false;
+  print_test_res(vld5.is_equal_to(p1, len1, p2, len2) == expected, test_name);
+  smt_var::enable_addr_off = true;
+  smt_var::enable_multi_map_tables = true;
+  smt_var::enable_multi_mem_tables = true;
 }
 
 void win_eq_check(inst* p1, int len1, inst* p2, int len2, int win_start, int win_end,
@@ -66,7 +90,6 @@ void test1() {
                            inst(MOV64XC, 0, 0),
                            inst(EXIT),
                           };
-  validator vld(instructions1, 9);
   eq_check(instructions1, 9, instructions1, 9, 1, "instructions1 == instructions1");
   eq_check(instructions1, 9, instructions2, 9, 1, "instructions1 == instructions2");
 
