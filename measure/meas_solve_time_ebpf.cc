@@ -134,7 +134,7 @@ void meas_solve_time_delta_n_times(inst* p, inst* delta, int start, int end,
   if (test2) measure_full_prog_off_based_multi_table(p, p_new);
   if (test3) measure_full_prog_addr_based_multi_table(p, p_new);
   if (test4) measure_full_prog_addr_based_single_map_table(p, p_new);
-  if (test5) measure_full_prog_addr_based_single_mem_table(p, p_new);
+  // if (test5) measure_full_prog_addr_based_single_mem_table(p, p_new);
   if (test6) measure_full_prog_addr_based_single_mem_single_map_table(p, p_new);
 }
 
@@ -182,6 +182,20 @@ void meas_solve_time_of_cilium_from_network() {
                inst(),
               };
   meas_solve_time_delta_n_times(bm, p2, 31, 36, "p2");
+}
+
+void meas_solve_time_of_katran_pkt_cntr() {
+  set_up_enviornment();
+  inst* bm;
+  vector<inst*> optis_progs;
+  string bm_name = path_prefix + "katran/xdp_pktcntr_xdp-pktcntr";
+  init_benchmark_from_file(&bm, (bm_name + ".insns").c_str(),
+                           (bm_name + ".maps").c_str(), (bm_name + ".desc").c_str());
+  inst p1[] = {inst(),
+               inst(STDW, 10, -8, 0),
+               inst(),
+              };
+  meas_solve_time_delta_n_times(bm, p1, 0, 2, "p1");
 }
 
 void meas_solve_time_of_katran_xdp_balancer() {
@@ -302,6 +316,7 @@ int main(int argc, char* argv[]) {
   meas_solve_time_of_xdp_devmap_xmit();
   meas_solve_time_of_xdp_cpumap_kthread();
   meas_solve_time_of_xdp_cpumap_enqueue();
+  meas_solve_time_of_katran_pkt_cntr();
   meas_solve_time_of_cilium_from_network();
   meas_solve_time_of_cilium_recvmsg4();
   meas_solve_time_of_katran_xdp_balancer();
