@@ -455,8 +455,8 @@ z3::expr array_mem_addr_in_one_wt(smt_var& sv1, smt_var& sv2, int mem_sz, int me
   assert(id1 != -1);
   assert(id2 != -1);
   smt_wt& wt1 = sv1.mem_var._mem_tables[id1]._wt;
-  smt_wt& wt2 = sv2.mem_var._mem_tables[id1]._wt;
-  smt_wt& urt1 = sv1.mem_var._mem_tables[id2]._urt;
+  smt_wt& wt2 = sv2.mem_var._mem_tables[id2]._wt;
+  smt_wt& urt1 = sv1.mem_var._mem_tables[id1]._urt;
   for (int i = wt1.size() - 1; i >= 0; i--) {
     z3::expr iv_out = wt1.is_valid[i];
     z3::expr a_out = wt1.addr[i];
@@ -1597,17 +1597,25 @@ void counterex_urt_2_input_map_mem_win(inout_t& input, z3::model & mdl, smt_var&
 // set input memory, for now, set pkt, stack(for window program eq check)
 // 1. get mem_addr_val list according to the pkt mem urt;
 // 2. traverse mem_addr_val list, if the addr is in input memory address range, update "input"
-void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt_input& sin) {
+void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt_input& sin, uint64_t pkt_s) {
   int pkt_sz = mem_t::_layout._pkt_sz;
   if (pkt_sz > 0) {
     int pkt_mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
     assert(pkt_mem_id != -1);
     vector<pair< uint64_t, uint8_t>> mem_addr_val;
-    bool pkt_null_off_chk = false; // since pkt is offset-record in the table
-    get_mem_from_mdl(mem_addr_val, mdl, sv, pkt_mem_id, pkt_null_off_chk);
+    if (smt_var::enable_addr_off) {
+      bool pkt_null_off_chk = false; // since pkt is offset-record in the table
+      get_mem_from_mdl(mem_addr_val, mdl, sv, pkt_mem_id, pkt_null_off_chk);
+    } else {
+      bool pkt_null_off_chk = true;
+      get_mem_from_mdl(mem_addr_val, mdl, sv, pkt_mem_id, pkt_null_off_chk);
+    }
 
     for (int i = 0; i < mem_addr_val.size(); i++) {
-      uint64_t off = mem_addr_val[i].first;
+      uint64_t off;
+      if (smt_var::enable_addr_off) off = mem_addr_val[i].first;
+      else off = mem_addr_val[i].first - pkt_s;
+
       uint8_t val = mem_addr_val[i].second;
       assert(off < pkt_sz);
       input.pkt[off] = val;
@@ -1682,7 +1690,7 @@ void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model & mdl, smt_v
   counterex_2_input_simu_r10(input, mdl, sv);
   counterex_2_input_simu_pkt_ptrs(input, mdl, sv);
   counterex_2_input_randoms_u32(input, mdl, sv);
-  counterex_urt_2_input_mem(input, mdl, sv, sin);
+  counterex_urt_2_input_mem(input, mdl, sv, sin, input.input_simu_pkt_s);
   for (int i = 0; i < mem_t::maps_number(); i++) {
     int mem_id = sv.mem_var.get_mem_table_id(MEM_TABLE_map, i);
     assert(mem_id != -1);
