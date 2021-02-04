@@ -17,5 +17,6 @@ sudo make install
 cd ../../
 git clone https://github.com/smartnic/superopt.git
 cd superopt
-make main.out
+make main_ebpf.out
 ```
+Todo: add more instructions soon
