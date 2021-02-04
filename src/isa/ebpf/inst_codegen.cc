@@ -487,13 +487,8 @@ z3::expr array_mem_addr_in_one_wt(smt_var& sv1, smt_var& sv2, int mem_sz, int me
       z3::expr iv_in = urt1.is_valid[j];
       z3::expr a_in = urt1.addr[j];
       z3::expr v_in = urt1.val[j];
-      z3::expr a_in_in_mem = Z3_true;
-      if (! smt_var::enable_multi_mem_tables) {
-        a_in_in_mem = addr_in_mem_range(a_in, mem_s, mem_e);
-      }
 
-      f = f && z3::implies(a_out_in_mem && a_in_in_mem &&
-                           iv_in && f_a_out &&
+      f = f && z3::implies(a_out_in_mem && iv_in && f_a_out &&
                            f_a_not_in_wt2 && (a_out == a_in),
                            v_out == v_in);
     }
@@ -659,10 +654,8 @@ z3::expr smt_array_mem_eq_chk(smt_var& sv1, smt_var& sv2, int mem_sz,
         z3::expr v2 = wt2.val[j];
         z3::expr f_a2 = latest_write_element(j, wt2.is_valid, wt2.addr);
         z3::expr a2_in_mem = Z3_true;
-        if (! smt_var::enable_multi_mem_tables) {
-          a2_in_mem = addr_in_mem_range(a2, mem_s, mem_e);
-        }
-        f = f && z3::implies(a1_in_mem && a2_in_mem && iv1 && iv2 && f_a1 && f_a2 && (a1 == a2), v1 == v2);
+
+        f = f && z3::implies(a1_in_mem && iv1 && iv2 && f_a1 && f_a2 && (a1 == a2), v1 == v2);
       }
     }
   }
