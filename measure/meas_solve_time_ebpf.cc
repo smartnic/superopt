@@ -134,7 +134,7 @@ void meas_solve_time_delta_n_times(inst* p, inst* delta, int start, int end,
   if (test2) measure_full_prog_off_based_multi_table(p, p_new);
   if (test3) measure_full_prog_addr_based_multi_table(p, p_new);
   if (test4) measure_full_prog_addr_based_single_map_table(p, p_new);
-  // if (test5) measure_full_prog_addr_based_single_mem_table(p, p_new);
+  if (test5) measure_full_prog_addr_based_single_mem_table(p, p_new);
   if (test6) measure_full_prog_addr_based_single_mem_single_map_table(p, p_new);
 }
 
