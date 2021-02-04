@@ -1168,6 +1168,10 @@ z3::expr smt_array_mem_set_same_input(smt_var& sv1, smt_var& sv2, int mem_sz, in
   z3::expr f = Z3_true;
   smt_wt& mem1_urt = sv1.mem_var._mem_tables[id1]._urt;
   smt_wt& mem2_urt = sv2.mem_var._mem_tables[id2]._urt;
+
+  z3::expr mem_s = sv1.get_mem_start(mem_table_type, map_id);
+  z3::expr mem_e = sv1.get_mem_end(mem_table_type, map_id);
+
   bool cond = (mem1_urt.size() > 0) && (mem2_urt.size() > 0);
   if (!cond) return f;
 
@@ -1175,13 +1179,17 @@ z3::expr smt_array_mem_set_same_input(smt_var& sv1, smt_var& sv2, int mem_sz, in
     z3::expr iv1 = mem1_urt.is_valid[i];
     z3::expr a1 = mem1_urt.addr[i];
     z3::expr v1 = mem1_urt.val[i];
+    z3::expr a1_in_mem = Z3_true;
+    if (! smt_var::enable_multi_mem_tables) {
+      a1_in_mem = addr_in_mem_range(a1, mem_s, mem_e);
+    }
 
     for (int j = 0; j < mem2_urt.size(); j++) {
       z3::expr iv2 = mem2_urt.is_valid[j];
       z3::expr a2 = mem2_urt.addr[j];
       z3::expr v2 = mem2_urt.val[j];
 
-      f = f && z3::implies(iv1 && iv2 && (a1 == a2), v1 == v2);
+      f = f && z3::implies(a1_in_mem && iv1 && iv2 && (a1 == a2), v1 == v2);
     }
   }
   return f;
