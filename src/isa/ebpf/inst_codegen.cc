@@ -446,6 +446,11 @@ z3::expr addr_in_addrs(z3::expr a, vector<z3::expr>& is_valid_list, vector<z3::e
   return f;
 }
 
+z3::expr addr_in_mem_range(z3::expr addr, z3::expr mem_s, z3::expr mem_e) {
+  // 1. mem_s <= addr; 2. addr <= mem_e
+  return ule(mem_s, addr) && ule(addr, mem_e);
+}
+
 // pkt address only in mem_p1 wt => pkt address in mem_p1 urt && same value in wt and urt
 z3::expr array_mem_addr_in_one_wt(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_table_type, int map_id) {
   z3::expr f = Z3_true;
@@ -457,6 +462,12 @@ z3::expr array_mem_addr_in_one_wt(smt_var& sv1, smt_var& sv2, int mem_sz, int me
   smt_wt& wt1 = sv1.mem_var._mem_tables[id1]._wt;
   smt_wt& wt2 = sv2.mem_var._mem_tables[id2]._wt;
   smt_wt& urt1 = sv1.mem_var._mem_tables[id1]._urt;
+
+  // get mem_s and mem_e according to mem_table_type and map_id
+  // sv1 and sv2 have the same mem_s and mem_e
+  z3::expr mem_s = sv1.get_mem_start(mem_table_type, map_id);
+  z3::expr mem_e = sv1.get_mem_end(mem_table_type, map_id);
+
   for (int i = wt1.size() - 1; i >= 0; i--) {
     z3::expr iv_out = wt1.is_valid[i];
     z3::expr a_out = wt1.addr[i];
@@ -464,13 +475,25 @@ z3::expr array_mem_addr_in_one_wt(smt_var& sv1, smt_var& sv2, int mem_sz, int me
     z3::expr f_a_out = iv_out && latest_write_element(i, wt1.is_valid, wt1.addr);
     z3::expr f_a_not_in_wt2 = !addr_in_addrs(a_out, wt2.is_valid, wt2.addr);
     z3::expr f_a_in_urt1 = addr_in_addrs(a_out, urt1.is_valid, urt1.addr);
-    f = f && z3::implies(f_a_out && f_a_not_in_wt2, f_a_in_urt1);
+    z3::expr a_out_in_mem = Z3_true;
+    if (! smt_var::enable_multi_mem_tables) {
+      a_out_in_mem = addr_in_mem_range(a_out, mem_s, mem_e);
+    }
+
+    f = f && z3::implies(a_out_in_mem && f_a_out && f_a_not_in_wt2, f_a_in_urt1);
+
 
     for (int j = 0; j < urt1.size(); j++) {
       z3::expr iv_in = urt1.is_valid[j];
       z3::expr a_in = urt1.addr[j];
       z3::expr v_in = urt1.val[j];
-      f = f && z3::implies(iv_in && f_a_out &&
+      z3::expr a_in_in_mem = Z3_true;
+      if (! smt_var::enable_multi_mem_tables) {
+        a_in_in_mem = addr_in_mem_range(a_in, mem_s, mem_e);
+      }
+
+      f = f && z3::implies(a_out_in_mem && a_in_in_mem &&
+                           iv_in && f_a_out &&
                            f_a_not_in_wt2 && (a_out == a_in),
                            v_out == v_in);
     }
@@ -596,10 +619,13 @@ z3::expr smt_array_mem_eq_chk_win(smt_var& sv1, smt_var& sv2, int mem_sz, int me
   return f;
 }
 
-// 1. pkt address in both mem_p1 wt and mem_p2 wt => same value (latest write)
-// 2. pkt address in one of wts => value (latest write) == input
-z3::expr smt_array_mem_eq_chk(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_table_type, bool is_win, int map_id = -1) {
+// [mem_s, mem_e], addr-based memory start and end addresses
+// 1. address in both mem_p1 wt and mem_p2 wt => same value (latest write)
+// 2. address in one of wts => value (latest write) == input
+z3::expr smt_array_mem_eq_chk(smt_var& sv1, smt_var& sv2, int mem_sz,
+                              int mem_table_type, bool is_win, int map_id = -1) {
   if ((is_win) && (map_id == -1)) {
+    // since win eq's memory table is off-based, don't need mem_s, mem_e
     z3::expr f = smt_array_mem_eq_chk_win(sv1, sv2, mem_sz, mem_table_type, map_id);
     return f;
   }
@@ -611,6 +637,10 @@ z3::expr smt_array_mem_eq_chk(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_ta
   z3::expr f = Z3_true;
   smt_wt& wt1 = sv1.mem_var._mem_tables[id1]._wt;
   smt_wt& wt2 = sv2.mem_var._mem_tables[id2]._wt;
+  // get mem_s and mem_e according to mem_table_type and map_id
+  // sv1 and sv2 have the same mem_s and mem_e
+  z3::expr mem_s = sv1.get_mem_start(mem_table_type, map_id);
+  z3::expr mem_e = sv1.get_mem_end(mem_table_type, map_id);
   // case 1: pkt address in both wts, latest write should be the same
   if ((wt1.size() > 0) && (wt2.size() > 0)) {
     for (int i = wt1.size() - 1; i >= 0; i--) {
@@ -618,13 +648,21 @@ z3::expr smt_array_mem_eq_chk(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_ta
       z3::expr a1 = wt1.addr[i];
       z3::expr v1 = wt1.val[i];
       z3::expr f_a1 = latest_write_element(i, wt1.is_valid, wt1.addr);
+      z3::expr a1_in_mem = Z3_true;
+      if (! smt_var::enable_multi_mem_tables) {
+        a1_in_mem = addr_in_mem_range(a1, mem_s, mem_e);
+      }
 
       for (int j = wt2.size() - 1; j >= 0; j--) {
         z3::expr iv2 = wt2.is_valid[j];
         z3::expr a2 = wt2.addr[j];
         z3::expr v2 = wt2.val[j];
         z3::expr f_a2 = latest_write_element(j, wt2.is_valid, wt2.addr);
-        f = f && z3::implies(iv1 && iv2 && f_a1 && f_a2 && (a1 == a2), v1 == v2);
+        z3::expr a2_in_mem = Z3_true;
+        if (! smt_var::enable_multi_mem_tables) {
+          a2_in_mem = addr_in_mem_range(a2, mem_s, mem_e);
+        }
+        f = f && z3::implies(a1_in_mem && a2_in_mem && iv1 && iv2 && f_a1 && f_a2 && (a1 == a2), v1 == v2);
       }
     }
   }

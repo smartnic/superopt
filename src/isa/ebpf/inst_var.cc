@@ -874,13 +874,13 @@ z3::expr smt_var::new_var(unsigned int bit_sz) {
   return to_expr(name, bit_sz);
 }
 
-z3::expr smt_var::get_map_start_addr(int map_id) { // return value: z3 bv64
+z3::expr smt_var::get_map_start_addr(int map_id) const { // return value: z3 bv64
   unsigned int map_start_off = mem_t::get_mem_off_by_idx_in_map(map_id, 0);
   z3::expr map_start_addr = (mem_var._stack_start + to_expr((uint64_t)map_start_off)).simplify();
   return map_start_addr;
 }
 
-z3::expr smt_var::get_map_end_addr(int map_id) { // return value: z3 bv64
+z3::expr smt_var::get_map_end_addr(int map_id) const { // return value: z3 bv64
   unsigned int number_entries = mem_t::map_max_entries(map_id);
   unsigned int map_end_off = mem_t::get_mem_off_by_idx_in_map(map_id, number_entries) - 1;
   z3::expr map_end_addr = (mem_var._stack_start + to_expr((uint64_t)map_end_off)).simplify();
@@ -922,6 +922,48 @@ void smt_var::get_map_id(vector<int>& map_ids, vector<z3::expr>& path_conds, z3:
       z3::expr cond = (e == to_expr((int64_t)map_id));
       path_conds.push_back(cond);
     }
+  }
+}
+
+z3::expr smt_var::get_mem_start(int type, int map_id) const {
+  // assert(type < mem_var._mem_tables.size());
+  // if (type == MEM_TABLE_map) {
+  //   assert(map_id >= 0);
+  //   assert(map_id < mem_t::maps_number());
+  // }
+  if (type == MEM_TABLE_stack) {
+    return get_stack_start_addr();
+  } else if (type == MEM_TABLE_pkt_ptrs) {
+    return get_pkt_start_ptr_addr();
+  } else if (type == MEM_TABLE_pkt) {
+    return get_pkt_start_addr();
+  } else if (type == MEM_TABLE_map) {
+    return get_map_start_addr(map_id);
+  } else if (type == MEM_TABLE_skb) {
+    return get_skb_start_addr();
+  } else {
+    return NULL_ADDR_EXPR;
+  }
+}
+
+z3::expr smt_var::get_mem_end(int type, int map_id) const {
+  // assert(type < mem_var._mem_tables.size());
+  // if (type == MEM_TABLE_map) {
+  //   assert(map_id >= 0);
+  //   assert(map_id < mem_t::maps_number());
+  // }
+  if (type == MEM_TABLE_stack) {
+    return get_stack_end_addr();
+  } else if (type == MEM_TABLE_pkt_ptrs) {
+    return get_pkt_end_ptr_addr();
+  } else if (type == MEM_TABLE_pkt) {
+    return get_pkt_end_addr();
+  } else if (type == MEM_TABLE_map) {
+    return get_map_end_addr(map_id);
+  } else if (type == MEM_TABLE_skb) {
+    return get_skb_end_addr();
+  } else {
+    return NULL_ADDR_EXPR;
   }
 }
 

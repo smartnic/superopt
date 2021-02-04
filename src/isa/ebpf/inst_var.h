@@ -408,14 +408,19 @@ class smt_var: public smt_var_base {
   z3::expr update_addr_v();
   z3::expr update_map_helper_func_ret();
   z3::expr new_var(unsigned int bit_sz);
-  z3::expr get_stack_start_addr() {return mem_var._stack_start;} // return value: z3 bv64
-  z3::expr get_stack_end_addr() {return (mem_var._stack_start + STACK_SIZE - 1);} // return value: z3 bv64
-  z3::expr get_stack_bottom_addr() {return (mem_var._stack_start + STACK_SIZE);}
-  z3::expr get_map_start_addr(int map_id); // return value: z3 bv64
-  z3::expr get_map_end_addr(int map_id); // return value: z3 bv64
-  z3::expr get_pkt_start_addr() {return mem_var._pkt_start;}
-  z3::expr get_pkt_end_addr() {return (mem_var._pkt_start + mem_var._pkt_off);}
+  z3::expr get_stack_start_addr() const {return mem_var._stack_start;} // return value: z3 bv64
+  z3::expr get_stack_end_addr() const {return (mem_var._stack_start + STACK_SIZE - 1);} // return value: z3 bv64
+  z3::expr get_stack_bottom_addr() const {return (mem_var._stack_start + STACK_SIZE);}
+  z3::expr get_map_start_addr(int map_id) const; // return value: z3 bv64
+  z3::expr get_map_end_addr(int map_id) const; // return value: z3 bv64
+  z3::expr get_pkt_start_addr() const {return mem_var._pkt_start;}
+  z3::expr get_pkt_end_addr() const {return (mem_var._pkt_start + mem_var._pkt_off);}
   z3::expr get_pkt_start_ptr_addr() const {return mem_var._pkt_start_ptr_addr;}
+  z3::expr get_pkt_end_ptr_addr() const {return (mem_var._pkt_start_ptr_addr + 8 - 1);}
+  z3::expr get_skb_start_addr() const {return mem_var._skb_start;}
+  z3::expr get_skb_end_addr() const {return mem_var._skb_end;}
+  z3::expr get_mem_start(int type, int map_id = -1) const;
+  z3::expr get_mem_end(int type, int map_id = -1) const;
   z3::expr mem_layout_constrain() const;
   void add_expr_map_id(z3::expr e, z3::expr map_id_expr, z3::expr path_cond = Z3_true);
   void add_expr_map_id(z3::expr e, int map_id, z3::expr path_cond = Z3_true);
