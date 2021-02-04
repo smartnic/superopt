@@ -883,7 +883,17 @@ void test5() { // test pkt
                 inst(STXB, 1, 1, 5),
                 inst(EXIT),
                };
-  eq_check(p7, 5, p8, 4, 1, "9");
+  eq_check(p7, 5, p8, 4, 1, "10");
+
+  // test only one program modifies stack
+  inst p9[2] = {inst(LDXB, 0, 1, 0), // r0 = pkt[0]
+                inst(EXIT),
+               };
+  inst p10[3] = {inst(STB, 10, -1, 0xff),
+                 inst(LDXB, 0, 1, 0), // r0 = pkt[0]
+                 inst(EXIT),
+                };
+  eq_check(p9, 2, p10, 3, 1, "11");
 }
 
 void test6() {
