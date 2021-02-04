@@ -1724,22 +1724,25 @@ void test13() {
   sv1.init();
   sv2.init();
   pkt_mem_id = sv1.mem_var.get_mem_table_id(MEM_TABLE_pkt);
-  sv1.mem_var.add_ptr(pkt_s, pkt_mem_id, ZERO_ADDR_OFF_EXPR);
-  sv1.mem_var.add_ptr(pkt_e, pkt_mem_id, pkt_e - pkt_s);
-  sv2.mem_var.add_ptr(pkt_s, pkt_mem_id, ZERO_ADDR_OFF_EXPR);
-  sv2.mem_var.add_ptr(pkt_e, pkt_mem_id, pkt_e - pkt_s);
-  f_mem_layout_constrain = sv1.mem_layout_constrain();
-  f_operations = Z3_true;
+  z3::expr pkt_s_expr = to_expr("pkt_s_test");
+  z3::expr pkt_e_expr = to_expr("pkt_e_test");
   pkt_s = sv1.get_pkt_start_addr(); // sv1, sv2 have the same pkt start address
   pkt_e = sv1.get_pkt_end_addr(); // sv1, sv2 have the same pkt start address
+  z3::expr f_pkt_s_e = (pkt_s_expr == pkt_s) && (pkt_e_expr == pkt_e);
+  sv1.mem_var.add_ptr(pkt_s_expr, pkt_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv1.mem_var.add_ptr(pkt_e_expr, pkt_mem_id, pkt_e - pkt_s);
+  sv2.mem_var.add_ptr(pkt_s_expr, pkt_mem_id, ZERO_ADDR_OFF_EXPR);
+  sv2.mem_var.add_ptr(pkt_e_expr, pkt_mem_id, pkt_e - pkt_s);
+  f_mem_layout_constrain = sv1.mem_layout_constrain();
+  f_operations = Z3_true;
   v1 = v("v1");
   v2 = v("v2");
   inout_t input;
   input.init();
   // v1, v2 are the outputs, v1 = pkt[0], v2 = pkt[sz-1], get counter example and update input
   // check the input pkt[0] != input pkt[sz-1]
-  f_operations = predicate_ld8(pkt_s, v(0), sv1, v1) &&
-                 predicate_ld8(pkt_e, v(0), sv2, v2);
+  f_operations = predicate_ld8(pkt_s_expr, v(0), sv1, v1);
+  f_operations = f_operations && predicate_ld8(pkt_e_expr, v(0), sv2, v2);
   z3::expr f_same_input = smt_pkt_set_same_input(sv1, sv2);
   z3::expr smt = z3::implies(f_mem_layout_constrain && f_same_input && f_operations, v1 == v2);
   z3::model mdl(smt_c);
