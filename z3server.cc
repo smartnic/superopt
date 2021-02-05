@@ -45,9 +45,9 @@ string run_solver(char* formula) {
     }
   }
 }
-void set_seed(){
+void set_seed() {
   srand (time(NULL));
-  int iSecret = rand() % ((int) pow(2,8)) + 1;
+  int iSecret = rand() % ((int) pow(2, 8)) + 1;
   // iSecret = rand() % 4 + 1;
   cout << "z3server: seed = " << iSecret << endl;
   z3::set_param("sls.random_seed", iSecret);
@@ -107,7 +107,7 @@ int read_problem_from_z3client(int PORT) {
              total_read < FORMULA_SIZE_BYTES);
     if (total_read >= FORMULA_SIZE_BYTES)
       cout << "Exhausted formula read buffer\n";
-    
+
     //cout << "z3server: Recieved Formula from client on port: " << PORT << endl;
 
     /* Run the solver. */
@@ -125,8 +125,7 @@ int read_problem_from_z3client(int PORT) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 2)
-  {
+  if (argc != 2) {
     cout << "No port argument" << endl;
     return 1;
   }
