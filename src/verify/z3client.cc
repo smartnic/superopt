@@ -23,7 +23,7 @@ using namespace std;
 #define SOLVER_RESPAWN_THRESOLD 1000
 
 
-int SERVER_PORT = 8002; /* default port */ 
+int SERVER_PORT = 8002; /* default port */
 z3::context c;
 pid_t child_pid_1 = -1;
 pid_t child_pid_2 = -1;
@@ -113,7 +113,7 @@ void read_from_solver(int sock) {
 }
 
 /* Poll Server Status non-blocking */
-int poll_servers(int sock, int timeout){
+int poll_servers(int sock, int timeout) {
   fd_set fds;
   FD_ZERO (&fds);
   FD_SET (sock, &fds);
@@ -129,7 +129,7 @@ string write_problem_to_z3server(string formula) {
   bool time_to_respawn = (! no_child_now) &&
                          nsolve1 > 0 && nsolve1 % SOLVER_RESPAWN_THRESOLD == 0;
   if (no_child_now || time_to_respawn) {
-    if (time_to_respawn) /* kill the existing server. */ 
+    if (time_to_respawn) /* kill the existing server. */
       kill(child_pid_1, SIGKILL);
 
     child_pid_1 = spawn_server(SERVER_PORT);
@@ -142,12 +142,12 @@ string write_problem_to_z3server(string formula) {
   /* Server Two */
   no_child_now = child_pid_2 <= 0;
   time_to_respawn = (! no_child_now) &&
-                         nsolve2 > 0 && nsolve2 % SOLVER_RESPAWN_THRESOLD == 0;
+                    nsolve2 > 0 && nsolve2 % SOLVER_RESPAWN_THRESOLD == 0;
   if (no_child_now || time_to_respawn) {
-    if (time_to_respawn) /* kill the existing server. */ 
+    if (time_to_respawn) /* kill the existing server. */
       kill(child_pid_2, SIGKILL);
 
-    child_pid_2 = spawn_server(SERVER_PORT+1000);
+    child_pid_2 = spawn_server(SERVER_PORT + 1000);
     if (child_pid_2 <= 0) { /* unsuccessful spawn */
       cout << "z3client: spawning server 1 failed\n";
       return "";
@@ -159,8 +159,8 @@ string write_problem_to_z3server(string formula) {
   //cout << "Connecting Server 1\n";
   int sock1 = create_and_connect_socket(SERVER_PORT);
   //cout << "Connecting Server 2\n";
-  int sock2 = create_and_connect_socket(SERVER_PORT+1000);
-  if (sock1 == -1 || sock2 == -1){ /* socket creation error */
+  int sock2 = create_and_connect_socket(SERVER_PORT + 1000);
+  if (sock1 == -1 || sock2 == -1) { /* socket creation error */
     return "";
   }
 
@@ -184,39 +184,35 @@ string write_problem_to_z3server(string formula) {
   }
   int server1_read = FD_ISSET (sock1, &fds);
   int server2_read = FD_ISSET (sock2, &fds);
-  int status; 
+  int status;
   if (server1_read > 0 && server2_read > 0) { /* both sockets are readable */
     cout << "z3Client: both servers returned\n";
     read_from_solver(sock1);
     read_from_solver(sock2);
     nsolve1++;
     nsolve2++;
-  }
-  else if (server1_read > 0 && server2_read == 0) { /* socket 1 is readable */
+  } else if (server1_read > 0 && server2_read == 0) { /* socket 1 is readable */
     read_from_solver(sock1);
     server2_read = poll_servers(sock2, 2);
-    if (server2_read > 0){
+    if (server2_read > 0) {
       cout << "z3client: both servers returned\n";
       read_from_solver(sock2);
       nsolve2++;
-    }
-    else{
+    } else {
       cout << "z3client: Only server 1 returned. Killing server 2\n";
       kill(child_pid_2, SIGKILL);
       waitpid(child_pid_2, &status, 0);
-      child_pid_2 = spawn_server(SERVER_PORT+1000);
+      child_pid_2 = spawn_server(SERVER_PORT + 1000);
     }
     nsolve1++;
-  }
-  else if (server1_read == 0 && server2_read > 0) { /* socket 2 is readable */
+  } else if (server1_read == 0 && server2_read > 0) { /* socket 2 is readable */
     read_from_solver(sock2);
     server1_read = poll_servers(sock1, 2);
-    if (server1_read > 0){
+    if (server1_read > 0) {
       cout << "z3client: both servers returned\n";
       read_from_solver(sock1);
       nsolve1++;
-    }
-    else{
+    } else {
       cout << "z3client: Only server 2 returned. Killing server 1\n";
       kill(child_pid_1, SIGKILL);
       waitpid(child_pid_1, &status, 0);
