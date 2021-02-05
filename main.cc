@@ -378,7 +378,6 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 1: in_para.bm = stoi(optarg); break;
       case 2: in_para.bm_from_file = true; break;
       case 3: in_para.bytecode = optarg; break;
-        <<< <<< < HEAD
       case 4: in_para.map = optarg; break;
       case 5: in_para.desc = optarg; break;
       case 6: in_para.w_e = stod(optarg); break;
