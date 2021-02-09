@@ -63,7 +63,6 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
       << "enable_prog_uneq_cache:" << ip.enable_prog_uneq_cache << endl
       << "is_win:" << ip.is_win << endl
       << "logger_level: " << ip.logger_level << endl;
-  out << "server_port:" << ip.server_port << endl;
   return out;
 }
 
@@ -402,7 +401,6 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 25: in_para.enable_prog_uneq_cache = true; break;
       case 26: in_para.is_win = true; break;
       case 27: in_para.logger_level = stoi(optarg); break;
-      case 28: in_para.server_port = stoi(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -465,7 +463,6 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.enable_prog_uneq_cache = false;
   in_para.is_win = false;
   in_para.logger_level = LOGGER_ERROR;
-  in_para.server_port = 8002;
 }
 
 void write_insns_to_file(prog* current_program, string prefix_name) {
