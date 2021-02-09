@@ -192,7 +192,7 @@ string write_problem_to_z3server(string formula) {
   int server2_read = FD_ISSET (sock2, &fds);
   int status;
   if (server1_read > 0 && server2_read > 0) { /* both sockets are readable */
-    cout << "z3Client: both servers returned\n";
+    // cout << "z3Client: both servers returned\n";
     read_from_solver(sock1);
     read_from_solver(sock2);
     nsolve1++;
@@ -201,7 +201,7 @@ string write_problem_to_z3server(string formula) {
     read_from_solver(sock1);
     server2_read = poll_servers(sock2, 2);
     if (server2_read > 0) {
-      cout << "z3client: both servers returned\n";
+      // cout << "z3client: both servers returned\n";
       read_from_solver(sock2);
       nsolve2++;
     } else {
@@ -215,7 +215,7 @@ string write_problem_to_z3server(string formula) {
     read_from_solver(sock2);
     server1_read = poll_servers(sock1, 2);
     if (server1_read > 0) {
-      cout << "z3client: both servers returned\n";
+      // cout << "z3client: both servers returned\n";
       read_from_solver(sock1);
       nsolve1++;
     } else {
