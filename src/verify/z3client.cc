@@ -60,15 +60,21 @@ int spawn_server(int port) {
   }
 }
 
-void kill_server() {
-  if (pid == 0) return;
-  string cmd = "kill -9 " + to_string(pid);
+void kill_server_by_pid(pid_t id) {
+  if (id == 0) return;
+  string cmd = "kill -9 " + to_string(id);
   int status = system(cmd.c_str());
   if ((status != -1) && WIFEXITED(status) && (WEXITSTATUS(status) == 0)) {
-    cout << "kill the z3 solver server successfully" << endl;
+    cout << "kill the z3 solver server " << id << " successfully" << endl;
   } else {
-    cout << "kill the z3 solver server failed" << endl;
+    cout << "kill the z3 solver server "  << id << " failed" << endl;
   }
+}
+
+void kill_server() {
+  kill_server_by_pid(pid);
+  kill_server_by_pid(child_pid_1);
+  kill_server_by_pid(child_pid_2);
 }
 
 int create_and_connect_socket(int port) {
