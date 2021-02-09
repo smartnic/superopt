@@ -34,6 +34,12 @@ int nsolve2 = 0;
 char form_buffer[FORMULA_SIZE_BYTES + 1] = {0};
 char res_buffer[RESULT_SIZE_BYTES + 1] = {0};
 
+// server_id starts from 0
+int get_server_port(int server_id) {
+  assert(server_id >= 0);
+  return (SERVER_PORT + server_id);
+}
+
 int spawn_server(int port) {
   // cout << "Hello before sleep\n";
   // sleep(10);
@@ -132,7 +138,7 @@ string write_problem_to_z3server(string formula) {
     if (time_to_respawn) /* kill the existing server. */
       kill(child_pid_1, SIGKILL);
 
-    child_pid_1 = spawn_server(SERVER_PORT);
+    child_pid_1 = spawn_server(get_server_port(0));
     if (child_pid_1 <= 0) { /* unsuccessful spawn */
       cout << "z3client: spawning server 1 failed\n";
       return "";
@@ -147,7 +153,7 @@ string write_problem_to_z3server(string formula) {
     if (time_to_respawn) /* kill the existing server. */
       kill(child_pid_2, SIGKILL);
 
-    child_pid_2 = spawn_server(SERVER_PORT + 1000);
+    child_pid_2 = spawn_server(get_server_port(1));
     if (child_pid_2 <= 0) { /* unsuccessful spawn */
       cout << "z3client: spawning server 1 failed\n";
       return "";
@@ -157,9 +163,9 @@ string write_problem_to_z3server(string formula) {
 
   /* Make connection request to server */
   //cout << "Connecting Server 1\n";
-  int sock1 = create_and_connect_socket(SERVER_PORT);
+  int sock1 = create_and_connect_socket(get_server_port(0));
   //cout << "Connecting Server 2\n";
-  int sock2 = create_and_connect_socket(SERVER_PORT + 1000);
+  int sock2 = create_and_connect_socket(get_server_port(1));
   if (sock1 == -1 || sock2 == -1) { /* socket creation error */
     return "";
   }
@@ -202,7 +208,7 @@ string write_problem_to_z3server(string formula) {
       cout << "z3client: Only server 1 returned. Killing server 2\n";
       kill(child_pid_2, SIGKILL);
       waitpid(child_pid_2, &status, 0);
-      child_pid_2 = spawn_server(SERVER_PORT + 1000);
+      child_pid_2 = spawn_server(get_server_port(1));
     }
     nsolve1++;
   } else if (server1_read == 0 && server2_read > 0) { /* socket 2 is readable */
@@ -216,7 +222,7 @@ string write_problem_to_z3server(string formula) {
       cout << "z3client: Only server 2 returned. Killing server 1\n";
       kill(child_pid_1, SIGKILL);
       waitpid(child_pid_1, &status, 0);
-      child_pid_1 = spawn_server(SERVER_PORT);
+      child_pid_1 = spawn_server(get_server_port(0));
     }
     nsolve2++;
   }
