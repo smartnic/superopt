@@ -1708,6 +1708,33 @@ void test11() {
     print_test_res(it->second == input.maps_mem[0][0], "interpret program 3");
   }
   smt_output::post_prog_r.clear();
+
+  inst p4[] = {inst(LDXW, 0, 7, 0),}; // r0 = u16 (*r7+0) r7 = map1_v + 1
+  input.clear();
+  output.clear();
+  expected.clear();
+  input.is_win = true;
+  inout_t::start_insn = 0;
+  inout_t::end_insn = 0;
+  input.reg_readable.resize(NUM_REGS);
+  input.stack_readble.resize(STACK_SIZE);
+  input.reg_type.resize(NUM_REGS);
+  input.reg_readable[7] = true;
+  input.input_simu_r10 = 0x10000;
+  // r7 = map_v + 1
+  uint64_t map1_v_addr_s = input.input_simu_r10 - STACK_SIZE + mem_t::get_mem_off_by_idx_in_map(1, 0);
+  input.regs[7] = map1_v_addr_s + 1;
+  input.reg_type[7] = PTR_TO_MAP_VALUE;
+  string err_msg_expected = "addr out of map value bound";
+  bool p4_res = false;
+  try {
+    interpret(output, p4, 1, ps, input);
+  } catch (string err_msg) {
+    if (err_msg.find(err_msg_expected) != string::npos) {
+      p4_res = true;
+    }
+  }
+  print_test_res(p4_res, "interpret program 4");
   smt_var::is_win = false;
 }
 

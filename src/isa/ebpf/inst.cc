@@ -1427,19 +1427,19 @@ INSN_NEG64XC:
 #define LDST(SIZEOP, SIZE)                                           \
   INSN_LDX##SIZEOP:                                                  \
     ps.reg_safety_chk(DST_ID, vector<int>{SRC_ID});                  \
-    real_addr = get_real_addr_by_simu(SRC + OFF, MEM, SR, ps.get_reg_type(SRC_ID)); \
+    real_addr = get_real_addr_by_simu(SRC + OFF, MEM, SR, ps.get_reg_type(SRC_ID), SIZE/8); \
     ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, true, true);  \
     DST = compute_ld##SIZE(real_addr, 0);                            \
     CONT;                                                            \
   INSN_STX##SIZEOP:                                                  \
     ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});          \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR, ps.get_reg_type(DST_ID)); \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR, ps.get_reg_type(DST_ID), SIZE/8); \
     ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false, true); \
     compute_st##SIZE(SRC, real_addr, 0);                             \
     CONT;                                                            \
   INSN_ST##SIZEOP:                                                   \
     ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                  \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR, ps.get_reg_type(DST_ID)); \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR, ps.get_reg_type(DST_ID), SIZE/8); \
     ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false, true); \
     compute_st##SIZE(IMM, real_addr, 0);                             \
     CONT;
@@ -1452,7 +1452,7 @@ INSN_NEG64XC:
 #define XADD(SIZE)                                                   \
   INSN_XADD##SIZE:                                                   \
     ps.reg_safety_chk(DST_ID, vector<int>{DST_ID, SRC_ID});          \
-    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR, ps.get_reg_type(DST_ID)); \
+    real_addr = get_real_addr_by_simu(DST + OFF, MEM, SR, ps.get_reg_type(DST_ID), SIZE/8); \
     ps.memory_access_and_safety_chk(real_addr, SIZE/8, true, false, true); \
     compute_xadd##SIZE(SRC, real_addr, 0);                           \
     CONT;

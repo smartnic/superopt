@@ -1859,7 +1859,8 @@ uint64_t get_simu_addr_by_real(uint64_t real_addr, mem_t& mem, simu_real sr) {
   throw (err_msg);
 }
 
-uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int reg_type) {
+// size is for safety check
+uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int reg_type, int size) {
   if (reg_type == PTR_TO_STACK) {
     uint64_t stack_start = mem.get_simu_mem_start_addr();
     if ((simu_addr >= stack_start) && (simu_addr < stack_start + STACK_SIZE)) {
@@ -1877,13 +1878,25 @@ uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int
       if (n_maps > 0) {
         for (int map_id = 0; map_id < mem_t::maps_number(); map_id++) {
           uint64_t map_s = mem.get_simu_mem_start_addr() + mem_t::get_mem_off_by_idx_in_map(map_id, 0);
-          uint64_t map_e = mem.get_simu_mem_start_addr() + mem_t::get_mem_off_by_idx_in_map(map_id, 1);
+          uint64_t map_e = mem.get_simu_mem_start_addr() + mem_t::get_mem_off_by_idx_in_map(map_id, 1) - 1;
           if ((simu_addr >= map_s) && (simu_addr <= map_e)) {
-            return (simu_addr + sr.real_r10 - sr.simu_r10);
+            // further check whether [simu_addr, simu_addr+size) in the
+            // map value range [v_off, v_off+v_sz)
+            int v_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
+            uint64_t v_off = v_sz * ((simu_addr - map_s) / v_sz);
+            if ((simu_addr - map_s + size) <= (v_off + v_sz)) {
+              return (simu_addr + sr.real_r10 - sr.simu_r10);
+            } else {
+              flag = false;
+              err_msg = "addr out of map value bound, convert simu_addr to real_addr fail";
+            }
           }
         }
-        flag = false;
-        err_msg = "addr not in map region, convert simu_addr to real_addr fail";
+
+        if (flag) { // if flag is false, mean detect error before.
+          flag = false;
+          err_msg = "addr not in map region, convert simu_addr to real_addr fail";
+        }
       } else {
         flag = false;
         err_msg = "there is no maps, convert simu_addr to real_addr fail";
@@ -1893,10 +1906,11 @@ uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int
         throw (err_msg);
       }
     }
-  }
-  if ((simu_addr >= mem.get_simu_mem_start_addr()) &&
-      (simu_addr <= mem.get_simu_mem_end_addr())) {
-    return (simu_addr + sr.real_r10 - sr.simu_r10);
+  } else {
+    if ((simu_addr >= mem.get_simu_mem_start_addr()) &&
+        (simu_addr <= mem.get_simu_mem_end_addr())) {
+      return (simu_addr + sr.real_r10 - sr.simu_r10);
+    }
   }
   int pgm_input_type = mem_t::get_pgm_input_type();
   if ((pgm_input_type == PGM_INPUT_pkt) || (pgm_input_type == PGM_INPUT_skb)) {

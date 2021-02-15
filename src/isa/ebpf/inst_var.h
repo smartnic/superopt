@@ -564,7 +564,7 @@ void update_ps_by_input(prog_state& ps, const inout_t& input);
 // not update input_simu_r10 which is only used for input
 void update_output_by_ps(inout_t& output, const prog_state& ps);
 uint64_t get_simu_addr_by_real(uint64_t real_addr, mem_t& mem, simu_real sr);
-uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int reg_type);
+uint64_t get_real_addr_by_simu(uint64_t simu_addr, mem_t& mem, simu_real sr, int reg_type, int size = 1);
 void get_cmp_lists(vector<int64_t>& val_list1, vector<int64_t>& val_list2,
                    inout_t& output1, inout_t& output2);
 int get_mem_size_by_layout();
