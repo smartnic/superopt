@@ -670,6 +670,24 @@ void test5() {
   vector<register_state> expected_insn3_r0_p4;
   print_test_res(reg_state_is_equal(expected_insn3_r0_p4, pss.static_state[3].reg_state[0]), "4");
 
+  // p5: check pkt_start and pkt_end
+  inst p5[] = {inst(LDXW, 2, 1, 4),
+               inst(LDXW, 7, 1, 0),
+               inst(MOV64XC, 0, 0),
+               inst(EXIT),
+              };
+  static_analysis(pss, p5, sizeof(p5) / sizeof(inst));
+  // check r2 state before executing insn 1
+  vector<register_state> expected_insn1_r2_p5;
+  expected_insn1_r2_p5.push_back(register_state{PTR_TO_PACKET_END, 0});
+  print_test_res(reg_state_is_equal(expected_insn1_r2_p5, pss.static_state[1].reg_state[2]), "5.1");
+  // check r2, r7 state before executing insn 2
+  vector<register_state> expected_insn2_r2_p5, expected_insn2_r7_p5;
+  expected_insn2_r2_p5.push_back(register_state{PTR_TO_PACKET_END, 0});
+  print_test_res(reg_state_is_equal(expected_insn2_r2_p5, pss.static_state[2].reg_state[2]), "5.2");
+  expected_insn2_r7_p5.push_back(register_state{PTR_TO_PKT, 0});
+  print_test_res(reg_state_is_equal(expected_insn2_r7_p5, pss.static_state[2].reg_state[7]), "5.3");
+
   cout << "5.2 safety check" << endl;
   test_safety_check(p1, sizeof(p1) / sizeof(inst), true, "1");
   test_safety_check(p2, sizeof(p2) / sizeof(inst), true, "2");

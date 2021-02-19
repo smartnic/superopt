@@ -417,13 +417,19 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   // keep strack of pointers and constant
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
-    // deal with pkt start pointer: check 1. src_reg's type is PTR_TO_CTX, off == 0
-    // 2. insn is: LDXW ri rj 0 (ri = *(u32*)(rj+0))
-    if ((opcode == LDXW) && (off == 0) && (iss.reg_state[src_reg].size() == 1)) {
-      if ((iss.reg_state[src_reg][0].type == PTR_TO_CTX) &&
-          (iss.reg_state[src_reg][0].off == 0)) {
-        iss.set_reg_state(dst_reg, PTR_TO_PKT, 0);
-        return; // return here in case the reg state is overwritten by the remaining code
+    // deal with pkt pointers: pkt_start and pkt_end
+    // check 1. src_reg's type is PTR_TO_CTX
+    // 2. pkt_start: insn is: LDXW ri rj 0 (ri = *(u32*)(rj+0))
+    // 3. pkt_end: insn is: LDXW ri rj 4 (ri = *(u32*)(rj+4))
+    if ((opcode == LDXW) && (iss.reg_state[src_reg].size() == 1)) {
+      if (iss.reg_state[src_reg][0].type == PTR_TO_CTX) {
+        if ((iss.reg_state[src_reg][0].off == 0) && (off == 0)) {
+          iss.set_reg_state(dst_reg, PTR_TO_PKT, 0);
+          return; // return here in case the reg state is overwritten by the remaining code
+        } else if ((iss.reg_state[src_reg][0].off == 0) && (off == 4)) {
+          iss.set_reg_state(dst_reg, PTR_TO_PACKET_END, 0);
+          return;
+        }
       }
     }
   }
