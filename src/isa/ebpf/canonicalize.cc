@@ -153,6 +153,7 @@ void canonicalize(inst* program, int len) {
 
 inst_static_state::inst_static_state() {
   reg_state.resize(NUM_REGS);
+  min_pkt_sz = mem_t::_layout._pkt_sz;
 }
 
 void inst_static_state::copy_reg_state(int dst_reg, int src_reg) {
@@ -238,6 +239,7 @@ inst_static_state& inst_static_state::operator=(const inst_static_state &rhs) {
   reg_state = rhs.reg_state;
   live_var.regs = rhs.live_var.regs;
   live_var.mem = rhs.live_var.mem;
+  min_pkt_sz = rhs.min_pkt_sz;
   return *this;
 }
 
@@ -252,6 +254,7 @@ ostream& operator<<(ostream& out, const inst_static_state& x) {
   }
   out << endl;
   out << "live variables: " << x.live_var << endl;
+  out << "min pkt sz: " << x.min_pkt_sz << endl;
   return out;
 }
 

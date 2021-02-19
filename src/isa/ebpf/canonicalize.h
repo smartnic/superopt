@@ -15,6 +15,7 @@ class inst_static_state {
  public:
   vector<vector<register_state>> reg_state; // all possible states of registers
   live_variables live_var;
+  unsigned int min_pkt_sz; // minimum pkt size before executing the insn.
 
   inst_static_state();
   void copy_reg_state(int dst_reg, int src_reg);
