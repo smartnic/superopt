@@ -921,7 +921,39 @@ void static_analysis(prog_static_state& pss, inst* program, int len) {
   min_pkt_sz_inference_pgm(pss, program, len);
 }
 
-void safety_chk_insn(inst& insn, const vector<vector<register_state>>& reg_state) {
+// return -1 if there is no offs
+int get_pkt_max_access_off(unordered_map<int, unordered_set<int>>& mem_offs) {
+  auto it = mem_offs.find(PTR_TO_PKT);
+  if (it == mem_offs.end()) return -1;
+  unordered_set<int>& offs = it->second;
+  int max_write_off = INT_MAX;
+  for (auto off : offs) {
+    if (max_write_off > off) max_write_off = off;
+  }
+  return max_write_off;
+}
+
+// check pkt memory access: out of bound
+void safety_chk_insn_pkt_mem_access(inst& insn, inst_static_state& iss) {
+  // check whether is memory access insn
+  if (! insn.is_mem_inst()) return;
+  unordered_map<int, unordered_set<int>> mem_write_offs, mem_read_offs;
+  get_mem_write_offs(mem_write_offs, iss.reg_state, insn);
+  get_mem_read_offs(mem_read_offs, iss.reg_state, insn);
+  int pkt_max_off = max(get_pkt_max_access_off(mem_write_offs),
+                        get_pkt_max_access_off(mem_read_offs));
+  if (pkt_max_off == -1) return;
+
+  // check whether pkt_max_off < min_pkt_sz
+  if (pkt_max_off >= iss.min_pkt_sz) {
+    string err_msg = "pkt (size: " + to_string(iss.min_pkt_sz) +
+                     ") out of bound, accessing " + to_string(pkt_max_off);
+    throw (err_msg);
+  }
+}
+
+void safety_chk_insn(inst& insn, inst_static_state& iss) {
+  const vector<vector<register_state>>& reg_state = iss.reg_state;
   vector<int> not_ptr_regs;
   insn.regs_cannot_be_ptrs(not_ptr_regs);
   for (int i = 0; i < not_ptr_regs.size(); i++) {
@@ -941,6 +973,8 @@ void safety_chk_insn(inst& insn, const vector<vector<register_state>>& reg_state
       throw (err_msg);
     }
   }
+
+  safety_chk_insn_pkt_mem_access(insn, iss);
 }
 
 void static_safety_check_pgm(inst* program, int len) {
@@ -949,8 +983,9 @@ void static_safety_check_pgm(inst* program, int len) {
   pss.g.gen_graph(program, len);
   topo_sort_for_graph(pss.dag, pss.g);
   type_const_inference_pgm(pss, program, len);
+  min_pkt_sz_inference_pgm(pss, program, len);
   for (int i = 0; i < len; i++) {
-    safety_chk_insn(program[i], pss.static_state[i].reg_state);
+    safety_chk_insn(program[i], pss.static_state[i]);
   }
 }
 
@@ -967,7 +1002,7 @@ void static_safety_check_win(inst* win_prog, int win_start, int win_end, prog_st
     type_const_inference_inst(ss_win[i + 1], win_prog[i + win_start]);
   }
   for (int i = 0; i < win_len; i++) {
-    safety_chk_insn(win_prog[i + win_start], ss_win[i].reg_state);
+    safety_chk_insn(win_prog[i + win_start], ss_win[i]);
   }
 }
 

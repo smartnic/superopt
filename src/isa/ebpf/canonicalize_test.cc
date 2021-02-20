@@ -599,6 +599,7 @@ void test4() {
   cout << "4.1 illegal pointer operations" << endl;
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(32);
   mem_t::add_map(map_attr(8, 8, 32)); // k_sz: 8 bits; v_sz: 8 bits; max_entirs: 32
   inst p1_1[] = {inst(JEQXC, 1, 0, 0),
                  inst(EXIT),
@@ -704,7 +705,37 @@ void test5() {
                  inst(LDXW, 3, 2, 0),
                  inst(EXIT),
                 };
-  test_safety_check(p2_1, sizeof(p2_1) / sizeof(inst), true, "3");
+  test_safety_check(p2_1, sizeof(p2_1) / sizeof(inst), false, "3");
+
+  inst p2_2[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
+                 inst(LDXW, 7, 1, 0), // r7: pkt_s
+                 inst(MOV64XY, 3, 7), // r3 = r7 + 4
+                 inst(ADD64XC, 3, 4),
+                 inst(JGTXY, 3, 2, 2), // if r3 > r2, exit;
+                 inst(STW, 7, 0, 1),   // 5: pkt[0:3] safe
+                 inst(STB, 7, 4, 1),   // 6: unsafe
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  test_safety_check(p2_2, sizeof(p2_2) / sizeof(inst), false, "p2.2");
+
+  inst p2_3[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
+                 inst(LDXW, 7, 1, 0), // r7: pkt_s
+                 inst(MOV64XY, 3, 7), // r3 = r7 + 4
+                 inst(ADD64XC, 3, 4),
+                 inst(JGTXY, 3, 2, 5), // if r3 > r2, exit;
+                 inst(STB, 7, 0, 1),   // 5: sz = 4
+                 inst(MOV64XY, 3, 7),  // 6: sz = 4
+                 inst(ADD64XC, 3, 6),  // r3 = r7 + 6
+                 inst(JGTXY, 3, 2, 1), // 8: sz = 4
+                 inst(STB, 7, 6, 1),   // 9: sz = 6, unsafe accessing pkt[6]
+                 inst(MOV64XC, 0, 0),  // 10: sz = min(0, 4, 6) = 0
+                 inst(EXIT),
+                };
+  test_safety_check(p2_3, sizeof(p2_3) / sizeof(inst), false, "p2.3");
+
+  // test_safety_check_win(p5_1, sizeof(p5_1) / sizeof(inst), 5, 5, true, "5.2");
+  // test_safety_check_win(p5_1, sizeof(p5_1) / sizeof(inst), 6, 6, false, "5.3");
 
   cout << "5.3 liveness analysis" << endl;
   inst p3_1[] = {inst(LDXW, 2, 1, 0),
@@ -729,8 +760,8 @@ void test5() {
                  inst(MOV64XY, 3, 7), // r3 = r7 + 4
                  inst(ADD64XC, 3, 4),
                  inst(JGTXY, 3, 2, 2), // if r3 > r2, exit; else pkt[0:1] = 1;
-                 inst(STB, 3, 0, 1),  // 5: sz = 4
-                 inst(STB, 3, 1, 1),  // 6: sz = 4
+                 inst(STB, 7, 0, 1),  // 5: sz = 4
+                 inst(STB, 7, 1, 1),  // 6: sz = 4
                  inst(MOV64XC, 0, 0), // 7: sz = min(0, 4)
                  inst(EXIT),
                 };
@@ -748,11 +779,11 @@ void test5() {
                  inst(MOV64XY, 3, 7), // r3 = r7 + 4
                  inst(ADD64XC, 3, 4),
                  inst(JGTXY, 3, 2, 5), // if r3 > r2, exit;
-                 inst(STB, 3, 0, 1),   // 5: sz = 4
+                 inst(STB, 7, 0, 1),   // 5: sz = 4
                  inst(MOV64XY, 3, 7),  // 6: sz = 4
                  inst(ADD64XC, 3, 6),  // r3 = r7 + 6
                  inst(JGTXY, 3, 2, 1), // 8: sz = 4
-                 inst(STB, 3, 5, 1),   // 9: sz = 6
+                 inst(STB, 7, 5, 1),   // 9: sz = 6
                  inst(MOV64XC, 0, 0),  // 10: sz = min(0, 4, 6) = 0
                  inst(EXIT),
                 };
@@ -769,12 +800,12 @@ void test5() {
                  inst(MOV64XY, 3, 7), // r3 = r7 + 4
                  inst(ADD64XC, 3, 4),
                  inst(JGTXY, 3, 2, 6), // 4: if r3 > r2, exit;
-                 inst(STB, 3, 0, 1),   // 5: sz = 4
+                 inst(STB, 7, 0, 1),   // 5: sz = 4
                  inst(MOV64XY, 3, 7),  // 6: sz = 4
                  inst(ADD64XC, 3, 6),  // r3 = r7 + 6
                  inst(JGTXY, 3, 2, 1), // 8: sz = 4
-                 inst(STB, 3, 5, 1),   // 9: sz = 6
-                 inst(STB, 3, 3, 1),   // 10: sz = min(4, 6) = 4
+                 inst(STB, 7, 5, 1),   // 9: sz = 6
+                 inst(STB, 7, 3, 1),   // 10: sz = min(4, 6) = 4
                  inst(MOV64XC, 0, 0),  // 11: sz = min(min(4, 6), 0) = 0
                  inst(EXIT),
                 };
@@ -825,12 +856,12 @@ void test5() {
                  inst(MOV64XY, 3, 7), // r3 = r7 + 4
                  inst(ADD64XC, 3, 4),
                  inst(JGTXY, 3, 2, 6), // 4: if r3 > r2, exit;
-                 inst(STB, 3, 0, 1),   // 5: sz = 4
+                 inst(STB, 7, 0, 1),   // 5: sz = 4
                  inst(MOV64XY, 3, 7),  // 6: sz = 4
                  inst(ADD64XC, 3, 6),  // r3 = r7 + 6
                  inst(JGTXC, 3, 0xff, 1), // 8: sz = 4
                  inst(JA, 1),          // 9: sz = 4
-                 inst(STB, 3, 3, 1),   // 10: sz = min(4, 4) = 4
+                 inst(STB, 7, 3, 1),   // 10: sz = min(4, 4) = 4
                  inst(MOV64XC, 0, 0),  // 11: sz = min(4, 0) = 0
                  inst(EXIT),
                 };
