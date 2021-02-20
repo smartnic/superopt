@@ -786,8 +786,11 @@ void live_analysis_pgm(prog_static_state& pss, inst* program, int len) {
 unsigned int get_min_pkt_sz_by_gt(int min_pkt_sz_default,
                                   vector<register_state>& rl_s,
                                   vector<register_state>& rr_s) {
-  assert(rl_s.size() > 0);
-  assert(rr_s.size() > 0);
+  if ((rl_s.size() <= 0) || (rr_s.size() <= 0)) {
+    string err_msg = "[get_min_pkt_sz_by_gt] no state for register";
+    throw (err_msg);
+  }
+
   // check rl points to pkt
   for (int i = 0; i < rl_s.size(); i++) {
     if (rl_s[i].type != PTR_TO_PKT) return min_pkt_sz_default;
