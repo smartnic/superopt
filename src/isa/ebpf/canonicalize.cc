@@ -827,12 +827,15 @@ void upd_min_pkt_sz_by_jmp_insn(unsigned int& not_jmp_min_pkt_sz,
 }
 
 void min_pkt_sz_inference_pgm(prog_static_state& pss, inst* program, int len) {
-  int default_min_pkt_sz = mem_t::_layout._pkt_sz;
-  if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
-    default_min_pkt_sz = 0;
+  if (mem_t::get_pgm_input_type() != PGM_INPUT_pkt_ptrs) {
+    for (int i = 0; i < pss.static_state.size(); i++) {
+      pss.static_state[i].min_pkt_sz = mem_t::_layout._pkt_sz;
+    }
+    return;
   }
+
   for (int i = 0; i < pss.static_state.size(); i++) {
-    pss.static_state[i].min_pkt_sz = default_min_pkt_sz;
+    pss.static_state[i].min_pkt_sz = 0;
   }
   assert(pss.dag.size() >= 1);
   vector<inst_static_state>& ss = pss.static_state;
