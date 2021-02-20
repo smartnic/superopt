@@ -579,10 +579,7 @@ void test_safety_check_win(inst* program, int len,
                            int win_start, int win_end,
                            bool expected_safe, string test_name) {
   prog_static_state pss;
-  pss.static_state.resize(len + 1);
-  pss.g.gen_graph(program, len);
-  topo_sort_for_graph(pss.dag, pss.g);
-  type_const_inference_pgm(pss, program, len);
+  static_analysis(pss, program, len);
 
   bool is_succ = false;
   try {
@@ -717,7 +714,9 @@ void test5() {
                  inst(MOV64XC, 0, 0),
                  inst(EXIT),
                 };
-  test_safety_check(p2_2, sizeof(p2_2) / sizeof(inst), false, "p2.2");
+  test_safety_check(p2_2, sizeof(p2_2) / sizeof(inst), false, "p2.2 1");
+  test_safety_check_win(p2_2, sizeof(p2_2) / sizeof(inst), 5, 5, true, "p2.2 2");
+  test_safety_check_win(p2_2, sizeof(p2_2) / sizeof(inst), 6, 6, false, "p2.2 3");
 
   inst p2_3[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
                  inst(LDXW, 7, 1, 0), // r7: pkt_s
@@ -732,10 +731,9 @@ void test5() {
                  inst(MOV64XC, 0, 0),  // 10: sz = min(0, 4, 6) = 0
                  inst(EXIT),
                 };
-  test_safety_check(p2_3, sizeof(p2_3) / sizeof(inst), false, "p2.3");
-
-  // test_safety_check_win(p5_1, sizeof(p5_1) / sizeof(inst), 5, 5, true, "5.2");
-  // test_safety_check_win(p5_1, sizeof(p5_1) / sizeof(inst), 6, 6, false, "5.3");
+  test_safety_check(p2_3, sizeof(p2_3) / sizeof(inst), false, "p2.3 1");
+  test_safety_check_win(p2_3, sizeof(p2_3) / sizeof(inst), 5, 5, true, "p2.3 2");
+  test_safety_check_win(p2_3, sizeof(p2_3) / sizeof(inst), 9, 9, false, "p2.3 3");
 
   cout << "5.3 liveness analysis" << endl;
   inst p3_1[] = {inst(LDXW, 2, 1, 0),

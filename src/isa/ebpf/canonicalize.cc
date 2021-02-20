@@ -829,6 +829,15 @@ void upd_min_pkt_sz_by_jmp_insn(unsigned int& not_jmp_min_pkt_sz,
   }
 }
 
+// min_pkt_sz_inference for win program without branches
+void min_pkt_sz_inference_win(vector<inst_static_state>& iss_win,
+                              inst_static_state& iss) {
+  unsigned int min_pkt_sz = iss.min_pkt_sz;
+  for (int i = 0; i < iss_win.size(); i++) {
+    iss_win[i].min_pkt_sz = min_pkt_sz;
+  }
+}
+
 void min_pkt_sz_inference_pgm(prog_static_state& pss, inst* program, int len) {
   if (mem_t::get_pgm_input_type() != PGM_INPUT_pkt_ptrs) {
     for (int i = 0; i < pss.static_state.size(); i++) {
@@ -1001,6 +1010,8 @@ void static_safety_check_win(inst* win_prog, int win_start, int win_end, prog_st
     ss_win[i + 1].reg_state = ss_win[i].reg_state;
     type_const_inference_inst(ss_win[i + 1], win_prog[i + win_start]);
   }
+  min_pkt_sz_inference_win(ss_win, pss_orig.static_state[win_start]);
+
   for (int i = 0; i < win_len; i++) {
     safety_chk_insn(win_prog[i + win_start], ss_win[i]);
   }
