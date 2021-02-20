@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <utility>
+#include <algorithm>
 #include "canonicalize.h"
 
 default_random_engine gen_ebpf_cano;
@@ -779,6 +780,130 @@ void live_analysis_pgm(prog_static_state& pss, inst* program, int len) {
   }
 }
 
+// rl > rr, rl_s and rr_s are the register states of rl and rr
+// check rl points to pkt and rr is PTR_TO_PACKET_END
+// return value is the max(min_pkt_sz when rl > rr, min_pkt_sz_default)
+unsigned int get_min_pkt_sz_by_gt(int min_pkt_sz_default,
+                                  vector<register_state>& rl_s,
+                                  vector<register_state>& rr_s) {
+  assert(rl_s.size() > 0);
+  assert(rr_s.size() > 0);
+  // check rl points to pkt
+  for (int i = 0; i < rl_s.size(); i++) {
+    if (rl_s[i].type != PTR_TO_PKT) return min_pkt_sz_default;
+  }
+  // check rr is PTR_TO_PACKET_END with 0 offset
+  for (int i = 0; i < rl_s.size(); i++) {
+    if (rr_s[i].type != PTR_TO_PACKET_END) return min_pkt_sz_default;
+    if (rr_s[i].off != 0) return min_pkt_sz_default;
+  }
+  // update min_pkt_sz_case_true
+  int min_pkt_sz = rl_s[0].off;
+  for (int i = 1; i < rl_s.size(); i++) {
+    min_pkt_sz = min(min_pkt_sz, rl_s[i].off);
+  }
+  min_pkt_sz = max(min_pkt_sz, min_pkt_sz_default);
+  return min_pkt_sz;
+}
+
+// not_jmp_min_pkt_sz = min(min_pkt_sz_not_jmp, min_pkt_sz_default)
+// jmp_min_pkt_sz = min(min_pkt_sz_jmp, min_pkt_sz_default)
+void upd_min_pkt_sz_by_jmp_insn(unsigned int& not_jmp_min_pkt_sz,
+                                unsigned int& jmp_min_pkt_sz,
+                                unsigned int min_pkt_sz_default,
+                                inst& insn,
+                                vector<vector<register_state>> regs_s) {
+  not_jmp_min_pkt_sz = min_pkt_sz_default;
+  jmp_min_pkt_sz = min_pkt_sz_default;
+  // check opcode is JMPXY
+  int op_type = insn.get_opcode_type();
+  if (op_type != OP_COND_JMP) return;
+  int src_reg = insn._src_reg;
+  int dst_reg = insn._dst_reg;
+  switch (insn._opcode) {
+    case JGTXY: not_jmp_min_pkt_sz = get_min_pkt_sz_by_gt(min_pkt_sz_default, regs_s[dst_reg], regs_s[src_reg]);
+    default: return;
+  }
+}
+
+void min_pkt_sz_inference_pgm(prog_static_state& pss, inst* program, int len) {
+  int default_min_pkt_sz = mem_t::_layout._pkt_sz;
+  if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
+    default_min_pkt_sz = 0;
+  }
+  for (int i = 0; i < pss.static_state.size(); i++) {
+    pss.static_state[i].min_pkt_sz = default_min_pkt_sz;
+  }
+  assert(pss.dag.size() >= 1);
+  vector<inst_static_state>& ss = pss.static_state;
+  graph& g = pss.g;
+  vector<unsigned int>& dag = pss.dag;
+
+  // Since min_pkt_sz is from either input or jmp instruction, instructions in each basic block
+  // have the same min_pkt_sz. We can calculate min_pkt_sz for each basic block and then update
+  // min_pkt_sz for each instruction
+  int n_block = dag.size();
+  vector<unsigned int> block_min_pkt_sz(n_block);
+
+  // store min_pkt_sz for block_e instructions
+  vector<unsigned int> block_e_not_jmp(n_block);
+  vector<unsigned int> block_e_jmp(n_block);
+
+  // initialize the min_pkt_sz for the first block (root)
+  block_min_pkt_sz[0] = 0;
+
+  // process block_e instructions and update block's min_pkt_sz in order of dag
+  for (int i = 0; i < dag.size(); i++) {
+    unsigned int block = dag[i];
+    // update block's min_pkt_sz by incoming blocks
+    unsigned int min_pkt_sz_blocks_in = 0;
+    for (int j = 0; j < g.nodes_in[block].size(); j++) { // root block does not have incoming blocks
+      unsigned int block_in = g.nodes_in[block][j];
+      unsigned int block_in_insn = g.nodes[block_in]._end;
+      // if block_in_insn is not an insn that will change min_pkt_sz,
+      // block_e_not_jmp[block_in_insn] == block_e_jmp[block_in_insn].
+      // so we only need to care about for jmp/not jmp case, where to get min_pkt_sz
+      if ( (program[block_in_insn].get_opcode_type() == OP_COND_JMP) &&
+           (program[block_in_insn].get_jmp_dis() == 0) ) {
+        unsigned int block_in_min_pkt_sz = min(block_e_not_jmp[block_in], block_e_jmp[block_in]);
+        if (min_pkt_sz_blocks_in == 0) min_pkt_sz_blocks_in = block_in_min_pkt_sz;
+        else min_pkt_sz_blocks_in = min(min_pkt_sz_blocks_in, block_in_min_pkt_sz);
+      } else {
+        // check whether block_in -> block is jmp or not jmp
+        bool not_jmp = false;
+        if ((block_in_insn + 1) == g.nodes[block]._start) {// not jmp
+          not_jmp = true;
+        }
+
+        if (not_jmp) {
+          if (min_pkt_sz_blocks_in == 0) min_pkt_sz_blocks_in = block_e_not_jmp[block_in];
+          else min_pkt_sz_blocks_in = min(min_pkt_sz_blocks_in, block_e_not_jmp[block_in]);
+        } else {
+          if (min_pkt_sz_blocks_in == 0) min_pkt_sz_blocks_in = block_e_jmp[block_in];
+          else min_pkt_sz_blocks_in = min(min_pkt_sz_blocks_in, block_e_jmp[block_in]);
+        }
+      }
+    }
+
+    block_min_pkt_sz[block] = min_pkt_sz_blocks_in;
+
+    unsigned int block_e = g.nodes[block]._end;
+    upd_min_pkt_sz_by_jmp_insn(block_e_not_jmp[block],
+                               block_e_jmp[block],
+                               block_min_pkt_sz[block],
+                               program[block_e],
+                               ss[block_e].reg_state);
+  }
+  // update min_pkt_sz for each insn by block_min_pkt_sz
+  for (int i = 0; i < dag.size(); i++) {
+    unsigned int block = dag[i];
+    unsigned int min_pkt_sz = block_min_pkt_sz[block];
+    for (int j = g.nodes[block]._start; j <= g.nodes[block]._end; j++) {
+      ss[j].min_pkt_sz = min_pkt_sz;
+    }
+  }
+}
+
 void static_analysis(prog_static_state& pss, inst* program, int len) {
   pss.clear();
   pss.static_state.resize(len + 1);
@@ -787,6 +912,7 @@ void static_analysis(prog_static_state& pss, inst* program, int len) {
   topo_sort_for_graph(pss.dag, pss.g);
   type_const_inference_pgm(pss, program, len);
   live_analysis_pgm(pss, program, len);
+  min_pkt_sz_inference_pgm(pss, program, len);
 }
 
 void safety_chk_insn(inst& insn, const vector<vector<register_state>>& reg_state) {

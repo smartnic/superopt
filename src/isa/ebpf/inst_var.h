@@ -455,7 +455,7 @@ enum REG_TYPE {
   PTR_TO_STACK,
   PTR_TO_CTX,
   PTR_TO_PKT,
-  PTR_TO_PACKET_END,
+  PTR_TO_PACKET_END,  // pkt_start + pkt_sz; It is not in pkt region, it's pkt[max_idx] + 1
   PTR_TO_MAP_OR_NULL,
   CONST_PTR_TO_MAP,
   PTR_TO_MAP_VALUE_OR_NULL,

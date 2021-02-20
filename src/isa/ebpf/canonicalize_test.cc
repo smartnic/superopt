@@ -16,6 +16,14 @@ void canonicalize_check(inst* prog, int len, inst* expected_prog, string test_na
   print_test_res(is_equal, test_name);
 }
 
+bool check_min_pkt_sz(vector<unsigned int>& expected, vector<inst_static_state>& actual) {
+  if (expected.size() != actual.size()) return false;
+  for (int i = 0; i < expected.size(); i++) {
+    if (expected[i] != actual[i].min_pkt_sz) return false;
+  }
+  return true;
+}
+
 void test1() {
   cout << "Test 1: program canonicalize check" << endl;
   inst p1[] = {inst(MOV64XC, 0, 0),
@@ -714,6 +722,125 @@ void test5() {
     liv_expected_insn0_p31.mem[PTR_TO_PKT].insert(i);
   }
   print_test_res(live_var_is_equal(liv_expected_insn0_p31, pss.static_state[0].live_var), "1");
+
+  cout << "5.4 min_pkt_sz inference" << endl;
+  inst p4_1[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
+                 inst(LDXW, 7, 1, 0), // r7: pkt_s
+                 inst(MOV64XY, 3, 7), // r3 = r7 + 4
+                 inst(ADD64XC, 3, 4),
+                 inst(JGTXY, 3, 2, 2), // if r3 > r2, exit; else pkt[0:1] = 1;
+                 inst(STB, 3, 0, 1),  // 5: sz = 4
+                 inst(STB, 3, 1, 1),  // 6: sz = 4
+                 inst(MOV64XC, 0, 0), // 7: sz = min(0, 4)
+                 inst(EXIT),
+                };
+  const int len_p4_1 = sizeof(p4_1) / sizeof(inst);
+  static_analysis(pss, p4_1, len_p4_1);
+  vector<unsigned int> min_pkt_sz_expected(pss.static_state.size());
+  for (int i = 0; i < min_pkt_sz_expected.size(); i++) min_pkt_sz_expected[i] = 0;
+  min_pkt_sz_expected[5] = 4;
+  min_pkt_sz_expected[6] = 4;
+  print_test_res(check_min_pkt_sz(min_pkt_sz_expected, pss.static_state), "1");
+
+  // check branches
+  inst p4_2[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
+                 inst(LDXW, 7, 1, 0), // r7: pkt_s
+                 inst(MOV64XY, 3, 7), // r3 = r7 + 4
+                 inst(ADD64XC, 3, 4),
+                 inst(JGTXY, 3, 2, 5), // if r3 > r2, exit;
+                 inst(STB, 3, 0, 1),   // 5: sz = 4
+                 inst(MOV64XY, 3, 7),  // 6: sz = 4
+                 inst(ADD64XC, 3, 6),  // r3 = r7 + 6
+                 inst(JGTXY, 3, 2, 1), // 8: sz = 4
+                 inst(STB, 3, 5, 1),   // 9: sz = 6
+                 inst(MOV64XC, 0, 0),  // 10: sz = min(0, 4, 6) = 0
+                 inst(EXIT),
+                };
+  const int len_p4_2 = sizeof(p4_2) / sizeof(inst);
+  static_analysis(pss, p4_2, len_p4_2);
+  min_pkt_sz_expected.resize(pss.static_state.size());
+  for (int i = 0; i < min_pkt_sz_expected.size(); i++) min_pkt_sz_expected[i] = 0;
+  for (int i = 5; i <= 8; i++) min_pkt_sz_expected[i] = 4;
+  min_pkt_sz_expected[9] = 6;
+  print_test_res(check_min_pkt_sz(min_pkt_sz_expected, pss.static_state), "2");
+
+  inst p4_3[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
+                 inst(LDXW, 7, 1, 0), // r7: pkt_s
+                 inst(MOV64XY, 3, 7), // r3 = r7 + 4
+                 inst(ADD64XC, 3, 4),
+                 inst(JGTXY, 3, 2, 6), // 4: if r3 > r2, exit;
+                 inst(STB, 3, 0, 1),   // 5: sz = 4
+                 inst(MOV64XY, 3, 7),  // 6: sz = 4
+                 inst(ADD64XC, 3, 6),  // r3 = r7 + 6
+                 inst(JGTXY, 3, 2, 1), // 8: sz = 4
+                 inst(STB, 3, 5, 1),   // 9: sz = 6
+                 inst(STB, 3, 3, 1),   // 10: sz = min(4, 6) = 4
+                 inst(MOV64XC, 0, 0),  // 11: sz = min(min(4, 6), 0) = 0
+                 inst(EXIT),
+                };
+  const int len_p4_3 = sizeof(p4_3) / sizeof(inst);
+  static_analysis(pss, p4_3, len_p4_3);
+  min_pkt_sz_expected.resize(pss.static_state.size());
+  for (int i = 0; i < min_pkt_sz_expected.size(); i++) min_pkt_sz_expected[i] = 0;
+  for (int i = 5; i <= 8; i++) min_pkt_sz_expected[i] = 4;
+  min_pkt_sz_expected[9] = 6;
+  min_pkt_sz_expected[10] = 4;
+  print_test_res(check_min_pkt_sz(min_pkt_sz_expected, pss.static_state), "3");
+
+  // check jmp 0
+  inst p4_4[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
+                 inst(LDXW, 7, 1, 0), // r7: pkt_s
+                 inst(MOV64XY, 3, 7), // r3 = r7 + 4
+                 inst(ADD64XC, 3, 4),
+                 inst(JGTXY, 3, 2, 0), // if r3 > r2, jmp 0
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  const int len_p4_4 = sizeof(p4_4) / sizeof(inst);
+  static_analysis(pss, p4_4, len_p4_4);
+  min_pkt_sz_expected.resize(pss.static_state.size());
+  for (int i = 0; i < min_pkt_sz_expected.size(); i++) min_pkt_sz_expected[i] = 0;
+  print_test_res(check_min_pkt_sz(min_pkt_sz_expected, pss.static_state), "4");
+
+  // check other block_e insns that won't update min_pkt_sz
+  inst p4_5[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
+                 inst(LDXW, 7, 1, 0), // r7: pkt_s
+                 inst(MOV64XY, 3, 7), // r3 = r7 + 4
+                 inst(ADD64XC, 3, 4),
+                 inst(JGTXC, 3, 2, 2), // if r3 > 2, jmp 1
+                 inst(MOV64XC, 0, 1),
+                 inst(JA, 1),
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  const int len_p4_5 = sizeof(p4_5) / sizeof(inst);
+  static_analysis(pss, p4_5, len_p4_5);
+  min_pkt_sz_expected.resize(pss.static_state.size());
+  for (int i = 0; i < min_pkt_sz_expected.size(); i++) min_pkt_sz_expected[i] = 0;
+  print_test_res(check_min_pkt_sz(min_pkt_sz_expected, pss.static_state), "5");
+
+  // check other block_e insns that won't update min_pkt_sz
+  inst p4_6[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
+                 inst(LDXW, 7, 1, 0), // r7: pkt_s
+                 inst(MOV64XY, 3, 7), // r3 = r7 + 4
+                 inst(ADD64XC, 3, 4),
+                 inst(JGTXY, 3, 2, 6), // 4: if r3 > r2, exit;
+                 inst(STB, 3, 0, 1),   // 5: sz = 4
+                 inst(MOV64XY, 3, 7),  // 6: sz = 4
+                 inst(ADD64XC, 3, 6),  // r3 = r7 + 6
+                 inst(JGTXC, 3, 0xff, 1), // 8: sz = 4
+                 inst(JA, 1),          // 9: sz = 4
+                 inst(STB, 3, 3, 1),   // 10: sz = min(4, 4) = 4
+                 inst(MOV64XC, 0, 0),  // 11: sz = min(4, 0) = 0
+                 inst(EXIT),
+                };
+  const int len_p4_6 = sizeof(p4_6) / sizeof(inst);
+  static_analysis(pss, p4_6, len_p4_6);
+  min_pkt_sz_expected.resize(pss.static_state.size());
+  for (int i = 0; i < min_pkt_sz_expected.size(); i++) min_pkt_sz_expected[i] = 0;
+  for (int i = 5; i <= 10; i++) min_pkt_sz_expected[i] = 4;
+  print_test_res(check_min_pkt_sz(min_pkt_sz_expected, pss.static_state), "6");
+
   mem_t::_layout.clear();
 }
 
