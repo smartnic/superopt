@@ -735,6 +735,24 @@ void test5() {
   test_safety_check_win(p2_3, sizeof(p2_3) / sizeof(inst), 5, 5, true, "p2.3 2");
   test_safety_check_win(p2_3, sizeof(p2_3) / sizeof(inst), 9, 9, false, "p2.3 3");
 
+  inst p2_4[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
+                 inst(LDXW, 7, 1, 0), // r7: pkt_s
+                 inst(MOV64XY, 3, 7), // r3 = r7 + 4
+                 inst(ADD64XC, 3, 4),
+                 inst(MOV64XY, 0, 7), // r0 = r7
+                 inst(JGEXC, 3, 0xff, 1),
+                 inst(ADD64XC, 0, 4),  // 6: r0 += 4
+                 inst(JGTXY, 3, 2, 2), // if r3 > r2, exit;
+                 inst(STB, 0, 0, 1),   // 8:
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  test_safety_check(p2_4, sizeof(p2_4) / sizeof(inst), false, "p2.4 1");
+  test_safety_check_win(p2_4, sizeof(p2_4) / sizeof(inst), 8, 8, false, "p2.4 2");
+  p2_4[6] = inst(ADD64XC, 0, 2);
+  test_safety_check(p2_4, sizeof(p2_4) / sizeof(inst), true, "p2.4 3");
+  test_safety_check_win(p2_4, sizeof(p2_4) / sizeof(inst), 8, 8, true, "p2.4 4");
+
   cout << "5.3 liveness analysis" << endl;
   inst p3_1[] = {inst(LDXW, 2, 1, 0),
                  inst(MOV64XY, 0, 2),

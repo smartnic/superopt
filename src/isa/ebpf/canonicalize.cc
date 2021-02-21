@@ -935,11 +935,11 @@ int get_pkt_max_access_off(unordered_map<int, unordered_set<int>>& mem_offs) {
   auto it = mem_offs.find(PTR_TO_PKT);
   if (it == mem_offs.end()) return -1;
   unordered_set<int>& offs = it->second;
-  int max_write_off = INT_MAX;
+  int max_off = -1;
   for (auto off : offs) {
-    if (max_write_off > off) max_write_off = off;
+    if (max_off < off) max_off = off;
   }
-  return max_write_off;
+  return max_off;
 }
 
 // check pkt memory access: out of bound
