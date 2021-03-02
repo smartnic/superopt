@@ -722,6 +722,7 @@ class inst: public inst_base {
   int reg_to_write() const;
   void regs_cannot_be_ptrs(vector<int>& regs) const;
 
+  void mem_access_regs(vector<int>& mem_access_regs) const;
   // memory sample related
   bool is_mem_inst() const;
   int num_sample_mem_opcodes() const;

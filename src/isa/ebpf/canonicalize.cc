@@ -944,8 +944,31 @@ int get_pkt_max_access_off(unordered_map<int, unordered_set<int>>& mem_offs) {
 
 // check pkt memory access: out of bound
 void safety_chk_insn_pkt_mem_access(inst& insn, inst_static_state& iss) {
-  // check whether is memory access insn
-  if (! insn.is_mem_inst()) return;
+  // check whether there are regs for memory access
+  vector<int> mem_access_regs;
+  insn.mem_access_regs(mem_access_regs);
+  if (mem_access_regs.size() == 0) return;
+  // check if registers have PTR_TO_PKT type pointer, its offset is a constant
+  bool has_pkt_off = false;
+  bool is_pkt_off_constant = true;
+  for (int i = 0; i < mem_access_regs.size(); i++) {
+    int reg = mem_access_regs[i];
+    if (iss.reg_state[reg].size() > 0) {
+      if (iss.reg_state[reg][0].type == PTR_TO_PKT) {
+        has_pkt_off = true;
+        // check whether pkt off is a constant
+        if (iss.reg_state[reg].size() != 1) {
+          is_pkt_off_constant = false;
+          // if there is one case where pkt off is not a constant, break
+          break;
+        }
+      }
+    }
+  }
+
+  // not able to check symbolic offsets
+  if ((! has_pkt_off) || (! is_pkt_off_constant)) return;
+
   unordered_map<int, unordered_set<int>> mem_write_offs, mem_read_offs;
   get_mem_write_offs(mem_write_offs, iss.reg_state, insn);
   get_mem_read_offs(mem_read_offs, iss.reg_state, insn);

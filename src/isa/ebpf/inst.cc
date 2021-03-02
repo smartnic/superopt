@@ -1088,6 +1088,29 @@ bool inst::is_mem_inst() const {
   return false;
 }
 
+void inst::mem_access_regs(vector<int>& mem_access_regs) const {
+  mem_access_regs.clear();
+  if (_opcode == CALL) {
+    switch (_imm) {
+      case BPF_FUNC_map_lookup_elem: mem_access_regs = {1}; return;
+      case BPF_FUNC_map_update_elem: mem_access_regs = {1, 2}; return;
+      case BPF_FUNC_map_delete_elem: mem_access_regs = {1}; return;
+      case BPF_FUNC_tail_call: mem_access_regs = {1}; return;
+      case BPF_FUNC_xdp_adjust_head: mem_access_regs = {1}; return;
+      case BPF_FUNC_fib_lookup: mem_access_regs = {1, 2}; return;
+      default: return;
+    }
+  }
+  if (! is_mem_inst()) return;
+  int op_class = BPF_CLASS(_opcode);
+  switch (op_class) {
+    case BPF_LDX: mem_access_regs = {_src_reg}; return;
+    case BPF_STX:
+    case BPF_ST: mem_access_regs = {_dst_reg}; return;
+    default: return;
+  }
+}
+
 bool inst::is_ldx_mem() const {
   unordered_set<int> set = {LDXB, LDXH, LDXW, LDXDW};
   if (set.find(_opcode) != set.end()) return true;

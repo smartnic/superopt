@@ -735,6 +735,8 @@ void test5() {
   test_safety_check_win(p2_3, sizeof(p2_3) / sizeof(inst), 5, 5, true, "p2.3 2");
   test_safety_check_win(p2_3, sizeof(p2_3) / sizeof(inst), 9, 9, false, "p2.3 3");
 
+  // in this case, r0 in insn8 has two possible values: r7 or r7+4(r7+2),
+  // so static safety check is not able to deal with this case
   inst p2_4[] = {inst(LDXW, 2, 1, 4), // r2: PTR_TO_PACKET_END
                  inst(LDXW, 7, 1, 0), // r7: pkt_s
                  inst(MOV64XY, 3, 7), // r3 = r7 + 4
@@ -747,8 +749,8 @@ void test5() {
                  inst(MOV64XC, 0, 0),
                  inst(EXIT),
                 };
-  test_safety_check(p2_4, sizeof(p2_4) / sizeof(inst), false, "p2.4 1");
-  test_safety_check_win(p2_4, sizeof(p2_4) / sizeof(inst), 8, 8, false, "p2.4 2");
+  test_safety_check(p2_4, sizeof(p2_4) / sizeof(inst), true, "p2.4 1");
+  test_safety_check_win(p2_4, sizeof(p2_4) / sizeof(inst), 8, 8, true, "p2.4 2");
   p2_4[6] = inst(ADD64XC, 0, 2);
   test_safety_check(p2_4, sizeof(p2_4) / sizeof(inst), true, "p2.4 3");
   test_safety_check_win(p2_4, sizeof(p2_4) / sizeof(inst), 8, 8, true, "p2.4 4");
