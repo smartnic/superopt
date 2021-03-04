@@ -162,6 +162,7 @@ run_tests:
 	./src/isa/toy-isa/inst_test.out
 	./src/isa/ebpf/inst_codegen_test.out
 	./src/isa/ebpf/inst_test.out
+	./src/isa/ebpf/canonicalize_test_ebpf.out
 	./src/isa/ebpf/win_select_test.out
 	./src/verify/validator_test.out
 	./src/verify/validator_test_ebpf.out
