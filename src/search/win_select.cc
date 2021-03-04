@@ -2,10 +2,10 @@
 
 using namespace std;
 
-/* If the insn does not satisfy window constraints, return bool.
+/* If the insn does not satisfy window constraints, return false.
 */
 bool insn_satisfy_general_win_constraints(inst& insn) {
-  /* no jmp insns */
+  /* no jmp and return insns */
   int op_type = insn.get_opcode_type();
   if ((op_type == OP_UNCOND_JMP) ||
       (op_type == OP_COND_JMP) ||
@@ -41,8 +41,8 @@ void gen_wins_by_general_constraints(vector<pair<int, int>>& wins,
           set_win_s = true;
           break;
         }
-        // check whether there is no win_s in this block,
-        // if so, break in order to go to the next block
+        // check whether there is win_s in this block,
+        // if not, break in order to go to the next block
         if (! set_win_s) break;
       }
 
