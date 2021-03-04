@@ -906,6 +906,13 @@ int opcode_2_idx(int opcode) {
   }
 }
 
+bool inst::is_valid_opcode(int opcode) {
+  if (opcode == NOP) return true;
+  int op_idx = opcode_2_idx(opcode);
+  if (op_idx == 0) return false;
+  return true;
+}
+
 // TODO: set the stack memory as 0
 z3::expr inst::smt_set_pre(z3::expr input, smt_var & sv) {
   z3::expr f = string_to_expr("true");

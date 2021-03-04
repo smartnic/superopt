@@ -1982,6 +1982,27 @@ void test16() {
   print_test_res(same_programs(p2, p2_len, p2_exp2, p2_exp2_len), "2.2");
 }
 
+void test17() {
+  cout << "Test17: test is_valid_opcode" << endl;
+  inst insn = inst();
+  vector<int> failed_opcodes;
+  for (int op_idx = 0; op_idx < NUM_INSTR; op_idx++) {
+    int opcode = insn.get_opcode_by_idx(op_idx);
+    bool is_valid_opcode = inst::is_valid_opcode(opcode);
+    if (! is_valid_opcode) failed_opcodes.push_back(opcode);
+  }
+
+  if (failed_opcodes.size() == 0) {
+    print_test_res(true, "is_valid_opcode");
+  } else {
+    print_test_res(false, "is_valid_opcode");
+    cout << "Failed opcodes: ";
+    for (int i = 0; i < failed_opcodes.size(); i++)
+      cout << inst::opcode_to_str(failed_opcodes[i]) << " ";
+    cout << endl;
+  }
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
@@ -2000,6 +2021,7 @@ int main(int argc, char *argv[]) {
     test14();
     test15();
     test16();
+    test17();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }
