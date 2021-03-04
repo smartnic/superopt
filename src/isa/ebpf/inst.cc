@@ -1209,6 +1209,13 @@ void inst::set_unused_operands_default_vals() {
   if (_opcode != LDDW) _imm64 = 0;
 }
 
+/* If the insn does not satisfy ISA window constraints, return bool and
+   this insn won't be selected in the windows.
+*/
+bool inst::satisfy_isa_win_constraints() const {
+  return true;
+}
+
 int num_real_instructions(const inst* program, int length) {
   int count = length;
   if (program[0]._opcode == NOP) count--;
