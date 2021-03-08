@@ -961,6 +961,11 @@ bool inst::is_movdwxc() const {
   else return false;
 }
 
+int inst::num_insns() const {
+  if (is_ldmapid() || is_movdwxc()) return 2;
+  else return 1;
+}
+
 string inst::get_bytecode_str() const {
 
   string str = ("{"

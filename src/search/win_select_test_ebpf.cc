@@ -13,8 +13,15 @@ void check_gen_wins(inst* program, int len,
   bool is_equal = true;
   if (wins.size() == win_s_expected.size()) {
     for (int i = 0; i < wins.size(); i++) {
-      if ((wins[i].first != win_s_expected[i]) ||
-          (wins[i].second != win_e_expected[i])) {
+      bool found = false;
+      for (int j = 0; j < win_s_expected.size(); j++) {
+        if ((wins[i].first == win_s_expected[j]) &&
+            (wins[i].second == win_e_expected[j])) {
+          found = true;
+          break;
+        }
+      }
+      if (! found) {
         is_equal = false;
         break;
       }
@@ -27,6 +34,11 @@ void check_gen_wins(inst* program, int len,
 
 void test1() {
   cout << "test 1" << endl;
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(32);
+  mem_t::add_map(map_attr(16, 32, 16));
+
   vector<int> win_s_expected, win_e_expected;
   inst p1[] = {inst(MOV64XC, 1, 0),
                inst(MOV64XC, 2, 2),
@@ -60,6 +72,33 @@ void test1() {
   win_s_expected = {1};
   win_e_expected = {3};
   check_gen_wins(p3, sizeof(p3) / sizeof(inst), win_s_expected, win_e_expected, "3");
+
+  cout << "Test 1.2: test the opcode with has multiple insns" << endl;
+  // test ldmapid
+  inst p2_1[] = {inst(STH, 10, -2, 0xff),
+                 INSN_LDMAPID(1, 0),
+                 inst(),
+                 inst(MOV64XY, 2, 10),
+                 inst(ADD64XC, 2, -2),
+                 inst(CALL, BPF_FUNC_map_lookup_elem),
+                 inst(JEQXC, 0, 0, 3),
+                 inst(LDXB, 1, 0, 0), // insn 6
+                 inst(MOV64XY, 0, 1),
+                 inst(EXIT),
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  win_s_expected = {0, 3, 7, 10};
+  win_e_expected = {0, 4, 8, 10};
+  check_gen_wins(p2_1, sizeof(p2_1) / sizeof(inst), win_s_expected, win_e_expected, "1");
+
+  // test movdwxc
+  inst p2_2[] = {INSN_MOVDWXC(0, 0x1234567890),
+                 inst(EXIT),
+                };
+  win_s_expected = {};
+  win_e_expected = {};
+  check_gen_wins(p2_2, sizeof(p2_2) / sizeof(inst), win_s_expected, win_e_expected, "2");
 }
 
 int main() {
