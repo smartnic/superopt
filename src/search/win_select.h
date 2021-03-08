@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../src/isa/inst_header.h"
+#include "../../src/isa/ebpf/win_select.h"
 
 using namespace std;
 

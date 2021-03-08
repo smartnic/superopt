@@ -66,7 +66,7 @@ void gen_wins(vector<pair<int, int>>& wins, inst* pgm, int len, prog_static_stat
 
   for (int i = 0; i < len; i++) {
     if (! insns_valid[i]) continue;
-    bool satisfied = pgm[i].satisfy_isa_win_constraints();
+    bool satisfied = insn_satisfy_isa_win_constraints(pgm[i], pss.static_state[i]);
     if (! satisfied) insns_valid[i] = false;
   }
 
