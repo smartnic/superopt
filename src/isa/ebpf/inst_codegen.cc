@@ -23,7 +23,7 @@ uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t
   bool chk_safety = true;
   switch (func_id) {
     case BPF_FUNC_map_lookup_elem: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_lookup_helper(r1, r2, ps, sr, chk_safety);
-    case BPF_FUNC_map_update_elem: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_map_update_helper(r1, r2, r3, ps, sr, chk_safety);
+    case BPF_FUNC_map_update_elem: ps.reg_safety_chk(0, vector<int> {1, 2, 3, 4}); return compute_map_update_helper(r1, r2, r3, ps, sr, chk_safety);
     case BPF_FUNC_map_delete_elem: ps.reg_safety_chk(0, vector<int> {1, 2}); return compute_map_delete_helper(r1, r2, ps, sr, chk_safety);
     case BPF_FUNC_tail_call: ps.reg_safety_chk(0, vector<int> {1, 2, 3}); return compute_tail_call_helper(r1, r2, r3, ps);
     case BPF_FUNC_get_prandom_u32: ps.reg_safety_chk(0, vector<int> {}); return compute_get_prandom_u32_helper(ps);

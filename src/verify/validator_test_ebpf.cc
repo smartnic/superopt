@@ -287,7 +287,7 @@ void test3() {
   // TODO: when safety check is added, these map related programs need to be modified
   // after calling map_update function, r1-r5 are unreadable.
   // map0[k1] = L8(input), output = L8(input)
-  inst p1[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+  inst p1[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = k1
                  inst(STXB, 10, -1, 1),
                  INSN_LDMAPID(1, 0), // r1 = map_id (0)
@@ -295,6 +295,7 @@ void test3() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
+                 inst(MOV64XC, 4, 0),
                  inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[r1] = 0x11
                  inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
                  inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
@@ -302,7 +303,7 @@ void test3() {
                  inst(EXIT),
                 };
   // map0[k1] = L8(input), output = L8(input)
-  inst p11[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+  inst p11[12] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
                   INSN_LDMAPID(1, 0), // r1 = map_id (0)
@@ -310,15 +311,16 @@ void test3() {
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                   inst(ADD64XC, 3, -2),
+                  inst(MOV64XC, 4, 0),
                   inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[r1] = 0x11
                   inst(LDXB, 0, 10, -2),
                   inst(EXIT),
                  };
-  eq_check(p1, 13, p1, 13, 1, "map helper function 1.1");
-  eq_check(p1, 13, p11, 11, 1, "map helper function 1.2");
+  eq_check(p1, 14, p1, 14, 1, "map helper function 1.1");
+  eq_check(p1, 14, p11, 12, 1, "map helper function 1.2");
 
   // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
-  inst p2[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+  inst p2[15] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
                  INSN_LDMAPID(1, 0), // r1 = map_id (0)
@@ -326,6 +328,7 @@ void test3() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
+                 inst(MOV64XC, 4, 0),
                  inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[r1] = 0x11
                  inst(CALL, BPF_FUNC_map_delete_elem), // delete map0[k]
                  inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
@@ -347,8 +350,8 @@ void test3() {
                   inst(LDXB, 0, 0, 0),
                   inst(EXIT),
                  };
-  eq_check(p2, 14, p2, 14, 1, "map helper function 2.1");
-  eq_check(p2, 14, p21, 13, 1, "map helper function 2.2");
+  eq_check(p2, 15, p2, 15, 1, "map helper function 2.1");
+  eq_check(p2, 15, p21, 13, 1, "map helper function 2.2");
   // r0 = *(lookup &k m), where k = 0x11, v = L8(input)
   inst p3[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                 inst(STXB, 10, -1, 1),
@@ -362,7 +365,7 @@ void test3() {
                };
   eq_check(p3, 9, p3, 9, 1, "map helper function 3.1");
 
-  inst p4[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+  inst p4[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
                  INSN_LDMAPID(1, 0), // r1 = 0
@@ -370,6 +373,7 @@ void test3() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
+                 inst(MOV64XC, 4, 0),
                  inst(CALL, BPF_FUNC_map_update_elem),
                  inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v1
                  inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = map0[k1]
@@ -386,10 +390,10 @@ void test3() {
                  inst(LDXB, 0, 0, 0),  // r0 = map0[k1]
                  inst(EXIT),
                 };
-  eq_check(p4, 13, p41, 9, 0, "map helper function 4.1");
+  eq_check(p4, 14, p41, 9, 0, "map helper function 4.1");
 
   // upd &k1 &input (del &k1 m0), output = 0
-  inst p5[12] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+  inst p5[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                  inst(MOV64XC, 1, k1), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
                  INSN_LDMAPID(1, map0), // r1 = map0
@@ -398,12 +402,13 @@ void test3() {
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
                  inst(CALL, BPF_FUNC_map_delete_elem),
+                 inst(MOV64XC, 4, 0),
                  inst(CALL, BPF_FUNC_map_update_elem),
                  inst(MOV64XC, 0, 0),
                  inst(EXIT),
                 };
   // upd &k1 &input m0, output = 0
-  inst p51[11] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+  inst p51[12] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                   inst(MOV64XC, 1, k1), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
                   INSN_LDMAPID(1, map0), // r1 = map0
@@ -411,12 +416,13 @@ void test3() {
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                   inst(ADD64XC, 3, -2),
+                  inst(MOV64XC, 4, 0),
                   inst(CALL, BPF_FUNC_map_update_elem),
                   inst(MOV64XC, 0, 0),
                   inst(EXIT),
                  };
-  eq_check(p5, 12, p5, 12, 1, "map helper function 5.1");
-  eq_check(p5, 12, p51, 11, 1, "map helper function 5.2");
+  eq_check(p5, 13, p5, 13, 1, "map helper function 5.1");
+  eq_check(p5, 13, p51, 12, 1, "map helper function 5.2");
 
   // if k1 in map0, map0[k1]+=1, output=0
   inst p6[12] = {inst(MOV64XC, 1, k1),
@@ -433,29 +439,30 @@ void test3() {
                  inst(EXIT),
                 };
   // r0 = *(lookup &k1 m0)
-  inst p61[16] = {inst(MOV64XC, 1, k1),
+  inst p61[17] = {inst(MOV64XC, 1, k1),
                   inst(STXB, 10, -1, 1), // *(r10-1) = k1
                   INSN_LDMAPID(1, map0), // r1 = map0
                   inst(MOV64XY, 2, 10), // r2 = (r10-1)
                   inst(ADD64XC, 2, -1),
                   inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = &v = lookup k1 map0
-                  inst(JEQXC, 0, 0, 8), // if r0 == 0, exit
+                  inst(JEQXC, 0, 0, 9), // if r0 == 0, exit
                   inst(LDXB, 1, 0, 0), // r1 = v
                   inst(ADD64XC, 1, 1), // r1 += 1
                   inst(STXB, 10, -2, 1), // *(r10-2) = r1
                   INSN_LDMAPID(1, map0), // r1 = map0
                   inst(MOV64XY, 3, 10), // r3 = r10-2
                   inst(ADD64XC, 3, -2),
+                  inst(MOV64XC, 4, 0),
                   inst(CALL, BPF_FUNC_map_update_elem),
                   inst(MOV64XC, 0, 0),
                   inst(EXIT),
                  };
   eq_check(p6, 12, p6, 12, 1, "map helper function 6.1");
-  eq_check(p6, 12, p61, 16, 1, "map helper function 6.2");
-  eq_check(p61, 16, p61, 16, 1, "map helper function 6.3");
-  eq_check(p61, 16, p6, 12, 1, "map helper function 6.4");
+  eq_check(p6, 12, p61, 17, 1, "map helper function 6.2");
+  eq_check(p61, 17, p61, 17, 1, "map helper function 6.3");
+  eq_check(p61, 17, p6, 12, 1, "map helper function 6.4");
 
-  inst p7[21] = {inst(MOV64XC, 0, 0),
+  inst p7[23] = {inst(MOV64XC, 0, 0),
                  inst(MOV64XC, 9, 0),
                  inst(STB, 10, -1, 1), // *(r10-1) = 1
                  inst(STB, 10, -2, 2), // *(r10-2) = 2
@@ -464,10 +471,12 @@ void test3() {
                  inst(MOV64XY, 3, 10), // r3 = r10-1
                  inst(ADD64XC, 3, -1),
                  INSN_LDMAPID(1, map0), // r1 = map0
+                 inst(MOV64XC, 4, 0),
                  inst(CALL, BPF_FUNC_map_update_elem), // map0[1] = 1
                  inst(MOV64XY, 3, 10), // r3 = r10-2
                  inst(ADD64XC, 3, -2),
                  INSN_LDMAPID(1, map2), // r1 = map2
+                 inst(MOV64XC, 4, 0),
                  inst(CALL, BPF_FUNC_map_update_elem), // map2[1] = 2
                  INSN_LDMAPID(1, map0), // r1 = map0, // 13
                  inst(JGTXY, 10, 9, 1),
@@ -477,7 +486,7 @@ void test3() {
                  inst(LDXB, 0, 0, 0),
                  inst(EXIT),
                 };
-  inst p71[18] = {inst(MOV64XC, 0, 0),
+  inst p71[20] = {inst(MOV64XC, 0, 0),
                   inst(MOV64XC, 9, 0),
                   inst(STB, 10, -1, 1), // *(r10-1) = 1
                   inst(STB, 10, -2, 2), // *(r10-2) = 2
@@ -486,20 +495,22 @@ void test3() {
                   inst(MOV64XY, 3, 10), // r3 = r10-1
                   inst(ADD64XC, 3, -1),
                   INSN_LDMAPID(1, map0), // r1 = map0
+                  inst(MOV64XC, 4, 0),
                   inst(CALL, BPF_FUNC_map_update_elem), // map0[1] = 1
                   inst(MOV64XY, 3, 10), // r3 = r10-2
                   inst(ADD64XC, 3, -2),
                   INSN_LDMAPID(1, map2), // r1 = map2
+                  inst(MOV64XC, 4, 0),
                   inst(CALL, BPF_FUNC_map_update_elem), // map2[1] = 2
                   inst(MOV64XC, 0, 1),
                   inst(JGTXY, 10, 9, 1),
                   inst(MOV64XC, 0, 2),
                   inst(EXIT),
                  };
-  eq_check(p7, 21, p7, 21, 1, "map helper function 7.1");
-  eq_check(p7, 21, p71, 18, 1, "map helper function 7.2");
+  eq_check(p7, 23, p7, 23, 1, "map helper function 7.1");
+  eq_check(p7, 23, p71, 20, 1, "map helper function 7.2");
 
-  inst p8[16] = {inst(STB, 10, -2, 0),
+  inst p8[18] = {inst(STB, 10, -2, 0),
                  inst(MOV64XC, 1, k1), // *addr_k = 0x11
                  inst(STXB, 10, -1, 1),
                  INSN_LDMAPID(1, map0), // r1 = map0
@@ -507,16 +518,18 @@ void test3() {
                  inst(ADD64XC, 2, -1),
                  inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                  inst(ADD64XC, 3, -2),
+                 inst(MOV64XC, 4, 0),
                  inst(CALL, BPF_FUNC_map_update_elem),
-                 inst(JEQXC, 10, 0xfff, 2),
+                 inst(JEQXC, 10, 0xfff, 3),
                  inst(STB, 10, -2, 1),
+                 inst(MOV64XC, 4, 0),
                  inst(CALL, BPF_FUNC_map_update_elem),
                  inst(CALL, BPF_FUNC_map_lookup_elem),
                  inst(JEQXC, 0, 0, 1),
                  inst(LDXB, 0, 0, 0),
                  inst(EXIT),
                 };
-  inst p81[16] = {inst(STB, 10, -2, 1),
+  inst p81[18] = {inst(STB, 10, -2, 1),
                   inst(MOV64XC, 1, k1), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
                   INSN_LDMAPID(1, map0), // r1 = map0
@@ -524,16 +537,18 @@ void test3() {
                   inst(ADD64XC, 2, -1),
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                   inst(ADD64XC, 3, -2),
+                  inst(MOV64XC, 4, 0),
                   inst(CALL, BPF_FUNC_map_update_elem),
-                  inst(JNEXC, 10, 0xfff, 2),
+                  inst(JNEXC, 10, 0xfff, 3),
                   inst(STB, 10, -2, 0),
+                  inst(MOV64XC, 4, 0),
                   inst(CALL, BPF_FUNC_map_update_elem),
                   inst(MOV64XC, 0, 0),
                   inst(JEQXC, 10, 0xfff, 1),
                   inst(MOV64XC, 0, 1),
                   inst(EXIT),
                  };
-  eq_check(p8, 16, p81, 16, 1, "map helper function 8.1");
+  eq_check(p8, 18, p81, 18, 1, "map helper function 8.1");
 
   // modify a part of map1[1]
   // mem_t::add_map(map_attr(16, 32, 32));  k_sz: 2 bytes, v_sz: 4 bytes
@@ -671,7 +686,7 @@ void test4() {
   print_test_res(res_expected, "1");
 
   // update k1 0 map0, output r0 = 0
-  inst p12[14] = {inst(MOV64XC, 1, 0), // *addr_v = 0
+  inst p12[15] = {inst(MOV64XC, 1, 0), // *addr_v = 0
                   inst(STXB, 10, -2, 1),
                   inst(MOV64XC, 1, k1), // *addr_k = 0x11
                   inst(STXB, 10, -1, 1),
@@ -681,7 +696,8 @@ void test4() {
                   inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                   inst(ADD64XC, 3, -2),
                   inst(CALL, BPF_FUNC_map_lookup_elem),
-                  inst(JEQXC, 0, 0, 1),
+                  inst(JEQXC, 0, 0, 2),
+                  inst(MOV64XC, 4, 0),
                   inst(CALL, BPF_FUNC_map_update_elem),
                   inst(MOV64XC, 0, 0),
                   inst(EXIT),
@@ -689,9 +705,9 @@ void test4() {
   inst p13[2] = {inst(MOV64XC, 0, 0),
                  inst(EXIT),
                 };
-  vld.set_orig(p12, 14);
+  vld.set_orig(p12, 15);
   // check counter example is generated and the value of input memory
-  res_expected = (vld.is_equal_to(p12, 14, p13, 2) == 0); // 0: not equal
+  res_expected = (vld.is_equal_to(p12, 15, p13, 2) == 0); // 0: not equal
   res_expected = res_expected && (vld._last_counterex.input.k_in_map(map0, k1_str));
   print_test_res(res_expected, "1.1");
 
@@ -1497,6 +1513,39 @@ void test13() {
   win_start = 6, win_end = 9;
   win_eq_check(p4, p4_len, p4, p4_len, win_start, win_end, 1, "4.1");
   win_eq_check(p4, p4_len, p4_1, p4_len, win_start, win_end, 1, "4.2");
+
+  // test flag parameter (r4) of map update
+  // map0, k_sz = 1 byte, v_sz = 1 byte
+  inst p5[] = {inst(STXB, 10, -2, 1),  // 0: *addr_v = r1
+               inst(MOV64XC, 1, 0x11), // 1: *addr_k = 0x11
+               inst(STXB, 10, -1, 1),  // 2:
+               INSN_LDMAPID(1, 0),     // 3: r1 = map_id (0)
+               inst(MOV64XY, 2, 10),   // 4: r2(addr_k) = r10 - 6
+               inst(ADD64XC, 2, -1),   // 5:
+               inst(MOV64XY, 3, 10),   // 6: r3(addr_v) = r10 - 4
+               inst(ADD64XC, 3, -2),   // 7:
+               inst(MOV64XC, 4, 0),    // 8:
+               inst(CALL, BPF_FUNC_map_update_elem), // 9: map0[k] = v, i.e., map0[0x11] = L8(input)
+               inst(LDXB, 0, 0, 0),    // 10:
+               inst(EXIT),             // 11:
+              };
+  inst p5_1[] = {inst(STXB, 10, -2, 1),  // 0: *addr_v = r1
+                 inst(MOV64XC, 1, 0x11), // 1: *addr_k = 0x11
+                 inst(STXB, 10, -1, 1),  // 2:
+                 INSN_LDMAPID(1, 0),     // 3: r1 = map_id (0)
+                 inst(MOV64XY, 2, 10),   // 4: r2(addr_k) = r10 - 6
+                 inst(ADD64XC, 2, -1),   // 5:
+                 inst(MOV64XY, 3, 10),   // 6: r3(addr_v) = r10 - 4
+                 inst(ADD64XC, 3, -2),   // 7:
+                 inst(MOV64XC, 4, 2),    // 8:
+                 inst(CALL, BPF_FUNC_map_update_elem), // 9: map0[k] = v, i.e., map0[0x11] = L8(input)
+                 inst(LDXB, 0, 0, 0),    // 10:
+                 inst(EXIT),             // 11:
+                };
+  int p5_len = sizeof(p5) / sizeof(inst);
+  win_start = 8, win_end = 8;
+  win_eq_check(p5, p5_len, p5, p5_len, win_start, win_end, 1, "5.1");
+  win_eq_check(p5, p5_len, p5_1, p5_len, win_start, win_end, 0, "5.2");
 
   // test xdp_exception
   mem_t::_layout.clear();

@@ -1053,7 +1053,7 @@ void inst::regs_to_read(vector<int>& regs) const {
     case CALL:
       switch (_imm) {
         case BPF_FUNC_map_lookup_elem: regs = {1, 2}; return;
-        case BPF_FUNC_map_update_elem: regs = {1, 2, 3}; return;
+        case BPF_FUNC_map_update_elem: regs = {1, 2, 3, 4}; return;
         case BPF_FUNC_map_delete_elem: regs = {1, 2}; return;
         case BPF_FUNC_ktime_get_ns: return;
         case BPF_FUNC_get_prandom_u32: return;

@@ -52,6 +52,7 @@ void test1() {
                inst(ADD64XC, 2, -1),
                inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                inst(ADD64XC, 3, -2),
+               inst(MOV64XC, 4, 0),
                inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[0x11] = L8(input)
                inst(LDXB, 0, 0, 0),
                inst(EXIT),
@@ -64,6 +65,7 @@ void test1() {
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                            inst(ADD64XC, 3, -2),
+                           inst(MOV64XC, 4, 0),
                            inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[0x11] = L8(input)
                            inst(LDXB, 0, 0, 0),
                            inst(EXIT),
@@ -509,6 +511,33 @@ void test3() {
   }
   print_test_res(live_var_is_equal(expected_insn0_p25, pss.static_state[0].live_var), "5.1");
   print_test_res(live_var_is_equal(expected_insn2_p25, pss.static_state[2].live_var), "5.2");
+
+  // test flag parameter (r4) of map update
+  // map0, k_sz = 2 bytes, v_sz = 4 bytes
+  inst p2_6[] = {inst(STXW, 10, -4, 1),  // 0: *addr_v = r1
+                 inst(MOV64XC, 1, 0x11), // 1: *addr_k = 0x11
+                 inst(STXH, 10, -6, 1),  // 2:
+                 INSN_LDMAPID(1, 0),     // 3: r1 = map_id (0)
+                 inst(MOV64XY, 2, 10),   // 4: r2(addr_k) = r10 - 6
+                 inst(ADD64XC, 2, -6),   // 5:
+                 inst(MOV64XY, 3, 10),   // 6: r3(addr_v) = r10 - 4
+                 inst(ADD64XC, 3, -4),   // 7:
+                 inst(MOV64XC, 4, 0),    // 8:
+                 inst(CALL, BPF_FUNC_map_update_elem), // 9: map0[k] = v, i.e., map0[0x11] = L8(input)
+                 inst(LDXB, 0, 0, 0),    // 10:
+                 inst(EXIT),             // 11:
+                };
+  static_analysis(pss, p2_6, sizeof(p2_6) / sizeof(inst));
+  // live variable after executing insn 8
+  live_variables expected_insn8_p26;
+  expected_insn8_p26.regs = {1, 2, 3, 4};
+  for (int i = -6; i < -1; i++) {
+    expected_insn8_p26.mem[PTR_TO_STACK].insert(STACK_SIZE + i);
+  }
+  for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
+    expected_insn8_p26.mem[PTR_TO_CTX].insert(i);
+  }
+  print_test_res(live_var_is_equal(expected_insn8_p26, pss.static_state[8].live_var), "6");
 
   cout << "3.3 test register constant inference" << endl;
   inst p3_1[] = {inst(MOV64XC, 1, 5),

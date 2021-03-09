@@ -145,7 +145,7 @@ inst instructions20[3] = {inst(STXH, 10, -2, 1),
 // TODO: when safety check is added, these map related programs need to be modified
 // after calling map_update function, r1-r5 are unreadable.
 // r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
-inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+inst instructions21[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                            inst(STXB, 10, -1, 1),
                            INSN_LDMAPID(1, 0), // r1 = map_id (0)
@@ -153,6 +153,7 @@ inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                            inst(ADD64XC, 3, -2),
+                           inst(MOV64XC, 4, 0),
                            inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[0x11] = L8(input)
                            inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
                            inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
@@ -160,7 +161,7 @@ inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(EXIT),
                           };
 // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
-inst instructions22[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+inst instructions22[15] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                            inst(STXB, 10, -1, 1),
                            INSN_LDMAPID(1, 0), // r1 = map_id (0)
@@ -168,6 +169,7 @@ inst instructions22[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(ADD64XC, 2, -1),
                            inst(MOV64XY, 3, 10), // r3(addr_v) = r10 - 2
                            inst(ADD64XC, 3, -2),
+                           inst(MOV64XC, 4, 0),
                            inst(CALL, BPF_FUNC_map_update_elem), // map0[k] = v, i.e., map0[r1] = 0x11
                            inst(CALL, BPF_FUNC_map_delete_elem), // delete map0[k]
                            inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
@@ -443,23 +445,23 @@ void test1() {
   input.reg = 0x123456;
   expected.reg = 0x56;
   expected.update_kv(0, "11", vector<uint8_t> {0x56});
-  interpret(output, instructions21, 13, ps, input);
+  interpret(output, instructions21, 14, ps, input);
   print_test_res(output == expected, "interpret map helper function 1.1");
 
   expected.reg = 0x0f;
   input.reg = 0x0f;
   expected.update_kv(0, "11", vector<uint8_t> {0x0f});
-  interpret(output, instructions21, 13, ps, input);
+  interpret(output, instructions21, 14, ps, input);
   print_test_res(output == expected, "interpret map helper function 1.2");
 
   input.reg = 0x56;
   expected.clear();
   expected.reg = 0;
-  interpret(output, instructions22, 14, ps, input);
+  interpret(output, instructions22, 15, ps, input);
   print_test_res(output == expected, "interpret map helper function 2.1");
   input.reg = 0x0f;
   expected.reg = 0;
-  interpret(output, instructions22, 14, ps, input);
+  interpret(output, instructions22, 15, ps, input);
   print_test_res(output == expected, "interpret map helper function 2.2");
 
   // r0 = L8(input), map0[0x11] = L8(input)
@@ -468,7 +470,7 @@ void test1() {
   expected.reg = 0x1f;
   expected.update_kv(0, "11", vector<uint8_t> {0x1f});
   // r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
-  interpret(output, instructions21, 13, ps, input);
+  interpret(output, instructions21, 14, ps, input);
   input = output;
   input.input_simu_r10 = 1024; // set as a random value (> 512)
   output.clear();
@@ -483,7 +485,7 @@ void test1() {
   expected.clear();
   expected.reg = 0;
   // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
-  interpret(output, instructions22, 14, ps, input);
+  interpret(output, instructions22, 15, ps, input);
   // r0 = *(lookup &k m), where k = 0x11
   input = output;
   input.input_simu_r10 = 1024; // set as a random value (> 512)
@@ -498,7 +500,7 @@ void test1() {
   // r0 = L8(input), map0[0x11] = L8(input)
   expected.reg = 0x1f;
   expected.update_kv(0, "11", vector<uint8_t> {0x1f});
-  interpret(output, instructions21, 13, ps, input);
+  interpret(output, instructions21, 14, ps, input);
   input = output;
   input.input_simu_r10 = 1024; // set as a random value (> 512)
   output.clear();
