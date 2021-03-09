@@ -454,8 +454,8 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.restart_w_e_list = {1};
   in_para.restart_w_p_list = {0};
   in_para.reset_win_niter = in_para.niter;
-  in_para.win_s_list = {0};
-  in_para.win_e_list = {inst::max_prog_len - 1};
+  in_para.win_s_list = {};
+  in_para.win_e_list = {};
   in_para.p_inst_operand = 1.0 / 4.0;
   in_para.p_inst = 1.0 / 4.0;
   in_para.p_inst_as_nop = 1.0 / 4.0;
@@ -527,16 +527,17 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
   write_bpf_insns_to_file(p_bpf_insns, prefix_name);
 }
 
-void generate_wins() {
+void generate_wins(vector<int>& win_s_list, vector<int>& win_e_list) {
   prog_static_state pss;
   static_analysis(pss, bm, inst::max_prog_len);
   vector<pair<int, int>> wins;
   gen_wins(wins, bm, inst::max_prog_len, pss);
-  cout << "windows: ";
   for (int i = 0; i < wins.size(); i++) {
-    cout << "[" << wins[i].first << "," << wins[i].second << "]" << " ";
+    win_s_list.push_back(wins[i].first);
+    win_e_list.push_back(wins[i].second);
   }
-  cout << endl;
+  std::sort(win_s_list.begin(), win_s_list.end());
+  std::sort(win_e_list.begin(), win_e_list.end());
 }
 
 int main(int argc, char* argv[]) {
@@ -566,8 +567,9 @@ int main(int argc, char* argv[]) {
   }
   SERVER_PORT = in_para.server_port;
   logger.set_least_print_level(in_para.logger_level);
-  generate_wins();
-  return 0;
+  if (in_para.win_s_list.size() == 0) {
+    generate_wins(in_para.win_s_list, in_para.win_e_list);
+  }
 
   top_k_progs topk_progs(in_para.k);
   run_mh_sampler(topk_progs, in_para, bm_optis_orig);
