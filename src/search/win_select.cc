@@ -1,6 +1,9 @@
 #include "win_select.h"
 
 using namespace std;
+int num_multi_insns = 0;
+int num_jmp = 0;
+int num_ret = 0;
 
 /* If the insn does not satisfy window constraints, return false.
 */
@@ -11,18 +14,22 @@ bool insn_satisfy_general_win_constraints(inst* insn, int num_insns) {
      support multiple contiguous insns)
   */
   if (num_insns > 1) {
+    num_multi_insns += num_insns;
     return false;
   }
 
   /* no jmp and return insns */
   int op_type = insn[0].get_opcode_type();
   if ((op_type == OP_UNCOND_JMP) ||
-      (op_type == OP_COND_JMP) ||
-      (op_type == OP_RET)) {
+      (op_type == OP_COND_JMP)) {
+    num_jmp++;
     return false;
-  } else {
-    return true;
+  } else if (op_type == OP_RET) {
+    num_ret++;
+    return false;
   }
+
+  return true;
 }
 
 /* Generate windows according to valid insns and general constraints
@@ -64,7 +71,23 @@ void gen_wins_by_general_constraints(vector<pair<int, int>>& wins,
   }
 }
 
+void reset_win_constraints_statistics() {
+  reset_isa_win_constraints_statistics();
+  num_multi_insns = 0;
+  num_jmp = 0;
+  num_ret = 0;
+}
+
+void print_win_constraints_statistics() {
+  print_isa_win_constraints_statistics();
+  cout << "# multi_insns: " << num_multi_insns << endl;
+  cout << "# jmp: " << num_jmp << endl;
+  cout << "# ret: " << num_ret << endl;
+}
+
 void gen_wins(vector<pair<int, int>>& wins, inst* pgm, int len, prog_static_state& pss) {
+  reset_win_constraints_statistics();
+
   vector<bool> insns_valid(len);
   for (int i = 0; i < len; i++) insns_valid[i] = true;
 
@@ -86,4 +109,13 @@ void gen_wins(vector<pair<int, int>>& wins, inst* pgm, int len, prog_static_stat
   }
 
   gen_wins_by_general_constraints(wins, pss, insns_valid);
+
+  if (logger.is_print_level(LOGGER_DEBUG)) {
+    print_win_constraints_statistics();
+    cout << "insns not in windows" << ": ";
+    for (int i = 0; i < len; i++) {
+      if (! insns_valid[i]) cout << i << " ";
+    }
+    cout << endl;
+  }
 }

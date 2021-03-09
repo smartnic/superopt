@@ -18,6 +18,7 @@
 #include "src/isa/inst_header.h"
 #include "src/isa/prog.h"
 #include "src/search/mh_prog.h"
+#include "src/search/win_select.h"
 #include "measure/benchmark_header.h"
 #include "measure/meas_mh_bhv.h"
 #include "main.h"
@@ -526,6 +527,18 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
   write_bpf_insns_to_file(p_bpf_insns, prefix_name);
 }
 
+void generate_wins() {
+  prog_static_state pss;
+  static_analysis(pss, bm, inst::max_prog_len);
+  vector<pair<int, int>> wins;
+  gen_wins(wins, bm, inst::max_prog_len, pss);
+  cout << "windows: ";
+  for (int i = 0; i < wins.size(); i++) {
+    cout << "[" << wins[i].first << "," << wins[i].second << "]" << " ";
+  }
+  cout << endl;
+}
+
 int main(int argc, char* argv[]) {
   dur_sum = 0;
   dur_sum_long = 0;
@@ -553,6 +566,8 @@ int main(int argc, char* argv[]) {
   }
   SERVER_PORT = in_para.server_port;
   logger.set_least_print_level(in_para.logger_level);
+  generate_wins();
+  return 0;
 
   top_k_progs topk_progs(in_para.k);
   run_mh_sampler(topk_progs, in_para, bm_optis_orig);

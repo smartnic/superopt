@@ -102,6 +102,7 @@ void test1() {
 }
 
 int main() {
+  logger.set_least_print_level(LOGGER_ERROR);
   try {
     test1();
   } catch (const string err_msg) {
