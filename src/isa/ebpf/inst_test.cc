@@ -1081,7 +1081,7 @@ void test3() {
                   inst(ARSH32XY, 3, 1),
                   inst(LE, 3, 16),
                   inst(BE, 3, 16),
-                  INSN_LDMAPID(1, 2),
+                  INSN_LDMAPID(1, 2), inst(NOP),
                   inst(LDXB, 1, 10, -4),
                   inst(STXB, 10, -4, 1),
                   inst(LDXH, 1, 10, -4),
@@ -1181,7 +1181,7 @@ void test3() {
              "{133, 0, 0, 0, 1},"\
              "{149, 0, 0, 0, 0},";
   prog_bytecode = "";
-  for (int i = 0; i < NUM_INSTR - 2; i++) { // exclude NOP
+  for (int i = 0; i < NUM_INSTR - 1; i++) { // exclude NOP but ldmapid has two insns
     prog_bytecode += prog2[i].get_bytecode_str() + ",";
   }
   print_test_res(prog_bytecode == expected, "ebpf bytecode 2");
