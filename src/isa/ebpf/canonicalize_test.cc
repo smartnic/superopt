@@ -630,8 +630,9 @@ void test4() {
   inst p1_1[] = {inst(JEQXC, 1, 0, 0),
                  inst(EXIT),
                 };
-  test_safety_check(p1_1, sizeof(p1_1) / sizeof(inst), false, "1");
-  test_safety_check_win(p1_1, sizeof(p1_1) / sizeof(inst), 0, 0, false, "1.1");
+  // todo: enable these tests if jmp safety check is added.
+  // test_safety_check(p1_1, sizeof(p1_1) / sizeof(inst), false, "1");
+  // test_safety_check_win(p1_1, sizeof(p1_1) / sizeof(inst), 0, 0, false, "1.1");
 
   inst p1_2[] = {inst(AND64XC, 1),
                  inst(EXIT),
@@ -654,6 +655,23 @@ void test4() {
   test_safety_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 6, 6, true, "3.1");
   test_safety_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 8, 8, true, "3.2");
   test_safety_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 5, 5, true, "3.3");
+
+  // check add64xy
+  inst p1_4[] = {inst(MOV64XC, 0, 0),
+                 inst(ADD64XY, 1, 0),
+                 inst(MOV64XY, 0, 1),
+                 inst(EXIT),
+                };
+  test_safety_check(p1_4, sizeof(p1_4) / sizeof(inst), true, "4");
+  test_safety_check_win(p1_4, sizeof(p1_4) / sizeof(inst), 1, 1, true, "4.1");
+  // check add64xy
+  inst p1_5[] = {inst(MOV64XC, 0, 0),
+                 inst(ADD64XY, 1, 1),
+                 inst(MOV64XY, 0, 1),
+                 inst(EXIT),
+                };
+  test_safety_check(p1_5, sizeof(p1_5) / sizeof(inst), false, "5");
+  test_safety_check_win(p1_5, sizeof(p1_5) / sizeof(inst), 1, 1, false, "5.1");
 }
 
 void test5() {

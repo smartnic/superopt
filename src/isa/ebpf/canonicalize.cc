@@ -986,30 +986,67 @@ void safety_chk_insn_pkt_mem_access(inst& insn, inst_static_state& iss) {
 
 void safety_chk_insn(inst& insn, inst_static_state& iss) {
   const vector<vector<register_state>>& reg_state = iss.reg_state;
-  vector<int> not_ptr_regs;
-  insn.regs_cannot_be_ptrs(not_ptr_regs);
-  for (int i = 0; i < not_ptr_regs.size(); i++) {
-    int reg = not_ptr_regs[i];
-    for (int j = 0; j < reg_state[reg].size(); j++) {
-      int type = reg_state[reg][j].type;
-      // todo: add PTR_TO_PKT
-      unordered_set<int> ptrs = {PTR_TO_CTX, PTR_TO_STACK, PTR_TO_MAP_VALUE_OR_NULL};
-      if (ptrs.find(type) == ptrs.end()) continue;
-      // `JEQXC r 0` is legal if r.type == PTR_TO_MAP_VALUE_OR_NULL
-      if ((type == PTR_TO_MAP_VALUE_OR_NULL) &&
-          ((insn._opcode == JEQXC) || (insn._opcode == JNEXC)) &&
-          (insn._imm == 0)) {
-        continue;
+  int op_type = insn.get_opcode_type();
+  if ((op_type == OP_NOP) ||
+      (op_type == OP_UNCOND_JMP) || // TODO: jmp is not in the window
+      (op_type == OP_COND_JMP)) {
+    // todo: enable the following check if jmp safety check is added.
+    // // `JEQXC r 0` is legal if r.type == PTR_TO_MAP_VALUE_OR_NULL
+    // if ((type == PTR_TO_MAP_VALUE_OR_NULL) &&
+    //     ((insn._opcode == JEQXC) || (insn._opcode == JNEXC)) &&
+    //     (insn._imm == 0)) {
+    //   continue;
+    // }
+    return;
+  } else if (op_type == OP_OTHERS) { // ALU operations:
+    // if pointers: only mov64xy, add64xc, add64xy are allowed
+    if ((insn._opcode == MOV64XY) ||
+        (insn._opcode == ADD64XC)) {
+      return;
+    } else if (insn._opcode == ADD64XY) {
+      // add64xy: only one of src and dst regs can be pointers.
+      // static analysis does not track pointers from ADD64XY
+      vector<int> regs_r = {insn._dst_reg, insn._src_reg};
+      int pointers_count = 0;
+      for (int i = 0; i < regs_r.size(); i++) {
+        int reg = regs_r[i];
+        for (int j = 0; j < reg_state[reg].size(); j++) {
+          if (reg_state[reg][j].type != SCALAR_VALUE) { // if pointers
+            pointers_count++;
+            break;
+          }
+        }
       }
-      string err_msg = "illegal pointer operation of r" + to_string(reg);
-      throw (err_msg);
+      if (pointers_count == regs_r.size()) { // all registers are both pointers
+        string err_msg = "illegal pointer operation of r" +
+                         to_string(regs_r[0]) + " r" + to_string(regs_r[1]);
+        throw (err_msg);
+      }
+      return;
     }
-  }
+
+    vector<int> regs_r;
+    insn.regs_to_read(regs_r);
+    for (int i = 0; i < regs_r.size(); i++) {
+      int reg = regs_r[i];
+      for (int j = 0; j < reg_state[reg].size(); j++) {
+        if (reg_state[reg][j].type == SCALAR_VALUE) { // if not pointers, continue
+          continue;
+        }
+        string err_msg = "illegal pointer operation of r" + to_string(reg);
+        throw (err_msg);
+      }
+    }
+  } else if (op_type == OP_CALL) {
+    return;
+  } else if (op_type == OP_RET) {
+    return;
+  } // todo: add memory access safety check
 
   safety_chk_insn_pkt_mem_access(insn, iss);
 }
 
-void static_safety_check_pgm(inst* program, int len) {
+void static_safety_check_pgm(inst * program, int len) {
   prog_static_state pss;
   pss.static_state.resize(len + 1);
   pss.g.gen_graph(program, len);
@@ -1021,7 +1058,7 @@ void static_safety_check_pgm(inst* program, int len) {
   }
 }
 
-void static_safety_check_win(inst* win_prog, int win_start, int win_end, prog_static_state& pss_orig) {
+void static_safety_check_win(inst * win_prog, int win_start, int win_end, prog_static_state & pss_orig) {
   int win_len = win_end - win_start + 1;
   // 1. compute ss_win according to the ss_orig and the window program
   vector<inst_static_state> ss_win(win_len); // [win_start, win_end]
@@ -1041,14 +1078,14 @@ void static_safety_check_win(inst* win_prog, int win_start, int win_end, prog_st
 }
 
 // update the original program's pre-condition and post-condition
-void set_up_smt_inout_orig(prog_static_state& pss, inst* program, int len, int win_start, int win_end) {
+void set_up_smt_inout_orig(prog_static_state & pss, inst * program, int len, int win_start, int win_end) {
   vector<inst_static_state>& ss = pss.static_state;
   assert(ss.size() >= win_end);
   smt_input::reg_state = ss[win_start].reg_state;
   smt_output::post_prog_r = ss[win_end].live_var;
 }
 
-void compute_win_w(live_variables& win_w, vector<inst_static_state>& ss_win, inst* program, int win_start, int win_end) {
+void compute_win_w(live_variables & win_w, vector<inst_static_state>& ss_win, inst * program, int win_start, int win_end) {
   win_w.clear();
   for (int i = win_start; i <= win_end; i++) {
     int reg_to_write = program[i].reg_to_write();
@@ -1071,9 +1108,9 @@ void compute_win_w(live_variables& win_w, vector<inst_static_state>& ss_win, ins
   }
 }
 
-void set_up_smt_output_win(smt_output& sout, vector<inst_static_state>& ss_win,
+void set_up_smt_output_win(smt_output & sout, vector<inst_static_state>& ss_win,
                            vector<inst_static_state>& ss_orig,
-                           inst* program, int win_start, int win_end) {
+                           inst * program, int win_start, int win_end) {
   live_variables win_w;
   compute_win_w(win_w, ss_win, program, win_start, win_end);
   // output_var = win_w intersection post_r
@@ -1081,8 +1118,8 @@ void set_up_smt_output_win(smt_output& sout, vector<inst_static_state>& ss_win,
   live_variables::intersection(sout.output_var, win_w, post_r);
 }
 
-void set_up_smt_inout_win(smt_input& sin, smt_output& sout,
-                          prog_static_state& pss_orig, inst* program, int win_start, int win_end) {
+void set_up_smt_inout_win(smt_input & sin, smt_output & sout,
+                          prog_static_state & pss_orig, inst * program, int win_start, int win_end) {
   int win_len = win_end - win_start + 1;
   // 1. compute ss_win according to the ss_orig and the window program
   vector<inst_static_state> ss_win(win_len); // [win_start, win_end]
@@ -1185,7 +1222,7 @@ void gen_random_input(vector<inout_t>& inputs, int n, int64_t reg_min, int64_t r
   }
 }
 
-void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state& iss, inst& insn, int win_start, int win_end) {
+void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state & iss, inst & insn, int win_start, int win_end) {
   inputs.clear();
   inputs.resize(n);
   for (int i = 0; i < inputs.size(); i++) {
