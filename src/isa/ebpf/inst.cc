@@ -1124,9 +1124,9 @@ void inst::mem_access_regs(vector<int>& mem_access_regs) const {
   mem_access_regs.clear();
   if (_opcode == CALL) {
     switch (_imm) {
-      case BPF_FUNC_map_lookup_elem: mem_access_regs = {1}; return;
-      case BPF_FUNC_map_update_elem: mem_access_regs = {1, 2}; return;
-      case BPF_FUNC_map_delete_elem: mem_access_regs = {1}; return;
+      case BPF_FUNC_map_lookup_elem: mem_access_regs = {2}; return;
+      case BPF_FUNC_map_update_elem: mem_access_regs = {2, 3}; return;
+      case BPF_FUNC_map_delete_elem: mem_access_regs = {2}; return;
       case BPF_FUNC_tail_call: mem_access_regs = {1}; return;
       case BPF_FUNC_xdp_adjust_head: mem_access_regs = {1}; return;
       case BPF_FUNC_fib_lookup: mem_access_regs = {1, 2}; return;
