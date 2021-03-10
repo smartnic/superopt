@@ -1100,6 +1100,26 @@ bool inst::is_mem_inst() const {
   return false;
 }
 
+int inst::mem_access_width() const {
+  switch (_opcode) {
+    case LDXB:
+    case STB:
+    case STXB: return 1;
+    case LDXH:
+    case STH:
+    case STXH: return 2;
+    case LDXW:
+    case STW:
+    case STXW:
+    case XADD32: return 4;
+    case LDXDW:
+    case STDW:
+    case STXDW:
+    case XADD64: return 8;
+    default: return 0;
+  }
+}
+
 void inst::mem_access_regs(vector<int>& mem_access_regs) const {
   mem_access_regs.clear();
   if (_opcode == CALL) {

@@ -802,6 +802,42 @@ void test5() {
   test_safety_check(p2_4, sizeof(p2_4) / sizeof(inst), true, "p2.4 3");
   test_safety_check_win(p2_4, sizeof(p2_4) / sizeof(inst), 8, 8, true, "p2.4 4");
 
+  // ctx memory access check: off > ctx_sizs
+  inst p2_5[] = {inst(LDXW, 2, 1, 16), // safe
+                 inst(LDXW, 2, 1, 20), // unsafe
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  test_safety_check(p2_5, sizeof(p2_5) / sizeof(inst), false, "p2.5 1");
+  test_safety_check_win(p2_5, sizeof(p2_5) / sizeof(inst), 0, 0, true, "p2.5 2");
+  test_safety_check_win(p2_5, sizeof(p2_5) / sizeof(inst), 1, 1, false, "p2.5 3");
+
+  // ctx memory access check: off < 0
+  inst p2_6[] = {inst(LDXW, 2, 1, 0), // safe
+                 inst(LDXW, 2, 1, -1), // unsafe
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  test_safety_check(p2_6, sizeof(p2_6) / sizeof(inst), false, "p2.6 1");
+  test_safety_check_win(p2_6, sizeof(p2_6) / sizeof(inst), 0, 0, true, "p2.6 2");
+  test_safety_check_win(p2_6, sizeof(p2_6) / sizeof(inst), 1, 1, false, "p2.6 3");
+
+  // ctx memory access check: memory access width != 4
+  inst p2_7[] = {inst(LDXB, 2, 1, 0), // unsafe
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  test_safety_check(p2_7, sizeof(p2_7) / sizeof(inst), false, "p2.7 1");
+  test_safety_check_win(p2_7, sizeof(p2_7) / sizeof(inst), 0, 0, false, "p2.7 2");
+
+  // ctx memory access check: off % 4 != 0
+  inst p2_8[] = {inst(LDXW, 2, 1, 3), // unsafe
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  test_safety_check(p2_8, sizeof(p2_8) / sizeof(inst), false, "p2.8 1");
+  test_safety_check_win(p2_8, sizeof(p2_8) / sizeof(inst), 0, 0, false, "p2.8 2");
+
   cout << "5.3 liveness analysis" << endl;
   inst p3_1[] = {inst(LDXW, 2, 1, 0),
                  inst(MOV64XY, 0, 2),

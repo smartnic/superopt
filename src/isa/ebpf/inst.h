@@ -726,6 +726,7 @@ class inst: public inst_base {
   void mem_access_regs(vector<int>& mem_access_regs) const;
   // memory sample related
   bool is_mem_inst() const;
+  int mem_access_width() const;
   int num_sample_mem_opcodes() const;
   int get_mem_opcode_by_sample_idx(int sample_idx) const;
   int sample_mem_idx(int opcode) const;

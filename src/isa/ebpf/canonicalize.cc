@@ -931,8 +931,8 @@ void static_analysis(prog_static_state& pss, inst* program, int len) {
 }
 
 // return -1 if there is no offs
-int get_pkt_max_access_off(unordered_map<int, unordered_set<int>>& mem_offs) {
-  auto it = mem_offs.find(PTR_TO_PKT);
+int get_max_access_off(unordered_map<int, unordered_set<int>>& mem_offs, int ptr_type) {
+  auto it = mem_offs.find(ptr_type);
   if (it == mem_offs.end()) return -1;
   unordered_set<int>& offs = it->second;
   int max_off = -1;
@@ -943,7 +943,7 @@ int get_pkt_max_access_off(unordered_map<int, unordered_set<int>>& mem_offs) {
 }
 
 // check pkt memory access: out of bound
-void safety_chk_insn_pkt_mem_access(inst& insn, inst_static_state& iss) {
+void safety_chk_insn_mem_access_pkt(inst& insn, inst_static_state& iss) {
   // check whether there are regs for memory access
   vector<int> mem_access_regs;
   insn.mem_access_regs(mem_access_regs);
@@ -972,8 +972,8 @@ void safety_chk_insn_pkt_mem_access(inst& insn, inst_static_state& iss) {
   unordered_map<int, unordered_set<int>> mem_write_offs, mem_read_offs;
   get_mem_write_offs(mem_write_offs, iss.reg_state, insn);
   get_mem_read_offs(mem_read_offs, iss.reg_state, insn);
-  int pkt_max_off = max(get_pkt_max_access_off(mem_write_offs),
-                        get_pkt_max_access_off(mem_read_offs));
+  int pkt_max_off = max(get_max_access_off(mem_write_offs, PTR_TO_PKT),
+                        get_max_access_off(mem_read_offs, PTR_TO_PKT));
   if (pkt_max_off == -1) return;
 
   // check whether pkt_max_off < min_pkt_sz
@@ -982,6 +982,63 @@ void safety_chk_insn_pkt_mem_access(inst& insn, inst_static_state& iss) {
                      ") out of bound, accessing " + to_string(pkt_max_off);
     throw (err_msg);
   }
+}
+
+// check ctx memory access
+void safety_chk_insn_mem_access_ctx(inst& insn, inst_static_state& iss) {
+  if (! insn.is_mem_inst()) return;
+
+  int prog_input_type = mem_t::get_pgm_input_type();
+  // if program type is xdp(i.e., PGM_INPUT_pkt_ptrs)
+  // three checks: https://elixir.bootlin.com/linux/v5.4/source/net/core/filter.c#L6858
+  if (prog_input_type == PGM_INPUT_pkt_ptrs) {
+    unordered_map<int, unordered_set<int>> mem_write_offs, mem_read_offs;
+    get_mem_write_offs(mem_write_offs, iss.reg_state, insn);
+    get_mem_read_offs(mem_read_offs, iss.reg_state, insn);
+
+    bool has_ctx_access = false;
+    if ((mem_write_offs.find(PTR_TO_CTX) != mem_write_offs.end()) ||
+        (mem_read_offs.find(PTR_TO_CTX) != mem_read_offs.end())) {
+      has_ctx_access = true;
+    }
+    if (! has_ctx_access) return;
+
+    int max_ctx_off = max(get_max_access_off(mem_write_offs, PTR_TO_CTX),
+                          get_max_access_off(mem_read_offs, PTR_TO_CTX));
+    if (max_ctx_off >= CTX_SIZE_XDP_PROG) { // check max off
+      string err_msg = "max_ctx_off " +  to_string(max_ctx_off) + " >= CTX_SIZE";
+      throw (err_msg);
+    }
+    if (insn.mem_access_width() != 4) { // check memory access width
+      string err_msg = "max_ctx_off is not u32";
+      throw (err_msg);
+    }
+    // check off_s
+    int min_off = INT_MAX;
+    auto it = mem_write_offs.find(PTR_TO_CTX);
+    if (it != mem_write_offs.end()) {
+      unordered_set<int>& offs = it->second;
+      for (auto off : offs) {
+        if (min_off > off) min_off = off;
+      }
+    }
+    it = mem_read_offs.find(PTR_TO_CTX);
+    if (it != mem_read_offs.end()) {
+      unordered_set<int>& offs = it->second;
+      for (auto off : offs) {
+        if (min_off > off) min_off = off;
+      }
+    }
+    if (min_off % 4 != 0) {
+      string err_msg = "max_ctx_off is not u32";
+      throw (err_msg);
+    }
+  }
+}
+
+void safety_chk_insn_mem_access(inst& insn, inst_static_state& iss) {
+  safety_chk_insn_mem_access_ctx(insn, iss);
+  safety_chk_insn_mem_access_pkt(insn, iss);
 }
 
 void safety_chk_insn(inst& insn, inst_static_state& iss) {
@@ -1041,9 +1098,9 @@ void safety_chk_insn(inst& insn, inst_static_state& iss) {
     return;
   } else if (op_type == OP_RET) {
     return;
-  } // todo: add memory access safety check
-
-  safety_chk_insn_pkt_mem_access(insn, iss);
+  } else if ((op_type == OP_ST) || (op_type == OP_LD)) {// memory access safety check
+    safety_chk_insn_mem_access(insn, iss);
+  }
 }
 
 void static_safety_check_pgm(inst * program, int len) {

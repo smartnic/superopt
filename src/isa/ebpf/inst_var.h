@@ -13,6 +13,8 @@
 using namespace std;
 
 #define STACK_SIZE 512 // 512 bytes
+#define CTX_SIZE_XDP_PROG 20 // 20 bytes: https://elixir.bootlin.com/linux/v5.4/source/include/uapi/linux/bpf.h#L3161
+
 #define NULL_ADDR 0
 #define NULL_ADDR_EXPR to_expr(NULL_ADDR)
 #define ZERO_ADDR_OFF_EXPR to_expr((int64_t)0)
