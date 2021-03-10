@@ -838,6 +838,21 @@ void test5() {
   test_safety_check(p2_8, sizeof(p2_8) / sizeof(inst), false, "p2.8 1");
   test_safety_check_win(p2_8, sizeof(p2_8) / sizeof(inst), 0, 0, false, "p2.8 2");
 
+  // test ctx memory access check with branch
+  inst p2_9[] = {inst(LDXW, 2, 1, 0), // PKT_S
+                 inst(LDXW, 3, 1, 4), // PKT_E
+                 inst(MOV64XY, 4, 1),
+                 inst(LDXW, 5, 4, 0), // 3: safe
+                 inst(JGTXY, 2, 3, 1),
+                 inst(ADD64XC, 4, 1),
+                 inst(LDXW, 5, 4, 0), // 6: unsafe
+                 inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  test_safety_check(p2_9, sizeof(p2_9) / sizeof(inst), false, "p2.9 1");
+  test_safety_check_win(p2_9, sizeof(p2_9) / sizeof(inst), 3, 3, true, "p2.9 2");
+  test_safety_check_win(p2_9, sizeof(p2_9) / sizeof(inst), 6, 6, false, "p2.9 3");
+
   cout << "5.3 liveness analysis" << endl;
   inst p3_1[] = {inst(LDXW, 2, 1, 0),
                  inst(MOV64XY, 0, 2),

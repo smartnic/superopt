@@ -984,54 +984,41 @@ void safety_chk_insn_mem_access_pkt(inst& insn, inst_static_state& iss) {
   }
 }
 
+bool is_valid_xdp_access(int off, int size) {
+  if ((off < 0) || (off >= CTX_SIZE_XDP_PROG))
+    return false;
+  if (off % size != 0)
+    return false;
+  if (size != sizeof(uint32_t))
+    return false;
+
+  return true;
+}
+
 // check ctx memory access
 void safety_chk_insn_mem_access_ctx(inst& insn, inst_static_state& iss) {
-  if (! insn.is_mem_inst()) return;
+  int op_type = insn.get_opcode_type();
+  if ((op_type != OP_ST) && (op_type != OP_LD)) return;
 
   int prog_input_type = mem_t::get_pgm_input_type();
   // if program type is xdp(i.e., PGM_INPUT_pkt_ptrs)
   // three checks: https://elixir.bootlin.com/linux/v5.4/source/net/core/filter.c#L6858
   if (prog_input_type == PGM_INPUT_pkt_ptrs) {
-    unordered_map<int, unordered_set<int>> mem_write_offs, mem_read_offs;
-    get_mem_write_offs(mem_write_offs, iss.reg_state, insn);
-    get_mem_read_offs(mem_read_offs, iss.reg_state, insn);
-
-    bool has_ctx_access = false;
-    if ((mem_write_offs.find(PTR_TO_CTX) != mem_write_offs.end()) ||
-        (mem_read_offs.find(PTR_TO_CTX) != mem_read_offs.end())) {
-      has_ctx_access = true;
-    }
-    if (! has_ctx_access) return;
-
-    int max_ctx_off = max(get_max_access_off(mem_write_offs, PTR_TO_CTX),
-                          get_max_access_off(mem_read_offs, PTR_TO_CTX));
-    if (max_ctx_off >= CTX_SIZE_XDP_PROG) { // check max off
-      string err_msg = "max_ctx_off " +  to_string(max_ctx_off) + " >= CTX_SIZE";
-      throw (err_msg);
-    }
-    if (insn.mem_access_width() != 4) { // check memory access width
-      string err_msg = "max_ctx_off is not u32";
-      throw (err_msg);
-    }
-    // check off_s
-    int min_off = INT_MAX;
-    auto it = mem_write_offs.find(PTR_TO_CTX);
-    if (it != mem_write_offs.end()) {
-      unordered_set<int>& offs = it->second;
-      for (auto off : offs) {
-        if (min_off > off) min_off = off;
+    vector<int> mem_acc_regs;
+    insn.mem_access_regs(mem_acc_regs);
+    int size = insn.mem_access_width();
+    int off = insn._off;
+    for (int i = 0; i < mem_acc_regs.size(); i++) {
+      int reg = mem_acc_regs[i];
+      for (int j = 0; j < iss.reg_state[reg].size(); j++) {
+        if (iss.reg_state[reg][j].type != PTR_TO_CTX) continue;
+        int off_s = iss.reg_state[reg][j].off;
+        if (is_valid_xdp_access(off_s + off, size)) continue;
+        string err_msg = "r" + to_string(reg) +
+                         " invalid ctx memory access, off: " + to_string(off) +
+                         ", size: " + to_string(size);
+        throw (err_msg);
       }
-    }
-    it = mem_read_offs.find(PTR_TO_CTX);
-    if (it != mem_read_offs.end()) {
-      unordered_set<int>& offs = it->second;
-      for (auto off : offs) {
-        if (min_off > off) min_off = off;
-      }
-    }
-    if (min_off % 4 != 0) {
-      string err_msg = "max_ctx_off is not u32";
-      throw (err_msg);
     }
   }
 }
