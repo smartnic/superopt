@@ -18,7 +18,12 @@ bool insn_satisfy_isa_win_constraints(const inst& insn, const inst_static_state&
     return false;
   }
 
-  /* not a function call (some helpers are not supported; can hardly improve function call) */
+  /* not a function call
+    (1. some helpers are not supported;
+     2. can hardly improve function call;
+     3. map update flag limitation:
+        https://github.com/smartnic/superopt/commit/d1c11c5ebfbeda68fd4e9cbc14066bca8c0316f1)
+  */
   if (insn._opcode == CALL) {
     num_call++;
     return false;
