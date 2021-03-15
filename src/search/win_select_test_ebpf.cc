@@ -73,6 +73,17 @@ void test1() {
   win_e_expected = {3};
   check_gen_wins(p3, sizeof(p3) / sizeof(inst), win_s_expected, win_e_expected, "3");
 
+  inst p4[] = {inst(MOV64XC, 0, 0),
+               inst(JEQXC, 0, 0, 3),
+               inst(MOV64XC, 0, 0),
+               inst(MOV64XC, 0, 0),
+               inst(MOV64XC, 0, 0),
+               inst(EXIT),
+              };
+  win_s_expected = {0, 2};
+  win_e_expected = {0, 4};
+  check_gen_wins(p4, sizeof(p4) / sizeof(inst), win_s_expected, win_e_expected, "4");
+
   cout << "Test 1.2: test the opcode with has multiple insns" << endl;
   // test ldmapid
   inst p2_1[] = {inst(STH, 10, -2, 0xff),

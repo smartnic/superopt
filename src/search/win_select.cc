@@ -1,3 +1,4 @@
+#include <map>
 #include "win_select.h"
 
 using namespace std;
@@ -62,11 +63,15 @@ void gen_wins_by_general_constraints(vector<pair<int, int>>& wins,
         if (! set_win_s) break;
       }
 
-      if (insns_valid[j]) continue;
-      if ((j - 1) < win_s) continue;
-      // push (win_s, j-1) into wins
-      wins.push_back(pair<int, int> {win_s, j - 1});
-      set_win_s = false;
+      // 2 cases that can set the window
+      // 1. when reach block end
+      // 2. next insn is not valid
+      if ((j == block_e) ||
+          ((j < block_e) && (! insns_valid[j + 1]))) {
+        // push (win_s, j) into wins
+        wins.push_back(pair<int, int> {win_s, j});
+        set_win_s = false;
+      }
     }
   }
 }
@@ -78,11 +83,29 @@ void reset_win_constraints_statistics() {
   num_ret = 0;
 }
 
-void print_win_constraints_statistics() {
+void print_win_constraints_statistics(const vector<pair<int, int>>& wins) {
   print_isa_win_constraints_statistics();
   cout << "# multi_insns: " << num_multi_insns << endl;
   cout << "# jmp: " << num_jmp << endl;
   cout << "# ret: " << num_ret << endl;
+  map<int, int> mp;
+  for (int i = 0; i < wins.size(); i++) {
+    int win_len = wins[i].second - wins[i].first + 1;
+    auto it = mp.find(win_len);
+    if (it == mp.end()) {
+      mp[win_len] = 1;
+    } else {
+      it->second++;
+    }
+  }
+  cout << "windows length and frequency: ";
+  int sum = 0;
+  for (auto it : mp) {
+    cout << it.first << ":" << it.second << " ";
+    sum += it.first * it.second;
+  }
+  cout << endl;
+  cout << "# winodws:" << wins.size() << " # insns: " << sum << endl;
 }
 
 void gen_wins(vector<pair<int, int>>& wins, inst* pgm, int len, prog_static_state& pss) {
@@ -111,11 +134,16 @@ void gen_wins(vector<pair<int, int>>& wins, inst* pgm, int len, prog_static_stat
   gen_wins_by_general_constraints(wins, pss, insns_valid);
 
   if (logger.is_print_level(LOGGER_DEBUG)) {
-    print_win_constraints_statistics();
+    print_win_constraints_statistics(wins);
     cout << "insns not in windows" << ": ";
+    int sum = 0;
     for (int i = 0; i < len; i++) {
-      if (! insns_valid[i]) cout << i << " ";
+      if (! insns_valid[i]) {
+        cout << i << " ";
+        sum++;
+      }
     }
     cout << endl;
+    cout << "sum: " << sum << endl;
   }
 }
