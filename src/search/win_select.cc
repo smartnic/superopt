@@ -135,19 +135,19 @@ void gen_wins(vector<pair<int, int>>& wins, inst* pgm, int len, prog_static_stat
 
   gen_wins_by_general_constraints(wins, pss, insns_valid);
 
-  if (logger.is_print_level(LOGGER_DEBUG)) {
-    print_win_constraints_statistics(wins);
-    cout << "insns not in windows" << ": ";
-    int sum = 0;
-    for (int i = 0; i < len; i++) {
-      if (! insns_valid[i]) {
-        cout << i << " ";
-        sum++;
-      }
-    }
-    cout << endl;
-    cout << "sum: " << sum << endl;
-  }
+  // if (logger.is_print_level(LOGGER_DEBUG)) {
+  //   print_win_constraints_statistics(wins);
+  //   cout << "insns not in windows" << ": ";
+  //   int sum = 0;
+  //   for (int i = 0; i < len; i++) {
+  //     if (! insns_valid[i]) {
+  //       cout << i << " ";
+  //       sum++;
+  //     }
+  //   }
+  //   cout << endl;
+  //   cout << "sum: " << sum << endl;
+  // }
 }
 
 // convert one window into windows according to some rules, eg remove small windows
