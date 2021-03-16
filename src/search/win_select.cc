@@ -6,6 +6,8 @@ int num_multi_insns = 0;
 int num_jmp = 0;
 int num_ret = 0;
 
+#define WIN_SZ_max 4
+
 /* If the insn does not satisfy window constraints, return false.
 */
 bool insn_satisfy_general_win_constraints(inst* insn, int num_insns) {
@@ -145,5 +147,51 @@ void gen_wins(vector<pair<int, int>>& wins, inst* pgm, int len, prog_static_stat
     }
     cout << endl;
     cout << "sum: " << sum << endl;
+  }
+}
+
+// convert one window into windows according to some rules, eg remove small windows
+void optimize_one_win(vector<pair<int, int>>& wins_after, const pair<int, int>& win_before) {
+  wins_after.clear();
+  int win_s = win_before.first;
+  int win_e = win_before.second;
+  int win_sz = win_e - win_s + 1;
+  // 1. remove windows with size 1
+  if (win_sz == 1) {
+    return;
+  }
+  // 2. split big windows into smaller ones
+  if (win_sz > WIN_SZ_max) {
+    for (int i = win_s; i <= win_e + 1 - WIN_SZ_max; i += WIN_SZ_max) {
+      wins_after.push_back(pair<int, int> {i, i + WIN_SZ_max - 1});
+    }
+    int remainder = win_sz % WIN_SZ_max;
+    if (remainder != 0) {
+      if (win_e + 1 - remainder < win_e) { // avoid window sz 1
+        wins_after.push_back(pair<int, int> {win_e + 1 - remainder, win_e});
+      }
+    }
+  } else {
+    wins_after.push_back(pair<int, int> {win_s, win_e});
+  }
+}
+
+// optimize windows to make windows easier to be optimized in a given time
+void optimize_wins(vector<pair<int, int>>& wins) {
+  vector<pair<int, int>> wins_temp(wins.size());
+  for (int i = 0; i < wins.size(); i++) {
+    wins_temp[i] = wins[i];
+  }
+
+  wins.clear();
+  for (int i = 0; i < wins_temp.size(); i++) {
+    vector<pair<int, int>> wins_after;
+    optimize_one_win(wins_after, wins_temp[i]);
+    for (int j = 0; j < wins_after.size(); j++) {
+      wins.push_back(wins_after[j]);
+    }
+  }
+  if (logger.is_print_level(LOGGER_DEBUG)) {
+    print_win_constraints_statistics(wins);
   }
 }

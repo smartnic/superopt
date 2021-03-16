@@ -532,6 +532,7 @@ void generate_wins(vector<int>& win_s_list, vector<int>& win_e_list) {
   static_analysis(pss, bm, inst::max_prog_len);
   vector<pair<int, int>> wins;
   gen_wins(wins, bm, inst::max_prog_len, pss);
+  optimize_wins(wins);
   for (int i = 0; i < wins.size(); i++) {
     win_s_list.push_back(wins[i].first);
     win_e_list.push_back(wins[i].second);
