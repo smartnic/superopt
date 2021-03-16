@@ -138,8 +138,8 @@ void test1() {
   win_s_expected = {0, 6, 10};
   win_e_expected = {4, 8, 19};
   check_gen_wins(p5, sizeof(p5) / sizeof(inst), win_s_expected, win_e_expected, "5");
-  win_s_expected = {0, 6, 10, 14, 18};
-  win_e_expected = {3, 8, 13, 17, 19};
+  win_s_expected = {0, 1, 6, 10, 14, 16};
+  win_e_expected = {3, 4, 8, 13, 17, 19};
   check_opt_wins(p5, sizeof(p5) / sizeof(inst), win_s_expected, win_e_expected, "5");
 
   cout << "Test 1.2: test the opcode with has multiple insns" << endl;

@@ -167,9 +167,7 @@ void optimize_one_win(vector<pair<int, int>>& wins_after, const pair<int, int>& 
     }
     int remainder = win_sz % WIN_SZ_max;
     if (remainder != 0) {
-      if (win_e + 1 - remainder < win_e) { // avoid window sz 1
-        wins_after.push_back(pair<int, int> {win_e + 1 - remainder, win_e});
-      }
+      wins_after.push_back(pair<int, int> {win_e + 1 - WIN_SZ_max, win_e});
     }
   } else {
     wins_after.push_back(pair<int, int> {win_s, win_e});
