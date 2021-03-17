@@ -120,7 +120,10 @@ void inst::set_off(int op_value) {
 int32_t inst::get_max_imm() const {
   switch (_opcode) {
     case ADD64XC:
+    case MUL64XC:
+    case DIV64XC:
     case OR64XC:
+    case XOR64XC:
     case AND64XC:
     case MOV64XC:
     case ADD32XC:
@@ -172,7 +175,10 @@ int16_t inst::get_max_off(int inst_index) const {
 int32_t inst::get_min_imm() const {
   switch (_opcode) {
     case ADD64XC:
+    case MUL64XC:
+    case DIV64XC:
     case OR64XC:
+    case XOR64XC:
     case AND64XC:
     case MOV64XC:
     case ADD32XC:
