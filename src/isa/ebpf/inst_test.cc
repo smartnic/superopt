@@ -314,6 +314,17 @@ inst instructions37[] = {inst(MOV64XC, 1, 1),
                          inst(EXIT),
                         };
 
+// test SUB64XY, MUL64XC, DIV64XY, XOR64XC, XOR64XY
+inst instructions38[] = {inst(MOV64XC, 0, -1),  // r0 = 0xffffffffffffffff
+                         inst(MOV64XC, 1, -2),  // r1 = 0xfffffffffffffffe
+                         inst(XOR64XY, 0, 1),   // r0 = 0x1
+                         inst(MOV64XC, 1, -10), // r1 = -10
+                         inst(SUB64XY, 0, 1),   // r0 = 1 - (-10) = 11
+                         inst(MUL64XC, 0, 4),   // r0 = 4 * 11 = 44
+                         inst(MOV64XC, 1, 2),   // r1 = 2
+                         inst(DIV64XY, 0, 1),   // r0 = 44/2 = 22
+                         inst(EXIT),
+                        };
 
 void test1() {
   mem_t::_layout.clear();
@@ -597,6 +608,12 @@ void test1() {
   expected.reg = 1;
   interpret(output, instructions37, sizeof(instructions37) / sizeof(inst), ps, input);
   print_test_res(output == expected, "interpret JGEXC/JGEXY");
+
+  input.clear();
+  expected.clear();
+  expected.reg = 22;
+  interpret(output, instructions38, sizeof(instructions38) / sizeof(inst), ps, input);
+  print_test_res(output == expected, "interpret SUB64XY, MUL64XC, DIV64XY, XOR64XC, XOR64XY");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output, bool flag = false) {
@@ -719,6 +736,19 @@ void test2() {
   insn = inst(ADD32XY, 0, 1);
   SMT_CHECK_XY(0xffffffff, 0xffffffff, 0xfffffffe, "smt ADD32XY");
 
+  insn = inst(SUB64XY, 0, 1);
+  SMT_CHECK_XY(0x1ffffffff, 0x1, 0x1fffffffe, "smt SUB64XY");
+
+  insn = inst(MUL64XC, 0, 5);
+  SMT_CHECK_XC(10, 50, "smt MUL64XC 1");
+
+  insn = inst(MUL64XC, 0, -5);
+  SMT_CHECK_XC(10, -50, "smt MUL64XC 2");
+
+  insn = inst(DIV64XY, 0, 1);
+  SMT_CHECK_XY(4, 2, 2, "smt DIV64XY 1");
+  SMT_CHECK_XY(-2, -1, 2, "smt DIV64XY 2");
+
   insn = inst(OR32XC, 0, 0xf0f0f0f0);
   SMT_CHECK_XC(0xfff0f00f0f, 0xf0f0ffff, "smt OR32XC");
 
@@ -747,6 +777,12 @@ void test2() {
   SMT_CHECK_XC(0x0, 0x0, "smt NEG64XC 1");
   SMT_CHECK_XC(-1, 1, "smt NEG64XC 2");
   SMT_CHECK_XC(1, -1, "smt NEG64XC 3");
+
+  insn = inst(XOR64XC, 0, -1);
+  SMT_CHECK_XC(0x0123456789abcdef, 0xfedcba9876543210, "smt XOR64XC");
+
+  insn = inst(XOR64XY, 0, 1);
+  SMT_CHECK_XY(0xffffffff00000000, 0x00000000ffffffff, 0xffffffffffffffff, "smt XOR64XY");
 
   insn = inst(LSH64XC, 0, 63);
   SMT_CHECK_XC(0xffffffffffffffff, 0x8000000000000000, "smt LSH64XC");

@@ -694,9 +694,9 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
   switch (_opcode) {
     case ADD64XC: sv.mem_var.add_ptr(NEWDST, CURDST, IMM, path_cond); return predicate_add(CURDST, IMM, NEWDST);
     case ADD64XY: sv.mem_var.add_ptr(NEWDST, CURDST, CURSRC, path_cond); return predicate_add(CURDST, CURSRC, NEWDST);
-    case SUB64XY: return Z3_true;
-    case MUL64XC: return Z3_true;
-    case DIV64XY: return Z3_true;
+    case SUB64XY: return predicate_sub(CURDST, CURSRC, NEWDST);
+    case MUL64XC: return predicate_mul(CURDST, IMM, NEWDST);
+    case DIV64XY: return predicate_div(CURDST, CURSRC, NEWDST);
     case OR64XC: return predicate_or(CURDST, IMM, NEWDST);
     case OR64XY: return predicate_or(CURDST, CURSRC, NEWDST);
     case AND64XC: return predicate_and(CURDST, IMM, NEWDST);
@@ -706,8 +706,8 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     case RSH64XC: return predicate_rsh(CURDST, IMM, NEWDST);
     case RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
     case NEG64XC: return predicate_mov(NEWDST, -CURDST);
-    case XOR64XC: return Z3_true;
-    case XOR64XY: return Z3_true;
+    case XOR64XC: return predicate_xor(CURDST, IMM, NEWDST);
+    case XOR64XY: return predicate_xor(CURDST, CURSRC, NEWDST);
     case MOV64XC: return predicate_mov(IMM, NEWDST);
     case MOV64XY: sv.mem_var.add_ptr(NEWDST, CURSRC, ZERO_ADDR_OFF_EXPR, path_cond); return predicate_mov(CURSRC, NEWDST);
     case ARSH64XC: return predicate_arsh(CURDST, IMM, NEWDST);
@@ -1478,12 +1478,12 @@ INSN_NEG64XC:
     DST = compute_##OP##32(DST, SRC);                              \
     CONT;
   ALU_BINARY(ADD, add)
-  ALU_BINARY(SUB, add)
-  ALU_BINARY(MUL, add)
-  ALU_BINARY(DIV, add)
+  ALU_BINARY(SUB, sub)
+  ALU_BINARY(MUL, mul)
+  ALU_BINARY(DIV, div)
   ALU_BINARY(OR, or )
   ALU_BINARY(AND, and )
-  ALU_BINARY(XOR, add)
+  ALU_BINARY(XOR, xor)
 #undef ALU_BINARY
 
 #define ALU_BINARY_SHIFT(OPCODE, OP)                               \
