@@ -75,8 +75,8 @@ void inst::set_imm(int op_value) {
     return;
   }
   // opcodes_set constains opcodes whose sample imm range = the default imm range + imms from source program
-  unordered_set<int32_t> opcodes_set = {ADD64XC, OR64XC, AND64XC, MOV64XC, ADD32XC, OR32XC,
-                                        AND32XC, MOV32XC, STB, STH, STW, STDW, LDABSH,
+  unordered_set<int32_t> opcodes_set = {ADD64XC, MUL64XC, OR64XC, AND64XC, MOV64XC, ADD32XC, OR32XC,
+                                        AND32XC, XOR64XC, MOV32XC, STB, STH, STW, STDW, LDABSH,
                                         JEQXC, JGTXC, JNEXC, JSGTXC, JEQ32XC, JNE32XC,
                                        };
   auto found = opcodes_set.find(_opcode);
