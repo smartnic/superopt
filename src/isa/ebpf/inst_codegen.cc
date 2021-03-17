@@ -1198,7 +1198,7 @@ z3::expr smt_pgm_set_same_input(smt_var& sv1, smt_var& sv2, bool is_win) {
   f = f && smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_skb); // skb
   int pgm_input_type = mem_t::get_pgm_input_type();
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
-    f = f && smt_array_mem_set_same_input(sv1, sv2, mem_t::_layout._skb_max_sz, MEM_TABLE_pkt_ptrs);
+    f = f && smt_array_mem_set_same_input(sv1, sv2, 8, MEM_TABLE_pkt_ptrs);
   }
   if (is_win) {
     f = f && smt_array_mem_set_same_input(sv1, sv2, STACK_SIZE, MEM_TABLE_stack);
