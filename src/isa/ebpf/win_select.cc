@@ -68,8 +68,8 @@ void print_isa_win_constraints_statistics() {
     cout << "# opcodes:" << unimplemented_opcodes.size() << "  ";
     cout << "opcodes:";
     for (auto op : unimplemented_opcodes) cout << hex << "0x" << op << dec << " ";
-    cout << endl;
   }
+  cout << endl;
   cout << "# helper calls: " << num_call << endl;
   cout << "# mem_acc multi_values: " << num_multi_values << endl;
   cout << "# mem_acc num_symbolic: " << num_symbolic << endl;
