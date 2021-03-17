@@ -1043,9 +1043,11 @@ void safety_chk_insn(inst& insn, inst_static_state& iss) {
     // }
     return;
   } else if (op_type == OP_OTHERS) { // ALU operations:
-    // if pointers: only mov64xy, add64xc, add64xy are allowed
+    // if pointers: only mov64xy, add64xc, add64xy, sub64xy are allowed
+    // todo: safety check of sub64xy
     if ((insn._opcode == MOV64XY) ||
-        (insn._opcode == ADD64XC)) {
+        (insn._opcode == ADD64XC) ||
+        (insn._opcode == SUB64XY)) {
       return;
     } else if (insn._opcode == ADD64XY) {
       // add64xy: only one of src and dst regs can be pointers.
