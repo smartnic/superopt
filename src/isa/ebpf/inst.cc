@@ -275,6 +275,9 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(NOP)
       MAPPER(ADD64XC)
       MAPPER(ADD64XY)
+      MAPPER(SUB64XY)
+      MAPPER(MUL64XC)
+      MAPPER(DIV64XY)
       MAPPER(OR64XC)
       MAPPER(OR64XY)
       MAPPER(AND64XC)
@@ -284,6 +287,8 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(RSH64XC)
       MAPPER(RSH64XY)
       MAPPER(NEG64XC)
+      MAPPER(XOR64XC)
+      MAPPER(XOR64XY)
       MAPPER(MOV64XC)
       MAPPER(MOV64XY)
       MAPPER(ARSH64XC)
@@ -689,6 +694,9 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
   switch (_opcode) {
     case ADD64XC: sv.mem_var.add_ptr(NEWDST, CURDST, IMM, path_cond); return predicate_add(CURDST, IMM, NEWDST);
     case ADD64XY: sv.mem_var.add_ptr(NEWDST, CURDST, CURSRC, path_cond); return predicate_add(CURDST, CURSRC, NEWDST);
+    case SUB64XY: return Z3_true;
+    case MUL64XC: return Z3_true;
+    case DIV64XY: return Z3_true;
     case OR64XC: return predicate_or(CURDST, IMM, NEWDST);
     case OR64XY: return predicate_or(CURDST, CURSRC, NEWDST);
     case AND64XC: return predicate_and(CURDST, IMM, NEWDST);
@@ -698,6 +706,8 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     case RSH64XC: return predicate_rsh(CURDST, IMM, NEWDST);
     case RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
     case NEG64XC: return predicate_mov(NEWDST, -CURDST);
+    case XOR64XC: return Z3_true;
+    case XOR64XY: return Z3_true;
     case MOV64XC: return predicate_mov(IMM, NEWDST);
     case MOV64XY: sv.mem_var.add_ptr(NEWDST, CURSRC, ZERO_ADDR_OFF_EXPR, path_cond); return predicate_mov(CURSRC, NEWDST);
     case ARSH64XC: return predicate_arsh(CURDST, IMM, NEWDST);
@@ -839,6 +849,9 @@ int opcode_2_idx(int opcode) {
     case NOP: return IDX_NOP;
     case ADD64XC: return IDX_ADD64XC;
     case ADD64XY: return IDX_ADD64XY;
+    case SUB64XY: return IDX_SUB64XY;
+    case MUL64XC: return IDX_MUL64XC;
+    case DIV64XY: return IDX_DIV64XY;
     case OR64XC: return IDX_OR64XC;
     case OR64XY: return IDX_OR64XY;
     case AND64XC: return IDX_AND64XC;
@@ -848,6 +861,8 @@ int opcode_2_idx(int opcode) {
     case RSH64XC: return IDX_RSH64XC;
     case RSH64XY: return IDX_RSH64XY;
     case NEG64XC: return IDX_NEG64XC;
+    case XOR64XC: return IDX_XOR64XC;
+    case XOR64XY: return IDX_XOR64XY;
     case MOV64XC: return IDX_MOV64XC;
     case MOV64XY: return IDX_MOV64XY;
     case ARSH64XC: return IDX_ARSH64XC;
@@ -989,6 +1004,9 @@ void inst::regs_to_read(vector<int>& regs) const {
     case NOP:      return;
     case ADD64XC:  regs = {_dst_reg}; return;
     case ADD64XY:  regs = {_dst_reg, _src_reg}; return;
+    case SUB64XY:  regs = {_dst_reg, _src_reg}; return;
+    case MUL64XC:  regs = {_dst_reg}; return;
+    case DIV64XY:  regs = {_dst_reg, _src_reg}; return;
     case OR64XC:   regs = {_dst_reg}; return;
     case OR64XY:   regs = {_dst_reg, _src_reg}; return;
     case AND64XC:  regs = {_dst_reg}; return;
@@ -998,6 +1016,8 @@ void inst::regs_to_read(vector<int>& regs) const {
     case RSH64XC:  regs = {_dst_reg}; return;
     case RSH64XY:  regs = {_dst_reg, _src_reg}; return;
     case NEG64XC:  regs = {_dst_reg}; return;
+    case XOR64XC:  regs = {_dst_reg}; return;
+    case XOR64XY:  regs = {_dst_reg, _src_reg}; return;
     case MOV64XC:  return;
     case MOV64XY:  regs = {_src_reg}; return;
     case ARSH64XC: regs = {_dst_reg}; return;
@@ -1331,6 +1351,9 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_NOP]      = && INSN_NOP,
     [IDX_ADD64XC]  = && INSN_ADD64XC,
     [IDX_ADD64XY]  = && INSN_ADD64XY,
+    [IDX_SUB64XY]  = && INSN_SUB64XY,
+    [IDX_MUL64XC]  = && INSN_MUL64XC,
+    [IDX_DIV64XY]  = && INSN_DIV64XY,
     [IDX_OR64XC]   = && INSN_OR64XC,
     [IDX_OR64XY]   = && INSN_OR64XY,
     [IDX_AND64XC]  = && INSN_AND64XC,
@@ -1340,6 +1363,8 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_RSH64XC]  = && INSN_RSH64XC,
     [IDX_RSH64XY]  = && INSN_RSH64XY,
     [IDX_NEG64XC]  = && INSN_NEG64XC,
+    [IDX_XOR64XC]  = && INSN_XOR64XC,
+    [IDX_XOR64XY]  = && INSN_XOR64XY,
     [IDX_MOV64XC]  = && INSN_MOV64XC,
     [IDX_MOV64XY]  = && INSN_MOV64XY,
     [IDX_ARSH64XC] = && INSN_ARSH64XC,
@@ -1453,8 +1478,12 @@ INSN_NEG64XC:
     DST = compute_##OP##32(DST, SRC);                              \
     CONT;
   ALU_BINARY(ADD, add)
+  ALU_BINARY(SUB, add)
+  ALU_BINARY(MUL, add)
+  ALU_BINARY(DIV, add)
   ALU_BINARY(OR, or )
   ALU_BINARY(AND, and )
+  ALU_BINARY(XOR, add)
 #undef ALU_BINARY
 
 #define ALU_BINARY_SHIFT(OPCODE, OP)                               \

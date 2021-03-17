@@ -1053,6 +1053,9 @@ void test3() {
   // since there is no NOP in linux bpf
   inst prog2[] = {inst(ADD64XC, 3, 1),
                   inst(ADD64XY, 3, 1),
+                  inst(SUB64XY, 3, 1),
+                  inst(MUL64XC, 3, 1),
+                  inst(DIV64XY, 3, 1),
                   inst(OR64XC, 3, 1),
                   inst(OR64XY, 3, 1),
                   inst(AND64XC, 3, 1),
@@ -1061,6 +1064,9 @@ void test3() {
                   inst(LSH64XY, 3, 1),
                   inst(RSH64XC, 3, 1),
                   inst(RSH64XY, 3, 1),
+                  inst(NEG64XC, 3),
+                  inst(XOR64XC, 3, 1),
+                  inst(XOR64XY, 3, 1),
                   inst(MOV64XC, 3, 1),
                   inst(MOV64XY, 3, 1),
                   inst(ARSH64XC, 3, 1),
@@ -1118,6 +1124,9 @@ void test3() {
                  };
   expected = "{7, 3, 0, 0, 1},"\
              "{15, 3, 1, 0, 0},"\
+             "{31, 3, 1, 0, 0},"\
+             "{39, 3, 0, 0, 1},"\
+             "{63, 3, 1, 0, 0},"\
              "{71, 3, 0, 0, 1},"\
              "{79, 3, 1, 0, 0},"\
              "{87, 3, 0, 0, 1},"\
@@ -1126,6 +1135,9 @@ void test3() {
              "{111, 3, 1, 0, 0},"\
              "{119, 3, 0, 0, 1},"\
              "{127, 3, 1, 0, 0},"\
+             "{135, 3, 0, 0, 0},"\
+             "{167, 3, 0, 0, 1},"\
+             "{175, 3, 1, 0, 0},"\
              "{183, 3, 0, 0, 1},"\
              "{191, 3, 1, 0, 0},"\
              "{199, 3, 0, 0, 1},"\
@@ -1181,7 +1193,7 @@ void test3() {
              "{133, 0, 0, 0, 1},"\
              "{149, 0, 0, 0, 0},";
   prog_bytecode = "";
-  for (int i = 0; i < NUM_INSTR - 1; i++) { // exclude NOP but ldmapid has two insns
+  for (int i = 0; i < NUM_INSTR; i++) { // exclude NOP but ldmapid has two insns
     prog_bytecode += prog2[i].get_bytecode_str() + ",";
   }
   print_test_res(prog_bytecode == expected, "ebpf bytecode 2");
