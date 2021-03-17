@@ -853,6 +853,14 @@ void test5() {
   test_safety_check_win(p2_9, sizeof(p2_9) / sizeof(inst), 3, 3, true, "p2.9 2");
   test_safety_check_win(p2_9, sizeof(p2_9) / sizeof(inst), 6, 6, false, "p2.9 3");
 
+  // test reg divided by 0
+  inst p2_10[] = {inst(MOV64XC, 0, 5),
+                  inst(DIV64XC, 0, 0), // unsafe
+                 };
+  test_safety_check(p2_10, sizeof(p2_10) / sizeof(inst), false, "p2.10 1");
+  test_safety_check_win(p2_10, sizeof(p2_10) / sizeof(inst), 0, 0, true, "p2.10 2");
+  test_safety_check_win(p2_10, sizeof(p2_10) / sizeof(inst), 1, 1, false, "p2.10 3");
+
   cout << "5.3 liveness analysis" << endl;
   inst p3_1[] = {inst(LDXW, 2, 1, 0),
                  inst(MOV64XY, 0, 2),

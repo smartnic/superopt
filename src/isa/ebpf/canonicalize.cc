@@ -1069,6 +1069,12 @@ void safety_chk_insn(inst& insn, inst_static_state& iss) {
         throw (err_msg);
       }
       return;
+    } else if (insn._opcode == DIV64XC) {
+      if (insn._imm == 0) {
+        string err_msg = "r" + to_string(insn._dst_reg) + " is divided by 0";
+        throw (err_msg);
+      }
+      return;
     }
 
     vector<int> regs_r;
