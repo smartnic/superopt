@@ -83,7 +83,7 @@ bool get_counterex_model(z3::model& m, z3::expr& smt) {
 void test1() {
   cout << "Test 1: ALU check" << endl;
   int64_t a = 4, b = 5, c = 10;
-  int64_t x = -1, y = -1, z = 0;
+  int64_t x = -1, y = -2, z = 0;
 
   // check add
   c = compute_add(a, b);
@@ -100,15 +100,30 @@ void test1() {
   print_test_res(c == (a - b), "compute_sub");
   print_test_res(is_valid(predicate_sub(v(a), v(b), v(c))), "predicate_sub match compute_sub");
 
+  // check sub32
+  z = compute_sub32(x, y);
+  print_test_res(z == L32(x - y), "compute_sub32");
+  print_test_res(is_valid(predicate_sub32(v(x), v(y), v(z))), "predicate_sub32 match compute_sub32");
+
   // check mul
   c = compute_mul(a, b);
   print_test_res(c == (a * b), "compute_mul");
   print_test_res(is_valid(predicate_mul(v(a), v(b), v(c))), "predicate_mul match compute_mul");
 
+  // check mul32
+  z = compute_mul32(x, y);
+  print_test_res(z == L32(x * y), "compute_mul32");
+  print_test_res(is_valid(predicate_mul32(v(x), v(y), v(z))), "predicate_mul32 match compute_mul32");
+
   // check div
   c = compute_div(a, b);
   print_test_res(c == (a / b), "compute_div");
   print_test_res(is_valid(predicate_div(v(a), v(b), v(c))), "predicate_div match compute_div");
+
+  // check div32
+  z = compute_div32(x, y);
+  print_test_res(z == L32(x / y), "compute_div32");
+  print_test_res(is_valid(predicate_div32(v(x), v(y), v(z))), "predicate_div32 match compute_div32");
 
   // check or
   c = compute_or(a, b);
@@ -135,6 +150,11 @@ void test1() {
   c = compute_xor(a, b);
   print_test_res(c == (a ^ b), "compute_xor");
   print_test_res(is_valid(predicate_xor(v(a), v(b), v(c))), "predicate_xor match compute_xor");
+
+  // check xor32
+  z = compute_xor32(x, y);
+  print_test_res(z == L32(x ^ y), "compute_xor32");
+  print_test_res(is_valid(predicate_xor32(v(x), v(y), v(z))), "predicate_xor32 match compute_xor32");
 
   // check mov
   c = compute_mov(a);

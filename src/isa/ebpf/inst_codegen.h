@@ -39,8 +39,11 @@ inline int64_t compute_ldmapid(int64_t in, int64_t out = 0);
 inline int64_t compute_add(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_add32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_sub(int64_t in1, int64_t in2, int64_t out = 0);
+inline int64_t compute_sub32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_mul(int64_t in1, int64_t in2, int64_t out = 0);
+inline int64_t compute_mul32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_div(int64_t in1, int64_t in2, int64_t out = 0);
+inline int64_t compute_div32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_or(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_or32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_and(int64_t in1, int64_t in2, int64_t out = 0);
@@ -50,6 +53,7 @@ inline int64_t compute_lsh32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_rsh(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_rsh32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_xor(int64_t in1, int64_t in2, int64_t out = 0);
+inline int64_t compute_xor32(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_arsh(int64_t in1, int64_t in2, int64_t out = 0);
 inline int64_t compute_arsh32(int64_t in1, int64_t in2, int64_t out = 0);
 // out = (u_sz)[addr + off]
@@ -88,8 +92,11 @@ inline z3::expr predicate_be64(z3::expr in, z3::expr out);
 inline z3::expr predicate_add(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_add32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_sub(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_sub32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_mul(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_mul32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_div(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_div32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_or(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_or32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_and(z3::expr in1, z3::expr in2, z3::expr out);
@@ -99,6 +106,7 @@ inline z3::expr predicate_lsh32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_rsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_rsh32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_xor(z3::expr in1, z3::expr in2, z3::expr out);
+inline z3::expr predicate_xor32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
 // (write addr+off, sz, in, m); type: in, addr, off: bv64;
@@ -187,11 +195,15 @@ void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model& mdl, smt_va
 #define XOR_EXPR(in1, in2, out) (out EQ (in1 ^ in2))
 #define ARSH_EXPR(in1, in2, out) (out EQ ARSH(in1, in2))
 #undef ADD32_EXPR
+#undef SUB32_EXPR
+#undef MUL32_EXPR
+#undef DIV32_EXPR
 #undef OR32_EXPR
 #undef AND32_EXPR
 #undef MOV32_EXPR
 #undef LSH32_EXPR
 #undef RSH32_EXPR
+#undef XOR32_EXPR
 #undef ARSH32_EXPR
 // 1. XXX32_EXPRs express the logic EBPF 32-bit ALU instructions.
 // E.g., instruction [add32 dst, src]: dst = 0x00000000ffffffff & ((int32_t)dst + (int32_t)src)
@@ -203,11 +215,15 @@ void counterex_urt_2_input_mem_for_one_sv(inout_t& input, z3::model& mdl, smt_va
 // 4. Why RSH(a, b) and RSH32(a, b): for numerical number,
 // need to convert a to unsigned according to its type: int32_t -> uint32_t, int64_t -> uint64_t
 #define ADD32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) + INT32(in2)))
+#define SUB32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) - INT32(in2)))
+#define MUL32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) * INT32(in2)))
+#define DIV32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) / INT32(in2)))
 #define OR32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) | INT32(in2)))
 #define AND32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) & INT32(in2)))
 #define MOV32_EXPR(in, out) (out EQ SET_HIGHER32_ZERO(INT32(in)))
 #define LSH32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(LSH(INT32(in1), INT32(in2))))
 #define RSH32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(RSH32(INT32(in1), INT32(in2))))
+#define XOR32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(INT32(in1) ^ INT32(in2)))
 #define ARSH32_EXPR(in1, in2, out) (out EQ SET_HIGHER32_ZERO(ARSH(INT32(in1), INT32(in2))))
 
 /* Predicate expressions capture instructions like MAX which have different
@@ -304,8 +320,11 @@ COMPUTE_UNARY(be64, BE64_EXPR)
 COMPUTE_BINARY(add, ADD_EXPR)
 COMPUTE_BINARY(add32, ADD32_EXPR)
 COMPUTE_BINARY(sub, SUB_EXPR)
+COMPUTE_BINARY(sub32, SUB32_EXPR)
 COMPUTE_BINARY(mul, MUL_EXPR)
+COMPUTE_BINARY(mul32, MUL32_EXPR)
 COMPUTE_BINARY(div, DIV_EXPR)
+COMPUTE_BINARY(div32, DIV32_EXPR)
 COMPUTE_BINARY( or , OR_EXPR)
 COMPUTE_BINARY(or32, OR32_EXPR)
 COMPUTE_BINARY( and , AND_EXPR)
@@ -315,6 +334,7 @@ COMPUTE_BINARY(lsh32, LSH32_EXPR)
 COMPUTE_BINARY(rsh, RSH_EXPR)
 COMPUTE_BINARY(rsh32, RSH32_EXPR)
 COMPUTE_BINARY(xor, XOR_EXPR)
+COMPUTE_BINARY(xor32, XOR32_EXPR)
 COMPUTE_BINARY(arsh, ARSH_EXPR)
 COMPUTE_BINARY(arsh32, ARSH32_EXPR)
 
@@ -376,13 +396,17 @@ PREDICATE_UNARY(be64, BE64_EXPR)
 PREDICATE_BINARY(add, ADD_EXPR)
 PREDICATE_BINARY(add32, ADD32_EXPR)
 PREDICATE_BINARY(sub, SUB_EXPR)
+PREDICATE_BINARY(sub32, SUB32_EXPR)
 PREDICATE_BINARY(mul, MUL_EXPR)
+PREDICATE_BINARY(mul32, MUL32_EXPR)
 PREDICATE_BINARY(div, DIV_EXPR)
+PREDICATE_BINARY(div32, DIV32_EXPR)
 PREDICATE_BINARY( or , OR_EXPR)
 PREDICATE_BINARY(or32, OR32_EXPR)
 PREDICATE_BINARY( and , AND_EXPR)
 PREDICATE_BINARY(and32, AND32_EXPR)
 PREDICATE_BINARY(xor, XOR_EXPR)
+PREDICATE_BINARY(xor32, XOR32_EXPR)
 PREDICATE_BINARY(lsh, LSH_EXPR)
 PREDICATE_BINARY(rsh, RSH_EXPR)
 PREDICATE_BINARY(arsh, ARSH_EXPR)
