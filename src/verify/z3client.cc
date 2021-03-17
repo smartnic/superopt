@@ -61,7 +61,7 @@ int spawn_server(int port) {
 }
 
 void kill_server_by_pid(pid_t id) {
-  if (id == 0) return;
+  if (id <= 0) return;
   string cmd = "kill -9 " + to_string(id);
   int status = system(cmd.c_str());
   if ((status != -1) && WIFEXITED(status) && (WEXITSTATUS(status) == 0)) {
