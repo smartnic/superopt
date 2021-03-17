@@ -95,6 +95,21 @@ void test1() {
   print_test_res(z == L32(x + y), "compute_add32");
   print_test_res(is_valid(predicate_add32(v(x), v(y), v(z))), "predicate_add32 match compute_add32");
 
+  // check sub
+  c = compute_sub(a, b);
+  print_test_res(c == (a - b), "compute_sub");
+  print_test_res(is_valid(predicate_sub(v(a), v(b), v(c))), "predicate_sub match compute_sub");
+
+  // check mul
+  c = compute_mul(a, b);
+  print_test_res(c == (a * b), "compute_mul");
+  print_test_res(is_valid(predicate_mul(v(a), v(b), v(c))), "predicate_mul match compute_mul");
+
+  // check div
+  c = compute_div(a, b);
+  print_test_res(c == (a / b), "compute_div");
+  print_test_res(is_valid(predicate_div(v(a), v(b), v(c))), "predicate_div match compute_div");
+
   // check or
   c = compute_or(a, b);
   print_test_res(c == (a | b), "compute_or");
@@ -115,6 +130,11 @@ void test1() {
   z = compute_and32(x, y);
   print_test_res(z == L32(x & y), "compute_and32");
   print_test_res(is_valid(predicate_and32(v(x), v(y), v(z))), "predicate_and32 match compute_and32");
+
+  // check xor
+  c = compute_xor(a, b);
+  print_test_res(c == (a ^ b), "compute_xor");
+  print_test_res(is_valid(predicate_xor(v(a), v(b), v(c))), "predicate_xor match compute_xor");
 
   // check mov
   c = compute_mov(a);
