@@ -314,15 +314,14 @@ inst instructions37[] = {inst(MOV64XC, 1, 1),
                          inst(EXIT),
                         };
 
-// test SUB64XY, MUL64XC, DIV64XY, XOR64XC, XOR64XY
+// test SUB64XY, MUL64XC, DIV64XC, XOR64XC, XOR64XY
 inst instructions38[] = {inst(MOV64XC, 0, -1),  // r0 = 0xffffffffffffffff
                          inst(MOV64XC, 1, -2),  // r1 = 0xfffffffffffffffe
                          inst(XOR64XY, 0, 1),   // r0 = 0x1
                          inst(MOV64XC, 1, -10), // r1 = -10
                          inst(SUB64XY, 0, 1),   // r0 = 1 - (-10) = 11
                          inst(MUL64XC, 0, 4),   // r0 = 4 * 11 = 44
-                         inst(MOV64XC, 1, 2),   // r1 = 2
-                         inst(DIV64XY, 0, 1),   // r0 = 44/2 = 22
+                         inst(DIV64XC, 0, 2),   // r0 = 44/2 = 22
                          inst(EXIT),
                         };
 
@@ -613,7 +612,7 @@ void test1() {
   expected.clear();
   expected.reg = 22;
   interpret(output, instructions38, sizeof(instructions38) / sizeof(inst), ps, input);
-  print_test_res(output == expected, "interpret SUB64XY, MUL64XC, DIV64XY, XOR64XC, XOR64XY");
+  print_test_res(output == expected, "interpret SUB64XY, MUL64XC, DIV64XC, XOR64XC, XOR64XY");
 }
 
 int64_t eval_output(z3::expr smt, z3::expr output, bool flag = false) {
@@ -745,9 +744,9 @@ void test2() {
   insn = inst(MUL64XC, 0, -5);
   SMT_CHECK_XC(10, -50, "smt MUL64XC 2");
 
-  insn = inst(DIV64XY, 0, 1);
-  SMT_CHECK_XY(4, 2, 2, "smt DIV64XY 1");
-  SMT_CHECK_XY(-2, -1, 2, "smt DIV64XY 2");
+  insn = inst(DIV64XC, 0, 2);
+  SMT_CHECK_XC(4, 2, "smt DIV64XC 1");
+  SMT_CHECK_XC(-2, -1, "smt DIV64XC 2");
 
   insn = inst(OR32XC, 0, 0xf0f0f0f0);
   SMT_CHECK_XC(0xfff0f00f0f, 0xf0f0ffff, "smt OR32XC");
@@ -1091,7 +1090,7 @@ void test3() {
                   inst(ADD64XY, 3, 1),
                   inst(SUB64XY, 3, 1),
                   inst(MUL64XC, 3, 1),
-                  inst(DIV64XY, 3, 1),
+                  inst(DIV64XC, 3, 1),
                   inst(OR64XC, 3, 1),
                   inst(OR64XY, 3, 1),
                   inst(AND64XC, 3, 1),
@@ -1162,7 +1161,7 @@ void test3() {
              "{15, 3, 1, 0, 0},"\
              "{31, 3, 1, 0, 0},"\
              "{39, 3, 0, 0, 1},"\
-             "{63, 3, 1, 0, 0},"\
+             "{55, 3, 0, 0, 1},"\
              "{71, 3, 0, 0, 1},"\
              "{79, 3, 1, 0, 0},"\
              "{87, 3, 0, 0, 1},"\

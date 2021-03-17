@@ -75,8 +75,8 @@ void inst::set_imm(int op_value) {
     return;
   }
   // opcodes_set constains opcodes whose sample imm range = the default imm range + imms from source program
-  unordered_set<int32_t> opcodes_set = {ADD64XC, MUL64XC, OR64XC, AND64XC, MOV64XC, ADD32XC, OR32XC,
-                                        AND32XC, XOR64XC, MOV32XC, STB, STH, STW, STDW, LDABSH,
+  unordered_set<int32_t> opcodes_set = {ADD64XC, MUL64XC, DIV64XC, OR64XC, AND64XC, MOV64XC, ADD32XC,
+                                        OR32XC, AND32XC, XOR64XC, MOV32XC, STB, STH, STW, STDW, LDABSH,
                                         JEQXC, JGTXC, JNEXC, JSGTXC, JEQ32XC, JNE32XC,
                                        };
   auto found = opcodes_set.find(_opcode);
@@ -277,7 +277,7 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(ADD64XY)
       MAPPER(SUB64XY)
       MAPPER(MUL64XC)
-      MAPPER(DIV64XY)
+      MAPPER(DIV64XC)
       MAPPER(OR64XC)
       MAPPER(OR64XY)
       MAPPER(AND64XC)
@@ -696,7 +696,7 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     case ADD64XY: sv.mem_var.add_ptr(NEWDST, CURDST, CURSRC, path_cond); return predicate_add(CURDST, CURSRC, NEWDST);
     case SUB64XY: return predicate_sub(CURDST, CURSRC, NEWDST);
     case MUL64XC: return predicate_mul(CURDST, IMM, NEWDST);
-    case DIV64XY: return predicate_div(CURDST, CURSRC, NEWDST);
+    case DIV64XC: return predicate_div(CURDST, IMM, NEWDST);
     case OR64XC: return predicate_or(CURDST, IMM, NEWDST);
     case OR64XY: return predicate_or(CURDST, CURSRC, NEWDST);
     case AND64XC: return predicate_and(CURDST, IMM, NEWDST);
@@ -851,7 +851,7 @@ int opcode_2_idx(int opcode) {
     case ADD64XY: return IDX_ADD64XY;
     case SUB64XY: return IDX_SUB64XY;
     case MUL64XC: return IDX_MUL64XC;
-    case DIV64XY: return IDX_DIV64XY;
+    case DIV64XC: return IDX_DIV64XC;
     case OR64XC: return IDX_OR64XC;
     case OR64XY: return IDX_OR64XY;
     case AND64XC: return IDX_AND64XC;
@@ -1006,7 +1006,7 @@ void inst::regs_to_read(vector<int>& regs) const {
     case ADD64XY:  regs = {_dst_reg, _src_reg}; return;
     case SUB64XY:  regs = {_dst_reg, _src_reg}; return;
     case MUL64XC:  regs = {_dst_reg}; return;
-    case DIV64XY:  regs = {_dst_reg, _src_reg}; return;
+    case DIV64XC:  regs = {_dst_reg}; return;
     case OR64XC:   regs = {_dst_reg}; return;
     case OR64XY:   regs = {_dst_reg, _src_reg}; return;
     case AND64XC:  regs = {_dst_reg}; return;
@@ -1353,7 +1353,7 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_ADD64XY]  = && INSN_ADD64XY,
     [IDX_SUB64XY]  = && INSN_SUB64XY,
     [IDX_MUL64XC]  = && INSN_MUL64XC,
-    [IDX_DIV64XY]  = && INSN_DIV64XY,
+    [IDX_DIV64XC]  = && INSN_DIV64XC,
     [IDX_OR64XC]   = && INSN_OR64XC,
     [IDX_OR64XY]   = && INSN_OR64XY,
     [IDX_AND64XC]  = && INSN_AND64XC,
