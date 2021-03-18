@@ -712,7 +712,7 @@ void live_variables::intersection(live_variables& lv, const live_variables& lv1,
   const unordered_set<int>& live_reg1 = lv1.regs;
   const unordered_set<int>& live_reg2 = lv2.regs;
   for (auto reg : lv1.regs) {
-    if (lv2.regs.find(reg) != lv1.regs.end()) {
+    if (lv2.regs.find(reg) != lv2.regs.end()) {
       lv.regs.insert(reg);
     }
   }
