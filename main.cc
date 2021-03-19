@@ -13,6 +13,7 @@
 #include <limits>
 #include <getopt.h>
 #include <chrono>
+#include <cstdlib>
 #include "src/utils.h"
 #include "src/inout.h"
 #include "src/isa/inst_header.h"
@@ -533,12 +534,13 @@ void generate_wins(vector<int>& win_s_list, vector<int>& win_e_list) {
   vector<pair<int, int>> wins;
   gen_wins(wins, bm, inst::max_prog_len, pss);
   optimize_wins(wins);
+  int seed = 1;
+  std::srand(seed);
+  std::random_shuffle(wins.begin(), wins.end());
   for (int i = 0; i < wins.size(); i++) {
     win_s_list.push_back(wins[i].first);
     win_e_list.push_back(wins[i].second);
   }
-  std::sort(win_s_list.begin(), win_s_list.end());
-  std::sort(win_e_list.begin(), win_e_list.end());
 }
 
 int main(int argc, char* argv[]) {
