@@ -420,6 +420,87 @@ void test3() {
   }
   print_test_res(p7_res, "7.2");
 
+  // test addxy, dst_reg and src_reg both are concrete values
+  inst p8[] = {inst(MOV64XC, 0, 1),
+               inst(JNEXY, 0, 0, 1),
+               inst(MOV64XC, 0, 2),   // r0 = 1 or 2
+               inst(MOV64XC, 1, 1),
+               inst(JNEXY, 0, 0, 1),
+               inst(MOV64XC, 1, 3),   // r0 = 1 or 3
+               inst(ADD64XY, 0, 1),   // r0 += r1
+               inst(EXIT),            // 7:
+              };
+  static_analysis(pss, p8, sizeof(p8) / sizeof(inst));
+  // check r0 state before executing insn 7
+  vector<register_state> expected_insn7_r0_p8;
+  register_state rs_p8;
+  rs_p8.type = SCALAR_VALUE;
+  rs_p8.val_flag = true;
+  vector<int> vals_p8 = {2, 3, 4, 5};
+  for (int i = 0; i < vals_p8.size(); i++) {
+    rs_p8.val = vals_p8[i];
+    expected_insn7_r0_p8.push_back(rs_p8);
+  }
+  print_test_res(reg_state_is_equal(expected_insn7_r0_p8, pss.static_state[7].reg_state[0]), "8");
+
+  // test addxy, dst_reg is ptr, src_reg contains concrete values
+  inst p9[] = {inst(MOV64XC, 0, 1),
+               inst(JNEXY, 0, 0, 1),
+               inst(MOV64XC, 0, 2),   // r0 = 1 or 2
+               inst(ADD64XY, 1, 0),   // r1 = r0 + r1
+               inst(LDXB, 0, 1, 0),   // 4:
+               inst(EXIT),
+              };
+  static_analysis(pss, p9, sizeof(p9) / sizeof(inst));
+  // check r1 state before executing insn 4
+  vector<register_state> expected_insn4_r1_p9;
+  register_state rs_p9;
+  rs_p9.type = PTR_TO_CTX;
+  rs_p9.off = 1;
+  expected_insn4_r1_p9.push_back(rs_p9);
+  rs_p9.off = 2;
+  expected_insn4_r1_p9.push_back(rs_p9);
+  print_test_res(reg_state_is_equal(expected_insn4_r1_p9, pss.static_state[4].reg_state[1]), "9");
+
+  // test addxy, dst_reg is ptr with different offs, src_reg contains concrete values
+  inst p10[] = {inst(MOV64XC, 0, 1),
+                inst(JNEXY, 0, 0, 3),
+                inst(MOV64XC, 0, 2),   // r0 = 1 or 2
+                inst(MOV64XY, 1, 10),
+                inst(ADD64XC, 1, -4),  // r1 = r10 - 4 or &ctx[0]
+                inst(ADD64XY, 1, 0),   // r1 += r0
+                inst(LDXB, 0, 1, 0),   // 6:
+                inst(EXIT),
+               };
+  static_analysis(pss, p10, sizeof(p10) / sizeof(inst));
+  // check r1 state before executing insn 6
+  vector<register_state> expected_insn6_r1_p10;
+  register_state rs_p10;
+  vector<int> p10_type = {PTR_TO_CTX, PTR_TO_CTX, PTR_TO_STACK, PTR_TO_STACK};
+  vector<int> p10_offs = {1, 2, 509, 510};
+  for (int i = 0; i < p10_type.size(); i++) {
+    rs_p10.type = p10_type[i];
+    rs_p10.off = p10_offs[i];
+    expected_insn6_r1_p10.push_back(rs_p10);
+  }
+  print_test_res(reg_state_is_equal(expected_insn6_r1_p10, pss.static_state[6].reg_state[1]), "10");
+
+  // test addxy when src_reg does not contain concrete values
+  inst p11[] = {inst(MOV64XC, 0, 1),
+                inst(JNEXY, 0, 0, 1),
+                inst(LDXB, 0, 1, 0),  // r0 = ctx[0] or 1
+                inst(ADD64XY, 0, 0),
+                inst(EXIT),           // 4:
+               };
+  static_analysis(pss, p11, sizeof(p11) / sizeof(inst));
+  // check r0 state before executing insn 4
+  vector<register_state> expected_insn4_r0_p11;
+  register_state rs_p11;
+  rs_p11.type = SCALAR_VALUE;
+  rs_p11.val_flag = false;
+  expected_insn4_r0_p11.push_back(rs_p11);
+  print_test_res(reg_state_is_equal(expected_insn4_r0_p11, pss.static_state[4].reg_state[0]), "11");
+
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
                  inst(STH, 10, -8, 0xff),

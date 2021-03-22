@@ -359,6 +359,77 @@ void type_const_inference_inst_block_start(inst_static_state& iss, int cur_insn,
   type_const_inference_inst_JNEXC(iss, block_in_insn, not_jmp);
 }
 
+bool must_be_ptr(vector<register_state>& rs) {
+  for (int i = 0; i < rs.size(); i++) {
+    if (! is_ptr(rs[i].type)) return false;
+  }
+  return true;
+}
+
+// SCALAR_VALUE with val flag
+bool must_be_concrete_vals(vector<register_state>& rs) {
+  for (int i = 0; i < rs.size(); i++) {
+    // Actually no need to check SCALAR_VALUE,
+    // since only SCALAR_VALUE's val_flag can be true
+    if (rs[i].type != SCALAR_VALUE) return false;
+    if (! rs[i].val_flag) return false;
+  }
+  return true;
+}
+
+void type_const_inference_inst_ADD64XY(inst_static_state& iss, inst& insn) {
+  if (insn._opcode != ADD64XY) return;
+  int dst_reg = insn._dst_reg;
+  int src_reg = insn._src_reg;
+  // dst_reg or src_reg is pointer
+  bool dst_reg_ptr = must_be_ptr(iss.reg_state[dst_reg]);
+  bool src_reg_ptr = must_be_ptr(iss.reg_state[src_reg]);
+  bool dst_reg_concrete = must_be_concrete_vals(iss.reg_state[dst_reg]);
+  bool src_reg_concrete = must_be_concrete_vals(iss.reg_state[src_reg]);
+  vector<register_state> rss = {};
+
+  if (dst_reg_concrete && src_reg_concrete) {
+    unordered_set<int64_t> vals = {};
+    for (int i = 0; i < iss.reg_state[dst_reg].size(); i++) {
+      for (int j = 0; j < iss.reg_state[src_reg].size(); j++) {
+        int64_t v = iss.reg_state[dst_reg][i].val + iss.reg_state[src_reg][j].val;
+        vals.insert(v);
+      }
+    }
+    for (auto v : vals) {
+      register_state rs;
+      rs.type = SCALAR_VALUE;
+      rs.val = v;
+      rs.val_flag = true;
+      rss.push_back(rs);
+    }
+  } else if ((dst_reg_ptr && src_reg_concrete) || (dst_reg_concrete && src_reg_ptr)) {
+    int ptr_reg = dst_reg, val_reg = src_reg;
+    if (dst_reg_concrete && src_reg_ptr) {
+      ptr_reg = src_reg;
+      val_reg = dst_reg;
+    }
+    for (int i = 0; i < iss.reg_state[ptr_reg].size(); i++) {
+      for (int j = 0; j < iss.reg_state[val_reg].size(); j++) {
+        int off = iss.reg_state[ptr_reg][i].off + iss.reg_state[val_reg][j].val;
+        register_state rs;
+        rs.type = iss.reg_state[ptr_reg][i].type;
+        rs.off = off;
+        rss.push_back(rs);
+      }
+    }
+  } else {
+    register_state rs;
+    rs.type = SCALAR_VALUE;
+    rss.push_back(rs);
+  }
+
+  iss.reg_state[dst_reg].clear();
+  for (int i = 0; i < rss.size(); i++) {
+    iss.reg_state[dst_reg].push_back(rss[i]);
+  }
+}
+
 void type_const_inference_inst_BPF_FUNC_map_lookup_elem(inst_static_state& iss, inst& insn) {
   // get map id according to r1's value
   int map_id_reg = 1;
@@ -457,6 +528,9 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
         iss.reg_state[dst_reg][i].val += imm;
       }
     }
+  } else if (opcode == ADD64XY) {
+    // update concrete value or pointer offset
+    type_const_inference_inst_ADD64XY(iss, insn);
   } else if (opcode == CALL) {
     iss.set_reg_state(0, SCALAR_VALUE);
     if (imm == BPF_FUNC_map_lookup_elem) type_const_inference_inst_BPF_FUNC_map_lookup_elem(iss, insn);
