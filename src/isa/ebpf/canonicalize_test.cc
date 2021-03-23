@@ -516,6 +516,45 @@ void test3() {
   expected_insn2_r0_p12.push_back(rs_p12);
   print_test_res(reg_state_is_equal(expected_insn2_r0_p12, pss.static_state[2].reg_state[0]), "12");
 
+  // test pointer stored on stack and read from stack: two possibilities with the same pointer
+  inst p13[] = {inst(STXDW, 10, -8, 1),
+                inst(MOV64XC, 0, 0),
+                inst(JEQXC, 0, 0, 1),
+                inst(STXDW, 10, -8, 1),
+                inst(LDXDW, 0, 10, -8),
+                inst(LDXB, 0, 0, 0),   // 5:
+                inst(EXIT),
+               };
+  static_analysis(pss, p13, sizeof(p13) / sizeof(inst));
+  // check r0 state before executing insn 5
+  vector<register_state> expected_insn5_r0_p13;
+  register_state rs_p13;
+  rs_p13.type = PTR_TO_CTX;
+  rs_p13.off = 0;
+  expected_insn5_r0_p13.push_back(rs_p13);
+  print_test_res(reg_state_is_equal(expected_insn5_r0_p13, pss.static_state[5].reg_state[0]), "13");
+
+  // test pointer stored on stack and read from stack: two possibilities with different pointers
+  inst p14[] = {inst(STXDW, 10, -8, 1),
+                inst(MOV64XC, 0, 0),
+                inst(JEQXC, 0, 0, 2),
+                inst(ADD64XC, 1, 2),
+                inst(STXDW, 10, -8, 1),
+                inst(LDXDW, 0, 10, -8),
+                inst(LDXB, 0, 0, 0),   // 6:
+                inst(EXIT),
+               };
+  static_analysis(pss, p14, sizeof(p14) / sizeof(inst));
+  // check r0 state before executing insn 6
+  vector<register_state> expected_insn6_r0_p14;
+  register_state rs_p14;
+  rs_p14.type = PTR_TO_CTX;
+  rs_p14.off = 0;
+  expected_insn6_r0_p14.push_back(rs_p14);
+  rs_p14.off = 2;
+  expected_insn6_r0_p14.push_back(rs_p14);
+  print_test_res(reg_state_is_equal(expected_insn6_r0_p14, pss.static_state[6].reg_state[0]), "14");
+
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
                  inst(STH, 10, -8, 0xff),
