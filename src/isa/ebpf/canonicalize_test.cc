@@ -1224,10 +1224,25 @@ void test6() {
   it = output.regs.find(0);
   if (it != output.regs.end()) {
     int64_t r0_actual = it->second;
-    print_test_res(r0_actual == r0_expected, "2");
+    print_test_res(r0_actual == r0_expected, "2.1");
   } else {
-    print_test_res(false, "2");
+    print_test_res(false, "2.1");
   }
+
+  win_start = 0, win_end = 2;
+  inout_t::start_insn = win_start;
+  inout_t::end_insn = win_end;
+  gen_random_input_for_win(inputs, n_inputs, pss.static_state[win_start], p2[win_start], win_start, win_end);
+  interpret(output, p2, sizeof(p2) / sizeof(inst), ps, inputs[0]);
+  r0_expected = inputs[0].pkt[0];
+  it = output.regs.find(0);
+  if (it != output.regs.end()) {
+    int64_t r0_actual = it->second;
+    print_test_res(r0_actual == r0_expected, "2.2");
+  } else {
+    print_test_res(false, "2.2");
+  }
+
 
   // test pointer (PTR_TO_STACK) from stack
   inst p3[] = {inst(MOV64XY, 1, 10),
