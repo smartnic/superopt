@@ -1344,6 +1344,7 @@ void set_up_smt_inout_orig(prog_static_state & pss, inst * program, int len, int
   vector<inst_static_state>& ss = pss.static_state;
   assert(ss.size() >= win_end);
   smt_input::reg_state = ss[win_start].reg_state;
+  smt_input::stack_state = ss[win_start].stack_state;
   smt_output::post_prog_r = ss[win_end].live_var;
 }
 
