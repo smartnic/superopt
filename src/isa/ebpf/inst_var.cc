@@ -5,6 +5,7 @@ using namespace std;
 
 mem_layout mem_t::_layout;
 vector<vector<register_state>> smt_input::reg_state;
+unordered_map<int, vector<register_state>> smt_input::stack_state;
 live_variables smt_output::post_prog_r;
 vector<z3::expr> smt_var::randoms_u32;
 bool smt_var::enable_addr_off = true;
@@ -746,6 +747,25 @@ ostream& operator<<(ostream& out, const live_variables& x) {
   return out;
 }
 
+z3::expr smt_input::path_conds_constraint(vector<z3::expr>& path_conds) {
+  // 1. at least one path condition is true
+  z3::expr f_pc_true = Z3_false;
+  for (int i = 0; i < path_conds.size(); i++) {
+    f_pc_true = f_pc_true || path_conds[i];
+  }
+  // 2. at most one path condition is true
+  z3::expr f_pc = Z3_true;
+  for (int i = 0; i < path_conds.size(); i++) {
+    z3::expr f_pc_i = Z3_true;
+    for (int j = 0; j < path_conds.size(); j++) {
+      if (j == i) continue;
+      f_pc_i = f_pc_i && (! path_conds[j]);
+    }
+    f_pc = f_pc && z3::implies(path_conds[i], f_pc_i);
+  }
+  return (f_pc_true && f_pc);
+}
+
 z3::expr smt_input::input_constraint() {
   z3::expr f = Z3_true;
   for (auto reg : prog_read.regs) {
@@ -760,23 +780,9 @@ z3::expr smt_input::input_constraint() {
       z3::expr reg_pc = reg_path_cond(reg, i);
       path_conds.push_back(reg_pc);
     }
-    // 1. at least one path condition is true
-    z3::expr f_pc_true = Z3_false;
-    for (int i = 0; i < path_conds.size(); i++) {
-      f_pc_true = f_pc_true || path_conds[i];
-    }
-    // 2. at most one path condition is true
-    z3::expr f_pc = Z3_true;
-    for (int i = 0; i < path_conds.size(); i++) {
-      z3::expr f_pc_i = Z3_true;
-      for (int j = 0; j < path_conds.size(); j++) {
-        if (j == i) continue;
-        f_pc_i = f_pc_i && (! path_conds[j]);
-      }
-      f_pc = f_pc && z3::implies(path_conds[i], f_pc_i);
-    }
+    z3::expr f_reg_pc = path_conds_constraint(path_conds);
 
-    f = f && f_pc_true && f_pc;
+    f = f && f_reg_pc;
   }
 
   // add constraints to input register (constant registers, type: SCALAR_VALUE)
@@ -798,6 +804,40 @@ z3::expr smt_input::input_constraint() {
     }
   }
   f = f && f_const_reg;
+
+  // constraint of stack state (pointer stored on the stack) path condition
+  vector<z3::expr> path_conds;
+  z3::expr f_stack_ptr_pc = Z3_true;
+  auto it_stack = prog_read.mem.find(PTR_TO_STACK);
+  // if there is no stack read, there is no need to set input of pointers stored on the stack
+  if (it_stack != prog_read.mem.end()) {
+    for (auto it = stack_state.begin(); it != stack_state.end(); it++) {
+      int ptr_off = it->first;
+      // check whether stack_state is in prog_read
+      assert(ptr_off >= 0);
+      const int ptr_size = 8;
+      assert(ptr_off <= STACK_SIZE - ptr_size);
+      bool ptr_in_prog_read = true;
+      for (int off_i = 0; off_i < ptr_size; off_i++) {
+        if (it_stack->second.find(ptr_off + off_i) == it_stack->second.end()) {
+          ptr_in_prog_read = false;
+          break;
+        }
+      }
+      // if ptr not in prog read, check next ptr
+      if (! ptr_in_prog_read) continue;
+
+      vector<register_state>& states = it->second;
+      for (auto st = states.begin(); st != states.end(); st++) {
+        z3::expr ptr_pc = ptr_on_stack_path_cond(off, i);
+        path_conds.push_back(ptr_pc);
+      }
+      z3::expr stack_ptr_pc = path_conds_constraint(path_conds);
+      f_stack_ptr_pc = f_stack_ptr_pc && stack_ptr_pc;
+    }
+  }
+  f = f && f_stack_ptr_pc;
+
   return f;
 }
 

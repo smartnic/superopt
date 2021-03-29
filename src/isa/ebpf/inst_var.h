@@ -333,12 +333,19 @@ class live_variables {
 };
 
 class smt_input {
+ private:
+  z3::expr path_conds_constraint(vector<z3::expr>& path_conds);
  public:
   // registers
   static vector<vector<register_state>> reg_state;
+  // stack state (pointers stored on the stack)
+  static unordered_map<int, vector<register_state>> stack_state; // stack start off and its state
   live_variables prog_read;
   static z3::expr reg_expr(int reg) {return to_expr("input_r_" + to_string(reg));}
   static z3::expr reg_path_cond(int reg, int state_id) {return to_bool_expr("input_pc_r_" + to_string(reg) + "_" + to_string(state_id));}
+  static z3::expr ptr_on_stack_path_cond(int off, int state_id) {
+    return to_bool_expr("input_pc_ptr_on_stack_" + to_string(off) + "_" + to_string(state_id));
+  }
   static z3::expr off_val_expr(int ptr_type, int off) {return to_expr("input_offval_" + to_string(ptr_type) + "_" + to_string(off), NUM_BYTE_BITS);}
   z3::expr input_constraint();
 };
