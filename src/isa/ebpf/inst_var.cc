@@ -691,6 +691,24 @@ void smt_mem::add_path_cond(z3::expr pc, unsigned int block_id) {
   _path_cond_list[block_id] = pc;
 }
 
+void smt_mem::add_ptr_in_stack_state(int stack_off_s, int mem_table_id, int ptr_off, z3::expr path_cond) {
+  // add ptr if not exist, otherwise update the path_cond
+  if (_stack_ptr_table.find(stack_off_s) == _stack_ptr_table.end()) {
+    _stack_ptr_table[stack_off_s] = {};
+  }
+  auto it = _stack_ptr_table.find(stack_off_s);
+  assert(it != _stack_ptr_table.end());
+  for (int i = 0; i < it->second.size(); i++) {
+    if ((it->second[i]._mem_table_id == mem_table_id) &&
+        (it->second[i]._off == ptr_off)) {
+      it->second[i]._path_cond = path_cond;
+      return;
+    }
+  }
+  ptr_info pi(mem_table_id, ptr_off, path_cond);
+  it->second.push_back(pi);
+}
+
 ostream& operator<<(ostream& out, const smt_mem& s) {
   for (int i = 0; i < s._mem_tables.size(); i++) {
     out << "memory table " << i << endl
@@ -828,8 +846,8 @@ z3::expr smt_input::input_constraint() {
       if (! ptr_in_prog_read) continue;
 
       vector<register_state>& states = it->second;
-      for (auto st = states.begin(); st != states.end(); st++) {
-        z3::expr ptr_pc = ptr_on_stack_path_cond(off, i);
+      for (int i = 0; i < states.size(); i++) {
+        z3::expr ptr_pc = ptr_on_stack_path_cond(ptr_off, i);
         path_conds.push_back(ptr_pc);
       }
       z3::expr stack_ptr_pc = path_conds_constraint(path_conds);
