@@ -251,6 +251,18 @@ class mem_table {
   friend ostream& operator<<(ostream& out, const mem_table& mt);
 };
 
+class ptr_info {
+ public:
+  int _mem_table_id = -1;
+  int _off = -1;
+  z3::expr _path_cond = Z3_false;
+  ptr_info(int table_id, int off, z3::expr pc) {
+    _mem_table_id = table_id;
+    _off = off;
+    _path_cond = pc;
+  }
+};
+
 class smt_mem {
  public:
   z3::expr _stack_start = string_to_expr("stack_start");
@@ -263,6 +275,11 @@ class smt_mem {
   vector<map_wt> _map_tables; // vector idx: map id
   vector<z3::expr> _addrs_map_v_next;
   vector<z3::expr> _path_cond_list;
+  // table of pointers on the stack
+  // _stack_ptr_table[stack_off_s] = ptr_info
+  // ptr_info is a list of mem_table_id, off and its path cond
+  // todo: for _stack_ptr_table, assume there is no branch in the window program
+  unordered_map<int, vector<ptr_info>> _stack_ptr_table;
 
   smt_mem() {}
   smt_mem(uint64_t stack_start) {_stack_start = to_expr(stack_start);}
@@ -282,6 +299,7 @@ class smt_mem {
   void add_ptr_by_map_id(z3::expr ptr_expr, int map_id, z3::expr path_cond = Z3_true);
   z3::expr get_block_path_cond(unsigned int block_id);
   void add_path_cond(z3::expr pc, unsigned int block_id);
+  void add_ptr_in_stack_state(int stack_off_s, int mem_table_id, int ptr_off, z3::expr path_cond);
   friend ostream& operator<<(ostream& out, const smt_mem& s);
 };
 
