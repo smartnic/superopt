@@ -291,6 +291,7 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   smt_var post_sv_synth = ps_synth.sv;
 
   int sc = safety_check(orig, length_orig, pre_synth, pl_synth, ps_synth.p_sc, post_sv_synth, smt_input_synth);
+  cout << "safety check: " << sc << endl;
   if (sc != 1) {
     if ((sc == ILLEGAL_CEX) && _enable_prog_uneq_cache) {
       insert_into_prog_cache(synth_prog_uneq_cache, _prog_uneq_cache);
@@ -321,6 +322,10 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   if (is_equal == 0) {
     // cout << is_equal << endl;
     // cout << mdl << endl;
+    cout << "_pl_orig \n" << _pl_orig << endl;
+    cout << "pl_synth\n" << pl_synth << endl;
+    cout << _post_sv_orig.mem_var << endl;
+    cout << post_sv_synth.mem_var << endl;
     try {
       gen_counterex(orig, length_orig, mdl, post_sv_synth, smt_input_synth, COUNTEREX_eq_check);
     } catch (const string err_msg) {
