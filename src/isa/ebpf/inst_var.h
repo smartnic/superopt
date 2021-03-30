@@ -300,6 +300,7 @@ class smt_mem {
   z3::expr get_block_path_cond(unsigned int block_id);
   void add_path_cond(z3::expr pc, unsigned int block_id);
   void add_ptr_in_stack_state(int stack_off_s, int mem_table_id, int ptr_off, z3::expr path_cond);
+  void get_ptr_info_in_stack_state(vector<ptr_info>& ptr_info_list, int stack_off_s);
   friend ostream& operator<<(ostream& out, const smt_mem& s);
 };
 
