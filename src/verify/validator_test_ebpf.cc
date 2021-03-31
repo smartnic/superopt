@@ -1655,6 +1655,43 @@ void test13() {
   win_eq_check(p8, p8_len, p8, p8_len, win_start, win_end, 1, "8.3");
   win_eq_check(p8, p8_len, p8_1, p8_len, win_start, win_end, 0, "8.4");
 
+  // test pointer stored on stack and read from stack: map value pointers
+  inst p9[] = {inst(STH, 10, -2, 0xff),
+               INSN_LDMAPID(1, 1),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -2),
+               inst(CALL, BPF_FUNC_map_lookup_elem),
+               inst(MOV64XY, 1, 0),
+               inst(MOV64XC, 2, 0),
+               inst(JEQXC, 1, 0, 5),
+               inst(JEQXC, 2, 1, 1),
+               inst(ADD64XC, 1, 1),
+               inst(),              // insn 10
+               inst(LDXB, 0, 1, 0), // insn 11
+               inst(EXIT),
+               inst(MOV64XC, 0, 2),
+               inst(EXIT),
+              };
+  const int p9_len = sizeof(p9) / sizeof(inst);
+  win_start = 10; win_end = 11;
+  win_eq_check(p9, p9_len, p9, p9_len, win_start, win_end, 1, "9.1.1");
+  win_start = 11; win_end = 11;
+  win_eq_check(p9, p9_len, p9, p8_len, win_start, win_end, 1, "9.1.2");
+
+  inst p9_1[p9_len], p9_2[p9_len];
+  for (int i = 0; i < p9_len; i++) p9_1[i] = p9[i];
+  p9_1[10] = inst();
+  p9_1[11] = inst(LDXB, 0, 1, 1);
+  win_start = 10; win_end = 11;
+  win_eq_check(p9, p9_len, p9_1, p9_len, win_start, win_end, 0, "9.2.1");
+  win_start = 11; win_end = 11;
+  win_eq_check(p9, p9_len, p9_1, p8_len, win_start, win_end, 0, "9.2.2");
+
+  for (int i = 0; i < p9_len; i++) p9_2[i] = p9[i];
+  p9_2[10] = inst(MOV64XY, 1, 1);
+  p9_2[11] = inst(LDXB, 0, 1, 1);
+  win_start = 10; win_end = 11;
+  win_eq_check(p9, p9_len, p9_2, p9_len, win_start, win_end, 0, "9.3");
   return;
 
   // test xdp_exception
@@ -2002,6 +2039,7 @@ int main() {
   inst::max_prog_len = TEST_PGM_MAX_LEN;
   try {
     test13();
+    kill_server();
     return 0;
     test1();
     test2();
