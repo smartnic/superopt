@@ -1164,9 +1164,35 @@ bool is_ptr(int type) {
   return false;
 }
 
+z3::expr get_ptr_value_expr(int ptr_type, smt_var& sv, int map_id = -1) {
+int pgm_input_type = mem_t::get_pgm_input_type();
+  z3::expr ptr_val_expr = ZERO_ADDR_OFF_EXPR;
+  if (ptr_type == PTR_TO_STACK) {
+    ptr_val_expr = sv.get_stack_start_addr();
+  } else if (ptr_type == PTR_TO_CTX) {
+    if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+      ptr_val_expr = sv.get_pkt_start_ptr_addr();
+    } else {
+      ptr_val_expr = sv.get_pkt_start_addr();
+    }
+  } else if (ptr_type == PTR_TO_PKT) {
+    ptr_val_expr = sv.get_pkt_start_addr();
+  } else if (ptr_type == PTR_TO_MAP_VALUE) {
+    assert(map_id >= 0);
+    assert(map_id < mem_t::maps_number());
+    ptr_val_expr = sv.get_map_start_addr(map_id);
+  } else {
+    // error here
+    string err_msg = "Error: no pointer type matches";
+    throw (err_msg);
+  }
+  return ptr_val_expr;
+}
+
 // set up sv.mem._stack_ptr_table only for pointers on the stack read by program
 void smt_pgm_set_pre_stack_state_table(smt_var& sv, smt_input& input) {
   auto it_stack = input.prog_read.mem.find(PTR_TO_STACK);
+  int stack_table_id = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
   // if there is no stack read, there is no need to set input of pointers stored on the stack
   if (it_stack != input.prog_read.mem.end()) {
     for (auto it = smt_input::stack_state.begin(); it != smt_input::stack_state.end(); it++) {
@@ -1187,15 +1213,35 @@ void smt_pgm_set_pre_stack_state_table(smt_var& sv, smt_input& input) {
 
       vector<register_state>& states = it->second;
       for (int i = 0; i < states.size(); i++) {
+        // add the ptr in the ptr table and add the memory value/pointer in the stack memory urt
         int ptr_type = states[i].type;
         int map_id = states[i].map_id;
         int ptr_off = states[i].off;
+        z3::expr ptr_off_expr = to_expr((uint64_t)ptr_off);
         int table_type = reg_ptr_type_2_mem_table_type(ptr_type);
         assert(table_type != -1);
         int table_id = sv.mem_var.get_mem_table_id(table_type, map_id);
         assert(table_id != -1);
         z3::expr pc = input.ptr_on_stack_path_cond(stack_off, i);
-        sv.mem_var.add_ptr_in_stack_state(stack_off, table_id, ptr_off, pc);
+        z3::expr stack_off_name_expr = smt_input::ptr_on_stack_expr(stack_off);
+        // add pointer info in the pointer table
+        sv.mem_var.add_ptr(stack_off_name_expr, table_id, ptr_off_expr, pc);
+
+        // get value expression according to ptr_type and ptr_off
+        z3::expr ptr_val_expr = Z3_true;
+        z3::expr ptr_value = get_ptr_value_expr(ptr_type, sv, map_id) + ptr_off_expr;
+
+        bool is_ptr = true;
+        mem_table_ptr_info ptr_info(is_ptr, stack_off_name_expr, ptr_off);
+        int block = 0;  // set as root block
+        z3::expr is_valid = pc;  // set is_valid as path condition
+        int pointer_sz = 8;
+        // push each off-val/ptr entry into stack memory urt
+        for (int v_id = 0; v_id < pointer_sz; v_id++) {
+          z3::expr val_expr = ptr_value.extract(8 * v_id + 7, 8 * v_id);
+          sv.mem_var._mem_tables[stack_table_id]._urt.add(block, is_valid,
+              to_expr((uint64_t)stack_off), val_expr, ptr_info);
+        }
       }
     }
   }
@@ -1206,7 +1252,6 @@ void smt_pgm_set_pre_stack_state_table(smt_var& sv, smt_input& input) {
 // sv is the sv of program's root basic block
 z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
   // cout << "smt_pgm_set_pre" << endl;
-  int pgm_input_type = mem_t::get_pgm_input_type();
   z3::expr f = Z3_true;
   // set up pointer registers only for registers read by program
   for (auto reg : input.prog_read.regs) {
@@ -1224,19 +1269,8 @@ z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
       assert(table_id != -1);
       z3::expr off_expr = to_expr(reg_state.off);
       sv.mem_var.add_ptr(reg_expr, table_id, off_expr, pc);
-      if (reg_state.type == PTR_TO_STACK) {
-        f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_stack_start_addr() + off_expr));
-      } else if (reg_state.type == PTR_TO_CTX) {
-        if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
-          f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_pkt_start_ptr_addr() + off_expr));
-        } else {
-          f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_pkt_start_addr() + off_expr));
-        }
-      } else if (reg_state.type == PTR_TO_PKT) {
-        f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_pkt_start_addr() + off_expr));
-      } else if (reg_state.type == PTR_TO_MAP_VALUE) {
-        f = f && z3::implies(pc, smt_input::reg_expr(reg) == (sv.get_map_start_addr(reg_state.map_id) + off_expr));
-      }
+      z3::expr ptr_val_expr = get_ptr_value_expr(reg_state.type, sv, reg_state.map_id) + off_expr;
+      f = f && z3::implies(pc, smt_input::reg_expr(reg) == ptr_val_expr);
       // cout << reg_expr << " " << table_id << " " << off_expr << endl;
     }
   }
