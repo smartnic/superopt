@@ -157,6 +157,22 @@ class mem_t {
 
 extern mem_layout _layout;
 
+class mem_table_ptr_info {
+ public:
+  bool is_ptr;
+  z3::expr ptr_expr = Z3_false;  // ptr name expr, 64-bit bitvector
+  int ptr_off;
+  mem_table_ptr_info(bool para_is_ptr = false, z3::expr para_ptr_expr = Z3_false, int para_ptr_off = -1) {
+    is_ptr = para_is_ptr;
+    ptr_expr = para_ptr_expr;
+    ptr_off = para_ptr_off;
+  }
+  friend ostream& operator<<(ostream& out, const mem_table_ptr_info& m) {
+    out << m.is_ptr << " " << m.ptr_expr << " " << m.ptr_off;
+    return out;
+  }
+};
+
 class smt_wt {
  private:
   bool is_equal(z3::expr e1, z3::expr e2);
@@ -165,11 +181,13 @@ class smt_wt {
   vector<z3::expr> is_valid; // flag, indicate whether this entry is valid or not
   vector<z3::expr> addr; // 64-bit bitvector, addr now is an offset
   vector<z3::expr> val;  // 8-bit bitvector
-  void add(unsigned int b, z3::expr iv, z3::expr a, z3::expr v) {
+  vector<mem_table_ptr_info> ptr_info;
+  void add(unsigned int b, z3::expr iv, z3::expr a, z3::expr v, mem_table_ptr_info ptr = mem_table_ptr_info()) {
     block.push_back(b); is_valid.push_back(iv); addr.push_back(a.simplify()); val.push_back(v);
+    ptr_info.push_back(ptr);
     // cout << "mem add entry: " << b << " " << iv << " " << a.simplify() << " " << v.simplify() << endl;
   }
-  void clear() {block.clear(); is_valid.clear(); addr.clear(); val.clear();}
+  void clear() {block.clear(); is_valid.clear(); addr.clear(); val.clear(); ptr_info.clear();}
   unsigned int size() {return addr.size();}
   smt_wt& operator=(const smt_wt &rhs);
   bool operator==(const smt_wt &rhs);
@@ -362,6 +380,9 @@ class smt_input {
   live_variables prog_read;
   static z3::expr reg_expr(int reg) {return to_expr("input_r_" + to_string(reg));}
   static z3::expr reg_path_cond(int reg, int state_id) {return to_bool_expr("input_pc_r_" + to_string(reg) + "_" + to_string(state_id));}
+  static z3::expr ptr_on_stack_expr(int off) {
+    return to_expr("input_ptr_on_stack_" + to_string(off));
+  }
   static z3::expr ptr_on_stack_path_cond(int off, int state_id) {
     return to_bool_expr("input_pc_ptr_on_stack_" + to_string(off) + "_" + to_string(state_id));
   }

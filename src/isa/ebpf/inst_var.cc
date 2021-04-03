@@ -500,8 +500,9 @@ smt_wt& smt_wt::operator=(const smt_wt &rhs) {
   is_valid.clear();
   addr.clear();
   val.clear();
+  ptr_info.clear();
   for (int i = 0; i < rhs.addr.size(); i++) {
-    add(rhs.block[i], rhs.is_valid[i], rhs.addr[i], rhs.val[i]);
+    add(rhs.block[i], rhs.is_valid[i], rhs.addr[i], rhs.val[i], rhs.ptr_info[i]);
   }
   return *this;
 }
@@ -519,7 +520,8 @@ bool smt_wt::operator==(const smt_wt &rhs) {
 ostream& operator<<(ostream& out, const smt_wt& s) {
   for (int i = 0; i < s.addr.size(); i++) {
     out << i << ": " << s.block[i] << " " << s.is_valid[i] << " "
-        << s.addr[i].simplify() << " " << s.val[i].simplify() << endl;
+        << s.addr[i].simplify() << " " << s.val[i].simplify() << " "
+        << s.ptr_info[i] << endl;
   }
   return out;
 }
