@@ -186,11 +186,79 @@ z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, 
           predicate_ld_byte(addr, off + 3, sv, out.extract(31, 24), block, Z3_true, enable_addr_off, is_win));
 }
 
+// check whether entry_start,... entry_start+7 combines a pointer
+bool is_a_ptr_in_mem_table(smt_wt& mem_table, int entry_start) {
+  const int ptr_sz = 8;
+  int entry_end = entry_start + ptr_sz - 1;
+  if ((entry_start < 0) || entry_end >= mem_table.size()) {
+    return false;
+  }
+  for (int i = entry_start; i <= entry_end; i++) {
+    if (! mem_table.ptr_info[i].is_ptr) return false;
+  }
+
+  // check the ptr_expr the same
+  unsigned int ptr_expr_id = mem_table.ptr_info[entry_start].ptr_expr.id();
+  for (int i = entry_start + 1; i <= entry_end; i++) {
+    unsigned int id = mem_table.ptr_info[i].ptr_expr.id();
+    if (ptr_expr_id != id) return false;
+  }
+
+  // check ptr_off, ptr_off should be 0, 1, ~ 7
+  vector<int> off_count(ptr_sz);
+  for (int i = 0; i < off_count.size(); i++) {
+    off_count[i] = 0;
+  }
+  for (int i = entry_start; i <= entry_end; i++) {
+    int ptr_off = mem_table.ptr_info[i].ptr_off;
+    if ((ptr_off < 0) || (ptr_off >= off_count.size())) return false;
+    off_count[ptr_off]++;
+  }
+  for (int i = 0; i < off_count.size(); i++) {
+    if (off_count[i] != 1) return false;
+  }
+  return true;
+}
+
+// load pointers from off_start in the given memory table
+void get_ptrs_from_off_based_mem_table(vector<z3::expr>& ptr_exprs,
+                                       vector<z3::expr>& ptr_conds,
+                                       uint64_t off_start, int mem_table_id,
+                                       smt_var& sv) {
+  ptr_exprs.clear();
+  // now only supports stack memory stores pointers
+  if (mem_table_id != sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
+    return;
+  }
+  // check whether stack_off is the off_start of a pointer
+  // walk through memory wt backwards (latest write)
+
+  // walk through memory urt
+  smt_wt& urt = sv.mem_var._mem_tables[mem_table_id]._urt;
+  for (int i = 0; i < urt.size(); i++) {
+    // check whether off_start matches off[i], since a pointer is stored as
+    // 8 bytes from low address to high.
+    z3::expr mem_off_expr = urt.addr[i];
+    uint64_t mem_off = get_uint64_from_bv64(mem_off_expr, true);
+    if (mem_off != off_start) continue;
+    // check whether it's a pointer
+    if (! is_a_ptr_in_mem_table(urt, i)) continue;
+    // push pointer and it's condition in the return vectors
+    // condition means: if condition, ptr_expr is a pointer
+    ptr_exprs.push_back(urt.ptr_info[i].ptr_expr);
+    // since entry_i to entry_i+7 is a pointer, is_valid of these 8 entris are the same
+    ptr_conds.push_back(urt.is_valid[i]);
+  }
+}
+
 z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
                         unsigned int block, bool enable_addr_off, bool is_win) {
+  cout << "predicate_ld64" << endl;
   z3::expr f = Z3_true;
   if (is_win) {
-    // check whether load a pointer from the stack
+    // add pointer into pointer table if ld64 loads a pointer from the stack
+    // 1. memory table must be stack memory
+    // 2. the stack memory stores a pointer
     bool flag_ptr_stack = true;
     int stack_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
     vector<int> ids;
@@ -201,30 +269,65 @@ z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
         flag_ptr_stack = false;
         break;
       }
-      for (int j = 0; j < info_list[i].size(); j++) {
-        z3::expr z3_stack_off = info_list[i][j].off + off;
-        // get the concrete value of z3_stack_off
-        uint64_t stack_off = get_uint64_from_bv64(z3_stack_off, true);
-        // check whether stack_off is the off_start of a pointer
-        vector<ptr_info> ptr_info_list;
-        sv.mem_var.get_ptr_info_in_stack_state(ptr_info_list, stack_off);
-        if (ptr_info_list.size() == 0) {
-          flag_ptr_stack = false;
-          break;
-        }
-        for (int k = 0; k < ptr_info_list.size(); k++) {
-          int mem_table_id = ptr_info_list[k]._mem_table_id;
-          int off = ptr_info_list[k]._off;
-          z3::expr z3_off = to_expr((int64_t)off);
-          z3::expr pc = ptr_info_list[k]._path_cond;
-          sv.mem_var.add_ptr(out, mem_table_id, z3_off, pc);
-          // todo: do we care about the value of out?
-          // how to deal with ptr_to_map_value
+    }
+    if (flag_ptr_stack) {
+      for (int i = 0; i < ids.size(); i++) {
+        // check is a pointer
+        for (int j = 0; j < info_list[i].size(); j++) {
+          z3::expr z3_stack_off = info_list[i][j].off + off;
+          // get the concrete value of z3_stack_off
+          uint64_t stack_off = get_uint64_from_bv64(z3_stack_off, true);
+          cout << "stack_off: " << stack_off << endl;
+          vector<z3::expr> ptr_exprs, ptr_conds;
+          get_ptrs_from_off_based_mem_table(ptr_exprs, ptr_conds, stack_off, stack_mem_table, sv);
+          for (int ptr_id = 0; ptr_id < ptr_exprs.size(); ptr_id++) {
+            cout << "ptr_expr: " << ptr_exprs[ptr_id] << endl;
+            // get the ptr_info according to ptr_expr and add all possible pointers in
+            // the pointer table
+            vector<int> ptr_mem_table_ids;
+            vector<vector<mem_ptr_info>> ptr_info_list;
+            sv.mem_var.get_mem_ptr_info(ptr_mem_table_ids, ptr_info_list, ptr_exprs[ptr_id]);
+            for (int m = 0; m < ptr_info_list.size(); m++) {
+              for (int n = 0; n < ptr_info_list[m].size(); n++) {
+                z3::expr ptr_off = ptr_info_list[m][n].off;
+                z3::expr ptr_pc = ptr_conds[ptr_id] && ptr_info_list[m][n].path_cond;
+                sv.mem_var.add_ptr(out, ptr_mem_table_ids[m], ptr_off, ptr_pc);
+              }
+            }
+          }
         }
       }
     }
-
     if (flag_ptr_stack) return f;
+    // for (int i = 0; i < ids.size(); i++) {
+    //   if (ids[i] != stack_mem_table) {
+    //     flag_ptr_stack = false;
+    //     break;
+    //   }
+    //   for (int j = 0; j < info_list[i].size(); j++) {
+    //     z3::expr z3_stack_off = info_list[i][j].off + off;
+    //     // get the concrete value of z3_stack_off
+    //     uint64_t stack_off = get_uint64_from_bv64(z3_stack_off, true);
+    //     // check whether stack_off is the off_start of a pointer
+    //     vector<ptr_info> ptr_info_list;
+    //     sv.mem_var.get_ptr_info_in_stack_state(ptr_info_list, stack_off);
+    //     if (ptr_info_list.size() == 0) {
+    //       flag_ptr_stack = false;
+    //       break;
+    //     }
+    //     for (int k = 0; k < ptr_info_list.size(); k++) {
+    //       int mem_table_id = ptr_info_list[k]._mem_table_id;
+    //       int off = ptr_info_list[k]._off;
+    //       z3::expr z3_off = to_expr((int64_t)off);
+    //       z3::expr pc = ptr_info_list[k]._path_cond;
+    //       sv.mem_var.add_ptr(out, mem_table_id, z3_off, pc);
+    //       // todo: do we care about the value of out?
+    //       // how to deal with ptr_to_map_value
+    //     }
+    //   }
+    // }
+
+    // if (flag_ptr_stack) return f;
   }
 
   f = predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off, is_win);
@@ -1165,7 +1268,7 @@ bool is_ptr(int type) {
 }
 
 z3::expr get_ptr_value_expr(int ptr_type, smt_var& sv, int map_id = -1) {
-int pgm_input_type = mem_t::get_pgm_input_type();
+  int pgm_input_type = mem_t::get_pgm_input_type();
   z3::expr ptr_val_expr = ZERO_ADDR_OFF_EXPR;
   if (ptr_type == PTR_TO_STACK) {
     ptr_val_expr = sv.get_stack_start_addr();
@@ -1232,12 +1335,12 @@ void smt_pgm_set_pre_stack_state_table(smt_var& sv, smt_input& input) {
         z3::expr ptr_value = get_ptr_value_expr(ptr_type, sv, map_id) + ptr_off_expr;
 
         bool is_ptr = true;
-        mem_table_ptr_info ptr_info(is_ptr, stack_off_name_expr, ptr_off);
         int block = 0;  // set as root block
         z3::expr is_valid = pc;  // set is_valid as path condition
         int pointer_sz = 8;
         // push each off-val/ptr entry into stack memory urt
         for (int v_id = 0; v_id < pointer_sz; v_id++) {
+          mem_table_ptr_info ptr_info(is_ptr, stack_off_name_expr, v_id);
           z3::expr val_expr = ptr_value.extract(8 * v_id + 7, 8 * v_id);
           sv.mem_var._mem_tables[stack_table_id]._urt.add(block, is_valid,
               to_expr((uint64_t)stack_off), val_expr, ptr_info);
@@ -1245,7 +1348,8 @@ void smt_pgm_set_pre_stack_state_table(smt_var& sv, smt_input& input) {
       }
     }
   }
-
+  cout << "smt_pgm_set_pre_stack_state_table" << endl;
+  cout << sv.mem_var << endl;
 }
 
 // Generate the precondition formula and set up the pointer registers,
