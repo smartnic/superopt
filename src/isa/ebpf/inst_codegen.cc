@@ -298,35 +298,6 @@ z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
         }
       }
     }
-    // for (int i = 0; i < ids.size(); i++) {
-    //   if (ids[i] != stack_mem_table) {
-    //     flag_ptr_stack = false;
-    //     break;
-    //   }
-    //   for (int j = 0; j < info_list[i].size(); j++) {
-    //     z3::expr z3_stack_off = info_list[i][j].off + off;
-    //     // get the concrete value of z3_stack_off
-    //     uint64_t stack_off = get_uint64_from_bv64(z3_stack_off, true);
-    //     // check whether stack_off is the off_start of a pointer
-    //     vector<ptr_info> ptr_info_list;
-    //     sv.mem_var.get_ptr_info_in_stack_state(ptr_info_list, stack_off);
-    //     if (ptr_info_list.size() == 0) {
-    //       flag_ptr_stack = false;
-    //       break;
-    //     }
-    //     for (int k = 0; k < ptr_info_list.size(); k++) {
-    //       int mem_table_id = ptr_info_list[k]._mem_table_id;
-    //       int off = ptr_info_list[k]._off;
-    //       z3::expr z3_off = to_expr((int64_t)off);
-    //       z3::expr pc = ptr_info_list[k]._path_cond;
-    //       sv.mem_var.add_ptr(out, mem_table_id, z3_off, pc);
-    //       // todo: do we care about the value of out?
-    //       // how to deal with ptr_to_map_value
-    //     }
-    //   }
-    // }
-
-    // if (flag_ptr_stack) return f;
   }
 
   f = predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off, is_win);
