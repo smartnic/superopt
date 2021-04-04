@@ -1571,6 +1571,11 @@ void test13() {
   win_start = 1, win_end = 2;
   win_eq_check(p6, p6_len, p6, p6_len, win_start, win_end, 1, "6.3");
   win_eq_check(p6, p6_len, p6_1, p6_len, win_start, win_end, 0, "6.4");
+  win_start = 1, win_end = 1;
+  win_eq_check(p6, p6_len, p6, p6_len, win_start, win_end, 1, "6.5");
+  win_start = 0, win_end = 2;
+  win_eq_check(p6, p6_len, p6, p6_len, win_start, win_end, 1, "6.6");
+  win_eq_check(p6, p6_len, p6_1, p6_len, win_start, win_end, 0, "6.7");
 
   // test pointer stored on stack and read from stack: two possibilities with different pointers
   inst p7[] = {inst(STXDW, 10, -8, 1),
@@ -1624,6 +1629,8 @@ void test13() {
   win_eq_check(p7, p7_len, p7_1, p7_len, win_start, win_end, 0, "7.6");
   win_eq_check(p7, p7_len, p7_2, p7_len, win_start, win_end, 0, "7.7");
   win_eq_check(p7, p7_len, p7_3, p7_len, win_start, win_end, 1, "7.8");
+  win_start = 5, win_end = 5;
+  win_eq_check(p7, p7_len, p7, p7_len, win_start, win_end, 1, "7.9");
 
   // test pointer stored on stack and read from stack: two possibilities with different pointers
   // one ctx pointer, the other stack pointer
@@ -1654,44 +1661,101 @@ void test13() {
   win_start = 6, win_end = 7;
   win_eq_check(p8, p8_len, p8, p8_len, win_start, win_end, 1, "8.3");
   win_eq_check(p8, p8_len, p8_1, p8_len, win_start, win_end, 0, "8.4");
+  win_start = 6, win_end = 6;
+  win_eq_check(p8, p8_len, p8, p8_len, win_start, win_end, 1, "8.5");
 
-  // test pointer stored on stack and read from stack: map value pointers
-  inst p9[] = {inst(STH, 10, -2, 0xff),
-               INSN_LDMAPID(1, 1),
-               inst(MOV64XY, 2, 10),
-               inst(ADD64XC, 2, -2),
-               inst(CALL, BPF_FUNC_map_lookup_elem),
-               inst(MOV64XY, 1, 0),
-               inst(MOV64XC, 2, 0),
-               inst(JEQXC, 1, 0, 5),
-               inst(JEQXC, 2, 1, 1),
+  // test pointer stored on stack and read from stack (test write when there is pointer in urt)
+  inst p9[] = {inst(STXDW, 10, -8, 1), // 0: store a pointer on stack
                inst(ADD64XC, 1, 1),
-               inst(),              // insn 10
-               inst(LDXB, 0, 1, 0), // insn 11
-               inst(EXIT),
-               inst(MOV64XC, 0, 2),
+               inst(MOV64XC, 2, 0xff),
+               inst(STXB, 1, 0, 2),    // 3: ctx[1] = 0xff
+               inst(STXDW, 10, -8, 1), // 4: store a new pointer on stack
+               inst(LDXDW, 0, 10, -8), // 5: read pointer from stack
+               inst(LDXB, 0, 0, 0),    // 6: r0 = ctx[1] = 0xff
                inst(EXIT),
               };
-  const int p9_len = sizeof(p9) / sizeof(inst);
-  win_start = 10; win_end = 11;
+  inst p9_1[] = {inst(STXDW, 10, -8, 1), // 0: store a pointer on stack
+                 inst(ADD64XC, 1, 1),
+                 inst(MOV64XC, 2, 0xff),
+                 inst(STXB, 1, 0, 2),    // 3: ctx[1] = 0xff
+                 inst(STXDW, 10, -8, 1), // 4: store a new pointer on stack
+                 inst(LDXDW, 0, 10, -8), // 5: read pointer from stack
+                 inst(LDXB, 0, 0, 1),    // 6: r0 = ctx[2]
+                 inst(EXIT),
+                };
+  inst p9_2[] = {inst(STXDW, 10, -8, 1), // 0: store a pointer on stack
+                 inst(ADD64XC, 1, 1),
+                 inst(MOV64XC, 2, 0xff),
+                 inst(STXB, 1, 0, 2),    // 3: ctx[1] = 0xff
+                 inst(STXDW, 10, -8, 1), // 4: store a new pointer on stack
+                 inst(LDXDW, 0, 10, -8), // 5: read pointer from stack
+                 inst(MOV64XC, 0, 0xff), // 6: r0 = 0xff
+                 inst(EXIT),
+                };
+  inst p9_3[] = {inst(STXDW, 10, -8, 1), // 0: store a pointer on stack
+                 inst(ADD64XC, 1, 1),
+                 inst(MOV64XC, 2, 0xff),
+                 inst(STXB, 1, 0, 2),    // 3: ctx[1] = 0xff
+                 inst(STXDW, 10, -8, 1), // 4: store a new pointer on stack
+                 inst(LDXDW, 0, 10, -8), // 5: read pointer from stack
+                 inst(MOV64XC, 0, 0xfe), // 6: r0 = 0xfe
+                 inst(EXIT),
+                };
+  int p9_len = sizeof(p9) / sizeof(inst);
+  win_start = 3, win_end = 6;  // set insn 0 as precondition
   win_eq_check(p9, p9_len, p9, p9_len, win_start, win_end, 1, "9.1.1");
-  win_start = 11; win_end = 11;
-  win_eq_check(p9, p9_len, p9, p8_len, win_start, win_end, 1, "9.1.2");
+  win_eq_check(p9, p9_len, p9_1, p9_len, win_start, win_end, 0, "9.1.2");
+  win_eq_check(p9, p9_len, p9_2, p9_len, win_start, win_end, 1, "9.1.3");
+  // test latest write
+  win_start = 0, win_end = 6;  // set insn 0 in the window
+  win_eq_check(p9, p9_len, p9, p9_len, win_start, win_end, 1, "9.2.1");
+  win_eq_check(p9, p9_len, p9_1, p9_len, win_start, win_end, 0, "9.2.2");
+  win_eq_check(p9, p9_len, p9_2, p9_len, win_start, win_end, 1, "9.2.3");
+  win_eq_check(p9_1, p9_len, p9_3, p9_len, win_start, win_end, 0, "9.2.4");
+  win_start = 6, win_end = 6;
+  win_eq_check(p9, p9_len, p9, p9_len, win_start, win_end, 1, "9.3.1");
+  win_eq_check(p9, p9_len, p9_1, p9_len, win_start, win_end, 0, "9.3.2");
+  // track of constant stored in the memory is not implemented in the static analysis
+  // win_eq_check(p9, p9_len, p9_2, p9_len, win_start, win_end, 1, "8.3.3");
 
-  inst p9_1[p9_len], p9_2[p9_len];
-  for (int i = 0; i < p9_len; i++) p9_1[i] = p9[i];
-  p9_1[10] = inst();
-  p9_1[11] = inst(LDXB, 0, 1, 1);
-  win_start = 10; win_end = 11;
-  win_eq_check(p9, p9_len, p9_1, p9_len, win_start, win_end, 0, "9.2.1");
-  win_start = 11; win_end = 11;
-  win_eq_check(p9, p9_len, p9_1, p8_len, win_start, win_end, 0, "9.2.2");
+  // // test pointer stored on stack and read from stack: map value pointers
+  // inst p10[] = {inst(STH, 10, -2, 0xff),
+  //               INSN_LDMAPID(1, 1),
+  //               inst(MOV64XY, 2, 10),
+  //               inst(ADD64XC, 2, -2),
+  //               inst(CALL, BPF_FUNC_map_lookup_elem),
+  //               inst(MOV64XY, 1, 0),
+  //               inst(MOV64XC, 2, 0),
+  //               inst(JEQXC, 1, 0, 5),
+  //               inst(JEQXC, 2, 1, 1),
+  //               inst(ADD64XC, 1, 1),
+  //               inst(),              // insn 10
+  //               inst(LDXB, 0, 1, 0), // insn 11
+  //               inst(EXIT),
+  //               inst(MOV64XC, 0, 2),
+  //               inst(EXIT),
+  //              };
+  // const int p10_len = sizeof(p10) / sizeof(inst);
+  // win_start = 10; win_end = 11;
+  // win_eq_check(p10, p10_len, p10, p10_len, win_start, win_end, 1, "10.1.1");
+  // win_start = 11; win_end = 11;
+  // win_eq_check(p10, p10_len, p10, p8_len, win_start, win_end, 1, "10.1.2");
 
-  for (int i = 0; i < p9_len; i++) p9_2[i] = p9[i];
-  p9_2[10] = inst(MOV64XY, 1, 1);
-  p9_2[11] = inst(LDXB, 0, 1, 1);
-  win_start = 10; win_end = 11;
-  win_eq_check(p9, p9_len, p9_2, p9_len, win_start, win_end, 0, "9.3");
+  // inst p10_1[p10_len], p10_2[p10_len];
+  // for (int i = 0; i < p10_len; i++) p10_1[i] = p10[i];
+  // p10_1[10] = inst();
+  // p10_1[11] = inst(LDXB, 0, 1, 1);
+  // win_start = 10; win_end = 11;
+  // win_eq_check(p10, p10_len, p10_1, p10_len, win_start, win_end, 0, "10.2.1");
+  // win_start = 11; win_end = 11;
+  // win_eq_check(p10, p10_len, p10_1, p8_len, win_start, win_end, 0, "10.2.2");
+
+  // for (int i = 0; i < p10_len; i++) p10_2[i] = p10[i];
+  // p10_2[10] = inst(MOV64XY, 1, 1);
+  // p10_2[11] = inst(LDXB, 0, 1, 1);
+  // win_start = 10; win_end = 11;
+  // win_eq_check(p10, p10_len, p10_2, p10_len, win_start, win_end, 0, "10.3");
+
   return;
 
   // test xdp_exception
