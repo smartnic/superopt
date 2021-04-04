@@ -232,8 +232,35 @@ void get_ptrs_from_off_based_mem_table(vector<z3::expr>& ptr_exprs,
   }
   // check whether stack_off is the off_start of a pointer
   // walk through memory wt backwards (latest write)
+  smt_wt& wt = sv.mem_var._mem_tables[mem_table_id]._wt;
+  vector<int> poss_entries;
+  // filter entries that do not match by offset
+  for (int i = wt.size() - 1; i >= 0; i--) {
+    z3::expr mem_off_expr = wt.addr[i];
+    uint64_t mem_off = get_uint64_from_bv64(mem_off_expr, true);
+    if (mem_off != off_start) continue;
+    poss_entries.push_back(i);
+  }
+  z3::expr f_not_in_writes_after_i = Z3_true; // for latest write
+  for (int i = 0; i < poss_entries.size(); i++) {
+    int entry = poss_entries[i];
+    // check whether is a pointer
+    if (! is_a_ptr_in_mem_table(wt, entry)) continue;
+    cout << "get_ptrs_from_off_based_mem_table wt" << endl;
+    cout << "entry id:" << entry << endl;
+
+    ptr_exprs.push_back(wt.ptr_info[entry].ptr_expr);
+    // since entry_i to entry_i+7 is a pointer, is_valid of these 8 entris are the same
+    z3::expr cond = f_not_in_writes_after_i && wt.is_valid[entry];
+    cout << "cond: " << cond.simplify() << endl;
+    ptr_conds.push_back(cond);
+
+    // update f_not_in_writes_after_i
+    f_not_in_writes_after_i = f_not_in_writes_after_i && (! wt.is_valid[entry]);
+  }
 
   // walk through memory urt
+  z3::expr f_not_in_wt = f_not_in_writes_after_i;
   smt_wt& urt = sv.mem_var._mem_tables[mem_table_id]._urt;
   for (int i = 0; i < urt.size(); i++) {
     // check whether off_start matches off[i], since a pointer is stored as
@@ -243,11 +270,14 @@ void get_ptrs_from_off_based_mem_table(vector<z3::expr>& ptr_exprs,
     if (mem_off != off_start) continue;
     // check whether it's a pointer
     if (! is_a_ptr_in_mem_table(urt, i)) continue;
+    cout << "get_ptrs_from_off_based_mem_table urt" << endl;
+    cout << "entry id:" << i << endl;
     // push pointer and it's condition in the return vectors
     // condition means: if condition, ptr_expr is a pointer
     ptr_exprs.push_back(urt.ptr_info[i].ptr_expr);
     // since entry_i to entry_i+7 is a pointer, is_valid of these 8 entris are the same
-    ptr_conds.push_back(urt.is_valid[i]);
+    z3::expr cond = f_not_in_wt && urt.is_valid[i];
+    ptr_conds.push_back(cond);
   }
 }
 
@@ -371,6 +401,53 @@ z3::expr predicate_st_n_bytes(int n, z3::expr in, z3::expr addr, smt_var& sv,
   return f;
 }
 
+z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
+                        unsigned int block, bool bpf_st, bool enable_addr_off) {
+  z3::expr f = predicate_st32(in.extract(31, 0), addr, off, sv, block, bpf_st, enable_addr_off);
+  f = f && predicate_st32(in.extract(63, 32), addr, off + to_expr(4, 64), sv, block, bpf_st, enable_addr_off);
+  // modify entries' pointer info if st64 stores a pointer on the stack
+  if (smt_var::is_win && (! bpf_st)) { // flag bpf_st means store an immediate number, which is not a pointer
+    // 1. memory table must be stack memory ("addr" must be stack memory)
+    // 2. store a pointer in the memory (expression "in" must be a pointer)
+    bool mem_must_be_stack = true;
+    int stack_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
+    vector<int> ids;
+    vector<vector<mem_ptr_info>> info_list;
+    sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
+    for (int i = 0; i < ids.size(); i++) {
+      if (ids[i] != stack_mem_table) {
+        mem_must_be_stack = false;
+        break;
+      }
+    }
+    bool store_a_pointer = true;
+    vector<int> store_ids;
+    vector<vector<mem_ptr_info>> store_info_list;
+    sv.mem_var.get_mem_ptr_info(store_ids, store_info_list, in);
+    if (store_ids.size() == 0) store_a_pointer = false;
+    if (mem_must_be_stack && store_a_pointer) {
+      // modify pointer info of entries added by this st64
+      const int ptr_sz = 8;
+      assert(ids.size() == 1);  // since memory table must be stack
+      int n_entries = info_list[0].size() * ptr_sz;
+      smt_wt& wt = sv.mem_var._mem_tables[stack_mem_table]._wt;
+      int entry_start = wt.size() - n_entries;
+      for (int i = 0; i < n_entries; i += ptr_sz) {
+        for (int j = 0; j < ptr_sz; j++) {
+          mem_table_ptr_info ptr_info;
+          ptr_info.is_ptr = true;
+          ptr_info.ptr_expr = in;
+          ptr_info.ptr_off = j; // add pointer byte by byte from low address to high
+          wt.ptr_info[entry_start + i + j] = ptr_info;
+        }
+      }
+      cout << "predicate_st64 after modifying entries' ptr info" << endl;
+      cout << sv.mem_var << endl;
+    }
+  }
+  return f;
+}
+
 inline z3::expr addr_in_range(z3::expr addr, z3::expr start, z3::expr end) {
   return (uge(addr, start) && uge(end, addr));
 }
@@ -440,6 +517,7 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
   // stack does not have urt
   if (smt_var::smt_var::enable_multi_mem_tables) {
     if ((table_id == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) && (! is_win)) {
+      f = z3::implies(cond, f);
       return f;
     }
   }
@@ -449,6 +527,7 @@ z3::expr predicate_ld_byte_for_one_mem_table(int table_id, mem_ptr_info& ptr_inf
   f = f && (not_found_in_wt == (!f_found_in_wt_after_i));
   if (is_addr_off_table) f = f && z3::implies(not_found_in_wt, urt_element_constrain(a, out, urt));
   else f = f && z3::implies(not_found_in_wt, urt_element_constrain_map_mem(a, out, urt));
+  f = z3::implies(cond, f);
   // add element in urt
   // An example that will cause a problem in equvialence check if just add (a, out) in urt
   // and add an entry in map URT using the same approach
@@ -1313,7 +1392,7 @@ void smt_pgm_set_pre_stack_state_table(smt_var& sv, smt_input& input) {
           mem_table_ptr_info ptr_info(is_ptr, stack_off_name_expr, v_id);
           z3::expr val_expr = ptr_value.extract(8 * v_id + 7, 8 * v_id);
           sv.mem_var._mem_tables[stack_table_id]._urt.add(block, is_valid,
-              to_expr((uint64_t)stack_off), val_expr, ptr_info);
+              to_expr((uint64_t)(stack_off + v_id)), val_expr, ptr_info);
         }
       }
     }
