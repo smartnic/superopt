@@ -1921,10 +1921,10 @@ void test13() {
 }
 
 void chk_counterex_by_vld_to_interpreter_win(inst* p1, int len1, inst* p2, int len2,
-    int win_start, int win_end, string test_name) {
+    int win_start, int win_end, string test_name, int counterex_type = COUNTEREX_eq_check) {
   bool interpret_check = false;
   bool is_win = true;
-  chk_counterex_by_vld_to_interpreter(p1, len1, p2, len2, test_name, COUNTEREX_eq_check,
+  chk_counterex_by_vld_to_interpreter(p1, len1, p2, len2, test_name, counterex_type,
                                       interpret_check, is_win, win_start, win_end);
 }
 
@@ -1956,6 +1956,169 @@ void test14() {
   win_start = 1;
   win_end = 2;
   chk_counterex_by_vld_to_interpreter_win(p2, 5, p2_2, 5, win_start, win_end, "2");
+
+  // test pointer stored on stack and read from stack
+  mem_t::_layout.clear();
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(16);
+  mem_t::add_map(map_attr(16, 32, 16)); // key_sz = 2 bytes, val_sz = 4 bytes
+  mem_t::add_map(map_attr(16, 32, 16));
+  // test pointer stored on stack and read from stack
+  inst p3[] = {inst(STXDW, 10, -8, 1), // store pointer on stack
+               inst(LDXDW, 0, 10, -8), // read pointer from stack
+               inst(LDXB, 0, 0, 0),    // 2:
+               inst(EXIT),
+              };
+  inst p3_1[] = {inst(STXDW, 10, -8, 1), // store pointer on stack
+                 inst(LDXDW, 0, 10, -8), // read pointer from stack
+                 inst(LDXB, 0, 0, 1),    // 2:
+                 inst(EXIT),
+                };
+  int p3_len = sizeof(p3) / sizeof(inst);
+  win_start = 2, win_end = 2;
+  chk_counterex_by_vld_to_interpreter_win(p3, p3_len, p3_1, p3_len, win_start, win_end, "3.1");
+  win_start = 1, win_end = 2;
+  chk_counterex_by_vld_to_interpreter_win(p3, p3_len, p3_1, p3_len, win_start, win_end, "3.2");
+  win_start = 0, win_end = 2;
+  chk_counterex_by_vld_to_interpreter_win(p3, p3_len, p3_1, p3_len, win_start, win_end, "3.3");
+
+  // test pointer stored on stack and read from stack: two possibilities with different pointers
+  inst p4[] = {inst(STXDW, 10, -8, 1),
+               inst(MOV64XC, 0, 0),
+               inst(JEQXC, 0, 0, 2),
+               inst(ADD64XC, 1, 2),
+               inst(STXDW, 10, -8, 1),
+               inst(LDXDW, 0, 10, -8),
+               inst(LDXB, 0, 0, 0),   // 6:
+               inst(),
+               inst(EXIT),
+              };
+  inst p4_1[] = {inst(STXDW, 10, -8, 1),
+                 inst(MOV64XC, 0, 0),
+                 inst(JEQXC, 0, 0, 2),
+                 inst(ADD64XC, 1, 2),
+                 inst(STXDW, 10, -8, 1),
+                 inst(LDXDW, 0, 10, -8),
+                 inst(LDXB, 0, 0, 1),   // 6:
+                 inst(),
+                 inst(EXIT),
+                };
+  inst p4_2[] = {inst(STXDW, 10, -8, 1),
+                 inst(MOV64XC, 0, 0),
+                 inst(JEQXC, 0, 0, 2),
+                 inst(ADD64XC, 1, 2),
+                 inst(STXDW, 10, -8, 1),
+                 inst(LDXDW, 0, 10, -8),
+                 inst(ADD64XC, 0, 1),   // 6:
+                 inst(LDXB, 0, 0, 0),   // 7:
+                 inst(EXIT),
+                };
+  int p4_len = sizeof(p4) / sizeof(inst);
+  win_start = 6, win_end = 7;
+  chk_counterex_by_vld_to_interpreter_win(p4, p4_len, p4_1, p4_len, win_start, win_end, "4.1.1");
+  chk_counterex_by_vld_to_interpreter_win(p4, p4_len, p4_2, p4_len, win_start, win_end, "4.1.2");
+  win_start = 5, win_end = 7;
+  chk_counterex_by_vld_to_interpreter_win(p4, p4_len, p4_1, p4_len, win_start, win_end, "4.2.1");
+  chk_counterex_by_vld_to_interpreter_win(p4, p4_len, p4_2, p4_len, win_start, win_end, "4.2.2");
+
+  // test pointer stored on stack and read from stack: two possibilities with different pointers
+  // one ctx pointer, the other stack pointer
+  inst p5[] = {inst(STXDW, 10, -8, 1),  // store ctx pointer ctx[0]
+               inst(MOV64XC, 0, 0),
+               inst(JEQXC, 0, 0, 3),
+               inst(MOV64XY, 1, 10),
+               inst(ADD64XC, 1, -2),    // store stack pointer stack[510]
+               inst(STXDW, 10, -8, 1),
+               inst(LDXDW, 0, 10, -8),
+               inst(LDXB, 0, 0, 0),     // 7:
+               inst(EXIT),
+              };
+  inst p5_1[] = {inst(STXDW, 10, -8, 1),  // store ctx pointer ctx[0]
+                 inst(MOV64XC, 0, 0),
+                 inst(JEQXC, 0, 0, 3),
+                 inst(MOV64XY, 1, 10),
+                 inst(ADD64XC, 1, -2),    // store stack pointer stack[511]
+                 inst(STXDW, 10, -8, 1),
+                 inst(LDXDW, 0, 10, -8),
+                 inst(LDXB, 0, 0, 1),     // 7:
+                 inst(EXIT),
+                };
+  int p5_len = sizeof(p5) / sizeof(inst);
+  win_start = 7, win_end = 7;
+  chk_counterex_by_vld_to_interpreter_win(p5, p5_len, p5_1, p5_len, win_start, win_end, "5.1");
+  win_start = 6, win_end = 7;
+  chk_counterex_by_vld_to_interpreter_win(p5, p5_len, p5_1, p5_len, win_start, win_end, "5.2");
+
+  // test pointer stored on stack and read from stack (test write when there is pointer in urt)
+  inst p6[] = {inst(STXDW, 10, -8, 1), // 0: store a pointer on stack
+               inst(ADD64XC, 1, 1),
+               inst(MOV64XC, 2, 0xff),
+               inst(STXB, 1, 0, 2),    // 3: ctx[1] = 0xff
+               inst(STXDW, 10, -8, 1), // 4: store a new pointer on stack
+               inst(LDXDW, 0, 10, -8), // 5: read pointer from stack
+               inst(LDXB, 0, 0, 0),    // 6: r0 = ctx[1] = 0xff
+               inst(EXIT),
+              };
+  inst p6_1[] = {inst(STXDW, 10, -8, 1), // 0: store a pointer on stack
+                 inst(ADD64XC, 1, 1),
+                 inst(MOV64XC, 2, 0xff),
+                 inst(STXB, 1, 0, 2),    // 3: ctx[1] = 0xff
+                 inst(STXDW, 10, -8, 1), // 4: store a new pointer on stack
+                 inst(LDXDW, 0, 10, -8), // 5: read pointer from stack
+                 inst(LDXB, 0, 0, 1),    // 6: r0 = ctx[2]
+                 inst(EXIT),
+                };
+  inst p6_2[] = {inst(STXDW, 10, -8, 1), // 0: store a pointer on stack
+                 inst(ADD64XC, 1, 1),
+                 inst(MOV64XC, 2, 0xff),
+                 inst(STXB, 1, 0, 2),    // 3: ctx[1] = 0xff
+                 inst(STXDW, 10, -8, 1), // 4: store a new pointer on stack
+                 inst(LDXDW, 0, 10, -8), // 5: read pointer from stack
+                 inst(MOV64XC, 0, 0xfe), // 6: r0 = 0xfe
+                 inst(EXIT),
+                };
+  int p6_len = sizeof(p6) / sizeof(inst);
+  win_start = 3, win_end = 6;  // set insn 0 as precondition
+  chk_counterex_by_vld_to_interpreter_win(p6, p6_len, p6_1, p6_len, win_start, win_end, "6.1");
+  // test latest write
+  win_start = 0, win_end = 6;  // set insn 0 in the window
+  chk_counterex_by_vld_to_interpreter_win(p6, p6_len, p6_1, p6_len, win_start, win_end, "6.2.1");
+  chk_counterex_by_vld_to_interpreter_win(p6_1, p6_len, p6_2, p6_len, win_start, win_end, "6.2.2");
+  win_start = 6, win_end = 6;
+  chk_counterex_by_vld_to_interpreter_win(p6, p6_len, p6_1, p6_len, win_start, win_end, "6.3");
+
+  // test pointer stored on stack and read from stack: map value pointers
+  inst p7[] = {inst(STH, 10, -2, 0xff),
+               INSN_LDMAPID(1, 1),
+               inst(MOV64XY, 2, 10),
+               inst(ADD64XC, 2, -2),
+               inst(CALL, BPF_FUNC_map_lookup_elem),
+               inst(MOV64XY, 1, 0),
+               inst(MOV64XC, 2, 0),
+               inst(JEQXC, 1, 0, 5),
+               inst(JEQXC, 2, 1, 1),
+               inst(ADD64XC, 1, 1),
+               inst(),              // insn 10
+               inst(LDXB, 0, 1, 0), // insn 11
+               inst(EXIT),
+               inst(MOV64XC, 0, 2),
+               inst(EXIT),
+              };
+  const int p7_len = sizeof(p7) / sizeof(inst);
+  inst p7_1[p7_len], p7_2[p7_len];
+  for (int i = 0; i < p7_len; i++) p7_1[i] = p7[i];
+  p7_1[10] = inst();
+  p7_1[11] = inst(LDXB, 0, 1, 1);
+  win_start = 10; win_end = 11;
+  chk_counterex_by_vld_to_interpreter_win(p7, p7_len, p7_1, p7_len, win_start, win_end, "7.1");
+  win_start = 11; win_end = 11;
+  chk_counterex_by_vld_to_interpreter_win(p7, p7_len, p7_1, p5_len, win_start, win_end, "7.2");
+
+  for (int i = 0; i < p7_len; i++) p7_2[i] = p7[i];
+  p7_2[10] = inst(MOV64XY, 1, 1);
+  p7_2[11] = inst(LDXB, 0, 1, 1);
+  win_start = 10; win_end = 11;
+  chk_counterex_by_vld_to_interpreter_win(p7, p7_len, p7_2, p7_len, win_start, win_end, "7.3");
 
   // test xdp_exception
   mem_t::_layout.clear();
@@ -2120,6 +2283,7 @@ int main() {
   inst::max_prog_len = TEST_PGM_MAX_LEN;
   try {
     test13();
+    test14();
     kill_server();
     return 0;
     test1();
