@@ -246,13 +246,10 @@ void get_ptrs_from_off_based_mem_table(vector<z3::expr>& ptr_exprs,
     int entry = poss_entries[i];
     // check whether is a pointer
     if (! is_a_ptr_in_mem_table(wt, entry)) continue;
-    cout << "get_ptrs_from_off_based_mem_table wt" << endl;
-    cout << "entry id:" << entry << endl;
 
     ptr_exprs.push_back(wt.ptr_info[entry].ptr_expr);
     // since entry_i to entry_i+7 is a pointer, is_valid of these 8 entris are the same
     z3::expr cond = f_not_in_writes_after_i && wt.is_valid[entry];
-    cout << "cond: " << cond.simplify() << endl;
     ptr_conds.push_back(cond);
 
     // update f_not_in_writes_after_i
@@ -270,8 +267,7 @@ void get_ptrs_from_off_based_mem_table(vector<z3::expr>& ptr_exprs,
     if (mem_off != off_start) continue;
     // check whether it's a pointer
     if (! is_a_ptr_in_mem_table(urt, i)) continue;
-    cout << "get_ptrs_from_off_based_mem_table urt" << endl;
-    cout << "entry id:" << i << endl;
+
     // push pointer and it's condition in the return vectors
     // condition means: if condition, ptr_expr is a pointer
     ptr_exprs.push_back(urt.ptr_info[i].ptr_expr);
@@ -283,7 +279,6 @@ void get_ptrs_from_off_based_mem_table(vector<z3::expr>& ptr_exprs,
 
 z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
                         unsigned int block, bool enable_addr_off, bool is_win) {
-  cout << "predicate_ld64" << endl;
   z3::expr f = Z3_true;
   if (is_win) {
     // add pointer into pointer table if ld64 loads a pointer from the stack
@@ -307,11 +302,9 @@ z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
           z3::expr z3_stack_off = info_list[i][j].off + off;
           // get the concrete value of z3_stack_off
           uint64_t stack_off = get_uint64_from_bv64(z3_stack_off, true);
-          cout << "stack_off: " << stack_off << endl;
           vector<z3::expr> ptr_exprs, ptr_conds;
           get_ptrs_from_off_based_mem_table(ptr_exprs, ptr_conds, stack_off, stack_mem_table, sv);
           for (int ptr_id = 0; ptr_id < ptr_exprs.size(); ptr_id++) {
-            cout << "ptr_expr: " << ptr_exprs[ptr_id] << endl;
             // get the ptr_info according to ptr_expr and add all possible pointers in
             // the pointer table
             vector<int> ptr_mem_table_ids;
@@ -441,8 +434,6 @@ z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
           wt.ptr_info[entry_start + i + j] = ptr_info;
         }
       }
-      cout << "predicate_st64 after modifying entries' ptr info" << endl;
-      cout << sv.mem_var << endl;
     }
   }
   return f;
@@ -1397,8 +1388,6 @@ void smt_pgm_set_pre_stack_state_table(smt_var& sv, smt_input& input) {
       }
     }
   }
-  cout << "smt_pgm_set_pre_stack_state_table" << endl;
-  cout << sv.mem_var << endl;
 }
 
 // Generate the precondition formula and set up the pointer registers,
@@ -1430,7 +1419,6 @@ z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
 
   smt_pgm_set_pre_stack_state_table(sv, input);
   f = f && input.input_constraint();
-  cout << "f: \n" << f.simplify() << endl;
   f = f && sv.mem_layout_constrain();
   return f;
 }
