@@ -1718,46 +1718,45 @@ void test13() {
   // track of constant stored in the memory is not implemented in the static analysis
   // win_eq_check(p9, p9_len, p9_2, p9_len, win_start, win_end, 1, "8.3.3");
 
-  // // test pointer stored on stack and read from stack: map value pointers
-  // inst p10[] = {inst(STH, 10, -2, 0xff),
-  //               INSN_LDMAPID(1, 1),
-  //               inst(MOV64XY, 2, 10),
-  //               inst(ADD64XC, 2, -2),
-  //               inst(CALL, BPF_FUNC_map_lookup_elem),
-  //               inst(MOV64XY, 1, 0),
-  //               inst(MOV64XC, 2, 0),
-  //               inst(JEQXC, 1, 0, 5),
-  //               inst(JEQXC, 2, 1, 1),
-  //               inst(ADD64XC, 1, 1),
-  //               inst(),              // insn 10
-  //               inst(LDXB, 0, 1, 0), // insn 11
-  //               inst(EXIT),
-  //               inst(MOV64XC, 0, 2),
-  //               inst(EXIT),
-  //              };
-  // const int p10_len = sizeof(p10) / sizeof(inst);
-  // win_start = 10; win_end = 11;
-  // win_eq_check(p10, p10_len, p10, p10_len, win_start, win_end, 1, "10.1.1");
-  // win_start = 11; win_end = 11;
-  // win_eq_check(p10, p10_len, p10, p8_len, win_start, win_end, 1, "10.1.2");
+  // test pointer stored on stack and read from stack: map value pointers
+  inst p10[] = {inst(STH, 10, -2, 0xff),
+                INSN_LDMAPID(1, 1),
+                inst(MOV64XY, 2, 10),
+                inst(ADD64XC, 2, -2),
+                inst(CALL, BPF_FUNC_map_lookup_elem),
+                inst(MOV64XY, 1, 0),
+                inst(MOV64XC, 2, 0),
+                inst(JEQXC, 1, 0, 5),
+                inst(JEQXC, 2, 1, 1),
+                inst(ADD64XC, 1, 1),
+                inst(),              // insn 10
+                inst(LDXB, 0, 1, 0), // insn 11
+                inst(EXIT),
+                inst(MOV64XC, 0, 2),
+                inst(EXIT),
+               };
+  const int p10_len = sizeof(p10) / sizeof(inst);
+  win_start = 10; win_end = 11;
+  win_eq_check(p10, p10_len, p10, p10_len, win_start, win_end, 1, "10.1.1");
+  win_start = 11; win_end = 11;
+  win_eq_check(p10, p10_len, p10, p8_len, win_start, win_end, 1, "10.1.2");
 
-  // inst p10_1[p10_len], p10_2[p10_len];
-  // for (int i = 0; i < p10_len; i++) p10_1[i] = p10[i];
-  // p10_1[10] = inst();
-  // p10_1[11] = inst(LDXB, 0, 1, 1);
-  // win_start = 10; win_end = 11;
-  // win_eq_check(p10, p10_len, p10_1, p10_len, win_start, win_end, 0, "10.2.1");
-  // win_start = 11; win_end = 11;
-  // win_eq_check(p10, p10_len, p10_1, p8_len, win_start, win_end, 0, "10.2.2");
+  inst p10_1[p10_len], p10_2[p10_len];
+  for (int i = 0; i < p10_len; i++) p10_1[i] = p10[i];
+  p10_1[10] = inst();
+  p10_1[11] = inst(LDXB, 0, 1, 1);
+  win_start = 10; win_end = 11;
+  win_eq_check(p10, p10_len, p10_1, p10_len, win_start, win_end, 0, "10.2.1");
+  win_start = 11; win_end = 11;
+  win_eq_check(p10, p10_len, p10_1, p8_len, win_start, win_end, 0, "10.2.2");
 
-  // for (int i = 0; i < p10_len; i++) p10_2[i] = p10[i];
-  // p10_2[10] = inst(MOV64XY, 1, 1);
-  // p10_2[11] = inst(LDXB, 0, 1, 1);
-  // win_start = 10; win_end = 11;
-  // win_eq_check(p10, p10_len, p10_2, p10_len, win_start, win_end, 0, "10.3");
+  for (int i = 0; i < p10_len; i++) p10_2[i] = p10[i];
+  p10_2[10] = inst(MOV64XY, 1, 1);
+  p10_2[11] = inst(LDXB, 0, 1, 1);
+  win_start = 10; win_end = 11;
+  win_eq_check(p10, p10_len, p10_2, p10_len, win_start, win_end, 0, "10.3");
 
   // test pointer stored on stack and read from stack: overwrite pointer
-
   inst p11[] = {inst(STXDW, 10, -8, 1), // 0: store pointer on stack
                 inst(),
                 inst(LDXDW, 0, 10, -8),
