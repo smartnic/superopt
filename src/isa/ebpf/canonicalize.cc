@@ -593,6 +593,23 @@ void type_const_inference_inst_BPF_FUNC_map_lookup_elem(inst_static_state& iss, 
   }
 }
 
+void type_const_inference_inst_LSH64XC(inst_static_state& iss, inst& insn) {
+  if (insn._opcode != LSH64XC) return;
+  // if dst_reg's value can be inferred, update the value by lsh
+  int dst_reg = insn._dst_reg;
+  int imm = insn._imm;
+  for (int i = 0; i < iss.reg_state[dst_reg].size(); i++) {
+    int type = iss.reg_state[dst_reg][i].type;
+    int val_flag = iss.reg_state[dst_reg][i].val_flag;
+    if ((type == SCALAR_VALUE) && val_flag) {
+      int64_t val = iss.reg_state[dst_reg][i].val;
+      int64_t new_val = ((uint64_t)val) << imm;
+      // update value
+      iss.reg_state[dst_reg][i].val = new_val;
+    }
+  }
+}
+
 // After executing the insn, update register type in inst_static_state
 void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   int opcode_type = insn.get_opcode_type();
@@ -662,6 +679,8 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   } else if (opcode == ADD64XY) {
     // update concrete value or pointer offset
     type_const_inference_inst_ADD64XY(iss, insn);
+  } else if (opcode == LSH64XC) {
+    type_const_inference_inst_LSH64XC(iss, insn);
   } else if (opcode == LDXDW) {
     // read pointer stored on stack
     type_const_inference_inst_LDXDW(iss, insn);
