@@ -1395,22 +1395,9 @@ void set_up_smt_output_win(smt_output & sout, vector<inst_static_state>& ss_win,
                            inst * program, int win_start, int win_end) {
   live_variables win_w;
   compute_win_w(win_w, ss_win, program, win_start, win_end);
+  // set output_var = win_w intersection post_r
   live_variables post_r = ss_orig[win_end].live_var;
-  // live_variables::intersection(sout.output_var, win_w, post_r);
-
-  // todo: since there are some symbolic offs in postfix program,
-  // set output_var.reg = win_w.reg intersection post_r.reg
-  // output_var.mem = win_w.mem
-  // instead of output_var = win_w intersection post_r
-  // 1. process live registers
-  sout.output_var.clear();
-  for (auto reg : win_w.regs) {
-    if (post_r.regs.find(reg) != post_r.regs.end()) {
-      sout.output_var.regs.insert(reg);
-    }
-  }
-  // 2. process live memory
-  sout.output_var.mem = win_w.mem;
+  live_variables::intersection(sout.output_var, win_w, post_r);
 }
 
 void set_up_smt_inout_win(smt_input & sin, smt_output & sout,
