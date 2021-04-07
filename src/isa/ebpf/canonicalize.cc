@@ -1393,10 +1393,12 @@ void static_safety_check_win(inst * win_prog, int win_start, int win_end, prog_s
   vector<inst_static_state> ss_win(win_len); // [win_start, win_end]
   // get the initial reg state from pss_orig `win_start`
   ss_win[0].reg_state = pss_orig.static_state[win_start].reg_state;
+  ss_win[0].stack_state = pss_orig.static_state[win_start].stack_state;
   // todo: extended for window program with branches
   // update reg_state of win_program from insn 1 to len, reg_state: before executing insn
   for (int i = 0; i < win_len - 1; i++) {
     ss_win[i + 1].reg_state = ss_win[i].reg_state;
+    ss_win[i + 1].stack_state = ss_win[i].stack_state;
     type_const_inference_inst(ss_win[i + 1], win_prog[i + win_start]);
   }
   min_pkt_sz_inference_win(ss_win, pss_orig.static_state[win_start]);
@@ -1455,10 +1457,12 @@ void set_up_smt_inout_win(smt_input & sin, smt_output & sout,
   vector<inst_static_state> ss_win(win_len); // [win_start, win_end]
   // get the initial reg state from pss_orig `win_start`
   ss_win[0].reg_state = pss_orig.static_state[win_start].reg_state;
+  ss_win[0].stack_state = pss_orig.static_state[win_start].stack_state;
   // todo: extended for window program with branches
   // update reg_state of win_program from insn 1 to len, reg_state: before executing insn
   for (int i = 0; i < win_len - 1; i++) {
     ss_win[i + 1].reg_state = ss_win[i].reg_state;
+    ss_win[i + 1].stack_state = ss_win[i].stack_state;
     type_const_inference_inst(ss_win[i + 1], program[i + win_start]);
   }
 
