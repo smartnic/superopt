@@ -6,9 +6,9 @@ logger_class logger;
 
 void print_test_res(bool res, string test_name) {
   if (res) {
-    std::cout << "check " + test_name + " SUCCESS\n";
+    std::cout << "check " + test_name + " SUCCESS" << endl;
   } else {
-    std::cout << "check " + test_name + " NOT SUCCESS\n";
+    std::cout << "check " + test_name + " NOT SUCCESS" << endl;
   }
 }
 
