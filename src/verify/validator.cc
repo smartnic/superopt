@@ -85,7 +85,8 @@ int validator::is_smt_valid(expr& smt, model& mdl) {
     s.add(!smt);
     cout << "About to invoke z3client" << endl;
     string res = write_problem_to_z3server(s.to_smt2());
-    cout << "Received result from z3server: " << endl << res << endl;
+    cout << "Received result from z3server: " << endl;
+    // cout << "Received result from z3server: " << endl << res << endl;
     if (res.compare("unsat") == 0)
       return 1;
     else if (res.compare("unknown") == 0)
