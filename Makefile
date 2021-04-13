@@ -20,7 +20,7 @@ main_ebpf.out: main.cc main.h main_ebpf_z3.o measure/benchmark_ebpf.cc measure/b
 	g++ -g $(EBPF_FLAG) -std=c++11 main_ebpf_z3.o measure/benchmark_ebpf.cc measure/meas_mh_bhv.cc $(SEARCH)win_select.cc $(EBPF)win_select.cc $(ISA)inst.cc $(EBPF)inst.cc  $(EBPF)inst_var.cc $(SEARCH)mh_prog.cc $(SEARCH)proposals.cc $(ISA)prog.cc $(SEARCH)cost.cc $(SRC)inout.cc $(EBPF)inst_codegen.cc $(EBPF)canonicalize.cc $(VERIFY)validator.cc $(VERIFY)z3client.cc $(VERIFY)cfg.cc $(VERIFY)smt_prog.cc $(ISA)inst_var.cc $(SRC)utils.cc  -o main_ebpf.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 
 main_ebpf_z3.o: main.cc
-	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)main_ebpf_z3.o  -I../z3/src/api -I../z3/src/api/c++ main.cc
+	$(CXX) -g $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)main_ebpf_z3.o  -I../z3/src/api -I../z3/src/api/c++ main.cc
 
 z3server.out: z3server.cc
 	$(CXX) $(CXXFLAGS) $(OS_DEFINES) $(CXX_OUT_FLAG)z3server.o -I../z3/src/api -I../z3/src/api/c++ z3server.cc
