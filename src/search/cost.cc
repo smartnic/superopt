@@ -256,10 +256,11 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   }
   int is_equal = 0;
   int ex_set_size = _examples._exs.size();
-
+  cout << "interpreter result: " << total_cost << endl;
   if (num_successful_ex == ex_set_size) {
     auto t1 = NOW;
     try {
+      cout << "validator start" << endl;
       is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
       // if (smt_var::is_win) {
       //   // check win prog eq check result
@@ -275,6 +276,7 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
       //   smt_var::is_win = true;
       // }
     } catch (const string err_msg) {
+      cout << "validator result: illegal program" << endl;
       // illegal program
       synth->set_error_cost(ERROR_COST_MAX);
       return ERROR_COST_MAX;
@@ -289,7 +291,7 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
       // synth->print();
     }
   }
-
+  cout << "validator result: " << is_equal << endl;
   int avg_value = get_avg_value(ex_set_size);
   total_cost = get_final_error_cost(total_cost, is_equal,
                                     ex_set_size, num_successful_ex,
