@@ -59,6 +59,7 @@ int inst::get_operand(int op_index) const {
 
 bool inst::sample_unmodifiable() const {
   if ((_opcode == CALL) && (_imm == BPF_FUNC_get_prandom_u32)) return true;
+  else if (_opcode == DIV64XC) return true;
   return false;
 }
 
@@ -612,6 +613,7 @@ void inst::insert_exit_opcodes(unordered_set<int>& set) const {
 void inst::insert_opcodes_not_gen(unordered_set<int>& opcode_set) const {
   opcode_set.insert(IDX_CALL);
   opcode_set.insert(IDX_LDDW);
+  opcode_set.insert(IDX_DIV64XC);
 }
 
 int inst::inst_output_opcode_type() const {
