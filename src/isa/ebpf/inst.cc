@@ -78,7 +78,7 @@ void inst::set_imm(int op_value) {
   // opcodes_set constains opcodes whose sample imm range = the default imm range + imms from source program
   unordered_set<int32_t> opcodes_set = {ADD64XC, MUL64XC, DIV64XC, OR64XC, AND64XC, MOV64XC, ADD32XC,
                                         OR32XC, AND32XC, XOR64XC, MOV32XC, STB, STH, STW, STDW, LDABSH,
-                                        JEQXC, JGTXC, JNEXC, JSGTXC, JEQ32XC, JNE32XC,
+                                        JEQXC, JGTXC, JLTXC, JNEXC, JSGTXC, JSLTXC, JEQ32XC, JNE32XC,
                                        };
   auto found = opcodes_set.find(_opcode);
   if (found == opcodes_set.end()) {
@@ -138,8 +138,10 @@ int32_t inst::get_max_imm() const {
     case LDABSH:
     case JEQXC:
     case JGTXC:
+    case JLTXC:
     case JNEXC:
     case JSGTXC:
+    case JSLTXC:
     case JEQ32XC:
     case JNE32XC: return MAX_IMM + _sample_pos_imms.size();
     case LSH64XC:
@@ -193,8 +195,10 @@ int32_t inst::get_min_imm() const {
     case LDABSH:
     case JEQXC:
     case JGTXC:
+    case JLTXC:
     case JNEXC:
     case JSGTXC:
+    case JSLTXC:
     case JEQ32XC:
     case JNE32XC: return MIN_IMM - _sample_neg_imms.size();
     case LSH64XC:
@@ -340,10 +344,14 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(JGTXY)
       MAPPER(JGEXC)
       MAPPER(JGEXY)
+      MAPPER(JLTXC)
+      MAPPER(JLTXY)
+      MAPPER(JLEXY)
       MAPPER(JNEXC)
       MAPPER(JNEXY)
       MAPPER(JSGTXC)
       MAPPER(JSGTXY)
+      MAPPER(JSLTXC)
       MAPPER(JEQ32XC)
       MAPPER(JEQ32XY)
       MAPPER(JNE32XC)
@@ -596,10 +604,14 @@ void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
   jmp_set.insert(IDX_JGTXY);
   jmp_set.insert(IDX_JGEXC);
   jmp_set.insert(IDX_JGEXY);
+  jmp_set.insert(IDX_JLTXC);
+  jmp_set.insert(IDX_JLTXY);
+  jmp_set.insert(IDX_JLEXY);
   jmp_set.insert(IDX_JNEXC);
   jmp_set.insert(IDX_JNEXY);
   jmp_set.insert(IDX_JSGTXC);
   jmp_set.insert(IDX_JSGTXY);
+  jmp_set.insert(IDX_JSLTXC);
   jmp_set.insert(IDX_JEQ32XC);
   jmp_set.insert(IDX_JEQ32XY);
   jmp_set.insert(IDX_JNE32XC);
@@ -788,10 +800,14 @@ z3::expr inst::smt_inst_jmp(smt_var & sv) const {
     case JGTXY: return (ugt(CURDST, CURSRC));
     case JGEXC: return (uge(CURDST, IMM));
     case JGEXY: return (uge(CURDST, CURSRC));
+    case JLTXC: return (ult(CURDST, IMM));
+    case JLTXY: return (ult(CURDST, CURSRC));
+    case JLEXY: return (ule(CURDST, CURSRC));
     case JNEXC: return (CURDST != IMM);
     case JNEXY: return (CURDST != CURSRC);
     case JSGTXC: return (CURDST > IMM);
     case JSGTXY: return (CURDST > CURSRC);
+    case JSLTXC: return (CURDST < IMM);
     case JEQ32XC: return (CURDST_L32 == IMM_L32);
     case JEQ32XY: return (CURDST_L32 == CURSRC_L32);
     case JNE32XC: return (CURDST_L32 != IMM_L32);
@@ -915,10 +931,14 @@ int opcode_2_idx(int opcode) {
     case JGTXY: return IDX_JGTXY;
     case JGEXC: return IDX_JGEXC;
     case JGEXY: return IDX_JGEXY;
+    case JLTXC: return IDX_JLTXC;
+    case JLTXY: return IDX_JLTXY;
+    case JLEXY: return IDX_JLEXY;
     case JNEXC: return IDX_JNEXC;
     case JNEXY: return IDX_JNEXY;
     case JSGTXC: return IDX_JSGTXC;
     case JSGTXY: return IDX_JSGTXY;
+    case JSLTXC: return IDX_JSLTXC;
     case JEQ32XC: return IDX_JEQ32XC;
     case JEQ32XY: return IDX_JEQ32XY;
     case JNE32XC: return IDX_JNE32XC;
@@ -1070,10 +1090,14 @@ void inst::regs_to_read(vector<int>& regs) const {
     case JGTXY:    regs = {_dst_reg, _src_reg}; return;
     case JGEXC:    regs = {_dst_reg}; return;
     case JGEXY:    regs = {_dst_reg, _src_reg}; return;
+    case JLTXC:    regs = {_dst_reg}; return;
+    case JLTXY:    regs = {_dst_reg, _src_reg}; return;
+    case JLEXY:    regs = {_dst_reg, _src_reg}; return;
     case JNEXC:    regs = {_dst_reg}; return;
     case JNEXY:    regs = {_dst_reg, _src_reg}; return;
     case JSGTXC:   regs = {_dst_reg}; return;
     case JSGTXY:   regs = {_dst_reg, _src_reg}; return;
+    case JSLTXC:   regs = {_dst_reg}; return;
     case JEQ32XC:  regs = {_dst_reg}; return;
     case JEQ32XY:  regs = {_dst_reg, _src_reg}; return;
     case JNE32XC:  regs = {_dst_reg}; return;
@@ -1417,10 +1441,14 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_JGTXY]    = && INSN_JGTXY,
     [IDX_JGEXC]    = && INSN_JGEXC,
     [IDX_JGEXY]    = && INSN_JGEXY,
+    [IDX_JLTXC]    = && INSN_JLTXC,
+    [IDX_JLTXY]    = && INSN_JLTXY,
+    [IDX_JLEXY]    = && INSN_JLEXY,
     [IDX_JNEXC]    = && INSN_JNEXC,
     [IDX_JNEXY]    = && INSN_JNEXY,
     [IDX_JSGTXC]   = && INSN_JSGTXC,
     [IDX_JSGTXY]   = && INSN_JSGTXY,
+    [IDX_JSLTXC]   = && INSN_JSLTXC,
     [IDX_JEQ32XC]  = && INSN_JEQ32XC,
     [IDX_JEQ32XY]  = && INSN_JEQ32XY,
     [IDX_JNE32XC]  = && INSN_JNE32XC,
@@ -1614,8 +1642,11 @@ INSN_JA:
   COND_JMP(JEQ, ==, UDST, USRC, UIMM)
   COND_JMP(JGT,  >, UDST, USRC, UIMM)
   COND_JMP(JGE, >=, UDST, USRC, UIMM)
+  COND_JMP(JLT,  <, UDST, USRC, UIMM)
+  COND_JMP(JLE, <=, UDST, USRC, UIMM)
   COND_JMP(JNE, !=, UDST, USRC, UIMM)
   COND_JMP(JSGT, >, DST, SRC, IMM)
+  COND_JMP(JSLT, <, DST, SRC, IMM)
 #undef COND_JMP
 
 INSN_CALL:
