@@ -270,8 +270,15 @@ string inst::func_to_str(int func_id) {
       MAPPER(ktime_get_ns)
       MAPPER(get_prandom_u32)
       MAPPER(get_smp_processor_id)
+      MAPPER(skb_store_bytes)
+      MAPPER(l3_csum_replace)
+      MAPPER(l4_csum_replace)
       MAPPER(tail_call)
+      MAPPER(skb_set_tunnel_key)
       MAPPER(redirect)
+      MAPPER(perf_event_output)
+      MAPPER(skb_load_bytes)
+      MAPPER(skb_change_type)
       MAPPER(xdp_adjust_head)
       MAPPER(redirect_map)
       MAPPER(fib_lookup)
@@ -1118,8 +1125,15 @@ void inst::regs_to_read(vector<int>& regs) const {
         case BPF_FUNC_ktime_get_ns: return;
         case BPF_FUNC_get_prandom_u32: return;
         case BPF_FUNC_get_smp_processor_id: return;
+        case BPF_FUNC_skb_store_bytes: regs = {1, 2, 3, 4, 5}; return;
+        case BPF_FUNC_l3_csum_replace: regs = {1, 2, 3, 4, 5}; return;
+        case BPF_FUNC_l4_csum_replace: regs = {1, 2, 3, 4, 5}; return;
         case BPF_FUNC_tail_call: regs = {1, 2, 3}; return;
+        case BPF_FUNC_skb_set_tunnel_key: return;
         case BPF_FUNC_redirect: regs = {1, 2}; return;
+        case BPF_FUNC_perf_event_output: regs = {1, 2, 3, 4, 5}; return;
+        case BPF_FUNC_skb_load_bytes: regs = {1, 2, 3, 4}; return;
+        case BPF_FUNC_skb_change_type: regs = {1, 2}; return;
         case BPF_FUNC_xdp_adjust_head: regs = {1, 2}; return;
         case BPF_FUNC_redirect_map: regs = {1, 2, 3}; return;
         case BPF_FUNC_fib_lookup: regs = {1, 2, 3, 4}; return;
@@ -1395,7 +1409,7 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_MUL64XC]  = && INSN_MUL64XC,
     [IDX_MUL64XY]  = && INSN_MUL64XY,
     [IDX_DIV64XC]  = && INSN_DIV64XC,
-    [IDX_DIV64XY]  = && INSN_DIV64XY,    
+    [IDX_DIV64XY]  = && INSN_DIV64XY,
     [IDX_OR64XC]   = && INSN_OR64XC,
     [IDX_OR64XY]   = && INSN_OR64XY,
     [IDX_AND64XC]  = && INSN_AND64XC,
