@@ -800,6 +800,7 @@ class inst: public inst_base {
   // for lddw opcode, instruction is either ldmapid or movdwxc
   bool is_ldmapid() const;
   bool is_movdwxc() const;
+  bool is_ldmapval() const;
   int num_insns() const;
 
   string get_bytecode_str() const;
