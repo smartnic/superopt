@@ -1351,7 +1351,8 @@ void prog_state::memory_access_chk(uint64_t addr, uint64_t num_bytes) {
   if (legal) return;
 
   int pgm_input_type = mem_t::get_pgm_input_type();
-  if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+  if ((pgm_input_type == PGM_INPUT_pkt_ptrs) ||
+      (pgm_input_type == PGM_INPUT_skb)) {
     start = (uint64_t)_mem.get_pkt_ptrs_start_addr();
     end = (uint64_t)_mem.get_pkt_ptrs_end_addr();
     legal = (addr >= start) && (addr + num_bytes - 1 <= end) &&
