@@ -103,7 +103,7 @@ int create_and_connect_socket(int port) {
 /* Send the formula to the server */
 void send_formula(int sock, string formula) {
   int nchars;
-  cout << "z3client: Sending formula to server..." << endl;
+  // cout << "z3client: Sending formula to server..." << endl;
   nchars = std::min(FORMULA_SIZE_BYTES, (int)formula.length());
   strncpy(form_buffer, formula.c_str(), nchars);
   form_buffer[nchars] = '\0';
@@ -168,9 +168,9 @@ string write_problem_to_z3server(string formula) {
   }
 
   /* Make connection request to server */
-  cout << "Connecting Server 1" << endl;
+  // cout << "Connecting Server 1" << endl;
   int sock1 = create_and_connect_socket(get_server_port(0));
-  cout << "Connecting Server 2" << endl;
+  // cout << "Connecting Server 2" << endl;
   int sock2 = create_and_connect_socket(get_server_port(1));
   if (sock1 == -1 || sock2 == -1) { /* socket creation error */
     return "";
@@ -198,7 +198,7 @@ string write_problem_to_z3server(string formula) {
   int server2_read = FD_ISSET (sock2, &fds);
   int status;
   if (server1_read > 0 && server2_read > 0) { /* both sockets are readable */
-    cout << "z3Client: both servers returned" << endl;
+    // cout << "z3Client: both servers returned" << endl;
     read_from_solver(sock1);
     read_from_solver(sock2);
     nsolve1++;
@@ -207,7 +207,7 @@ string write_problem_to_z3server(string formula) {
     read_from_solver(sock1);
     server2_read = poll_servers(sock2, 2);
     if (server2_read > 0) {
-      cout << "z3client: both servers returned" << endl;
+      // cout << "z3client: both servers returned" << endl;
       read_from_solver(sock2);
       nsolve2++;
     } else {
@@ -221,7 +221,7 @@ string write_problem_to_z3server(string formula) {
     read_from_solver(sock2);
     server1_read = poll_servers(sock1, 2);
     if (server1_read > 0) {
-      cout << "z3client: both servers returned" << endl;
+      // cout << "z3client: both servers returned" << endl;
       read_from_solver(sock1);
       nsolve1++;
     } else {
@@ -233,6 +233,6 @@ string write_problem_to_z3server(string formula) {
     nsolve2++;
   }
   /* Read back solver results. */
-  cout << "z3client: Waiting for solver results from server..." << endl;
+  // cout << "z3client: Waiting for solver results from server..." << endl;
   return string(res_buffer);
 }
