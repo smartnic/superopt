@@ -1,8 +1,46 @@
+#include <random>
 #include "utils.h"
 
 using namespace std;
 
 logger_class logger;
+
+default_random_engine gen_utils;
+uniform_real_distribution<double> unidist_utils(0.0, 1.0);
+
+// Return a uniformly random integer from start to end inclusive
+int random_int(int start, int end) {
+  end++;
+  int val;
+  do {
+    val = start + (int)(unidist_utils(gen_utils) * (double)(end - start));
+  } while (val == end && end > start);
+  return val;
+}
+
+uint64_t random_uint64(uint64_t start, uint64_t end) {
+  if (end != 0xffffffffffffffff) end++;
+  uint64_t val;
+  do {
+    val = start + (uint64_t)(unidist_utils(gen_utils) * (double)(end - start));
+  } while (val == end && end > start);
+  return val;
+}
+
+double random_double_unit() {
+  return unidist_utils(gen_utils);
+}
+
+/* Return a uniformly random integer from start to end inclusive, with the
+ * exception of  `except`. */
+int random_int_with_exception(int start, int end, int except) {
+  end++;
+  int val;
+  do {
+    val = start + (int)(unidist_utils(gen_utils) * (double)(end - start));
+  } while ((val == end || val == except) && ((end - start) > 1));
+  return val;
+}
 
 void print_test_res(bool res, string test_name) {
   if (res) {

@@ -45,6 +45,11 @@ typedef int op_t;
   throw (err_msg); \
 }
 
+int random_int(int start, int end);
+uint64_t random_uint64(uint64_t start, uint64_t end);
+double random_double_unit();
+int random_int_with_exception(int start, int end, int except);
+
 void print_test_res(bool res, string test_name);
 ostream& operator<<(ostream& out, const vector<double>& vec);
 void split_string(const string& s, vector<string>& v, const string& c);

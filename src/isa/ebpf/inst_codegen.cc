@@ -2,9 +2,6 @@
 
 using namespace std;
 
-default_random_engine gen_codegen;
-uniform_real_distribution<double> unidist_codegen(0.0, 1.0);
-
 z3::expr latest_write_element(int idx, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
 z3::expr addr_in_addrs(z3::expr a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
 z3::expr addr_in_addrs_map_mem(z3::expr& a, vector<z3::expr>& is_valid_list, vector<z3::expr>& x);
@@ -1856,7 +1853,7 @@ void get_v_from_addr_v(vector<uint8_t>& v, uint64_t addr_v,
       }
     }
     if (!found_i) {
-      v[i] = unidist_codegen(gen_codegen) * (double)0xff; // uint8_t: 0 - 0xff
+      v[i] = random_int(0, 0xff); // uint8_t: 0 - 0xff
     }
   }
 }
@@ -1941,7 +1938,7 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt
     if (it != sin.prog_read.mem.end()) {
       for (auto off : it->second) {
         input.stack_readble[off] = true;
-        uint8_t val = unidist_codegen(gen_codegen) * 0x100;
+        uint8_t val = random_int(0, 0xff);
         input.stack[off] = val; // [0 - 0xff]
       }
     }
@@ -1967,7 +1964,7 @@ void counterex_2_input_simu_pkt_s(inout_t& input, z3::model& mdl, smt_var& sv) {
   input.input_simu_pkt_s = get_uint64_from_bv64(z3_pkt_s, false); // r10: stack bottom
   if (input.input_simu_pkt_s == 0) {// means z3 does not care about r10, assign a random value
     // 0x10000000 is to make sure r10 >> stack_s
-    input.input_simu_pkt_s = 0x10000000 + unidist_codegen(gen_codegen) * (double)0xffff;
+    input.input_simu_pkt_s = random_uint64(0x10000000, 0x1000ffff);
   }
 }
 
@@ -1976,7 +1973,7 @@ void counterex_2_input_simu_r10(inout_t& input, z3::model & mdl, smt_var& sv) {
   input.input_simu_r10 = get_uint64_from_bv64(z3_stack_bottom, false); // r10: stack bottom
   if (input.input_simu_r10 == 0) {// means z3 does not care about r10, assign a random value
     // 0x10000 is to make sure r10 > 512
-    input.input_simu_r10 = 0x10000 + unidist_codegen(gen_codegen) * (double)0xffff;
+    input.input_simu_r10 = random_uint64(0x10000, 0x1ffff);
   }
 }
 

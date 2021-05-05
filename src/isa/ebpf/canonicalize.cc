@@ -2,11 +2,8 @@
 #include <iostream>
 #include <algorithm>
 #include <utility>
-#include <algorithm>
 #include "canonicalize.h"
 
-default_random_engine gen_ebpf_cano;
-uniform_real_distribution<double> unidist_ebpf_cano(0.0, 1.0);
 void get_mem_write_offs(unordered_map<int, unordered_set<int>>& mem_write_offs,
                         vector<vector<register_state>>& reg_state, inst& insn);
 
@@ -1518,26 +1515,6 @@ void set_up_smt_inout_win(smt_input & sin, smt_output & sout,
   set_up_smt_output_win(sout, ss_win, pss_orig.static_state, program, win_start, win_end);
 }
 
-// todo: move random number generation into utils.h/cc
-// Return a uniformly random integer from start to end inclusive
-int random_int(int start, int end) {
-  end++;
-  int val;
-  do {
-    val = start + (int)(unidist_ebpf_cano(gen_ebpf_cano) * (double)(end - start));
-  } while (val == end && end > start);
-  return val;
-}
-
-uint64_t random_uint64(uint64_t start, uint64_t end) {
-  if (end != 0xffffffffffffffff) end++;
-  uint64_t val;
-  do {
-    val = start + (uint64_t)(unidist_ebpf_cano(gen_ebpf_cano) * (double)(end - start));
-  } while (val == end && end > start);
-  return val;
-}
-
 // generate random value of stack bottom
 uint64_t gen_random_stack_bottom() {
   uint64_t max_uint32 = 0xffffffff;
@@ -1578,7 +1555,7 @@ void gen_random_input(vector<inout_t>& inputs, int n, int64_t reg_min, int64_t r
   if (mem_t::_layout._pkt_sz == 0) { // case 1: r1 is not used as pkt address
     unordered_set<int64_t> reg_set; // use set to avoid that registers have the same values
     for (int i = 0; i < inputs.size();) {
-      int64_t reg = reg_min + (reg_max - reg_min) * unidist_ebpf_cano(gen_ebpf_cano);
+      int64_t reg = random_uint64(reg_min, reg_max);
       if (reg_set.find(reg) == reg_set.end()) {
         reg_set.insert(reg);
         inputs[i].reg = reg;

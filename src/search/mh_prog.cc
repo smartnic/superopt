@@ -8,9 +8,6 @@
 
 using namespace std;
 
-default_random_engine gen_mh;
-uniform_real_distribution<double> unidist_mh(0.0, 1.0);
-
 mh_sampler_next_win::mh_sampler_next_win() {
   vector<int> win_s_list = {0}, win_e_list = {inst::max_prog_len - 1};
   set_win_lists(win_s_list, win_e_list);
@@ -189,7 +186,7 @@ void mh_sampler_next_proposal::set_win(int start, int end) {
 }
 
 prog* mh_sampler_next_proposal::next_proposal(prog* curr) {
-  double uni_sample = unidist_mh(gen_mh);
+  double uni_sample = random_double_unit();
   if (uni_sample <= _thr_mod_random_inst_operand) {
     return mod_random_inst_operand(*curr, _win_start, _win_end);
   } else if (uni_sample <= _thr_mod_random_inst) {
@@ -234,7 +231,7 @@ prog* mh_sampler::mh_next(prog* curr, prog* orig) {
     }
   }
   // next->canonicalize();
-  double uni_sample = unidist_mh(gen_mh);
+  double uni_sample = random_double_unit();
   double a = alpha(curr, next, orig);
   _meas_data.insert_proposal(*next, uni_sample < a);
   int iter_num = _meas_data._proposals.size() - 1;

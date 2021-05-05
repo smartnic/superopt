@@ -10,17 +10,9 @@
 
 using namespace std;
 
-default_random_engine gen;
-uniform_real_distribution<double> unidist(0.0, 1.0);
-
 /* Return a uniformly random integer from start to end inclusive */
 int sample_int(int start, int end) {
-  end++;
-  int val;
-  do {
-    val = start + (int)(unidist(gen) * (double)(end - start));
-  } while (val == end && end > start);
-  return val;
+  return random_int(start, end);
 }
 
 /* Return a uniformly random integer from 0 to limit inclusive */
@@ -45,12 +37,7 @@ int sample_int_with_exceptions(int limit, unordered_set<int> &excepts) {
 /* Return a uniformly random integer from start to end inclusive, with the
  * exception of  `except`. */
 int sample_int_with_exception(int start, int end, int except) {
-  end++;
-  int val;
-  do {
-    val = start + (int)(unidist(gen) * (double)(end - start));
-  } while ((val == end || val == except) && ((end - start) > 1));
-  return val;
+  return sample_int_with_exception(start, end, except);
 }
 
 /* Return a uniformly random integer from 0 to limit inclusive, with the

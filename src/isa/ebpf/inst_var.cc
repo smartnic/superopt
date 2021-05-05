@@ -15,9 +15,6 @@ bool smt_var::is_win = false;
 int inout_t::start_insn = 0;
 int inout_t::end_insn = 0;
 
-default_random_engine gen_ebpf_inst_var;
-uniform_real_distribution<double> unidist_ebpf_inst_var(0.0, 1.0);
-
 int get_mem_size_by_layout() {
   int mem_size;
   int n_maps = mem_t::_layout._maps_attr.size();
@@ -111,7 +108,7 @@ unsigned int map_t::get_and_update_next_idx() {
       return 0;
     }
     // get a random idx from the available idx range [0, # available indexes]
-    int x = (_max_entries - 1 - _cur_max_entries) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+    int x = random_int(0, _max_entries - 1 - _cur_max_entries);
     int c = 0;
     int target_i = -1;
     for (int i = 0; i < _idx_used.size(); i++) {
@@ -1454,7 +1451,7 @@ uint32_t prog_state::get_next_random_u32() {
 inout_t::inout_t() {
   uint64_t r10_min = STACK_SIZE;
   uint64_t r10_max = 0xffffffffffffffff - get_mem_size_by_layout() + 1 - STACK_SIZE;
-  input_simu_r10 = r10_min + (r10_max - r10_min) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+  input_simu_r10 = random_uint64(r10_min, r10_max);
   pkt = new uint8_t[mem_t::_layout._pkt_sz];
   memset(pkt, 0, sizeof(uint8_t)*mem_t::_layout._pkt_sz);
   skb = new uint8_t[mem_t::_layout._skb_max_sz];
@@ -1533,18 +1530,16 @@ bool inout_t::k_in_map(int map_id, string k) {
 void inout_t::set_pkt_random_val() {
   if (! mem_t::_layout._enable_pkt_random_val) return;
   for (int i = 0; i < mem_t::_layout._pkt_sz; i++) {
-    uint8_t val = (0xff + 1) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+    uint8_t val = random_int(0, 0xff);
     pkt[i] = val;
   }
   if (mem_t::get_pgm_input_type() == PGM_INPUT_skb) {
     uint64_t max_uint32 = 0xffffffff;
     uint32_t skb_min_start = 1;
     uint32_t skb_max_start = max_uint32 - mem_t::_layout._skb_max_sz;
-    uint32_t skb_rand_start = skb_min_start +
-                              (skb_max_start - skb_min_start) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
-
+    uint32_t skb_rand_start = random_uint64(skb_min_start, skb_max_start);
     uint32_t skb_max_end = skb_rand_start + mem_t::_layout._skb_max_sz;
-    uint32_t skb_rand_end = skb_max_end * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+    uint32_t skb_rand_end = random_uint64(0, skb_max_end);
 
     *(uint32_t*)&pkt[SKB_data_s_off] = skb_rand_start;
     *(uint32_t*)&pkt[SKB_data_e_off] = skb_rand_end;
@@ -1553,7 +1548,7 @@ void inout_t::set_pkt_random_val() {
 
 void inout_t::set_skb_random_val() {
   for (int i = 0; i < mem_t::_layout._skb_max_sz; i++) {
-    uint8_t val = (0xff + 1) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+    uint8_t val = random_int(0, 0xff);
     skb[i] = val;
   }
 }
@@ -1562,7 +1557,7 @@ void inout_t::set_randoms_u32() {
 // generate random values
   uint64_t max_uint32 = 0xffffffff;
   for (int i = 0; i < randoms_u32.size(); i++) {
-    randoms_u32[i] = (uint64_t)(max_uint32 + 1) * unidist_ebpf_inst_var(gen_ebpf_inst_var);
+    randoms_u32[i] = random_uint64(0, max_uint32);
   }
 }
 

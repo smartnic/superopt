@@ -8,9 +8,6 @@
 
 using namespace z3;
 
-default_random_engine gen_vld;
-uniform_real_distribution<double> unidist_vld(0.0, 1.0);
-
 bool validator::enable_z3server = true;
 
 /* class validator start */
@@ -53,7 +50,7 @@ void validator::gen_counterex(inst* orig, int length, model& m, smt_var& post_sv
     if (input_orig_val.is_numeral()) {
       _last_counterex.input.reg = (reg_t)input_orig_val.get_numeral_uint64();
     } else {  // mean Z3 does not care about this value
-      _last_counterex.input.reg = (double)unidist_vld(gen_vld) * 0xffffffffffffffff;
+      _last_counterex.input.reg = random_uint64(0, 0xffffffffffffffff);
     }
   } else {
     _last_counterex.input.start_insn = _win_start;

@@ -4,9 +4,6 @@
 
 using namespace std;
 
-default_random_engine gen_toy_isa_inst_var;
-uniform_real_distribution<double> unidist_toy_isa_inst_var(0.0, 1.0);
-
 void update_ps_by_input(prog_state& ps, const inout_t& input) {
   ps._regs[0] = input.reg;
 }
@@ -26,8 +23,7 @@ void get_cmp_lists(vector<int>& val_list1, vector<int>& val_list2,
 void gen_random_input(vector<inout_t>& inputs, int reg_min, int reg_max) {
   unordered_set<reg_t> input_set;
   for (size_t i = 0; i < inputs.size();) {
-    reg_t input = reg_min + (reg_max - reg_min) *
-                  unidist_toy_isa_inst_var(gen_toy_isa_inst_var);
+    reg_t input = random_uint64(reg_min, reg_max);
     if (input_set.find(input) == input_set.end()) {
       input_set.insert(input);
       inputs[i].reg = input;
