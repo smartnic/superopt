@@ -488,10 +488,10 @@ void type_const_inference_inst_STXDW(inst_static_state& iss, inst& insn) {
     for (int i = 0; i < iss.reg_state[src_reg].size(); i++) {
       register_state rs;
       rs = iss.reg_state[src_reg][i];
-      if (rs.type == CONST_PTR_TO_MAP) {
-        cout << "type_const_inference_inst_STXDW: adding CONST_PTR_TO_MAP" << endl;
-        cout << rs << endl;
-      }
+      // if (rs.type == CONST_PTR_TO_MAP) {
+      //   cout << "type_const_inference_inst_STXDW: adding CONST_PTR_TO_MAP" << endl;
+      //   cout << rs << endl;
+      // }
 
       for (auto o : stack_offs) {
         auto it = iss.stack_state.find(o);
