@@ -64,7 +64,7 @@ enum OPCODE_IDX {
   // Byteswap
   IDX_LE,
   IDX_BE,
-  // LDDW: ldmapid/movdwxc
+  // LDDW: ldmapid/movdwxc/ldmapval
   IDX_LDDW,
   // Memory
   IDX_LDXB,
@@ -715,6 +715,10 @@ static const int optable[NUM_INSTR] = {
 #define INSN_MOVDWXC(dst_reg, imm64) \
   inst(LDDW, 0, dst_reg, 0, uint32_t(uint64_t(imm64))),\
   inst(0, 0, 0, 0, uint64_t(imm64) >> 32)
+
+#define INSN_LDMAPVAL(dst_reg, map_id, off) \
+  inst(LDDW, 2, dst_reg, 0, map_id),\
+  inst(0, 0, 0, 0, off)
 
 class inst: public inst_base {
  private:
