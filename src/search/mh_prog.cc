@@ -385,7 +385,9 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
     // sample one program
     next = mh_next(curr, prog_start);
     // update best by next
+    bool found_better = false;
     if ((next->_error_cost == 0) && (next->_perf_cost < best->_perf_cost)) {
+      found_better = true;
       cout << "find a better program at " << i
            << " cost: " << next->_error_cost << " " << next->_perf_cost << endl;
       for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
@@ -406,7 +408,7 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
     topk_progs.insert(curr);
 
     auto end = NOW;
-    if (logger.is_print_level(LOGGER_DEBUG)) {
+    if (found_better || logger.is_print_level(LOGGER_DEBUG)) {
       cout << "iter_timestamp: " << DUR(start, end) << endl;
     }
   }
