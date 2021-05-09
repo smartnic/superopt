@@ -20,7 +20,7 @@ inst benchmark1[] = {inst(MOV64XC, 0, 0),    // 0: r0 = 0
                      inst(),                 // 5-6: r1 = map0 fd
                      inst(MOV64XY, 2, 10),   // 7: r2 = r10
                      inst(ADD64XC, 2, -4),   // 8: r2 += -4
-                     inst(CALL, BPF_FUNC_map_lookup_elem),  // 9: r0 = lookup v map0, where v = *(u32*)r2
+                     inst(CALL, BPF_FUNC_map_lookup_elem),  // 9: r0 = lookup v map0, where v = *(u8*)r2
                      inst(JEQXC, 0, 0, 1),   // 10: if r0 = 0, jmp to 12
                      inst(MOV64XC, 0, 1),    // 11: r0 = 1
                      inst(EXIT),             // 12: exit, return r0
@@ -35,7 +35,7 @@ inst benchmark1[] = {inst(MOV64XC, 0, 0),    // 0: r0 = 0
 //                      inst(),                 // 5-6: r1 = map 0 fd
 //                      inst(MOV64XY, 2, 10),   // 7: r2 = r10
 //                      inst(ADD64XC, 2, -4),   // 8: r2 += - 4
-//                      inst(CALL, BPF_FUNC_map_lookup_elem),  // 9: r0 = lookup v map0, where v = *(u32*)r2
+//                      inst(CALL, BPF_FUNC_map_lookup_elem),  // 9: r0 = lookup v map0, where v = *(u8*)r2
 //                      inst(JEQXC, 0, 0, 1),   // 10: if r0 = 0, jmp 1 (exit)
 //                      inst(MOV64XC, 0, 1),    // 11: r0 = 1
 //                      inst(EXIT),             // 12: exit, return r0
