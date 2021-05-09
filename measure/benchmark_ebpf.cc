@@ -6,6 +6,42 @@
 
 using namespace std;
 
+inst benchmark0[] = {inst(MOV64XC, 0, 0x1),  // 0: r0 = 0x1
+                     inst(ADD64XY, 0, 0),    // 1: r0 += r0
+                     inst(EXIT),             // 2: exit, return r0
+                    };
+
+inst benchmark1[] = {inst(MOV64XC, 0, 0),    // 0: r0 = 0
+                     inst(STXB, 10, -1, 0),  // 1: *(u8 *)(r10 - 1) = r0
+                     inst(STXB, 10, -2, 0),  // 2: *(u8 *)(r10 - 2) = r0
+                     inst(STXB, 10, -3, 0),  // 3: *(u8 *)(r10 - 3) = r0
+                     inst(STXB, 10, -4, 0),  // 4: *(u8 *)(r10 - 4) = r0
+                     INSN_LDMAPID(1, 0),
+                     inst(),                 // 5-6: r1 = map0 fd
+                     inst(MOV64XY, 2, 10),   // 7: r2 = r10
+                     inst(ADD64XC, 2, -4),   // 8: r2 += -4
+                     inst(CALL, BPF_FUNC_map_lookup_elem),  // 9: r0 = lookup v map0, where v = *(u32*)r2
+                     inst(JEQXC, 0, 0, 1),   // 10: if r0 = 0, jmp to 12
+                     inst(MOV64XC, 0, 1),    // 11: r0 = 1
+                     inst(EXIT),             // 12: exit, return r0
+                    };
+
+// inst benchmark1[] = {inst(MOV64XC, 0, 0),    // 0: r0 = 0
+//                      inst(STXW, 10, -4, 0),  // 1: *(u16 *)(r10 - 4) = r0
+//                      inst(MOV64XC, 0, 1),    // 2: r0 = 1
+//                      inst(STXB, 10, -5, 0),  // 3: *(u8 *)(r10 - 5) = r0
+//                      inst(),                 // 4: nop
+//                      INSN_LDMAPID(1, 0),
+//                      inst(),                 // 5-6: r1 = map 0 fd
+//                      inst(MOV64XY, 2, 10),   // 7: r2 = r10
+//                      inst(ADD64XC, 2, -4),   // 8: r2 += - 4
+//                      inst(CALL, BPF_FUNC_map_lookup_elem),  // 9: r0 = lookup v map0, where v = *(u32*)r2
+//                      inst(JEQXC, 0, 0, 1),   // 10: if r0 = 0, jmp 1 (exit)
+//                      inst(MOV64XC, 0, 1),    // 11: r0 = 1
+//                      inst(EXIT),             // 12: exit, return r0
+//                     };
+
+
 inst bm0[N0] = {inst(MOV64XC, 0, 0x1),  /* mov64 r0, 0x1 */
                 inst(ADD64XY, 0, 0),  /* add64 r0, r0 */
                 inst(EXIT),  /* exit, return r0 */
@@ -1054,195 +1090,208 @@ void init_benchmark_from_file(inst** bm, const char* insn_file,
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
-      inst::max_prog_len = N0;
+      inst::max_prog_len = sizeof(benchmark0) / sizeof(inst);
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(8);
-      *bm = bm0;
-      bm_optis_orig.push_back(bm_opti00);
-      bm_optis_orig.push_back(bm_opti01);
-      bm_optis_orig.push_back(bm_opti02);
-      bm_optis_orig.push_back(bm_opti03);
+      *bm = benchmark0;
       break;
     case 1:
-      inst::max_prog_len = N1;
+      inst::max_prog_len = sizeof(benchmark1) / sizeof(inst);
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(8);
-      *bm = bm1;
-      bm_optis_orig.push_back(bm_opti10);
+      mem_t::add_map(map_attr(8, 8, inst::max_prog_len));
+      *bm = benchmark1;
       break;
-    case 2:
-      inst::max_prog_len = N2;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(8);
-      mem_t::add_map(map_attr(8, 8, N2));
-      *bm = bm2;
-      bm_optis_orig.push_back(bm_opti20);
-      break;
-    case 3:
-      inst::max_prog_len = N3;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(128);
-      mem_t::add_map(map_attr(128, 64, N3)); // 8 items
-      mem_t::add_map(map_attr(96, 96, N3));  // 12 items
-      mem_t::add_map(map_attr(64, 128, N3)); // 16 items  => 36 items
-      *bm = bm3;
-      break;
-    case 4:
-      inst::max_prog_len = N4;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(8);
-      *bm = bm4;
-      bm_optis_orig.push_back(bm_opti40);
-      break;
-    case 5:
-      inst::max_prog_len = N5;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(4);
-      *bm = bm5;
-      bm_optis_orig.push_back(bm_opti50);
-      break;
-    case 6:
-      inst::max_prog_len = N6;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(8);
-      *bm = bm6;
-      bm_optis_orig.push_back(bm_opti60);
-      break;
-    case 7:
-      inst::max_prog_len = N7;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(8);
-      *bm = bm7;
-      bm_optis_orig.push_back(bm_opti70);
-      break;
-    case 8:
-      inst::max_prog_len = N8;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(160);
-      mem_t::add_map(map_attr(64, 32, N8));
-      *bm = bm8;
-      break;
-    case 9:
-      inst::max_prog_len = N9;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(4);
-      *bm = bm9;
-      break;
-    case 10:
-      inst::max_prog_len = N10;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(16);
-      *bm = bm10;
-      break;
-    case 11:
-      inst::max_prog_len = N11;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(8);
-      mem_t::add_map(map_attr(32, 32, N11));
-      *bm = bm11;
-      break;
-    case 12:
-      inst::max_prog_len = N12;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
-      mem_t::set_pkt_sz(256);
-      mem_t::add_map(map_attr(32, 32, N12));
-      *bm = bm12;
-      break;
-    case 13:
-      inst::max_prog_len = N13;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(64);
-      mem_t::add_map(map_attr(32, 256, N13));
-      *bm = bm13;
-      break;
-    case 14:
-      inst::max_prog_len = N14;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(40);
-      mem_t::add_map(map_attr(32, 256, N14));
-      *bm = bm14;
-      break;
-    case 15:
-      inst::max_prog_len = N15;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(32);
-      mem_t::add_map(map_attr(32, 64, N15));
-      *bm = bm15;
-      break;
-    case 16:
-      inst::max_prog_len = N16;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(32);
-      mem_t::add_map(map_attr(32, 64, N16));
-      *bm = bm16;
-      break;
-    case 17:
-      inst::max_prog_len = N17;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(40);
-      mem_t::add_map(map_attr(32, 256, N17));
-      *bm = bm17;
-      break;
-    case 18:
-      inst::max_prog_len = N18;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(8);
-      mem_t::add_map(map_attr(32, 32, N18));
-      *bm = bm18;
-      break;
-    case 19:
-      inst::max_prog_len = N19;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(8);
-      mem_t::add_map(map_attr(64, 64, N19));
-      *bm = bm19;
-      break;
-    case 20:
-      inst::max_prog_len = N20;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(68);
-      mem_t::add_map(map_attr(64, 128, N20));
-      *bm = bm20;
-      break;
-    case 21:
-      inst::max_prog_len = N21;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(68);
-      mem_t::add_map(map_attr(32, 32, 8));
-      *bm = bm21;
-      break;
-    case 22:
-      inst::max_prog_len = N22;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(68);
-      mem_t::add_map(map_attr(32, 32, 8));
-      *bm = bm22;
-      break;
-    case 23:
-      inst::max_prog_len = N23;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(68);
-      mem_t::add_map(map_attr(64, 128, N23));
-      *bm = bm23;
-      break;
-    case 24:
-      inst::max_prog_len = N24;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(68);
-      mem_t::add_map(map_attr(32, 32, N24));
-      mem_t::add_map(map_attr(32, 64, N24));
-      *bm = bm24;
-      break;
-    case 25:
-      inst::max_prog_len = N25;
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
-      mem_t::set_pkt_sz(68);
-      mem_t::add_map(map_attr(32, 64, N25));
-      mem_t::add_map(map_attr(32, 32, N25));
-      *bm = bm25;
-      break;
+    // case 0:
+    //   inst::max_prog_len = N0;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(8);
+    //   *bm = bm0;
+    //   bm_optis_orig.push_back(bm_opti00);
+    //   bm_optis_orig.push_back(bm_opti01);
+    //   bm_optis_orig.push_back(bm_opti02);
+    //   bm_optis_orig.push_back(bm_opti03);
+    //   break;
+    // case 1:
+    //   inst::max_prog_len = N1;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(8);
+    //   *bm = bm1;
+    //   bm_optis_orig.push_back(bm_opti10);
+    //   break;
+    // case 2:
+    //   inst::max_prog_len = N2;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(8);
+    //   mem_t::add_map(map_attr(8, 8, N2));
+    //   *bm = bm2;
+    //   bm_optis_orig.push_back(bm_opti20);
+    //   break;
+    // case 3:
+    //   inst::max_prog_len = N3;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(128);
+    //   mem_t::add_map(map_attr(128, 64, N3)); // 8 items
+    //   mem_t::add_map(map_attr(96, 96, N3));  // 12 items
+    //   mem_t::add_map(map_attr(64, 128, N3)); // 16 items  => 36 items
+    //   *bm = bm3;
+    //   break;
+    // case 4:
+    //   inst::max_prog_len = N4;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(8);
+    //   *bm = bm4;
+    //   bm_optis_orig.push_back(bm_opti40);
+    //   break;
+    // case 5:
+    //   inst::max_prog_len = N5;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(4);
+    //   *bm = bm5;
+    //   bm_optis_orig.push_back(bm_opti50);
+    //   break;
+    // case 6:
+    //   inst::max_prog_len = N6;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(8);
+    //   *bm = bm6;
+    //   bm_optis_orig.push_back(bm_opti60);
+    //   break;
+    // case 7:
+    //   inst::max_prog_len = N7;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(8);
+    //   *bm = bm7;
+    //   bm_optis_orig.push_back(bm_opti70);
+    //   break;
+    // case 8:
+    //   inst::max_prog_len = N8;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(160);
+    //   mem_t::add_map(map_attr(64, 32, N8));
+    //   *bm = bm8;
+    //   break;
+    // case 9:
+    //   inst::max_prog_len = N9;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(4);
+    //   *bm = bm9;
+    //   break;
+    // case 10:
+    //   inst::max_prog_len = N10;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(16);
+    //   *bm = bm10;
+    //   break;
+    // case 11:
+    //   inst::max_prog_len = N11;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(8);
+    //   mem_t::add_map(map_attr(32, 32, N11));
+    //   *bm = bm11;
+    //   break;
+    // case 12:
+    //   inst::max_prog_len = N12;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+    //   mem_t::set_pkt_sz(256);
+    //   mem_t::add_map(map_attr(32, 32, N12));
+    //   *bm = bm12;
+    //   break;
+    // case 13:
+    //   inst::max_prog_len = N13;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(64);
+    //   mem_t::add_map(map_attr(32, 256, N13));
+    //   *bm = bm13;
+    //   break;
+    // case 14:
+    //   inst::max_prog_len = N14;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(40);
+    //   mem_t::add_map(map_attr(32, 256, N14));
+    //   *bm = bm14;
+    //   break;
+    // case 15:
+    //   inst::max_prog_len = N15;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(32);
+    //   mem_t::add_map(map_attr(32, 64, N15));
+    //   *bm = bm15;
+    //   break;
+    // case 16:
+    //   inst::max_prog_len = N16;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(32);
+    //   mem_t::add_map(map_attr(32, 64, N16));
+    //   *bm = bm16;
+    //   break;
+    // case 17:
+    //   inst::max_prog_len = N17;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(40);
+    //   mem_t::add_map(map_attr(32, 256, N17));
+    //   *bm = bm17;
+    //   break;
+    // case 18:
+    //   inst::max_prog_len = N18;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(8);
+    //   mem_t::add_map(map_attr(32, 32, N18));
+    //   *bm = bm18;
+    //   break;
+    // case 19:
+    //   inst::max_prog_len = N19;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(8);
+    //   mem_t::add_map(map_attr(64, 64, N19));
+    //   *bm = bm19;
+    //   break;
+    // case 20:
+    //   inst::max_prog_len = N20;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(68);
+    //   mem_t::add_map(map_attr(64, 128, N20));
+    //   *bm = bm20;
+    //   break;
+    // case 21:
+    //   inst::max_prog_len = N21;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(68);
+    //   mem_t::add_map(map_attr(32, 32, 8));
+    //   *bm = bm21;
+    //   break;
+    // case 22:
+    //   inst::max_prog_len = N22;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(68);
+    //   mem_t::add_map(map_attr(32, 32, 8));
+    //   *bm = bm22;
+    //   break;
+    // case 23:
+    //   inst::max_prog_len = N23;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(68);
+    //   mem_t::add_map(map_attr(64, 128, N23));
+    //   *bm = bm23;
+    //   break;
+    // case 24:
+    //   inst::max_prog_len = N24;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+    //   mem_t::set_pkt_sz(68);
+    //   mem_t::add_map(map_attr(32, 32, N24));
+    //   mem_t::add_map(map_attr(32, 64, N24));
+    //   *bm = bm24;
+    //   break;
+    // case 25:
+    //   inst::max_prog_len = N25;
+    //   mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
+    //   mem_t::set_pkt_sz(68);
+    //   mem_t::add_map(map_attr(32, 64, N25));
+    //   mem_t::add_map(map_attr(32, 32, N25));
+    //   *bm = bm25;
+    //   break;
     default:
-      cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
+      cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1}" << endl;
       return;
   }
   setup(bm);
