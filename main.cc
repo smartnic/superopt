@@ -489,7 +489,8 @@ void write_desc_to_file(prog* current_program, string prefix_name) {
   fout.open(output_file, ios::out | ios::trunc);
   fout << "perf_cost: " << current_program->_perf_cost << endl;
   fout << "readable program: " << endl;
-  for (int i = 0; i < inst::max_prog_len; i++) {
+  int real_len = num_real_instructions(current_program->inst_list, inst::max_prog_len);
+  for (int i = 0; i < real_len; i++) {
     fout << i << ": " << current_program->inst_list[i];
   }
   fout.close();
@@ -519,10 +520,11 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
 
   string prefix_name = path_out + "output" + to_string(id);
   set_nops_as_JA0(current_program->inst_list, inst::max_prog_len);
-  write_desc_to_file(current_program, prefix_name);
+  // write_desc_to_file(current_program, prefix_name);
   write_insns_to_file(current_program, prefix_name);
 
   remove_nops(p_bpf_insns->inst_list, inst::max_prog_len);
+  write_desc_to_file(p_bpf_insns, prefix_name);
   write_bpf_insns_to_file(p_bpf_insns, prefix_name);
 }
 
