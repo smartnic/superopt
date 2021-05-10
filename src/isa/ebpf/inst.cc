@@ -367,6 +367,11 @@ ostream& operator<<(ostream& out, const inst& insn) {
   return out;
 }
 
+int inst::num_inst() const {
+  if (_opcode == LDDW) return 2;
+  else return 1;
+}
+
 
 // get_canonical_reg_list return the registers that can be modified
 vector<int> inst::get_canonical_reg_list() const {

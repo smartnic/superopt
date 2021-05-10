@@ -484,14 +484,25 @@ void write_insns_to_file(prog* current_program, string prefix_name) {
 
 // readable code + perf_cost
 void write_desc_to_file(prog* current_program, string prefix_name) {
+  prog* prog_copy = new prog(*current_program);
   string output_file = prefix_name + ".desc";
   ofstream fout;
   fout.open(output_file, ios::out | ios::trunc);
-  fout << "perf_cost: " << current_program->_perf_cost << endl;
+  fout << "perf_cost: " << prog_copy->_perf_cost << endl;
   fout << "readable program: " << endl;
-  int real_len = num_real_instructions(current_program->inst_list, inst::max_prog_len);
+  int real_len = num_real_instructions(prog_copy->inst_list, inst::max_prog_len);
+  convert_bpf_pgm_to_superopt_pgm(prog_copy->inst_list, real_len);
   for (int i = 0; i < real_len; i++) {
-    fout << i << ": " << current_program->inst_list[i];
+    int num_inst = 1;
+    if (i != real_len - 1) {
+      num_inst = prog_copy->inst_list[i].num_inst();
+    }
+    if (num_inst == 1) {
+      fout << i << ": " << prog_copy->inst_list[i];
+    } else if (num_inst == 2) {
+      fout << i << "-" << (i + 1) << ": " << prog_copy->inst_list[i];
+      i++;
+    }
   }
   fout.close();
 }
@@ -563,12 +574,12 @@ int main(int argc, char* argv[]) {
   }
   auto end = NOW;
 
-  cout << "Best program(s): " << endl;
+  cout << "Best program(s) found by K2: " << endl;
   topk_progs.sort();
   // rbegin() returns to the last value of map
   for (int i = 0; i < topk_progs.progs.size(); i++) {
     prog* p = topk_progs.progs[i];
-    cout << "program " << i  << " cost: " << p->_error_cost << " " << p->_perf_cost << endl;
+    cout << "top program " << i  << " with performance cost: " << p->_perf_cost << endl;
     write_optimized_prog_to_file(p, i, in_para.path_out);
   }
 

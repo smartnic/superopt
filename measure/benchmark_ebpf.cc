@@ -2,45 +2,10 @@
 #include <algorithm>
 #include <cctype>
 #include <locale>
+#include "benchmark.h"
 #include "benchmark_ebpf.h"
 
 using namespace std;
-
-inst benchmark0[] = {inst(MOV64XC, 0, 0x1),  // 0: r0 = 0x1
-                     inst(ADD64XY, 0, 0),    // 1: r0 += r0
-                     inst(EXIT),             // 2: exit, return r0
-                    };
-
-inst benchmark1[] = {inst(MOV64XC, 0, 0),    // 0: r0 = 0
-                     inst(STXB, 10, -1, 0),  // 1: *(u8 *)(r10 - 1) = r0
-                     inst(STXB, 10, -2, 0),  // 2: *(u8 *)(r10 - 2) = r0
-                     inst(STXB, 10, -3, 0),  // 3: *(u8 *)(r10 - 3) = r0
-                     inst(STXB, 10, -4, 0),  // 4: *(u8 *)(r10 - 4) = r0
-                     INSN_LDMAPID(1, 0),
-                     inst(),                 // 5-6: r1 = map0 fd
-                     inst(MOV64XY, 2, 10),   // 7: r2 = r10
-                     inst(ADD64XC, 2, -4),   // 8: r2 += -4
-                     inst(CALL, BPF_FUNC_map_lookup_elem),  // 9: r0 = lookup v map0, where v = *(u8*)r2
-                     inst(JEQXC, 0, 0, 1),   // 10: if r0 = 0, jmp to 12
-                     inst(MOV64XC, 0, 1),    // 11: r0 = 1
-                     inst(EXIT),             // 12: exit, return r0
-                    };
-
-// inst benchmark1[] = {inst(MOV64XC, 0, 0),    // 0: r0 = 0
-//                      inst(STXW, 10, -4, 0),  // 1: *(u16 *)(r10 - 4) = r0
-//                      inst(MOV64XC, 0, 1),    // 2: r0 = 1
-//                      inst(STXB, 10, -5, 0),  // 3: *(u8 *)(r10 - 5) = r0
-//                      inst(),                 // 4: nop
-//                      INSN_LDMAPID(1, 0),
-//                      inst(),                 // 5-6: r1 = map 0 fd
-//                      inst(MOV64XY, 2, 10),   // 7: r2 = r10
-//                      inst(ADD64XC, 2, -4),   // 8: r2 += - 4
-//                      inst(CALL, BPF_FUNC_map_lookup_elem),  // 9: r0 = lookup v map0, where v = *(u8*)r2
-//                      inst(JEQXC, 0, 0, 1),   // 10: if r0 = 0, jmp 1 (exit)
-//                      inst(MOV64XC, 0, 1),    // 11: r0 = 1
-//                      inst(EXIT),             // 12: exit, return r0
-//                     };
-
 
 inst bm0[N0] = {inst(MOV64XC, 0, 0x1),  /* mov64 r0, 0x1 */
                 inst(ADD64XY, 0, 0),  /* add64 r0, r0 */
@@ -135,6 +100,7 @@ inst bm_opti20[N2] = {inst(STXB, 10, -2, 1),    // *(r10-2) = L8(input)
                       inst(),
                       inst(),
                       inst(),
+                      inst(),
                      };
 // bpf_sock.o section: rcv-sock4
 inst bm3[N3] = {inst(191, 1, 6, 0, 0),
@@ -157,7 +123,6 @@ inst bm3[N3] = {inst(191, 1, 6, 0, 0),
                 inst(191, 10, 2, 0, 0),
                 inst(7, 0, 2, 0, -40),
                 INSN_LDMAPID(1, 0),
-                inst(0, 0, 0, 0),
                 inst(133, 0, 0, 0, 1),
                 inst(191, 0, 7, 0, 0),
                 inst(21, 0, 7, 65, 0),
@@ -172,7 +137,6 @@ inst bm3[N3] = {inst(191, 1, 6, 0, 0),
                 inst(191, 10, 2, 0, 0),
                 inst(7, 0, 2, 0, -56),
                 INSN_LDMAPID(1, 1),
-                inst(0, 0, 0, 0),
                 inst(133, 0, 0, 0, 1),
                 inst(21, 0, 0, 2, 0),
                 inst(105, 0, 1, 4, 0),
@@ -182,7 +146,6 @@ inst bm3[N3] = {inst(191, 1, 6, 0, 0),
                 inst(191, 10, 2, 0, 0),
                 inst(7, 0, 2, 0, -56),
                 INSN_LDMAPID(1, 1),
-                inst(0, 0, 0, 0),
                 inst(133, 0, 0, 0, 1),
                 inst(21, 0, 0, 5, 0),
                 inst(105, 0, 1, 4, 0),
@@ -193,7 +156,6 @@ inst bm3[N3] = {inst(191, 1, 6, 0, 0),
                 inst(191, 10, 2, 0, 0),
                 inst(7, 0, 2, 0, -40),
                 INSN_LDMAPID(1, 0),
-                inst(0, 0, 0, 0),
                 inst(133, 0, 0, 0, 3),
                 inst(183, 0, 6, 0, 0),
                 inst(123, 6, 10, -8, 0),
@@ -203,7 +165,6 @@ inst bm3[N3] = {inst(191, 1, 6, 0, 0),
                 inst(191, 10, 2, 0, 0),
                 inst(7, 0, 2, 0, -24),
                 INSN_LDMAPID(1, 2),
-                inst(0, 0, 0, 0),
                 inst(133, 0, 0, 0, 1),
                 inst(21, 0, 0, 9, 0),
                 inst(121, 0, 1, 0, 0),
@@ -223,7 +184,6 @@ inst bm3[N3] = {inst(191, 1, 6, 0, 0),
                 inst(191, 10, 3, 0, 0),
                 inst(7, 0, 3, 0, -16),
                 INSN_LDMAPID(1, 2),
-                inst(0, 0, 0, 0),
                 inst(180, 0, 4, 0, 0),
                 inst(133, 0, 0, 0, 2),
                 inst(180, 0, 0, 0, 1),
@@ -308,7 +268,6 @@ inst bm8[N8] = {inst(183, 0, 2, 0, 1),
                 inst(191, 10, 2, 0, 0),
                 inst(7, 0, 2, 0, -8),
                 INSN_LDMAPID(1, 0),
-                inst(0, 0, 0, 0, 0),
                 inst(133, 0, 0, 0, 1),
                 inst(21, 0, 0, 4, 0),
                 inst(97, 0, 1, 0, 0),
@@ -320,7 +279,6 @@ inst bm8[N8] = {inst(183, 0, 2, 0, 1),
                 inst(191, 10, 3, 0, 0),
                 inst(7, 0, 3, 0, -12),
                 INSN_LDMAPID(1, 0),
-                inst(0, 0, 0, 0, 0),
                 inst(183, 0, 4, 0, 1),
                 inst(133, 0, 0, 0, 2),
                 inst(183, 0, 0, 0, 0),
@@ -358,7 +316,6 @@ inst bm11[N11] = {inst(183, 0, 1, 0, 0),
                   inst(191, 10, 2, 0, 0),
                   inst(7, 0, 2, 0, -4),
                   INSN_LDMAPID(1, 0),
-                  inst(),
                   inst(133, 0, 0, 0, 1),
                   inst(21, 0, 0, 4, 0),
                   inst(97, 0, 1, 0, 0),
@@ -370,7 +327,6 @@ inst bm11[N11] = {inst(183, 0, 1, 0, 0),
                   inst(191, 10, 3, 0, 0),
                   inst(7, 0, 3, 0, -8),
                   INSN_LDMAPID(1, 0),
-                  inst(),
                   inst(183, 0, 4, 0, 1),
                   inst(133, 0, 0, 0, 2),
                   inst(183, 0, 0, 0, 0),
@@ -831,7 +787,6 @@ inst bm24[N24] = {inst(183, 0, 1, 0, 0),
                   inst(191, 10, 2, 0, 0),
                   inst(7, 0, 2, 0, -4),
                   INSN_LDMAPID(1, 0),
-                  inst(),
                   inst(133, 0, 0, 0, 1),
                   inst(21, 0, 0, 11, 0),
                   inst(97, 0, 1, 0, 0),
@@ -839,7 +794,6 @@ inst bm24[N24] = {inst(183, 0, 1, 0, 0),
                   inst(191, 10, 2, 0, 0),
                   inst(7, 0, 2, 0, -8),
                   INSN_LDMAPID(1, 1),
-                  inst(),
                   inst(133, 0, 0, 0, 1),
                   inst(21, 0, 0, 3, 0),
                   inst(121, 0, 1, 0, 0),
@@ -860,7 +814,6 @@ inst bm25[N25] = {inst(97, 1, 2, 4, 0),
                   inst(191, 10, 2, 0, 0),
                   inst(7, 0, 2, 0, -4),
                   INSN_LDMAPID(1, 0), // ldmapid, map0: rxcnt
-                  inst(),
                   inst(133, 0, 0, 0, 1),
                   inst(21, 0, 0, 3, 0),
                   inst(121, 0, 1, 0, 0),
@@ -879,7 +832,6 @@ inst bm25[N25] = {inst(97, 1, 2, 4, 0),
                   inst(107, 1, 6, 6, 0),
                   inst(107, 2, 6, 4, 0),
                   INSN_LDMAPID(1, 1), // ldmapid, map1: tx_port
-                  inst(),
                   inst(183, 0, 2, 0, 0),
                   inst(183, 0, 3, 0, 0),
                   inst(133, 0, 0, 0, 51),
@@ -1090,17 +1042,11 @@ void init_benchmark_from_file(inst** bm, const char* insn_file,
 void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
   switch (bm_id) {
     case 0:
-      inst::max_prog_len = sizeof(benchmark0) / sizeof(inst);
+      inst::max_prog_len = sizeof(program) / sizeof(inst);
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(8);
-      *bm = benchmark0;
-      break;
-    case 1:
-      inst::max_prog_len = sizeof(benchmark1) / sizeof(inst);
-      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-      mem_t::set_pkt_sz(8);
-      mem_t::add_map(map_attr(8, 8, inst::max_prog_len));
-      *bm = benchmark1;
+      mem_t::set_pkt_sz(2);
+      mem_t::add_map(map_attr(16, 16, inst::max_prog_len));
+      *bm = program;
       break;
     // case 0:
     //   inst::max_prog_len = N0;
@@ -1291,7 +1237,7 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
     //   *bm = bm25;
     //   break;
     default:
-      cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1}" << endl;
+      cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0}" << endl;
       return;
   }
   setup(bm);

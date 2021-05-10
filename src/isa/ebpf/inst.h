@@ -626,7 +626,9 @@ static const int optable[NUM_INSTR] = {
 #undef UNUSED_OPS
 
 // todo: extend ldmapid to two insns
-#define INSN_LDMAPID(dst_reg, map_id) inst(LDDW, 1, dst_reg, 0, map_id)
+#define INSN_LDMAPID(dst_reg, map_id) \
+  inst(LDDW, 1, dst_reg, 0, map_id), \
+  inst()
 
 #define INSN_MOVDWXC(dst_reg, imm64) \
   inst(LDDW, 0, dst_reg, 0, uint32_t(uint64_t(imm64))),\
@@ -728,6 +730,7 @@ class inst: public inst_base {
   int get_mem_opcode_by_sample_idx(int sample_idx) const;
   int sample_mem_idx(int opcode) const;
   void set_unused_operands_default_vals();
+  int num_inst() const;
 };
 
 int num_real_instructions(const inst* program, int length);
