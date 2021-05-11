@@ -495,7 +495,7 @@ void write_desc_to_file(prog* current_program, string prefix_name) {
   for (int i = 0; i < real_len; i++) {
     int num_inst = 1;
     if (i != real_len - 1) {
-      num_inst = prog_copy->inst_list[i].num_inst();
+      num_inst = inst::num_inst(prog_copy->inst_list[i]._opcode);
     }
     if (num_inst == 1) {
       fout << i << ": " << prog_copy->inst_list[i];

@@ -258,3 +258,16 @@ enum bpf_map_type {
   BPF_MAP_TYPE_DEVMAP_HASH,
   BPF_MAP_TYPE_STRUCT_OPS,
 };
+
+
+// Struct needs to be defined because the loader writes to
+// the .ins file using bpf_insn which has a different size
+// than insn
+struct bpf_insn {
+
+  uint8_t opcode;
+  uint8_t dst_reg: 4;
+  uint8_t src_reg: 4;
+  short off;
+  int imm;
+};

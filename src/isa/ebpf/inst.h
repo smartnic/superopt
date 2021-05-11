@@ -681,6 +681,7 @@ class inst: public inst_base {
   bool operator==(const inst &x) const;
   static string func_to_str(int func_id);
   static string opcode_to_str(int);
+  static int str_to_opcode(string);
   static string swap_byte_to_str(int opcode, int imm);
   void print() const;
   friend ostream& operator<<(ostream& out, const inst& insn);
@@ -720,6 +721,7 @@ class inst: public inst_base {
   bool is_movdwxc() const;
 
   string get_bytecode_str() const;
+  bpf_insn to_bpf_insn() const;
   void regs_to_read(vector<int>& regs) const;
   int reg_to_write() const;
   void regs_cannot_be_ptrs(vector<int>& regs) const;
@@ -730,7 +732,7 @@ class inst: public inst_base {
   int get_mem_opcode_by_sample_idx(int sample_idx) const;
   int sample_mem_idx(int opcode) const;
   void set_unused_operands_default_vals();
-  int num_inst() const;
+  static int num_inst(int opcode);
 };
 
 int num_real_instructions(const inst* program, int length);

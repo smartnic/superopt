@@ -38,10 +38,3 @@ class input_paras {
   bool is_win;
   int logger_level;
 };
-struct bpf_insn {
-  uint8_t opcode;
-  uint8_t dst_reg: 4;
-  uint8_t src_reg: 4;
-  short off;
-  int imm;
-};

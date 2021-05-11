@@ -343,6 +343,82 @@ string inst::opcode_to_str(int opcode) {
 }
 #undef MAPPER
 
+#define MAPPER(OP) if (str == #OP) {return OP;}
+int inst::str_to_opcode(string str) {
+  MAPPER(NOP)
+  MAPPER(ADD64XC)
+  MAPPER(ADD64XY)
+  MAPPER(OR64XC)
+  MAPPER(OR64XY)
+  MAPPER(AND64XC)
+  MAPPER(AND64XY)
+  MAPPER(LSH64XC)
+  MAPPER(LSH64XY)
+  MAPPER(RSH64XC)
+  MAPPER(RSH64XY)
+  MAPPER(NEG64XC)
+  MAPPER(MOV64XC)
+  MAPPER(MOV64XY)
+  MAPPER(ARSH64XC)
+  MAPPER(ARSH64XY)
+  MAPPER(ADD32XC)
+  MAPPER(ADD32XY)
+  MAPPER(OR32XC)
+  MAPPER(OR32XY)
+  MAPPER(AND32XC)
+  MAPPER(AND32XY)
+  MAPPER(LSH32XC)
+  MAPPER(LSH32XY)
+  MAPPER(RSH32XC)
+  MAPPER(RSH32XY)
+  MAPPER(MOV32XC)
+  MAPPER(MOV32XY)
+  MAPPER(ARSH32XC)
+  MAPPER(ARSH32XY)
+  MAPPER(LE)
+  MAPPER(BE)
+  MAPPER(LDXB)
+  MAPPER(STXB)
+  MAPPER(LDXH)
+  MAPPER(STXH)
+  MAPPER(LDXW)
+  MAPPER(STXW)
+  MAPPER(STB)
+  MAPPER(STH)
+  MAPPER(STW)
+  MAPPER(STDW)
+  MAPPER(LDXDW)
+  MAPPER(STXDW)
+  MAPPER(XADD64)
+  MAPPER(XADD32)
+  MAPPER(LDABSH)
+  MAPPER(LDINDH)
+  MAPPER(JA)
+  MAPPER(JEQXC)
+  MAPPER(JEQXY)
+  MAPPER(JGTXC)
+  MAPPER(JGTXY)
+  MAPPER(JGEXC)
+  MAPPER(JGEXY)
+  MAPPER(JNEXC)
+  MAPPER(JNEXY)
+  MAPPER(JSGTXC)
+  MAPPER(JSGTXY)
+  MAPPER(JEQ32XC)
+  MAPPER(JEQ32XY)
+  MAPPER(JNE32XC)
+  MAPPER(JNE32XY)
+  MAPPER(CALL)
+  MAPPER(EXIT)
+  else if (str == "LDMAPID") {return LDDW;}
+  else if (str == "MOVDWXC") {return LDDW;}
+  else {
+    cout << "unknown opcode: " + str << endl;
+    return -1;
+  }
+}
+#undef MAPPER
+
 void inst::print() const {
   cout << *this;
 }
@@ -367,8 +443,8 @@ ostream& operator<<(ostream& out, const inst& insn) {
   return out;
 }
 
-int inst::num_inst() const {
-  if (_opcode == LDDW) return 2;
+int inst::num_inst(int opcode) {
+  if (opcode == LDDW) return 2;
   else return 1;
 }
 
@@ -974,6 +1050,16 @@ string inst::get_bytecode_str() const {
            + "}");
   }
   return str;
+}
+
+bpf_insn inst::to_bpf_insn() const {
+  bpf_insn insn;
+  insn.opcode = _opcode;
+  insn.dst_reg = _dst_reg;
+  insn.src_reg = _src_reg;
+  insn.off = _off;
+  insn.imm = _imm;
+  return insn;
 }
 
 void inst::regs_to_read(vector<int>& regs) const {
