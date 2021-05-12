@@ -33,6 +33,12 @@ k2_inst_translater.out: k2_inst_translater_z3.o $(EBPF)inst.cc $(EBPF)inst.h $(E
 k2_inst_translater_z3.o: $(INPUT_TRANSLATER)k2_inst_translater.cc
 	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(INPUT_TRANSLATER)k2_inst_translater_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(INPUT_TRANSLATER)k2_inst_translater.cc
 
+bpf_insn_translater.out: bpf_insn_translater_z3.o $(INPUT_TRANSLATER)bpf_insn.h $(INPUT_TRANSLATER)bpf_insn_prog.h $(EBPF)inst.cc $(EBPF)inst.h $(EBPF)bpf.h $(SRC)utils.cc $(SRC)utils.h $(EBPF)inst_codegen.h $(EBPF)inst_codegen.cc $(EBPF)inst_var.cc $(EBPF)inst_var.h $(ISA)inst_header.h $(ISA)inst_header_basic.h $(ISA)inst.cc $(ISA)inst.h $(ISA)inst_var.cc $(ISA)inst_var.h
+	g++ $(EBPF_FLAG) -std=c++11 -fvisibility=hidden $(INPUT_TRANSLATER)bpf_insn_translater_z3.o $(EBPF)inst.cc $(SRC)utils.cc $(EBPF)inst_codegen.cc $(EBPF)inst_var.cc $(ISA)inst.cc $(ISA)inst_var.cc -o $(INPUT_TRANSLATER)bpf_insn_translater.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
+
+bpf_insn_translater_z3.o: $(INPUT_TRANSLATER)k2_inst_translater.cc
+	$(CXX) $(EBPF_FLAG) $(CXXFLAGS) $(OS_DEFINES) $(EXAMP_DEBUG_FLAG) $(CXX_OUT_FLAG)$(INPUT_TRANSLATER)bpf_insn_translater_z3.o  -I../z3/src/api -I../z3/src/api/c++ $(INPUT_TRANSLATER)bpf_insn_translater.cc
+
 proposals_test.out: proposals_z3.o $(TOY_ISA)inst_codegen.h $(TOY_ISA)inst_var.h $(TOY_ISA)inst_var.cc $(ISA)inst_header.h $(ISA)inst_header_basic.h $(ISA)inst.cc $(ISA)inst.h $(TOY_ISA)inst.cc $(TOY_ISA)inst.h $(SEARCH)proposals.cc $(ISA)prog.cc $(ISA)prog.h $(SRC)utils.cc $(SRC)utils.h $(ISA)inst_var.cc $(ISA)inst_var.h
 	g++ $(TOY_ISA_FLAG) -std=c++11 $(ISA)inst.cc $(TOY_ISA)inst.cc $(TOY_ISA)inst_var.cc $(SEARCH)proposals.cc $(SEARCH)proposals_z3.o $(ISA)prog.cc $(SRC)utils.cc $(ISA)inst_var.cc -o $(SEARCH)proposals_test.out ../z3/build/libz3$(SO_EXT) $(LINK_EXTRA_FLAGS)
 

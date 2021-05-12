@@ -977,7 +977,7 @@ void read_insns(inst** bm, const char* insn_file) {
   bpf_insn input;
   // read file contents till end of file
   while (fread(&input, sizeof(bpf_insn), 1, fp)) {
-    inst curr_inst((int)input.opcode,
+    inst curr_inst((int)input.code,
                    (int32_t)input.src_reg,
                    (int32_t)input.dst_reg,
                    (int16_t)input.off,

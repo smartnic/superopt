@@ -1054,7 +1054,7 @@ string inst::get_bytecode_str() const {
 
 bpf_insn inst::to_bpf_insn() const {
   bpf_insn insn;
-  insn.opcode = _opcode;
+  insn.code = _opcode;
   insn.dst_reg = _dst_reg;
   insn.src_reg = _src_reg;
   insn.off = _off;
@@ -1805,4 +1805,18 @@ void init_sample_range(inst* program, int len) {
   for (int i = 0; i < inst::_sample_pos_offs.size(); i++)
     cout << inst::_sample_pos_offs[i] << " ";
   cout << endl;
+}
+
+void write_insns_to_file_in_bpf_insn(vector<inst> insns, string output_file) {
+  FILE *fp;
+  fp = fopen(output_file.c_str(), "w");
+  if (fp == NULL ) {
+    std::cerr << "Error: BPF bytecode file could not be opened" << std::endl;
+    exit(1);
+  }
+  for (int i = 0; i < insns.size(); i++) {
+    bpf_insn output = insns[i].to_bpf_insn();
+    fwrite(&output, sizeof(bpf_insn), 1, fp);
+  }
+  fclose(fp);
 }

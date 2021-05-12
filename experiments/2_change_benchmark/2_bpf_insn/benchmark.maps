@@ -1,0 +1,1 @@
+map0 { type = 1, key_size = 2, value_size = 2, max_entries = 16, fd = 0 }

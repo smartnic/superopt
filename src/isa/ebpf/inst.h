@@ -743,3 +743,4 @@ void convert_bpf_pgm_to_superopt_pgm(inst* program, int length);
 void convert_superopt_pgm_to_bpf_pgm(inst* program, int length);
 // init sample immediate numbers and offsets
 void init_sample_range(inst* program, int len);
+void write_insns_to_file_in_bpf_insn(vector<inst> insns, string output_file);

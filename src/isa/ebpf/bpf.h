@@ -265,7 +265,7 @@ enum bpf_map_type {
 // than insn
 struct bpf_insn {
 
-  uint8_t opcode;
+  uint8_t code;
   uint8_t dst_reg: 4;
   uint8_t src_reg: 4;
   short off;
