@@ -488,8 +488,8 @@ void write_desc_to_file(prog* current_program, string prefix_name) {
   string output_file = prefix_name + ".desc";
   ofstream fout;
   fout.open(output_file, ios::out | ios::trunc);
-  fout << "perf_cost: " << prog_copy->_perf_cost << endl;
-  fout << "readable program: " << endl;
+  // fout << "perf_cost: " << prog_copy->_perf_cost << endl;
+  // fout << "readable program: " << endl;
   int real_len = num_real_instructions(prog_copy->inst_list, inst::max_prog_len);
   convert_bpf_pgm_to_superopt_pgm(prog_copy->inst_list, real_len);
   for (int i = 0; i < real_len; i++) {
@@ -498,9 +498,9 @@ void write_desc_to_file(prog* current_program, string prefix_name) {
       num_inst = inst::num_inst(prog_copy->inst_list[i]._opcode);
     }
     if (num_inst == 1) {
-      fout << i << ": " << prog_copy->inst_list[i];
+      fout << prog_copy->inst_list[i];
     } else if (num_inst == 2) {
-      fout << i << "-" << (i + 1) << ": " << prog_copy->inst_list[i];
+      fout << prog_copy->inst_list[i];
       i++;
     }
   }
@@ -579,7 +579,7 @@ int main(int argc, char* argv[]) {
   // rbegin() returns to the last value of map
   for (int i = 0; i < topk_progs.progs.size(); i++) {
     prog* p = topk_progs.progs[i];
-    cout << "top program " << i  << " with performance cost: " << p->_perf_cost << endl;
+    cout << "top " << (i + 1) << " program's " << "performance cost: " << p->_perf_cost << endl;
     write_optimized_prog_to_file(p, i, in_para.path_out);
   }
 
@@ -588,7 +588,7 @@ int main(int argc, char* argv[]) {
     cout << "validator long time: " << dur_sum_long << " " << n_sum_long << " " << dur_sum_long / n_sum_long << endl;
   else
     cout << "validator long time: " << dur_sum_long << endl;
-  cout << "compiling time: " << DUR(start, end) << " us" << endl;
+  cout << "compiling time: " << DUR(start, end)/1000000 << " s" << endl;
 
   // kill z3 solver server after compiling
   kill_server();
