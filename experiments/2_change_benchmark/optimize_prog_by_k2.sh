@@ -1,7 +1,7 @@
 #!/bin/bash
 path_prefix=experiments/2_change_benchmark/
 benchmark=benchmark_before.k2_inst
-if [[ $# -gt 0 ]]; then
+if [ $# -gt 0 ]; then
   benchmark=$1
 fi
 echo "Benchmark is" $benchmark
