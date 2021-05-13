@@ -5,7 +5,7 @@
 
 Install K2 and dependencies:
 
-    `./install.sh`
+    ./install.sh
 
 Now execute run_k2.py:
 
