@@ -3,3 +3,8 @@ z3server.out
 bpf-elf-tools/*
 src/*
 elf_extract
+*.maps
+*.rel
+*.o
+*.txt
+*.insns
