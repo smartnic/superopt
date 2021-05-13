@@ -50,12 +50,34 @@ def invoke_patcher(infile, name):
             new_insns,
             name,
             '-o',
-            f'{name}_modified.o'
+            f'output/{name}_modified.o'
         ]) 
     except subprocess.CalledProcessError as e:
         print(e.output)
         print('ELF patcher failed')
         exit()
+
+def cleanup():
+
+    try:
+        with open(os.devnull) as FNULL:
+            subprocess.check_output([
+                'mkdir',
+                'old-extracted-files',
+            ], stderr=FNULL)
+    except:
+        pass
+    for f in os.listdir('.'):
+        if f.endswith('.insns') or f.endswith('.rel') or \
+           f.endswith('.maps') or f.endswith('.txt'):
+            try:
+                subprocess.check_output([
+                    'mv', 
+                    f,
+                    'old-extracted-files'
+                ]) 
+            except subprocess.CalledProcessError as e:
+                print(e.output)
 
 def main():
     ap = argparse.ArgumentParser()
@@ -77,6 +99,7 @@ def main():
                 name = extract_base_name(f)
                 invoke_k2(descfile, name)
                 invoke_patcher(infile, name)
+    cleanup()
 
 if __name__ == '__main__':
     main()

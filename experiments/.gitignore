@@ -8,3 +8,4 @@ elf_extract
 *.o
 *.txt
 *.insns
+old-extracted-files
