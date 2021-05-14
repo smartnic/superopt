@@ -1,0 +1,4 @@
+is_win
+win_s_list=5
+win_e_list=8
+n=20000
