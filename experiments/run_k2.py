@@ -6,11 +6,32 @@ import subprocess
 def extract_base_name(name):
     return name.split('.')[0] 
 
-def invoke_k2(descfile, name):
+def parse_k2file(k2file):
+    k2args = []
+    with open(k2file) as f:
+        for line in f:
+            if len(line.strip()) == 0:
+                # Skip blank lines
+                continue
+            line = line.replace(' ','')
+            line = line.replace('\n','')
+            line_arr = line.split('=')
+            if len(line_arr[0]) == 1:
+                line_arr[0] = f'-{line_arr[0]}'
+            else:
+                line_arr[0] = f'--{line_arr[0]}'
+            k2args.append(line_arr[0])
+            if len(line_arr) == 2:
+                k2args.append(line_arr[1])
+            elif len(line_arr) != 1:
+                raise Exception('Error: Invalid K2 input format')
+    return k2args
+
+def invoke_k2(descfile, name, k2args):
+
     insns_file = f'{name}.insns' 
     maps_file = f'{name}.maps' 
-    try:
-        subprocess.check_output([
+    k2_command = [ 
             './main_ebpf.out',
             '--bm_from_file',
             '--desc',
@@ -19,14 +40,11 @@ def invoke_k2(descfile, name):
             insns_file,
             '--map',
             maps_file,
-            '--is_win',
-            '--win_s_list',
-            '5',
-            '--win_e_list',
-            '8',
-            '-n',
-            '10'
-        ])
+    ]
+    k2_command.extend(k2args)
+    try:
+        k2_output = subprocess.check_output(k2_command)
+        print(k2_output.decode('utf-8'))
     except subprocess.CalledProcessError as e:
         print(e.output)
         print('K2 failed')
@@ -58,7 +76,6 @@ def invoke_patcher(infile, name):
         exit()
 
 def cleanup():
-
     try:
         with open(os.devnull) as FNULL:
             subprocess.check_output([
@@ -83,21 +100,24 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('infile')
     ap.add_argument('descfile')
+    ap.add_argument('k2file')
     ap.add_argument('--programs', nargs='+', default=[])
     args = ap.parse_args()
     programs = args.programs
     infile = args.infile 
     descfile = args.descfile
+    k2file = args.k2file
     invoke_text_extractor(infile)
+    k2args = parse_k2file(k2file)
     if len(programs) > 0:
         for name in programs:
-            invoke_k2(descfile, name)
+            invoke_k2(descfile, name, k2args)
             invoke_patcher(infile, name)
     else:
         for f in os.listdir('.'):
             if f.endswith('.insns'):
                 name = extract_base_name(f)
-                invoke_k2(descfile, name)
+                invoke_k2(descfile, name, k2args)
                 invoke_patcher(infile, name)
     cleanup()
 
