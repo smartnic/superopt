@@ -145,7 +145,7 @@ inst instructions20[3] = {inst(STXH, 10, -2, 1),
 // TODO: when safety check is added, these map related programs need to be modified
 // after calling map_update function, r1-r5 are unreadable.
 // r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
-inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+inst instructions21[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                            inst(STXB, 10, -1, 1),
                            INSN_LDMAPID(1, 0), // r1 = map_id (0)
@@ -160,7 +160,7 @@ inst instructions21[13] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(EXIT),
                           };
 // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
-inst instructions22[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
+inst instructions22[15] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
                            inst(STXB, 10, -1, 1),
                            INSN_LDMAPID(1, 0), // r1 = map_id (0)
@@ -176,16 +176,16 @@ inst instructions22[14] = {inst(STXB, 10, -2, 1), // *addr_v = r1
                            inst(EXIT),
                           };
 // r0 = *(lookup &k m), where k = 0x11, v = L8(input)
-inst instructions23[9] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
-                          inst(STXB, 10, -1, 1),
-                          INSN_LDMAPID(1, 0), // r1 = map_id (0)
-                          inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
-                          inst(ADD64XC, 2, -1),
-                          inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
-                          inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
-                          inst(LDXB, 0, 0, 0),
-                          inst(EXIT),
-                         };
+inst instructions23[10] = {inst(MOV64XC, 1, 0x11), // *addr_k = 0x11
+                           inst(STXB, 10, -1, 1),
+                           INSN_LDMAPID(1, 0), // r1 = map_id (0)
+                           inst(MOV64XY, 2, 10), // r2(addr_k) = r10 - 1
+                           inst(ADD64XC, 2, -1),
+                           inst(CALL, BPF_FUNC_map_lookup_elem), // r0 = addr_v = lookup k map0
+                           inst(JEQXC, 0, 0, 1), // if r0 == 0, exit else r0 = *addr_v
+                           inst(LDXB, 0, 0, 0),
+                           inst(EXIT),
+                          };
 
 // check or32xc, and32xc
 // r0 = (r1 & 0xffff) | 0xff0000
@@ -443,23 +443,23 @@ void test1() {
   input.reg = 0x123456;
   expected.reg = 0x56;
   expected.update_kv(0, "11", vector<uint8_t> {0x56});
-  interpret(output, instructions21, 13, ps, input);
+  interpret(output, instructions21, 14, ps, input);
   print_test_res(output == expected, "interpret map helper function 1.1");
 
   expected.reg = 0x0f;
   input.reg = 0x0f;
   expected.update_kv(0, "11", vector<uint8_t> {0x0f});
-  interpret(output, instructions21, 13, ps, input);
+  interpret(output, instructions21, 14, ps, input);
   print_test_res(output == expected, "interpret map helper function 1.2");
 
   input.reg = 0x56;
   expected.clear();
   expected.reg = 0;
-  interpret(output, instructions22, 14, ps, input);
+  interpret(output, instructions22, 15, ps, input);
   print_test_res(output == expected, "interpret map helper function 2.1");
   input.reg = 0x0f;
   expected.reg = 0;
-  interpret(output, instructions22, 14, ps, input);
+  interpret(output, instructions22, 15, ps, input);
   print_test_res(output == expected, "interpret map helper function 2.2");
 
   // r0 = L8(input), map0[0x11] = L8(input)
@@ -468,12 +468,12 @@ void test1() {
   expected.reg = 0x1f;
   expected.update_kv(0, "11", vector<uint8_t> {0x1f});
   // r0 = *(lookup &k (update &k &v m)), where k = 0x11, v = L8(input)
-  interpret(output, instructions21, 13, ps, input);
+  interpret(output, instructions21, 14, ps, input);
   input = output;
   input.input_simu_r10 = 1024; // set as a random value (> 512)
   output.clear();
   // r0 = *(lookup &k m), where k = 0x11
-  interpret(output, instructions23, 9, ps, input);
+  interpret(output, instructions23, 10, ps, input);
   print_test_res(output == expected, "interpret map input 1");
 
   input = output;
@@ -483,12 +483,12 @@ void test1() {
   expected.clear();
   expected.reg = 0;
   // r0 = *(lookup &k (delete &k (update &k &v m))), where k = 0x11, v = L8(input)
-  interpret(output, instructions22, 14, ps, input);
+  interpret(output, instructions22, 15, ps, input);
   // r0 = *(lookup &k m), where k = 0x11
   input = output;
   input.input_simu_r10 = 1024; // set as a random value (> 512)
   output.clear();
-  interpret(output, instructions23, 9, ps, input);
+  interpret(output, instructions23, 10, ps, input);
   print_test_res(output == expected, "interpret map input 2");
 
   input = output;
@@ -502,7 +502,7 @@ void test1() {
   input = output;
   input.input_simu_r10 = 1024; // set as a random value (> 512)
   output.clear();
-  interpret(output, instructions23, 9, ps, input);
+  interpret(output, instructions23, 10, ps, input);
   print_test_res(output == expected, "interpret map input 3");
 
   // w0 = (w1 & 0xffff) | 0xff0000
@@ -1179,7 +1179,7 @@ void test3() {
              "{133, 0, 0, 0, 1},"\
              "{149, 0, 0, 0, 0},";
   prog_bytecode = "";
-  for (int i = 0; i < NUM_INSTR - 2; i++) { // exclude NOP
+  for (int i = 0; i < NUM_INSTR - 1; i++) { // exclude NOP + ldmapid has two instructions
     prog_bytecode += prog2[i].get_bytecode_str() + ",";
   }
   print_test_res(prog_bytecode == expected, "ebpf bytecode 2");
@@ -1490,24 +1490,24 @@ void test9() {
   output2.init();
   expected.init();
   input.input_simu_r10 = (uint64_t)ps._mem.get_stack_bottom_addr();
-  inst p1[6] = {inst(MOV64XY, 1, 1),
+  inst p1[7] = {inst(MOV64XY, 1, 1),
                 INSN_LDMAPID(2, 0),
                 inst(MOV64XC, 3, 1), // Jump to map[1] program
                 inst(CALL, BPF_FUNC_tail_call), // in the current implementation, this is an exit insn
                 inst(MOV64XC, 0, 0xff),
                 inst(EXIT),
                };
-  interpret(output1, p1, 6, ps, input);
+  interpret(output1, p1, 7, ps, input);
   expected.tail_call_para = 1;
   expected.pgm_exit_type = PGM_EXIT_TYPE_tail_call;
   print_test_res(output1 == expected, "tail call 1.1");
-  inst p1_1[5] = {inst(MOV64XY, 1, 1),
+  inst p1_1[6] = {inst(MOV64XY, 1, 1),
                   INSN_LDMAPID(2, 0),
                   inst(MOV64XC, 3, 1), // Jump to map[1] program
                   inst(CALL, BPF_FUNC_tail_call), // in the current implementation, this is an exit insn
                   inst(EXIT),
                  };
-  interpret(output2, p1_1, 5, ps, input);
+  interpret(output2, p1_1, 6, ps, input);
   print_test_res(output2 == expected, "tail call 1.2");
   vector<int64_t> val_list1, val_list2;
   get_cmp_lists(val_list1, val_list2, output1, output2);
@@ -1675,7 +1675,7 @@ void test11() {
                inst(ADD64XC, 2, -2),
                inst(CALL, BPF_FUNC_map_lookup_elem),
                inst(JEQXC, 0, 0, 3),
-               inst(LDXB, 1, 0, 0), // insn 6
+               inst(LDXB, 1, 0, 0), // insn 7
                inst(MOV64XY, 0, 1),
                inst(EXIT),
                inst(MOV64XC, 0, 0),
@@ -1685,8 +1685,8 @@ void test11() {
   output.clear();
   expected.clear();
   input.is_win = true;
-  inout_t::start_insn = 6;
-  inout_t::end_insn = 6;
+  inout_t::start_insn = 7;
+  inout_t::end_insn = 7;
   input.reg_readable.resize(NUM_REGS);
   input.stack_readble.resize(STACK_SIZE);
   input.reg_type.resize(NUM_REGS);
@@ -1931,7 +1931,6 @@ void test16() {
 
   // inst(int opcode, int32_t src_reg, int32_t dst_reg, int16_t off, int32_t imm) {
   inst p2[] = {INSN_LDMAPID(1, 0),
-               inst(),
                inst(MOV64XC, 0, 0),
                inst(EXIT),
               };
