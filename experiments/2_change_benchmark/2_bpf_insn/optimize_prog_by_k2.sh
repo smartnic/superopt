@@ -12,6 +12,11 @@ fi
 cd ../../../
 cp input_translater/bpf_insn_prog.h input_translater/bpf_insn_prog_bk.h
 cp $path_prefix$benchmark input_translater/bpf_insn_prog.h
+tail_append="};\n"
+echo $tail_append >> input_translater/bpf_insn_prog.h
+head_append="#include \"bpf_insn.h\"\n\nstruct bpf_insn prog[] = {"
+echo $head_append | cat - input_translater/bpf_insn_prog.h > temp && mv temp input_translater/bpf_insn_prog.h
+
 make bpf_insn_translater.out > compile_bpf_insn_translater.tmp_log
 rm -rf compile_bpf_insn_translater.tmp_log
 ./input_translater/bpf_insn_translater.out experiments/2_change_benchmark/2_bpf_insn/benchmark.insns
@@ -23,7 +28,7 @@ grep "original" output/log.txt
 echo "best program found by K2: "
 grep "top 1 " output/log.txt
 echo "Optimized program is stored in" $output_file
-mv output/output0.desc $output_file
+mv output/output0.bpf_c_macros $output_file
 grep "compiling" output/log.txt
 rm -rf output
 rm -rf benchmark.insns

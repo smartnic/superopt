@@ -1820,3 +1820,101 @@ void write_insns_to_file_in_bpf_insn(vector<inst> insns, string output_file) {
   }
   fclose(fp);
 }
+
+
+string reg_to_str(int reg) {
+  return ("BPF_REG_" + to_string(reg));
+}
+
+string k2_inst_to_bpf_c_macro(inst& insn) {
+  int opcode = insn._opcode;
+  string src = reg_to_str(insn._src_reg);
+  string dst = reg_to_str(insn._dst_reg);
+  string imm = to_string(insn._imm);
+  string off = to_string(insn._off);
+  string imm64 = to_string(insn._imm64);
+  string str = "";
+  if (opcode == NOP) {cout << "[k2_inst_to_bpf_c_macro] Error: opcode cannot be NOP" << endl;}
+  else if (opcode == ADD64XC ) {str = "BPF_ALU64_IMM(BPF_ADD, " + dst + ", " + imm + ")";}
+  else if (opcode == ADD64XY ) {str = "BPF_ALU64_REG(BPF_ADD, " + dst + ", " + src + ")";}
+  else if (opcode == OR64XC  ) {str = "BPF_ALU64_IMM(BPF_OR, " + dst + ", " + imm + ")";}
+  else if (opcode == OR64XY  ) {str = "BPF_ALU64_REG(BPF_OR, " + dst + ", " + src + ")";}
+  else if (opcode == AND64XC ) {str = "BPF_ALU64_IMM(BPF_AND, " + dst + ", " + imm + ")";}
+  else if (opcode == AND64XY ) {str = "BPF_ALU64_REG(BPF_AND, " + dst + ", " + src + ")";}
+  else if (opcode == LSH64XC ) {str = "BPF_ALU64_IMM(BPF_LSH, " + dst + ", " + imm + ")";}
+  else if (opcode == LSH64XY ) {str = "BPF_ALU64_REG(BPF_LSH, " + dst + ", " + src + ")";}
+  else if (opcode == RSH64XC ) {str = "BPF_ALU64_IMM(BPF_RSH, " + dst + ", " + imm + ")";}
+  else if (opcode == RSH64XY ) {str = "BPF_ALU64_REG(BPF_RSH, " + dst + ", " + src + ")";}
+  else if (opcode == NEG64XC ) {str = "BPF_ALU64_IMM(BPF_NEG, " + dst + ", " + imm + ")";}
+  else if (opcode == MOV64XC ) {str = "BPF_ALU64_REG(BPF_MOV, " + dst + ", " + imm + ")";}
+  else if (opcode == MOV64XY ) {str = "BPF_ALU64_REG(BPF_MOV, " + dst + ", " + src + ")";}
+  else if (opcode == ARSH64XC) {str = "BPF_ALU64_IMM(BPF_ARSH, " + dst + ", " + imm + ")";}
+  else if (opcode == ARSH64XY) {str = "BPF_ALU64_REG(BPF_ARSH, " + dst + ", " + src + ")";}
+  else if (opcode == ADD32XC ) {str = "BPF_ALU32_IMM(BPF_ADD, " + dst + ", " + imm + ")";}
+  else if (opcode == ADD32XY ) {str = "BPF_ALU32_REG(BPF_ADD, " + dst + ", " + src + ")";}
+  else if (opcode == OR32XC  ) {str = "BPF_ALU32_IMM(BPF_OR, " + dst + ", " + imm + ")";}
+  else if (opcode == OR32XY  ) {str = "BPF_ALU32_REG(BPF_OR, " + dst + ", " + src + ")";}
+  else if (opcode == AND32XC ) {str = "BPF_ALU32_IMM(BPF_AND, " + dst + ", " + imm + ")";}
+  else if (opcode == AND32XY ) {str = "BPF_ALU32_REG(BPF_AND, " + dst + ", " + src + ")";}
+  else if (opcode == LSH32XC ) {str = "BPF_ALU32_IMM(BPF_LSH, " + dst + ", " + imm + ")";}
+  else if (opcode == LSH32XY ) {str = "BPF_ALU32_REG(BPF_LSH, " + dst + ", " + src + ")";}
+  else if (opcode == RSH32XC ) {str = "BPF_ALU32_IMM(BPF_RSH, " + dst + ", " + imm + ")";}
+  else if (opcode == RSH32XY ) {str = "BPF_ALU32_REG(BPF_RSH, " + dst + ", " + src + ")";}
+  else if (opcode == MOV32XC ) {str = "BPF_ALU32_REG(BPF_MOV, " + dst + ", " + imm + ")";}
+  else if (opcode == MOV32XY ) {str = "BPF_ALU32_REG(BPF_MOV, " + dst + ", " + src + ")";}
+  else if (opcode == ARSH32XC) {str = "BPF_ALU32_IMM(BPF_ARSH, " + dst + ", " + imm + ")";}
+  else if (opcode == ARSH32XY) {str = "BPF_ALU32_REG(BPF_ARSH, " + dst + ", " + src + ")";}
+  else if (opcode == LE      ) {str = "BPF_ENDIAN(BPF_TO_LE, " + dst + ", " + imm + ")";}
+  else if (opcode == BE      ) {str = "BPF_ENDIAN(BPF_TO_BE, " + dst + ", " + imm + ")";}
+  else if (opcode == LDDW    ) {
+    if (insn.is_ldmapid()) {str = "BPF_LD_MAP_FD(" + dst + ", " + imm + ")";}
+    else if (insn.is_movdwxc()) {str = "BPF_LD_IMM64(" + dst + ", " + imm64 + ")";}
+  } else if (opcode == LDXB  ) {str = "BPF_LDX_MEM(BPF_B, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == STXB    ) {str = "BPF_STX_MEM(BPF_B, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == LDXH    ) {str = "BPF_LDX_MEM(BPF_H, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == STXH    ) {str = "BPF_STX_MEM(BPF_H, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == LDXW    ) {str = "BPF_LDX_MEM(BPF_W, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == STXW    ) {str = "BPF_STX_MEM(BPF_W, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == LDXDW   ) {str = "BPF_LDX_MEM(BPF_DW, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == STXDW   ) {str = "BPF_STX_MEM(BPF_DW, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == STB     ) {str = "BPF_ST_MEM(BPF_B, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == STH     ) {str = "BPF_ST_MEM(BPF_H, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == STW     ) {str = "BPF_ST_MEM(BPF_W, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == STDW    ) {str = "BPF_ST_MEM(BPF_DW, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == XADD64  ) {str = "BPF_STX_XADD(BPF_DW, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == XADD32  ) {str = "BPF_STX_XADD(BPF_W, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == LDABSH  ) {str = "BPF_LD_ABS(BPF_H, " + imm + ")";}
+  else if (opcode == LDINDH  ) {str = "BPF_LD_IND(BPF_H, " + imm + ", " + src + ")";}
+  else if (opcode == JA      ) {str = "BPF_JMP_A(" + off + ")";}
+  else if (opcode == JEQXC   ) {str = "BPF_JMP_IMM(BPF_JEQ, " + dst + ", " + imm + ")";}
+  else if (opcode == JEQXY   ) {str = "BPF_JMP_REG(BPF_JEQ, " + dst + ", " + src + ")";}
+  else if (opcode == JGTXC   ) {str = "BPF_JMP_IMM(BPF_JGT, " + dst + ", " + imm + ")";}
+  else if (opcode == JGTXY   ) {str = "BPF_JMP_REG(BPF_JGT, " + dst + ", " + src + ")";}
+  else if (opcode == JGEXC   ) {str = "BPF_JMP_IMM(BPF_JGE, " + dst + ", " + imm + ")";}
+  else if (opcode == JGEXY   ) {str = "BPF_JMP_REG(BPF_JGE, " + dst + ", " + src + ")";}
+  else if (opcode == JNEXC   ) {str = "BPF_JMP_IMM(BPF_JNE, " + dst + ", " + imm + ")";}
+  else if (opcode == JNEXY   ) {str = "BPF_JMP_REG(BPF_JNE, " + dst + ", " + src + ")";}
+  else if (opcode == JSGTXC  ) {str = "BPF_JMP_IMM(BPF_JSGT, " + dst + ", " + imm + ")";}
+  else if (opcode == JSGTXY  ) {str = "BPF_JMP_REG(BPF_JSGT, " + dst + ", " + src + ")";}
+  else if (opcode == JEQ32XC ) {str = "BPF_JMP32_IMM(BPF_JEQ, " + dst + ", " + imm + ")";}
+  else if (opcode == JEQ32XY ) {str = "BPF_JMP32_REG(BPF_JEQ, " + dst + ", " + src + ")";}
+  else if (opcode == JNE32XC ) {str = "BPF_JMP32_IMM(BPF_JNE, " + dst + ", " + imm + ")";}
+  else if (opcode == JNE32XY ) {str = "BPF_JMP32_REG(BPF_JNE, " + dst + ", " + src + ")";}
+  else if (opcode == CALL    ) {
+    string func = inst::func_to_str(insn._imm);
+    str = "BPF_RAW_INSN(BPF_JMP | BPF_CALL, 0, 0, 0, " + func + ")";
+  } else if (opcode == EXIT  ) {str = "BPF_EXIT_INSN()";}
+
+  return str;
+}
+
+string k2_inst_pgm_to_bpf_c_macro_str(inst* pgm, int len) {
+  string str = "";
+  for (int i = 0; i < len; i++) {
+    str += k2_inst_to_bpf_c_macro(pgm[i]) + "," + "\n";
+    int n = inst::num_inst(pgm[i]._opcode);
+    i += n - 1;
+  }
+
+  return str;
+}

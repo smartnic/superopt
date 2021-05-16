@@ -744,3 +744,10 @@ void convert_superopt_pgm_to_bpf_pgm(inst* program, int length);
 // init sample immediate numbers and offsets
 void init_sample_range(inst* program, int len);
 void write_insns_to_file_in_bpf_insn(vector<inst> insns, string output_file);
+// k2 inst to bpf c macro strings
+// 1. k2 inst program does not contain real NOP
+// 2. k2 inst is the inst data structure after convert_bpf_pgm_to_superopt_pgm()
+// eg. movdwxc r0 imm64:
+// insn 1: opcode = movdwxc, dst_reg = r0, _imm64 = imm64
+// insn 2: opcode = NOP (not a real NOP)
+string k2_inst_pgm_to_bpf_c_macro_str(inst* pgm, int len);

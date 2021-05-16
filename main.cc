@@ -518,6 +518,15 @@ void write_bpf_insns_to_file(prog* current_program, string prefix_name) {
   fout.close();
 }
 
+void write_bpf_c_macros_to_file(prog* current_program, int len, string prefix_name) {
+  string bpf_c_macro_str = k2_inst_pgm_to_bpf_c_macro_str(current_program->inst_list, len);
+  string output_file = prefix_name + ".bpf_c_macros";
+  ofstream fout;
+  fout.open(output_file, ios::out | ios::trunc);
+  fout << bpf_c_macro_str;
+  fout.close();
+}
+
 void write_optimized_prog_to_file(prog* current_program, int id, string path_out) {
   // create path_out if not exist
   if (access(path_out.c_str(), 0) != 0) {
@@ -526,15 +535,18 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
       return;
     }
   }
-  convert_superopt_pgm_to_bpf_pgm(current_program->inst_list, inst::max_prog_len);
-  prog* p_bpf_insns = new prog(*current_program);
-
   string prefix_name = path_out + "output" + to_string(id);
+  remove_nops(current_program->inst_list, inst::max_prog_len);
+  int real_len = num_real_instructions(current_program->inst_list, inst::max_prog_len);
+  write_bpf_c_macros_to_file(current_program, real_len, prefix_name);
+
+  convert_superopt_pgm_to_bpf_pgm(current_program->inst_list, inst::max_prog_len);
+
   set_nops_as_JA0(current_program->inst_list, inst::max_prog_len);
   // write_desc_to_file(current_program, prefix_name);
   write_insns_to_file(current_program, prefix_name);
 
-  remove_nops(p_bpf_insns->inst_list, inst::max_prog_len);
+  prog* p_bpf_insns = new prog(*current_program);
   write_desc_to_file(p_bpf_insns, prefix_name);
   write_bpf_insns_to_file(p_bpf_insns, prefix_name);
 }
@@ -588,7 +600,7 @@ int main(int argc, char* argv[]) {
     cout << "validator long time: " << dur_sum_long << " " << n_sum_long << " " << dur_sum_long / n_sum_long << endl;
   else
     cout << "validator long time: " << dur_sum_long << endl;
-  cout << "compiling time: " << DUR(start, end)/1000000 << " s" << endl;
+  cout << "compiling time: " << DUR(start, end) / 1000000 << " s" << endl;
 
   // kill z3 solver server after compiling
   kill_server();

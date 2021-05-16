@@ -7,3 +7,4 @@
 *.insns
 *.desc
 *.bpf_insns
+*.bpf_c_macros
