@@ -13,6 +13,11 @@ def parse_k2file(k2file):
             if len(line.strip()) == 0:
                 # Skip blank lines
                 continue
+            if '>' in line:
+                # output log path
+                line = line.replace('\n','')
+                k2args.append(line)
+                continue
             line = line.replace(' ','')
             line = line.replace('\n','')
             line_arr = line.split('=')
