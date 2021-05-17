@@ -1846,7 +1846,7 @@ string k2_inst_to_bpf_c_macro(inst& insn) {
   else if (opcode == RSH64XC ) {str = "BPF_ALU64_IMM(BPF_RSH, " + dst + ", " + imm + ")";}
   else if (opcode == RSH64XY ) {str = "BPF_ALU64_REG(BPF_RSH, " + dst + ", " + src + ")";}
   else if (opcode == NEG64XC ) {str = "BPF_ALU64_IMM(BPF_NEG, " + dst + ", " + imm + ")";}
-  else if (opcode == MOV64XC ) {str = "BPF_ALU64_REG(BPF_MOV, " + dst + ", " + imm + ")";}
+  else if (opcode == MOV64XC ) {str = "BPF_ALU64_IMM(BPF_MOV, " + dst + ", " + imm + ")";}
   else if (opcode == MOV64XY ) {str = "BPF_ALU64_REG(BPF_MOV, " + dst + ", " + src + ")";}
   else if (opcode == ARSH64XC) {str = "BPF_ALU64_IMM(BPF_ARSH, " + dst + ", " + imm + ")";}
   else if (opcode == ARSH64XY) {str = "BPF_ALU64_REG(BPF_ARSH, " + dst + ", " + src + ")";}
@@ -1860,7 +1860,7 @@ string k2_inst_to_bpf_c_macro(inst& insn) {
   else if (opcode == LSH32XY ) {str = "BPF_ALU32_REG(BPF_LSH, " + dst + ", " + src + ")";}
   else if (opcode == RSH32XC ) {str = "BPF_ALU32_IMM(BPF_RSH, " + dst + ", " + imm + ")";}
   else if (opcode == RSH32XY ) {str = "BPF_ALU32_REG(BPF_RSH, " + dst + ", " + src + ")";}
-  else if (opcode == MOV32XC ) {str = "BPF_ALU32_REG(BPF_MOV, " + dst + ", " + imm + ")";}
+  else if (opcode == MOV32XC ) {str = "BPF_ALU32_IMM(BPF_MOV, " + dst + ", " + imm + ")";}
   else if (opcode == MOV32XY ) {str = "BPF_ALU32_REG(BPF_MOV, " + dst + ", " + src + ")";}
   else if (opcode == ARSH32XC) {str = "BPF_ALU32_IMM(BPF_ARSH, " + dst + ", " + imm + ")";}
   else if (opcode == ARSH32XY) {str = "BPF_ALU32_REG(BPF_ARSH, " + dst + ", " + src + ")";}
@@ -1877,29 +1877,29 @@ string k2_inst_to_bpf_c_macro(inst& insn) {
   else if (opcode == STXW    ) {str = "BPF_STX_MEM(BPF_W, " + dst + ", " + src + ", " + off + ")";}
   else if (opcode == LDXDW   ) {str = "BPF_LDX_MEM(BPF_DW, " + dst + ", " + src + ", " + off + ")";}
   else if (opcode == STXDW   ) {str = "BPF_STX_MEM(BPF_DW, " + dst + ", " + src + ", " + off + ")";}
-  else if (opcode == STB     ) {str = "BPF_ST_MEM(BPF_B, " + dst + ", " + src + ", " + off + ")";}
-  else if (opcode == STH     ) {str = "BPF_ST_MEM(BPF_H, " + dst + ", " + src + ", " + off + ")";}
-  else if (opcode == STW     ) {str = "BPF_ST_MEM(BPF_W, " + dst + ", " + src + ", " + off + ")";}
-  else if (opcode == STDW    ) {str = "BPF_ST_MEM(BPF_DW, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == STB     ) {str = "BPF_ST_MEM(BPF_B, " + dst + ", " + off + ", " + imm + ")";}
+  else if (opcode == STH     ) {str = "BPF_ST_MEM(BPF_H, " + dst + ", " + off + ", " + imm + ")";}
+  else if (opcode == STW     ) {str = "BPF_ST_MEM(BPF_W, " + dst + ", " + off + ", " + imm + ")";}
+  else if (opcode == STDW    ) {str = "BPF_ST_MEM(BPF_DW, " + dst + ", " + off + ", " + imm + ")";}
   else if (opcode == XADD64  ) {str = "BPF_STX_XADD(BPF_DW, " + dst + ", " + src + ", " + off + ")";}
   else if (opcode == XADD32  ) {str = "BPF_STX_XADD(BPF_W, " + dst + ", " + src + ", " + off + ")";}
   else if (opcode == LDABSH  ) {str = "BPF_LD_ABS(BPF_H, " + imm + ")";}
   else if (opcode == LDINDH  ) {str = "BPF_LD_IND(BPF_H, " + imm + ", " + src + ")";}
   else if (opcode == JA      ) {str = "BPF_JMP_A(" + off + ")";}
-  else if (opcode == JEQXC   ) {str = "BPF_JMP_IMM(BPF_JEQ, " + dst + ", " + imm + ")";}
-  else if (opcode == JEQXY   ) {str = "BPF_JMP_REG(BPF_JEQ, " + dst + ", " + src + ")";}
-  else if (opcode == JGTXC   ) {str = "BPF_JMP_IMM(BPF_JGT, " + dst + ", " + imm + ")";}
-  else if (opcode == JGTXY   ) {str = "BPF_JMP_REG(BPF_JGT, " + dst + ", " + src + ")";}
-  else if (opcode == JGEXC   ) {str = "BPF_JMP_IMM(BPF_JGE, " + dst + ", " + imm + ")";}
-  else if (opcode == JGEXY   ) {str = "BPF_JMP_REG(BPF_JGE, " + dst + ", " + src + ")";}
-  else if (opcode == JNEXC   ) {str = "BPF_JMP_IMM(BPF_JNE, " + dst + ", " + imm + ")";}
-  else if (opcode == JNEXY   ) {str = "BPF_JMP_REG(BPF_JNE, " + dst + ", " + src + ")";}
-  else if (opcode == JSGTXC  ) {str = "BPF_JMP_IMM(BPF_JSGT, " + dst + ", " + imm + ")";}
-  else if (opcode == JSGTXY  ) {str = "BPF_JMP_REG(BPF_JSGT, " + dst + ", " + src + ")";}
-  else if (opcode == JEQ32XC ) {str = "BPF_JMP32_IMM(BPF_JEQ, " + dst + ", " + imm + ")";}
-  else if (opcode == JEQ32XY ) {str = "BPF_JMP32_REG(BPF_JEQ, " + dst + ", " + src + ")";}
-  else if (opcode == JNE32XC ) {str = "BPF_JMP32_IMM(BPF_JNE, " + dst + ", " + imm + ")";}
-  else if (opcode == JNE32XY ) {str = "BPF_JMP32_REG(BPF_JNE, " + dst + ", " + src + ")";}
+  else if (opcode == JEQXC   ) {str = "BPF_JMP_IMM(BPF_JEQ, " + dst + ", " + imm + ", " + off + ")";}
+  else if (opcode == JEQXY   ) {str = "BPF_JMP_REG(BPF_JEQ, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == JGTXC   ) {str = "BPF_JMP_IMM(BPF_JGT, " + dst + ", " + imm + ", " + off + ")";}
+  else if (opcode == JGTXY   ) {str = "BPF_JMP_REG(BPF_JGT, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == JGEXC   ) {str = "BPF_JMP_IMM(BPF_JGE, " + dst + ", " + imm + ", " + off + ")";}
+  else if (opcode == JGEXY   ) {str = "BPF_JMP_REG(BPF_JGE, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == JNEXC   ) {str = "BPF_JMP_IMM(BPF_JNE, " + dst + ", " + imm + ", " + off + ")";}
+  else if (opcode == JNEXY   ) {str = "BPF_JMP_REG(BPF_JNE, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == JSGTXC  ) {str = "BPF_JMP_IMM(BPF_JSGT, " + dst + ", " + imm + ", " + off + ")";}
+  else if (opcode == JSGTXY  ) {str = "BPF_JMP_REG(BPF_JSGT, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == JEQ32XC ) {str = "BPF_JMP32_IMM(BPF_JEQ, " + dst + ", " + imm + ", " + off + ")";}
+  else if (opcode == JEQ32XY ) {str = "BPF_JMP32_REG(BPF_JEQ, " + dst + ", " + src + ", " + off + ")";}
+  else if (opcode == JNE32XC ) {str = "BPF_JMP32_IMM(BPF_JNE, " + dst + ", " + imm + ", " + off + ")";}
+  else if (opcode == JNE32XY ) {str = "BPF_JMP32_REG(BPF_JNE, " + dst + ", " + src + ", " + off + ")";}
   else if (opcode == CALL    ) {
     string func = inst::func_to_str(insn._imm);
     str = "BPF_RAW_INSN(BPF_JMP | BPF_CALL, 0, 0, 0, " + func + ")";
