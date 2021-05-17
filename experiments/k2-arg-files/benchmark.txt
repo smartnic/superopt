@@ -1,9 +1,8 @@
 bm_from_file
-desc=experiments/benchmark.desc
 k=1
 is_win
 port=8000
-logger_level=1
+logger_level=0
 w_e=0.5
 w_p=1.5
 st_ex=0
@@ -17,8 +16,8 @@ p_inst_operand=0.33333333
 p_inst=0.33333333
 p_inst_as_nop=0.15
 reset_win_niter=5000
-win_s_list=0
-win_e_list=3
-path_res=experiments/output/
+win_s_list=5
+win_e_list=8
+path_res=output/
 n=50000
-> experiments/output/log.txt
+output/log.txt

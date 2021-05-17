@@ -46,14 +46,17 @@ def invoke_k2(descfile, name, k2args):
             '--map',
             maps_file,
     ]
-    k2_command.extend(k2args)
+    k2_command.extend(k2args[:-1])
+    f_out = open(k2args[-1][2:], "w")
     try:
-        k2_output = subprocess.check_output(k2_command)
-        print(k2_output.decode('utf-8'))
+        k2_output = subprocess.call(k2_command, stdout=f_out)
+        # print(k2_output.decode('utf-8'))
     except subprocess.CalledProcessError as e:
         print(e.output)
         print('K2 failed')
+        f_out.close()
         exit()
+    f_out.close()
 
 def invoke_text_extractor(infile):
     try:
