@@ -519,7 +519,7 @@ void write_bpf_insns_to_file(prog* current_program, string prefix_name) {
 }
 
 void write_bpf_c_macros_to_file(prog* current_program, int len, string prefix_name) {
-  string bpf_c_macro_str = k2_inst_pgm_to_bpf_c_macro_str(current_program->inst_list, len);
+  string bpf_c_macro_str = bpf_inst_pgm_to_bpf_c_macro_str(current_program->inst_list, len);
   string output_file = prefix_name + ".bpf_c_macros";
   ofstream fout;
   fout.open(output_file, ios::out | ios::trunc);
@@ -538,9 +538,8 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
   string prefix_name = path_out + "output" + to_string(id);
   remove_nops(current_program->inst_list, inst::max_prog_len);
   int real_len = num_real_instructions(current_program->inst_list, inst::max_prog_len);
-  write_bpf_c_macros_to_file(current_program, real_len, prefix_name);
-
   convert_superopt_pgm_to_bpf_pgm(current_program->inst_list, inst::max_prog_len);
+  write_bpf_c_macros_to_file(current_program, real_len, prefix_name);
 
   set_nops_as_JA0(current_program->inst_list, inst::max_prog_len);
   // write_desc_to_file(current_program, prefix_name);

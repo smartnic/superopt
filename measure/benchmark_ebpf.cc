@@ -863,7 +863,8 @@ void parse_str(unordered_map<string, int>& str_map, string str) {
   str_map.clear();
   int open_brace_idx = str.find("{");
   int close_brace_idx = str.find("}");
-  std::string attr_str(str.substr(open_brace_idx + 2, close_brace_idx - 2));
+  std::string attr_str(str.substr(open_brace_idx + 2, close_brace_idx - 4));
+  if (attr_str.back() != ',') attr_str += ",";
   size_t comma_pos = 0;
 
   while ((comma_pos = attr_str.find(',')) != std::string::npos) {
@@ -906,7 +907,8 @@ map_attr extract_attrs_from_map(string str) {
   return map_attr(attr_map["key_size"] * NUM_BYTE_BITS,
                   attr_map["value_size"] * NUM_BYTE_BITS,
                   inst::max_prog_len,
-                  prog_type);
+                  prog_type,
+                  attr_map["fd"]);
 }
 
 void read_desc(const char* desc_file) {
@@ -958,7 +960,8 @@ void read_maps(const char* map_file) {
     cout << "add map " << "k_sz: " << mp.key_sz / NUM_BYTE_BITS << " bytes, "
          << "v_sz: " << mp.val_sz / NUM_BYTE_BITS << " bytes, "
          << "max_num: " << mp.max_entries << ", "
-         << "type: " << mp.map_type << endl;
+         << "type: " << mp.map_type << ", "
+         << "fd: " << mp.map_fd << endl;
     mem_t::add_map(mp);
   }
   fclose(fp);

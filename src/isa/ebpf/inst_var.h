@@ -32,11 +32,13 @@ struct map_attr { // map attribute
   unsigned int val_sz;
   unsigned int max_entries;
   unsigned int map_type;
+  int map_fd;
   map_attr(unsigned int k_sz, unsigned int v_sz, unsigned int n_entries = 0,
-           unsigned int m_type = MAP_TYPE_prog_array) {
+           unsigned int m_type = MAP_TYPE_prog_array, int m_fd = 0) {
     key_sz = k_sz; val_sz = v_sz;
     max_entries = n_entries;
     map_type = m_type;
+    map_fd = m_fd;
   }
 };
 ostream& operator<<(ostream& out, const map_attr& m_attr);
@@ -108,6 +110,8 @@ class mem_t {
   static void set_skb_max_sz(unsigned int sz) {_layout._skb_max_sz = sz;}
   static void set_pgm_input_type(int type) {_layout._pgm_input_type = type;}
   static int get_pgm_input_type() {return _layout._pgm_input_type;}
+  static unsigned int get_map_id(int map_fd);
+  static int get_map_fd(unsigned int map_id);
   static unsigned int maps_number() {return _layout._maps_attr.size();}
   static unsigned int map_key_sz(int map_id);
   static unsigned int map_val_sz(int map_id);

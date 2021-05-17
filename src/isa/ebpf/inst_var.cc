@@ -31,7 +31,8 @@ int get_mem_size_by_layout() {
 }
 
 ostream& operator<<(ostream& out, const map_attr& m_attr) {
-  out << m_attr.key_sz << " " << m_attr.val_sz << " " << m_attr.max_entries;
+  out << m_attr.key_sz << " " << m_attr.val_sz << " "
+      << m_attr.max_entries << " " << m_attr.map_fd;
   return out;
 }
 
@@ -200,6 +201,26 @@ void mem_t::add_map(map_attr m_attr) {
   }
   _layout._maps_attr.push_back(m_attr);
   _layout._maps_start.push_back(start_mem_off);
+}
+
+unsigned int mem_t::get_map_id(int map_fd) {
+  for (int i = 0; i < maps_number(); i++) {
+    int map_fd_i = get_map_fd(i);
+    if (map_fd_i == map_fd) {
+      return i;
+    }
+  }
+
+  string err_msg = "cannot found map_fd: " + to_string(map_fd);
+  throw (err_msg);
+}
+
+int mem_t::get_map_fd(unsigned int map_id) {
+  if (map_id >= maps_number()) {
+    string err_msg = "map_id > #maps";
+    throw (err_msg);
+  }
+  return _layout._maps_attr[map_id].map_fd;
 }
 
 unsigned int mem_t::map_key_sz(int map_id) {

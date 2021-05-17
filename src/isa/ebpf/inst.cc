@@ -1754,6 +1754,11 @@ void convert_bpf_pgm_to_superopt_pgm(inst* program, int length) {
       program[i + 1]._imm = 0;
       program[i]._imm64 = imm64;
       i++;
+    } else if (program[i].is_ldmapid()) {
+      assert(i + 1 < length);
+      int map_fd = program[i]._imm;
+      program[i]._imm = mem_t::get_map_id(map_fd);
+      i++;
     }
   }
 }
@@ -1768,6 +1773,11 @@ void convert_superopt_pgm_to_bpf_pgm(inst* program, int length) {
       program[i]._imm64 = 0;
       program[i]._imm = imm32_1;
       program[i + 1]._imm = imm32_2;
+      i++;
+    } else if (program[i].is_ldmapid()) {
+      assert(i + 1 < length);
+      int map_id = program[i]._imm;
+      program[i]._imm = mem_t::get_map_fd(map_id);
       i++;
     }
   }
@@ -1826,13 +1836,19 @@ string reg_to_str(int reg) {
   return ("BPF_REG_" + to_string(reg));
 }
 
-string k2_inst_to_bpf_c_macro(inst& insn) {
-  int opcode = insn._opcode;
-  string src = reg_to_str(insn._src_reg);
-  string dst = reg_to_str(insn._dst_reg);
-  string imm = to_string(insn._imm);
-  string off = to_string(insn._off);
-  string imm64 = to_string(insn._imm64);
+string bpf_inst_to_bpf_c_macro(inst* insn, int len) {
+  assert(len >= 1);
+  int opcode = insn[0]._opcode;
+  string src = reg_to_str(insn[0]._src_reg);
+  string dst = reg_to_str(insn[0]._dst_reg);
+  string imm = to_string(insn[0]._imm);
+  string off = to_string(insn[0]._off);
+  string imm64 = "";
+  if (len == 2) {
+    uint64_t imm32_1 = L32(insn[0]._imm);
+    uint64_t imm32_2 = L32(insn[1]._imm);
+    imm64 = to_string((uint64_t)(imm32_1 | (imm32_2 << 32)));
+  }
   string str = "";
   if (opcode == NOP) {cout << "[k2_inst_to_bpf_c_macro] Error: opcode cannot be NOP" << endl;}
   else if (opcode == ADD64XC ) {str = "BPF_ALU64_IMM(BPF_ADD, " + dst + ", " + imm + ")";}
@@ -1867,8 +1883,8 @@ string k2_inst_to_bpf_c_macro(inst& insn) {
   else if (opcode == LE      ) {str = "BPF_ENDIAN(BPF_TO_LE, " + dst + ", " + imm + ")";}
   else if (opcode == BE      ) {str = "BPF_ENDIAN(BPF_TO_BE, " + dst + ", " + imm + ")";}
   else if (opcode == LDDW    ) {
-    if (insn.is_ldmapid()) {str = "BPF_LD_MAP_FD(" + dst + ", " + imm + ")";}
-    else if (insn.is_movdwxc()) {str = "BPF_LD_IMM64(" + dst + ", " + imm64 + ")";}
+    if (insn[0].is_ldmapid()) {str = "BPF_LD_MAP_FD(" + dst + ", " + imm + ")";}
+    else if (insn[0].is_movdwxc()) {str = "BPF_LD_IMM64(" + dst + ", " + imm64 + ")";}
   } else if (opcode == LDXB  ) {str = "BPF_LDX_MEM(BPF_B, " + dst + ", " + src + ", " + off + ")";}
   else if (opcode == STXB    ) {str = "BPF_STX_MEM(BPF_B, " + dst + ", " + src + ", " + off + ")";}
   else if (opcode == LDXH    ) {str = "BPF_LDX_MEM(BPF_H, " + dst + ", " + src + ", " + off + ")";}
@@ -1901,18 +1917,18 @@ string k2_inst_to_bpf_c_macro(inst& insn) {
   else if (opcode == JNE32XC ) {str = "BPF_JMP32_IMM(BPF_JNE, " + dst + ", " + imm + ", " + off + ")";}
   else if (opcode == JNE32XY ) {str = "BPF_JMP32_REG(BPF_JNE, " + dst + ", " + src + ", " + off + ")";}
   else if (opcode == CALL    ) {
-    string func = inst::func_to_str(insn._imm);
+    string func = inst::func_to_str(insn[0]._imm);
     str = "BPF_RAW_INSN(BPF_JMP | BPF_CALL, 0, 0, 0, " + func + ")";
   } else if (opcode == EXIT  ) {str = "BPF_EXIT_INSN()";}
 
   return str;
 }
 
-string k2_inst_pgm_to_bpf_c_macro_str(inst* pgm, int len) {
+string bpf_inst_pgm_to_bpf_c_macro_str(inst* pgm, int len) {
   string str = "";
   for (int i = 0; i < len; i++) {
-    str += k2_inst_to_bpf_c_macro(pgm[i]) + "," + "\n";
     int n = inst::num_inst(pgm[i]._opcode);
+    str += bpf_inst_to_bpf_c_macro(&pgm[i], 2) + "," + "\n";
     i += n - 1;
   }
 
