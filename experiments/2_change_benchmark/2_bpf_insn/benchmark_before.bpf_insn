@@ -1,10 +1,10 @@
-BPF_LDX_MEM(BPF_B, BPF_REG_0, BPF_REG_1, 0), // r0 = *(u8 *)(r1 + 0)
-BPF_STX_MEM(BPF_B, BPF_REG_10, BPF_REG_0, -2), // *(u8 *)(fp - 2) = r0
-BPF_LDX_MEM(BPF_B, BPF_REG_0, BPF_REG_1, 1), // r0 = *(u8 *)(r1 + 1)
-BPF_STX_MEM(BPF_B, BPF_REG_10, BPF_REG_0, -1), // *(u8 *)(fp - 1) = r0
-BPF_LD_MAP_FD(BPF_REG_1, 0), // r1 = map0 fd
+BPF_LDX_MEM(BPF_H, BPF_REG_0, BPF_REG_1, 0), // r0 = *(u16 *)(r1 + 0)
+BPF_STX_MEM(BPF_H, BPF_REG_10, BPF_REG_0, -4), // *(u16 *)(fp - 4) = r0
+BPF_LDX_MEM(BPF_H, BPF_REG_0, BPF_REG_1, 2), // r0 = *(u16 *)(r1 + 2)
+BPF_STX_MEM(BPF_H, BPF_REG_10, BPF_REG_0, -2), // *(u16 *)(fp - 2) = r0
+BPF_LD_MAP_FD(BPF_REG_1, 4), // r1 = map0 fd, and map0 fd is 4
 BPF_MOV64_REG(BPF_REG_2, BPF_REG_10), // r2 = r10
-BPF_ALU64_IMM(BPF_ADD, BPF_REG_2, -2), // r2 += -2
+BPF_ALU64_IMM(BPF_ADD, BPF_REG_2, -4), // r2 += -4
 BPF_RAW_INSN(BPF_JMP | BPF_CALL, 0, 0, 0, BPF_FUNC_map_lookup_elem), // call BPF_FUNC_map_lookup_elem
 BPF_JMP_IMM(BPF_JEQ, BPF_REG_0, 0, 1), // if r0 = 0, jmp 1
 BPF_MOV64_IMM(BPF_REG_0, 0x1), // r0 = 1
