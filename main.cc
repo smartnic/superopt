@@ -535,17 +535,17 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
       return;
     }
   }
-  string prefix_name = path_out + "output" + to_string(id);
-  remove_nops(current_program->inst_list, inst::max_prog_len);
-  int real_len = num_real_instructions(current_program->inst_list, inst::max_prog_len);
   convert_superopt_pgm_to_bpf_pgm(current_program->inst_list, inst::max_prog_len);
-  write_bpf_c_macros_to_file(current_program, real_len, prefix_name);
+  prog* p_bpf_insns = new prog(*current_program);
 
+  string prefix_name = path_out + "output" + to_string(id);
   set_nops_as_JA0(current_program->inst_list, inst::max_prog_len);
   // write_desc_to_file(current_program, prefix_name);
   write_insns_to_file(current_program, prefix_name);
 
-  prog* p_bpf_insns = new prog(*current_program);
+  remove_nops(p_bpf_insns->inst_list, inst::max_prog_len);
+  int real_len = num_real_instructions(p_bpf_insns->inst_list, inst::max_prog_len);
+  write_bpf_c_macros_to_file(p_bpf_insns, real_len, prefix_name);
   write_desc_to_file(p_bpf_insns, prefix_name);
   write_bpf_insns_to_file(p_bpf_insns, prefix_name);
 }
