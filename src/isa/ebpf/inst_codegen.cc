@@ -1706,11 +1706,20 @@ void counterex_2_input_simu_r10(inout_t& input, z3::model & mdl, smt_var& sv) {
 void counterex_2_input_simu_pkt_ptrs(inout_t& input, z3::model & mdl, smt_var& sv) {
   if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
     z3::expr z3_pkt_ptrs_s = mdl.eval(sv.get_pkt_start_ptr_addr());
-    input.input_simu_pkt_ptrs_s = get_uint64_from_bv64(z3_pkt_ptrs_s, true);
+    input.input_simu_pkt_ptrs_s = get_uint64_from_bv64(z3_pkt_ptrs_s, false);
+    if (input.input_simu_pkt_ptrs_s == 0) {
+      input.input_simu_pkt_ptrs_s = 0x100000000 + unidist_codegen(gen_codegen) * (double)0x10000000;
+    }
     z3::expr z3_pkt_start = mdl.eval(sv.get_pkt_start_addr());
-    input.input_simu_pkt_ptrs[0] = (uint32_t)get_uint64_from_bv64(z3_pkt_start, true);
+    input.input_simu_pkt_ptrs[0] = (uint32_t)get_uint64_from_bv64(z3_pkt_start, false);
+    if (input.input_simu_pkt_ptrs[0] == 0) {
+      input.input_simu_pkt_ptrs[0] = input.input_simu_pkt_s;
+    }
     z3::expr z3_pkt_end = mdl.eval(sv.get_pkt_end_addr());
-    input.input_simu_pkt_ptrs[1] = (uint32_t)get_uint64_from_bv64(z3_pkt_end, true);
+    input.input_simu_pkt_ptrs[1] = (uint32_t)get_uint64_from_bv64(z3_pkt_end, false);
+    if (input.input_simu_pkt_ptrs[1] == 0) {
+      input.input_simu_pkt_ptrs[1] = input.input_simu_pkt_s + mem_t::_layout._pkt_sz - 1;
+    }
   }
 }
 
