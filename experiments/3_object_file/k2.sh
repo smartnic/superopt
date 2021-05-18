@@ -8,7 +8,6 @@ fi
 if [ $# -gt 1 ]; then
   section=$2
 fi
-echo output/${section}_modified.o
 echo "Benchmark is" $benchmark $section
 output_file=$benchmark.o.out
 if [ ! -d "output" ]; then
