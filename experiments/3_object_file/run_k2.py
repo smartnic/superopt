@@ -13,11 +13,6 @@ def parse_k2file(k2file):
             if len(line.strip()) == 0:
                 # Skip blank lines
                 continue
-            if '>' in line:
-                # output log path
-                line = line.replace('\n','')
-                k2args.append(line)
-                continue
             line = line.replace(' ','')
             line = line.replace('\n','')
             line_arr = line.split('=')
@@ -30,6 +25,8 @@ def parse_k2file(k2file):
                 k2args.append(line_arr[1])
             elif len(line_arr) != 1:
                 raise Exception('Error: Invalid K2 input format')
+    k2args[-1] = k2args[-1][2:] # the last line is output path, remove "--"
+    print(k2args)
     return k2args
 
 def invoke_k2(descfile, name, k2args):
@@ -47,7 +44,7 @@ def invoke_k2(descfile, name, k2args):
             maps_file,
     ]
     k2_command.extend(k2args[:-1])
-    f_out = open(k2args[-1][2:], "w")
+    f_out = open(k2args[-1], "w")
     try:
         k2_output = subprocess.call(k2_command, stdout=f_out)
         # print(k2_output.decode('utf-8'))
