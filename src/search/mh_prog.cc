@@ -389,7 +389,7 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
     next = mh_next(curr, prog_start);
     // update best by next
     if ((next->_error_cost == 0) && (next->_perf_cost < best->_perf_cost)) {
-      cout << "find a better program at " << i
+      cout << "find a better program at " << i << " " << (DUR(start, NOW) / 1000000) << " s"
            << " cost: " << next->_error_cost << " " << next->_perf_cost << endl;
       for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
         cout << i << ": ";
