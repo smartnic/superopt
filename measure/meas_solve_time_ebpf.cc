@@ -329,6 +329,9 @@ int main(int argc, char* argv[]) {
   if (argc > 1) {
     loop_times = atoi(argv[1]);
   }
+  if (argc > 2) {
+    path_prefix = argv[2];
+  }
   logger.set_least_print_level(LOGGER_DEBUG);
   meas_solve_time_of_xdp_exception();
   meas_solve_time_of_xdp_redirect_err();
