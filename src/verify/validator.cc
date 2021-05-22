@@ -11,7 +11,7 @@ using namespace z3;
 default_random_engine gen_vld;
 uniform_real_distribution<double> unidist_vld(0.0, 1.0);
 
-bool validator::enable_z3server = true;
+bool validator::enable_z3server = false;
 
 /* class validator start */
 validator::validator() {

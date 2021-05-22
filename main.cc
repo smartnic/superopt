@@ -61,6 +61,7 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
   out << "server_port:" << ip.server_port << endl
       << "disable_prog_eq_cache:" << ip.disable_prog_eq_cache << endl
       << "enable_prog_uneq_cache:" << ip.enable_prog_uneq_cache << endl
+      << "enable_z3server:" << ip.enable_z3server << endl
       << "is_win:" << ip.is_win << endl
       << "logger_level: " << ip.logger_level << endl;
   return out;
@@ -311,6 +312,7 @@ void usage() {
        << endl << "validator related arguments" << endl
        << setw(W) << "--disable_prog_eq_cache: disable the usage of prog_eq_cache" << endl
        << setw(W) << "--enable_prog_uneq_cache: enable the usage of prog_uneq_cache" << endl
+       << setw(W) << "--enable_z3server: enable z3 server for solving z3 requests" << endl
        << setw(W) << "--is_win: enable window program equivalence check" << endl
        << endl << setw(W) << "--logger_level" << ": " << para_logger_level_desc() << endl;
 }
@@ -360,8 +362,9 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"port", required_argument, nullptr, 23},
     {"disable_prog_eq_cache", no_argument, nullptr, 24},
     {"enable_prog_uneq_cache", no_argument, nullptr, 25},
-    {"is_win", no_argument, nullptr, 26},
-    {"logger_level", required_argument, nullptr, 27},
+    {"enable_z3server", no_argument, nullptr, 26},
+    {"is_win", no_argument, nullptr, 27},
+    {"logger_level", required_argument, nullptr, 28},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -399,8 +402,9 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 23: in_para.server_port = stoi(optarg); break;
       case 24: in_para.disable_prog_eq_cache = true; break;
       case 25: in_para.enable_prog_uneq_cache = true; break;
-      case 26: in_para.is_win = true; break;
-      case 27: in_para.logger_level = stoi(optarg); break;
+      case 26: in_para.enable_z3server = true; break;
+      case 27: in_para.is_win = true; break;
+      case 28: in_para.logger_level = stoi(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -461,6 +465,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.server_port = 8002;
   in_para.disable_prog_eq_cache = false;
   in_para.enable_prog_uneq_cache = false;
+  in_para.enable_z3server = false;
   in_para.is_win = false;
   in_para.logger_level = LOGGER_ERROR;
 }
@@ -563,6 +568,7 @@ int main(int argc, char* argv[]) {
   vector<inst*> bm_optis_orig;
   // todo: a temporary way to set up win eq check flag
   smt_var::is_win = in_para.is_win;
+  validator::enable_z3server = in_para.enable_z3server;
   auto start = NOW;
   if (in_para.bm_from_file) {
     init_benchmark_from_file(&bm, in_para.bytecode.c_str(),

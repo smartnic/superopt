@@ -35,6 +35,7 @@ class input_paras {
   int server_port;
   bool disable_prog_eq_cache;
   bool enable_prog_uneq_cache;
+  bool enable_z3server;
   bool is_win;
   int logger_level;
 };
