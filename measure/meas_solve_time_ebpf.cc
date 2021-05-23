@@ -303,12 +303,12 @@ void meas_solve_time_of_xdp_cpumap_kthread() {
               };
   meas_solve_time_delta_n_times(bm, p1, 1, 2, "p1");
 
-  inst p2[] = {inst(LDXW, 1, 6, 24),
-               inst(),
-               inst(XADD64, 0, 0, 1),
-               inst(),
-              };
-  meas_solve_time_delta_n_times(bm, p2, 9, 12, "p2");
+  // inst p2[] = {inst(LDXW, 1, 6, 24),
+  //              inst(),
+  //              inst(XADD64, 0, 0, 1),
+  //              inst(),
+  //             };
+  // meas_solve_time_delta_n_times(bm, p2, 9, 12, "p2");
 }
 
 void meas_solve_time_of_xdp_cpumap_enqueue() {
