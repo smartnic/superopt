@@ -37,7 +37,7 @@ int sample_int_with_exceptions(int limit, unordered_set<int> &excepts) {
 /* Return a uniformly random integer from start to end inclusive, with the
  * exception of  `except`. */
 int sample_int_with_exception(int start, int end, int except) {
-  return sample_int_with_exception(start, end, except);
+  return random_int_with_exception(start, end, except);
 }
 
 /* Return a uniformly random integer from 0 to limit inclusive, with the
