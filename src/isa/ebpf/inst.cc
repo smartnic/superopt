@@ -60,6 +60,9 @@ int inst::get_operand(int op_index) const {
 bool inst::sample_unmodifiable() const {
   if ((_opcode == CALL) && (_imm == BPF_FUNC_get_prandom_u32)) return true;
   else if ((_opcode == DIV64XC) || (_opcode == DIV64XY)) return true;
+  // MUL64XY is added because of cilium which is not in camera-ready benchmarks
+  else if (_opcode == MUL64XY) return true;
+
   return false;
 }
 
@@ -639,6 +642,7 @@ void inst::insert_opcodes_not_gen(unordered_set<int>& opcode_set) const {
   opcode_set.insert(IDX_LDDW);
   opcode_set.insert(IDX_DIV64XC);
   opcode_set.insert(IDX_DIV64XY);
+  opcode_set.insert(IDX_MUL64XY); // this opcode is added because of cilium which is not in camera-ready benchmarks
 }
 
 int inst::inst_output_opcode_type() const {
