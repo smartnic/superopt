@@ -258,3 +258,12 @@ enum bpf_map_type {
   BPF_MAP_TYPE_DEVMAP_HASH,
   BPF_MAP_TYPE_STRUCT_OPS,
 };
+
+// not copy from linux/bpf.h or linux/bpf_common.h
+struct bpf_insn {
+  uint8_t opcode;
+  uint8_t dst_reg: 4;
+  uint8_t src_reg: 4;
+  short off;
+  int imm;
+};

@@ -312,7 +312,69 @@ void mh_sampler::print_restart_info(int iter_num, const prog &restart, double w_
   restart.print();
 }
 
+void write_insns_to_file(prog* current_program, string prefix_name) {
+  string output_file = prefix_name + ".insns";
+  FILE* output_file_fp = fopen(output_file.c_str(), "w");
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    inst t_insn = current_program->inst_list[i];
+    struct bpf_insn insn = {(uint8_t)t_insn._opcode,
+             (uint8_t)t_insn._dst_reg,
+             (uint8_t)t_insn._src_reg,
+             t_insn._off,
+             t_insn._imm
+    };
+    fwrite(&insn, sizeof(bpf_insn), 1, output_file_fp);
+  }
+
+  fclose(output_file_fp);
+}
+
+// readable code + perf_cost
+void write_desc_to_file(prog* current_program, string prefix_name) {
+  string output_file = prefix_name + ".desc";
+  ofstream fout;
+  fout.open(output_file, ios::out | ios::trunc);
+  fout << "perf_cost: " << current_program->_perf_cost << endl;
+  fout << "readable program: " << endl;
+  for (int i = 0; i < inst::max_prog_len; i++) {
+    fout << i << ": " << current_program->inst_list[i];
+  }
+  fout.close();
+}
+
+void write_bpf_insns_to_file(prog* current_program, string prefix_name) {
+  string output_file = prefix_name + ".bpf_insns";
+  ofstream fout;
+  fout.open(output_file, ios::out | ios::trunc);
+  int real_len = num_real_instructions(current_program->inst_list, inst::max_prog_len);
+  for (int i = 0; i < real_len; i++) {
+    fout << current_program->inst_list[i].get_bytecode_str() << "," << endl;
+  }
+  fout.close();
+}
+
+void write_optimized_prog_to_file(prog* current_program, int id, string path_out) {
+  // create path_out if not exist
+  if (access(path_out.c_str(), 0) != 0) {
+    if (mkdir(path_out.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
+      cout << "ERROR: mkdir path_out " << path_out << " failed" << endl;
+      return;
+    }
+  }
+  convert_superopt_pgm_to_bpf_pgm(current_program->inst_list, inst::max_prog_len);
+  prog* p_bpf_insns = new prog(*current_program);
+
+  string prefix_name = path_out + "output" + to_string(id);
+  set_nops_as_JA0(current_program->inst_list, inst::max_prog_len);
+  write_desc_to_file(current_program, prefix_name);
+  write_insns_to_file(current_program, prefix_name);
+
+  remove_nops(p_bpf_insns->inst_list, inst::max_prog_len);
+  write_bpf_insns_to_file(p_bpf_insns, prefix_name);
+}
+
 void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool is_win) {
+  int better_store_id = 0;
   topk_progs.clear();
   // best is the program with zero error cost and minimum performance cost in MC
   prog *curr, *next, *prog_start, *best;
@@ -394,6 +456,13 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
         cout << i << ": ";
         next->inst_list[i].print();
       }
+      // store the better program if _enable_better_store is true
+      if (_enable_better_store) {
+        // programs are not stored in the order of performance cost
+        write_optimized_prog_to_file(next, better_store_id, _better_store_path);
+        better_store_id = (better_store_id + 1) % _max_n_better_store;
+      }
+
       delete best;
       best = new prog(*next);
     }

@@ -1,6 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <utility>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "../../src/utils.h"
 #include "../../src/inout.h"
 #include "../../src/isa/inst_header.h"
@@ -112,6 +115,9 @@ class mh_sampler {
   meas_mh_data _meas_data;
   cost _cost;
   double _base = 2;
+  bool _enable_better_store = true;  // enable store the program when a better program is found
+  string _better_store_path = "output/"; // path to store the programwhen a better program is found
+  int _max_n_better_store = 1; // max number of programs to be stored
   mh_sampler();
   ~mh_sampler();
   double alpha(prog* curr, prog* next, prog* orig);
@@ -120,3 +126,5 @@ class mh_sampler {
   void turn_off_measure();
   void mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool is_win = false);
 };
+
+void write_optimized_prog_to_file(prog* current_program, int id, string path_out);

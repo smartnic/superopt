@@ -850,19 +850,6 @@ inst bm25[N25] = {inst(97, 1, 2, 4, 0),
                   inst(149, 0, 0, 0, 0),
                  };
 
-// Struct needs to be defined because the loader writes to
-// the .ins file using bpf_insn which has a different size
-// than insn
-struct bpf_insn {
-
-  uint8_t opcode;
-  uint8_t dst_reg: 4;
-  uint8_t src_reg: 4;
-  short off;
-  int imm;
-};
-
-
 // trim from start (in place)
 static inline void ltrim(std::string &s) {
   s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {

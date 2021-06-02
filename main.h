@@ -38,10 +38,3 @@ class input_paras {
   int logger_level;
   int server_port;
 };
-struct bpf_insn {
-  uint8_t opcode;
-  uint8_t dst_reg: 4;
-  uint8_t src_reg: 4;
-  short off;
-  int imm;
-};

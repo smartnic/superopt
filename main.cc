@@ -1,8 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <unordered_map>
 #include <algorithm>
 #include <unordered_set>
@@ -104,6 +101,8 @@ string gen_file_name_suffix_from_input(const input_paras &in_para) {
 void run_mh_sampler(top_k_progs& topk_progs, input_paras &in_para, vector<inst*> &bm_optis_orig) {
   cout << "run_mh_sampler..." << endl;
   mh_sampler mh;
+  mh._better_store_path = in_para.path_out; // path to store the programwhen a better program is found
+  mh._max_n_better_store = in_para.k; // max number of programs to be stored
   mh._restart.set_st_when_to_restart(in_para.st_when_to_restart,
                                      in_para.st_when_to_restart_niter);
   mh._restart.set_st_next_start_prog(in_para.st_start_prog);
@@ -465,67 +464,6 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.enable_prog_uneq_cache = false;
   in_para.is_win = false;
   in_para.logger_level = LOGGER_ERROR;
-}
-
-void write_insns_to_file(prog* current_program, string prefix_name) {
-  string output_file = prefix_name + ".insns";
-  FILE* output_file_fp = fopen(output_file.c_str(), "w");
-  for (int i = 0; i < inst::max_prog_len; i++) {
-    inst t_insn = current_program->inst_list[i];
-    struct bpf_insn insn = {(uint8_t)t_insn._opcode,
-             (uint8_t)t_insn._dst_reg,
-             (uint8_t)t_insn._src_reg,
-             t_insn._off,
-             t_insn._imm
-    };
-    fwrite(&insn, sizeof(bpf_insn), 1, output_file_fp);
-  }
-
-  fclose(output_file_fp);
-}
-
-// readable code + perf_cost
-void write_desc_to_file(prog* current_program, string prefix_name) {
-  string output_file = prefix_name + ".desc";
-  ofstream fout;
-  fout.open(output_file, ios::out | ios::trunc);
-  fout << "perf_cost: " << current_program->_perf_cost << endl;
-  fout << "readable program: " << endl;
-  for (int i = 0; i < inst::max_prog_len; i++) {
-    fout << i << ": " << current_program->inst_list[i];
-  }
-  fout.close();
-}
-
-void write_bpf_insns_to_file(prog* current_program, string prefix_name) {
-  string output_file = prefix_name + ".bpf_insns";
-  ofstream fout;
-  fout.open(output_file, ios::out | ios::trunc);
-  int real_len = num_real_instructions(current_program->inst_list, inst::max_prog_len);
-  for (int i = 0; i < real_len; i++) {
-    fout << current_program->inst_list[i].get_bytecode_str() << "," << endl;
-  }
-  fout.close();
-}
-
-void write_optimized_prog_to_file(prog* current_program, int id, string path_out) {
-  // create path_out if not exist
-  if (access(path_out.c_str(), 0) != 0) {
-    if (mkdir(path_out.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
-      cout << "ERROR: mkdir path_out " << path_out << " failed" << endl;
-      return;
-    }
-  }
-  convert_superopt_pgm_to_bpf_pgm(current_program->inst_list, inst::max_prog_len);
-  prog* p_bpf_insns = new prog(*current_program);
-
-  string prefix_name = path_out + "output" + to_string(id);
-  set_nops_as_JA0(current_program->inst_list, inst::max_prog_len);
-  write_desc_to_file(current_program, prefix_name);
-  write_insns_to_file(current_program, prefix_name);
-
-  remove_nops(p_bpf_insns->inst_list, inst::max_prog_len);
-  write_bpf_insns_to_file(p_bpf_insns, prefix_name);
 }
 
 void generate_wins(vector<int>& win_s_list, vector<int>& win_e_list) {
