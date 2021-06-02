@@ -354,6 +354,7 @@ void write_bpf_insns_to_file(prog* current_program, string prefix_name) {
 }
 
 void write_optimized_prog_to_file(prog* current_program, int id, string path_out) {
+  prog* prog_copy = new prog(*current_program);
   // create path_out if not exist
   if (access(path_out.c_str(), 0) != 0) {
     if (mkdir(path_out.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
@@ -361,16 +362,19 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
       return;
     }
   }
-  convert_superopt_pgm_to_bpf_pgm(current_program->inst_list, inst::max_prog_len);
-  prog* p_bpf_insns = new prog(*current_program);
+  convert_superopt_pgm_to_bpf_pgm(prog_copy->inst_list, inst::max_prog_len);
+  prog* p_bpf_insns = new prog(*prog_copy);
 
   string prefix_name = path_out + "output" + to_string(id);
-  set_nops_as_JA0(current_program->inst_list, inst::max_prog_len);
-  write_desc_to_file(current_program, prefix_name);
-  write_insns_to_file(current_program, prefix_name);
+  set_nops_as_JA0(prog_copy->inst_list, inst::max_prog_len);
+  write_desc_to_file(prog_copy, prefix_name);
+  write_insns_to_file(prog_copy, prefix_name);
 
   remove_nops(p_bpf_insns->inst_list, inst::max_prog_len);
   write_bpf_insns_to_file(p_bpf_insns, prefix_name);
+
+  delete p_bpf_insns;
+  delete prog_copy;
 }
 
 void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool is_win) {
