@@ -362,14 +362,16 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
       return;
     }
   }
-  convert_superopt_pgm_to_bpf_pgm(prog_copy->inst_list, inst::max_prog_len);
   prog* p_bpf_insns = new prog(*prog_copy);
 
   string prefix_name = path_out + "output" + to_string(id);
   set_nops_as_JA0(prog_copy->inst_list, inst::max_prog_len);
   write_desc_to_file(prog_copy, prefix_name);
+
+  convert_superopt_pgm_to_bpf_pgm(prog_copy->inst_list, inst::max_prog_len);
   write_insns_to_file(prog_copy, prefix_name);
 
+  convert_superopt_pgm_to_bpf_pgm(p_bpf_insns->inst_list, inst::max_prog_len);
   remove_nops(p_bpf_insns->inst_list, inst::max_prog_len);
   write_bpf_insns_to_file(p_bpf_insns, prefix_name);
 
