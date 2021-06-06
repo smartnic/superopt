@@ -849,10 +849,10 @@ void get_mem_read_regs_and_read_sz_from_helper(vector<pair<int, int> >& regs_sz,
 
   } else if (func_id == BPF_FUNC_map_update_elem) {
     for (int i = 0; i < reg_state[1].size(); i++) { // r1 points to map id
-      // assert(reg_state[1][i].type == CONST_PTR_TO_MAP);
-      if (reg_state[1][i].type != CONST_PTR_TO_MAP) {
-        return;
-      }
+      assert(reg_state[1][i].type == CONST_PTR_TO_MAP);
+      // if (reg_state[1][i].type != CONST_PTR_TO_MAP) {
+      //   return;
+      // }
       assert(reg_state[1][i].val_flag);
       int map_id = reg_state[1][i].val;
       int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
