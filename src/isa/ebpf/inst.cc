@@ -1328,6 +1328,17 @@ void inst::set_unused_operands_default_vals() {
   if (_opcode != LDDW) _imm64 = 0;
 }
 
+// return the operand index of immediate number, if immediate number
+// is not used for the opcode and/or the opcode is invalid, return -1
+int inst::imm_op_idx(int opcode) {
+  for (int i = 0; i < MAX_OP_LEN; i++) {
+    if (OPTYPE(opcode, i) == OP_IMM) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 int num_real_instructions(const inst* program, int length) {
   int count = length;
   if (program[0]._opcode == NOP) count--;

@@ -94,7 +94,9 @@ prog* mod_random_inst_operand(const prog &orig, int win_start, int win_end) {
   return synth;
 }
 
-/* randomly choose a possible opcode to replace the memory old opcode
+/* 1. Choose a possible opcode at random to replace the old memory opcode
+   2. If the new opcode utilizes imm such as storing an imm in the memory for eBPF,
+      choose a possible imm at random
  */
 void mod_mem_inst_opcode(prog *orig, unsigned int sel_inst_index) {
   // 1. check whether it is a memory inst
@@ -110,6 +112,12 @@ void mod_mem_inst_opcode(prog *orig, unsigned int sel_inst_index) {
   int new_mem_opcode = sel_inst->get_mem_opcode_by_sample_idx(new_mem_opcode_index);
   // 3. modify opcode
   sel_inst->set_opcode(new_mem_opcode);
+  // 4. modify imm if used
+  int imm_op_idx = inst::imm_op_idx(new_mem_opcode);
+  if (imm_op_idx != -1) { // imm_op_idx != -1 -> imm is used in the opcode
+    mod_operand(orig, synth, sel_inst_index, imm_op_idx);
+  }
+
   sel_inst->set_unused_operands_default_vals();
 }
 

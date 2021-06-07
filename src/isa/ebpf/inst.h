@@ -820,6 +820,7 @@ class inst: public inst_base {
   int get_mem_opcode_by_sample_idx(int sample_idx) const;
   int sample_mem_idx(int opcode) const;
   void set_unused_operands_default_vals();
+  static int imm_op_idx(int opcode);
 
   // win select related
   static bool is_valid_opcode(int opcode);
