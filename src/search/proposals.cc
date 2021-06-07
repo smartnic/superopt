@@ -63,7 +63,7 @@ int get_new_operand(int sel_inst_index, const inst& sel_inst, int op_to_change) 
   return new_opvalue;
 }
 
-void mod_operand(const prog &orig, prog* synth, int sel_inst_index, int op_to_change) {
+void mod_operand(prog* synth, int sel_inst_index, int op_to_change) {
   assert (op_to_change < MAX_OP_LEN);
   assert(sel_inst_index < inst::max_prog_len);
   // First make a fresh copy of the program.
@@ -78,7 +78,7 @@ void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
   int num = orig.inst_list[inst_index].get_num_operands();
   if (num == 0) return;
   int op_to_change = sample_int(num - 1);
-  mod_operand(orig, synth, inst_index, op_to_change);
+  mod_operand(synth, inst_index, op_to_change);
 }
 
 prog* mod_random_inst_operand(const prog &orig, int win_start, int win_end) {
@@ -115,7 +115,7 @@ void mod_mem_inst_opcode(prog *orig, unsigned int sel_inst_index) {
   // 4. modify imm if used
   int imm_op_idx = inst::imm_op_idx(new_mem_opcode);
   if (imm_op_idx != -1) { // imm_op_idx != -1 -> imm is used in the opcode
-    mod_operand(orig, synth, sel_inst_index, imm_op_idx);
+    mod_operand(orig, sel_inst_index, imm_op_idx);
   }
 
   sel_inst->set_unused_operands_default_vals();
