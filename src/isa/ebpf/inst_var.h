@@ -334,7 +334,7 @@ struct map_id_pc {
 class register_state {
  public:
   int type;
-  int map_id;
+  int map_id = -1;
   int off; // memory offset (stack, pkt)
   // bool is_val; // flag of whether `val` is available
   bool val_flag = false; // if `val_flag` is true, `val` is valid

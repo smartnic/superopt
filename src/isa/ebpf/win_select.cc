@@ -23,6 +23,7 @@ bool insn_satisfy_isa_win_constraints(const inst& insn, const inst_static_state&
      2. can hardly improve function call;
      3. map update flag limitation:
         https://github.com/smartnic/superopt/commit/d1c11c5ebfbeda68fd4e9cbc14066bca8c0316f1)
+     4. register containing map id (from r_i = map id x) is not set as r_i = x in the window input
   */
   if (insn._opcode == CALL) {
     num_call++;

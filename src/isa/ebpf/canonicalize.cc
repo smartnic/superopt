@@ -350,8 +350,7 @@ void type_const_inference_inst_JEQXC(inst_static_state& iss, inst& insn, bool no
       if (not_jmp) {
         rs.type = CONST_PTR_TO_MAP;
         // todo: val i.e.(map id = 2) is set for katran balancer_kern
-        rs.val = 2;
-        rs.val_flag = true;
+        rs.map_id = 2;
         iss.set_reg_state(dst_reg, rs);
       } else {
         rs.type = SCALAR_VALUE;
@@ -566,13 +565,8 @@ void type_const_inference_inst_BPF_FUNC_map_lookup_elem(inst_static_state& iss, 
         cout << "ERROR: r1's type is not CONST_PTR_TO_MAP" << endl;
       }
       return;
-    } else if (! iss.reg_state[map_id_reg][i].val_flag) {
-      if (logger.is_print_level(LOGGER_ERROR)) {
-        cout << "ERROR: r1 is not a const" << endl;
-      }
-      return;
     }
-    int map_id = iss.reg_state[map_id_reg][i].val;
+    int map_id = iss.reg_state[map_id_reg][i].map_id;
     if ((map_id < 0) || (map_id > mem_t::maps_number())) {
       if (logger.is_print_level(LOGGER_ERROR)) {
         cout << "ERROR: map_id " << map_id << " not in [0, # map]" << endl;
@@ -722,8 +716,7 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   } else if (insn.is_ldmapid()) {
     register_state rs;
     rs.type = CONST_PTR_TO_MAP;
-    rs.val = insn._imm;
-    rs.val_flag = true;
+    rs.map_id = insn._imm;
     iss.set_reg_state(dst_reg, rs);
   } else if (insn.is_movdwxc()) {
     register_state rs;
@@ -841,8 +834,7 @@ void get_mem_read_regs_and_read_sz_from_helper(vector<pair<int, int> >& regs_sz,
   if ((func_id == BPF_FUNC_map_lookup_elem) || (func_id == BPF_FUNC_map_delete_elem)) {
     for (int i = 0; i < reg_state[1].size(); i++) { // r1 points to map id
       assert(reg_state[1][i].type == CONST_PTR_TO_MAP);
-      assert(reg_state[1][i].val_flag);
-      int map_id = reg_state[1][i].val;
+      int map_id = reg_state[1][i].map_id;
       int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
       regs_sz.push_back({2, k_sz}); // r2 points to the key stored on stack
     }
@@ -853,8 +845,7 @@ void get_mem_read_regs_and_read_sz_from_helper(vector<pair<int, int> >& regs_sz,
       // if (reg_state[1][i].type != CONST_PTR_TO_MAP) {
       //   return;
       // }
-      assert(reg_state[1][i].val_flag);
-      int map_id = reg_state[1][i].val;
+      int map_id = reg_state[1][i].map_id;
       int k_sz = mem_t::map_key_sz(map_id) / NUM_BYTE_BITS;
       int v_sz = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
       regs_sz.push_back({2, k_sz}); // r2 points to the key stored on stack
@@ -1691,8 +1682,7 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state 
           assert(map_id < mem_t::maps_number());
           ptr_val = stack_top + map_v_mem_off_start + map_v_off;
         } else if (ptr_type == CONST_PTR_TO_MAP) {
-          assert(elem.second[idx].val_flag);
-          int map_id = elem.second[idx].val;
+          int map_id = elem.second[idx].map_id;
           assert(map_id >= 0);
           assert(map_id < mem_t::maps_number());
           ptr_val = map_id;

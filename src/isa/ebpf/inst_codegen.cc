@@ -1354,8 +1354,9 @@ void smt_pgm_set_pre_stack_state_table(smt_var& sv, smt_input& input) {
         z3::expr pc = input.ptr_on_stack_path_cond(stack_off, i);
         z3::expr stack_off_name_expr = smt_input::ptr_on_stack_expr(stack_off);
         if (ptr_type == CONST_PTR_TO_MAP) {
-          assert(states[i].val_flag);
-          int map_id = states[i].val;
+          int map_id = states[i].map_id;
+          assert(map_id >= 0);
+          assert(map_id < mem_t::maps_number());
           ptr_value = to_expr(map_id);
         } else {
           int map_id = states[i].map_id;

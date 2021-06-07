@@ -599,6 +599,23 @@ void test3() {
   rs_p17.val = 16;
   print_test_res(reg_state_is_equal(expected_insn3_r0_p17, pss.static_state[3].reg_state[0]), "17");
 
+  // test pointer (CONST_PTR_TO_MAP) from stack
+  inst p18[] = {INSN_LDMAPID(0, 1),     // 0: r0 = map1
+                inst(STXDW, 10, -8, 0),  // 1: store pointer
+                inst(LDXDW, 1, 10, -8),  // 2: load pointer
+                inst(NOP),
+                inst(EXIT),
+               };
+  convert_bpf_pgm_to_superopt_pgm(p18, sizeof(p18) / sizeof(inst));
+  static_analysis(pss, p18, sizeof(p18) / sizeof(inst));
+  // check r1 state before executing insn 3
+  vector<register_state> expected_insn3_r1_p18;
+  register_state rs_p18;
+  rs_p18.type = CONST_PTR_TO_MAP;
+  rs_p18.map_id = 1;
+  expected_insn3_r1_p18.push_back(rs_p18);
+  print_test_res(reg_state_is_equal(expected_insn3_r1_p18, pss.static_state[3].reg_state[1]), "18");
+
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
                  inst(STH, 10, -8, 0xff),
@@ -1344,27 +1361,28 @@ void test6() {
     print_test_res(false, "4");
   }
 
-  // test pointer (CONST_PTR_TO_MAP) from stack
-  inst p5[] = {INSN_LDMAPID(0, 1),      // 0: r0 = map1
-               inst(STXDW, 10, -8, 0),  // 1: store pointer
-               inst(LDXDW, 1, 10, -8),  // 2: load pointer
-               inst(NOP),
-               inst(EXIT),
-              };
-  win_start = 3, win_end = 3;
-  inout_t::start_insn = win_start;
-  inout_t::end_insn = win_end;
-  n_inputs = 1;
-  convert_bpf_pgm_to_superopt_pgm(p5, sizeof(p5) / sizeof(inst));
-  static_analysis(pss, p5, sizeof(p5) / sizeof(inst));
-  gen_random_input_for_win(inputs, n_inputs, pss.static_state[win_start], p5[win_start], win_start, win_end);
-  it = inputs[0].regs.find(1);
-  if (it != inputs[0].regs.end()) {
-    int64_t r1_actual = it->second;
-    print_test_res(r1_actual == 1, "5");
-  } else {
-    print_test_res(false, "5");
-  }
+  // This test is removed since in the input, for r_i = map id x, r_i will be set as a random value instead of x
+  // // test pointer (CONST_PTR_TO_MAP) from stack
+  // inst p5[] = {INSN_LDMAPID(0, 1),      // 0: r0 = map1
+  //              inst(STXDW, 10, -8, 0),  // 1: store pointer
+  //              inst(LDXDW, 1, 10, -8),  // 2: load pointer
+  //              inst(NOP),
+  //              inst(EXIT),
+  //             };
+  // win_start = 3, win_end = 3;
+  // inout_t::start_insn = win_start;
+  // inout_t::end_insn = win_end;
+  // n_inputs = 1;
+  // convert_bpf_pgm_to_superopt_pgm(p5, sizeof(p5) / sizeof(inst));
+  // static_analysis(pss, p5, sizeof(p5) / sizeof(inst));
+  // gen_random_input_for_win(inputs, n_inputs, pss.static_state[win_start], p5[win_start], win_start, win_end);
+  // it = inputs[0].regs.find(1);
+  // if (it != inputs[0].regs.end()) {
+  //   int64_t r1_actual = it->second;
+  //   print_test_res(r1_actual == 1, "5");
+  // } else {
+  //   print_test_res(false, "5");
+  // }
 }
 
 void test7() {
