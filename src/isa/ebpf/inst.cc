@@ -1339,6 +1339,30 @@ int inst::imm_op_idx(int opcode) {
   return -1;
 }
 
+// return non-ptr registes operand index
+vector<int> inst::non_ptr_regs_op_idx(int opcode) {
+  vector<int> idx;
+  if (opcode == NOP) return idx;
+
+  int op_class = BPF_CLASS(opcode);
+  bool dst_reg_ptr = (op_class == BPF_STX) || (op_class == BPF_ST);
+  bool src_reg_ptr = (op_class == BPF_LDX);
+
+  for (int i = 0; i < MAX_OP_LEN; i++) {
+    int optype = OPTYPE(opcode, i);
+    if (optype == OP_DST_REG) {
+      if (! dst_reg_ptr) {
+        idx.push_back(i);
+      }
+    } else if (optype == OP_SRC_REG) {
+      if (! src_reg_ptr) {
+        idx.push_back(i);
+      }
+    }
+  }
+  return idx;
+}
+
 int num_real_instructions(const inst* program, int length) {
   int count = length;
   if (program[0]._opcode == NOP) count--;

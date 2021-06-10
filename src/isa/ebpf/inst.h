@@ -821,6 +821,7 @@ class inst: public inst_base {
   int sample_mem_idx(int opcode) const;
   void set_unused_operands_default_vals();
   static int imm_op_idx(int opcode);
+  static vector<int> non_ptr_regs_op_idx(int opcode);
 
   // win select related
   static bool is_valid_opcode(int opcode);

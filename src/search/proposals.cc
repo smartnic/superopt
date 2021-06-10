@@ -117,7 +117,12 @@ void mod_mem_inst_opcode(prog *orig, unsigned int sel_inst_index) {
   if (imm_op_idx != -1) { // imm_op_idx != -1 -> imm is used in the opcode
     mod_operand(orig, sel_inst_index, imm_op_idx);
   }
-
+  // 5. modify registers which are not pointers if used
+  vector<int> regs_idx = inst::non_ptr_regs_op_idx(new_mem_opcode);
+  for (int i = 0; i < regs_idx.size(); i++) {
+    int idx = regs_idx[i];
+    mod_operand(orig, sel_inst_index, idx);
+  }
   sel_inst->set_unused_operands_default_vals();
 }
 
