@@ -74,6 +74,17 @@ void mod_operand(prog* synth, int sel_inst_index, int op_to_change) {
   sel_inst->set_operand(op_to_change, new_opvalue);
 }
 
+void mod_operand_without_exception(prog* synth, int sel_inst_index, int op_to_change) {
+  assert (op_to_change < MAX_OP_LEN);
+  assert(sel_inst_index < inst::max_prog_len);
+  // First make a fresh copy of the program.
+  inst* sel_inst = &synth->inst_list[sel_inst_index];
+  if (sel_inst->sample_unmodifiable()) return;
+  int old_opvalue = sel_inst->get_operand(op_to_change);
+  int new_opvalue = get_new_operand(sel_inst_index, *sel_inst, op_to_change);
+  sel_inst->set_operand(op_to_change, new_opvalue);
+}
+
 void mod_random_operand(const prog &orig, prog* synth, int inst_index) {
   int num = orig.inst_list[inst_index].get_num_operands();
   if (num == 0) return;
@@ -115,13 +126,13 @@ void mod_mem_inst_opcode(prog *orig, unsigned int sel_inst_index) {
   // 4. modify imm if used
   int imm_op_idx = inst::imm_op_idx(new_mem_opcode);
   if (imm_op_idx != -1) { // imm_op_idx != -1 -> imm is used in the opcode
-    mod_operand(orig, sel_inst_index, imm_op_idx);
+    mod_operand_without_exception(orig, sel_inst_index, imm_op_idx);
   }
   // 5. modify registers which are not pointers if used
   vector<int> regs_idx = inst::non_ptr_regs_op_idx(new_mem_opcode);
   for (int i = 0; i < regs_idx.size(); i++) {
     int idx = regs_idx[i];
-    mod_operand(orig, sel_inst_index, idx);
+    mod_operand_without_exception(orig, sel_inst_index, idx);
   }
   sel_inst->set_unused_operands_default_vals();
 }
