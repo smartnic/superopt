@@ -56,7 +56,9 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
   out << endl;
   out << "p_inst_operand:" << ip.p_inst_operand << endl
       << "p_inst:" << ip.p_inst << endl
-      << "p_inst_as_nop:" << ip.p_inst_as_nop << endl;
+      << "p_inst_as_nop:" << ip.p_inst_as_nop << endl
+      << "disable_move_mem_exchange:" << ip.disable_move_mem_exchange << endl
+      << "disable_move_mem_exchange_gen_operands:" << ip.disable_move_mem_exchange_gen_operands << endl;
   out << "server_port:" << ip.server_port << endl
       << "disable_prog_eq_cache:" << ip.disable_prog_eq_cache << endl
       << "enable_prog_uneq_cache:" << ip.enable_prog_uneq_cache << endl
