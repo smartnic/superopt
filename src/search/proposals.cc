@@ -10,6 +10,9 @@
 
 using namespace std;
 
+bool ENABLE_MOVE_mem_exchange = true;
+bool ENABLE_MOVE_mem_exchange_gen_operands = true;
+
 /* Return a uniformly random integer from start to end inclusive */
 int sample_int(int start, int end) {
   return random_int(start, end);
@@ -123,17 +126,21 @@ void mod_mem_inst_opcode(prog *orig, unsigned int sel_inst_index) {
   int new_mem_opcode = sel_inst->get_mem_opcode_by_sample_idx(new_mem_opcode_index);
   // 3. modify opcode
   sel_inst->set_opcode(new_mem_opcode);
-  // 4. modify imm if used
-  int imm_op_idx = inst::imm_op_idx(new_mem_opcode);
-  if (imm_op_idx != -1) { // imm_op_idx != -1 -> imm is used in the opcode
-    mod_operand_without_exception(orig, sel_inst_index, imm_op_idx);
+
+  if (ENABLE_MOVE_mem_exchange_gen_operands) {
+    // 4. modify imm if used
+    int imm_op_idx = inst::imm_op_idx(new_mem_opcode);
+    if (imm_op_idx != -1) { // imm_op_idx != -1 -> imm is used in the opcode
+      mod_operand_without_exception(orig, sel_inst_index, imm_op_idx);
+    }
+    // 5. modify registers which are not pointers if used
+    vector<int> regs_idx = inst::non_ptr_regs_op_idx(new_mem_opcode);
+    for (int i = 0; i < regs_idx.size(); i++) {
+      int idx = regs_idx[i];
+      mod_operand_without_exception(orig, sel_inst_index, idx);
+    }
   }
-  // 5. modify registers which are not pointers if used
-  vector<int> regs_idx = inst::non_ptr_regs_op_idx(new_mem_opcode);
-  for (int i = 0; i < regs_idx.size(); i++) {
-    int idx = regs_idx[i];
-    mod_operand_without_exception(orig, sel_inst_index, idx);
-  }
+
   sel_inst->set_unused_operands_default_vals();
 }
 
@@ -143,13 +150,15 @@ void mod_select_inst(prog *orig, unsigned int sel_inst_index) {
   inst* sel_inst = &orig->inst_list[sel_inst_index];
   if (sel_inst->sample_unmodifiable()) return;
   int old_opcode = sel_inst->get_opcode();
-  if (sel_inst->is_mem_inst()) {
-    // 50% use the same modification as other opcodes, 50% use memory specific modification
-    int num_types = 2;
-    int type = sample_int(num_types - 1); // [0, 1]
-    if (type == 0) {
-      mod_mem_inst_opcode(orig, sel_inst_index);
-      return;
+  if (ENABLE_MOVE_mem_exchange) {
+    if (sel_inst->is_mem_inst()) {
+      // 50% use the same modification as other opcodes, 50% use memory specific modification
+      int num_types = 2;
+      int type = sample_int(num_types - 1); // [0, 1]
+      if (type == 0) {
+        mod_mem_inst_opcode(orig, sel_inst_index);
+        return;
+      }
     }
   }
 

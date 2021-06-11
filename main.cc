@@ -363,6 +363,8 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"enable_prog_uneq_cache", no_argument, nullptr, 25},
     {"is_win", no_argument, nullptr, 26},
     {"logger_level", required_argument, nullptr, 27},
+    {"disable_move_mem_exchange", no_argument, nullptr, 28},
+    {"disable_move_mem_exchange_gen_operands", no_argument, nullptr, 29},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -402,6 +404,8 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 25: in_para.enable_prog_uneq_cache = true; break;
       case 26: in_para.is_win = true; break;
       case 27: in_para.logger_level = stoi(optarg); break;
+      case 28: in_para.disable_move_mem_exchange = true; break;
+      case 29: in_para.disable_move_mem_exchange_gen_operands = true; break;
       case '?': usage(); return false;
     }
   }
@@ -464,6 +468,8 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.enable_prog_uneq_cache = false;
   in_para.is_win = false;
   in_para.logger_level = LOGGER_ERROR;
+  in_para.disable_move_mem_exchange = false;
+  in_para.disable_move_mem_exchange_gen_operands = false;
 }
 
 void generate_wins(vector<int>& win_s_list, vector<int>& win_e_list) {
@@ -505,6 +511,9 @@ int main(int argc, char* argv[]) {
   vector<inst*> bm_optis_orig;
   // todo: a temporary way to set up win eq check flag
   smt_var::is_win = in_para.is_win;
+  ENABLE_MOVE_mem_exchange = ! in_para.disable_move_mem_exchange;
+  ENABLE_MOVE_mem_exchange_gen_operands = ! in_para.disable_move_mem_exchange_gen_operands;
+  cout << "mem_exchange: " << ENABLE_MOVE_mem_exchange << " " << ENABLE_MOVE_mem_exchange_gen_operands << endl;
   auto start = NOW;
   if (in_para.bm_from_file) {
     init_benchmark_from_file(&bm, in_para.bytecode.c_str(),

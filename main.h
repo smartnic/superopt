@@ -37,4 +37,7 @@ class input_paras {
   bool is_win;
   int logger_level;
   int server_port;
+  // memory exchange move related
+  bool disable_move_mem_exchange;
+  bool disable_move_mem_exchange_gen_operands;
 };

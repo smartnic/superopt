@@ -4,6 +4,13 @@
 
 using namespace std;
 
+// Flag of enable memory exchange move
+extern bool ENABLE_MOVE_mem_exchange;
+// Flag of enable generating random operands (non-address related, such as imm)
+// for memory exchange move
+// Precondition: this flag works only when `enable_move_mem_exchange` is true
+extern bool ENABLE_MOVE_mem_exchange_gen_operands;
+
 // a modification in program window [win_start, win_end]
 prog* mod_random_inst_operand(const prog &program,
                               int win_start = 0, int win_end = inst::max_prog_len - 1);
