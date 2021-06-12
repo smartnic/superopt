@@ -515,7 +515,6 @@ int main(int argc, char* argv[]) {
   smt_var::is_win = in_para.is_win;
   ENABLE_MOVE_mem_exchange = ! in_para.disable_move_mem_exchange;
   ENABLE_MOVE_mem_exchange_gen_operands = ! in_para.disable_move_mem_exchange_gen_operands;
-  cout << "mem_exchange: " << ENABLE_MOVE_mem_exchange << " " << ENABLE_MOVE_mem_exchange_gen_operands << endl;
   auto start = NOW;
   if (in_para.bm_from_file) {
     init_benchmark_from_file(&bm, in_para.bytecode.c_str(),
