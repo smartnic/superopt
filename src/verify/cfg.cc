@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <unordered_set>
 #include "cfg.h"
 
 using namespace std;
@@ -312,4 +313,34 @@ void topo_sort_for_graph(vector<unsigned int>& nodes, const graph& g) {
   // cfg here is without loop, loop detect: function dfs in class graph
   topo_sort_dfs(0, nodes, finished, g);
   std::reverse(nodes.begin(), nodes.end());
+}
+
+void node_height_bfs(int& cur_height, unordered_set<int>& cur_height_nodes, const graph& g) {
+  if (cur_height_nodes.size() == 0) {
+    return;
+  }
+  bool flag = false;  // flag of the next level exists
+  unordered_set<int> next_height_nodes;
+  for (auto node : cur_height_nodes) {
+    if (g.nodes_out[node].size() > 0) {
+      flag = true;
+    }
+    for (size_t i = 0; i < g.nodes_out[node].size(); i++) {
+      next_height_nodes.insert(g.nodes_out[node][i]);
+    }
+  }
+  if (flag) {
+    cur_height++;
+  }
+  cur_height_nodes = next_height_nodes;
+  node_height_bfs(cur_height, cur_height_nodes, g);
+}
+
+// The height of graph with one node is 1
+int graph_height(const graph& g) {
+  unordered_set<int> cur_height_nodes;
+  cur_height_nodes.insert(0); // insert root
+  int cur_height = 1;
+  node_height_bfs(cur_height, cur_height_nodes, g);
+  return cur_height;
 }

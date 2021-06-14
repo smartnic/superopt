@@ -49,3 +49,4 @@ class graph {
 };
 
 void topo_sort_for_graph(vector<unsigned int>& nodes, const graph& g);
+int graph_height(const graph& g);

@@ -63,8 +63,24 @@ void test1() {
   print_test_res(g4.graph_to_str() == expected, "program 4");
 }
 
+void test2() {
+  cout << "Test2: graph height" << endl;
+  graph g1(instructions1, 8);
+  print_test_res(graph_height(g1) == 3, "program 1");
+
+  graph g2(instructions2, 9);
+  print_test_res(graph_height(g2) == 4, "program 2");
+
+  graph g3(instructions3, 6);
+  print_test_res(graph_height(g3) == 3, "program 3");
+
+  graph g4(instructions4, 6);
+  print_test_res(graph_height(g4) == 1, "program 4");
+}
+
 int main() {
   test1();
+  test2();
 
   return 0;
 }
