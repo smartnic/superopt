@@ -14,6 +14,18 @@
 
 using namespace std;
 
+/*
+  I: memory type: multiple memory tables
+  II: map type: multiple map tables
+  III: memory offset concretizations: off-based memory table (precondition: I is on)
+  IV: modular verification: (precondition: I, II, III)
+  1. I, II, III, IV
+  2. I, II, III
+  3. I, II
+  4. I
+  5. None
+*/
+
 int loop_times = 1;
 string path_prefix = "../superopt-input-bm/input_bm_0108_ab7e41e/";
 
@@ -29,12 +41,13 @@ void meas_solve_time_delta(inst* p, inst* p_new, validator& vld) {
     vld.is_equal_to(p, inst::max_prog_len, p_new, inst::max_prog_len);
   }
   auto t2 = NOW;
-  cout << "is_equal_to: " << (DUR(t1, t2) / loop_times) << " us" << endl;
+  cout << "solve time: " << (DUR(t1, t2) / loop_times) << " us" << endl;
 }
 
-// win program + off-based mutilple memory tables + multiple map tables
+// win program + off-based multiple memory tables + multiple map tables
 void measure_win_prog_off_based_multi_table(inst* p, inst* p_new, int win_start, int win_end) {
-  cout << "win program + off-based mutilple memory tables + multiple map tables......" << endl;
+  // cout << "win program + off-based mutilple memory tables + multiple map tables......" << endl;
+  cout << "I, II, III, IV" << endl;
   validator::enable_z3server = false;
   smt_var::enable_multi_map_tables = true;
   smt_var::enable_multi_mem_tables = true;
@@ -47,7 +60,8 @@ void measure_win_prog_off_based_multi_table(inst* p, inst* p_new, int win_start,
 
 // full program + off-based multiple memory tables + multiple map tables
 void measure_full_prog_off_based_multi_table(inst* p, inst* p_new) {
-  cout << "full program + off-based multiple memory tables + multiple map tables......" << endl;
+  // cout << "full program + off-based multiple memory tables + multiple map tables......" << endl;
+  cout << "I, II, III" << endl;
   validator::enable_z3server = false;
   smt_var::enable_multi_map_tables = true;
   smt_var::enable_multi_mem_tables = true;
@@ -60,7 +74,8 @@ void measure_full_prog_off_based_multi_table(inst* p, inst* p_new) {
 
 // full program + addr-based multiple memory tables + multiple map tables
 void measure_full_prog_addr_based_multi_table(inst* p, inst* p_new) {
-  cout << "full program + addr-based multiple memory tables + multiple map tables......" << endl;
+  // cout << "full program + addr-based multiple memory tables + multiple map tables......" << endl;
+  cout << "I, II" << endl;
   validator::enable_z3server = false;
   smt_var::enable_multi_map_tables = true;
   smt_var::enable_multi_mem_tables = true;
@@ -74,7 +89,8 @@ void measure_full_prog_addr_based_multi_table(inst* p, inst* p_new) {
 
 // full program + addr-based multiple memory tables + single map table
 void measure_full_prog_addr_based_single_map_table(inst* p, inst* p_new) {
-  cout << "full program + addr-based multiple memory tables + single map table......" << endl;
+  // cout << "full program + addr-based multiple memory tables + single map table......" << endl;
+  cout << "I" << endl;
   validator::enable_z3server = false;
   smt_var::enable_multi_map_tables = false;
   smt_var::enable_multi_mem_tables = true;
@@ -87,7 +103,8 @@ void measure_full_prog_addr_based_single_map_table(inst* p, inst* p_new) {
 }
 
 void measure_full_prog_addr_based_single_mem_table(inst* p, inst* p_new) {
-  cout << "full program + addr-based single memory table + multiple map table......" << endl;
+  // cout << "full program + addr-based single memory table + multiple map table......" << endl;
+  cout << "II" << endl;
   validator::enable_z3server = false;
   smt_var::enable_multi_map_tables = true;
   smt_var::enable_multi_mem_tables = false;
@@ -100,7 +117,8 @@ void measure_full_prog_addr_based_single_mem_table(inst* p, inst* p_new) {
 }
 
 void measure_full_prog_addr_based_single_mem_single_map_table(inst* p, inst* p_new) {
-  cout << "full program + addr-based single memory table + single map table......" << endl;
+  // cout << "full program + addr-based single memory table + single map table......" << endl;
+  cout << "None" << endl;
   validator::enable_z3server = false;
   smt_var::enable_multi_map_tables = false;
   smt_var::enable_multi_mem_tables = false;
@@ -118,7 +136,7 @@ void meas_solve_time_delta_n_times(inst* p, inst* delta, int start, int end,
                                    bool test2 = true,
                                    bool test3 = true,
                                    bool test4 = true,
-                                   bool test5 = true,
+                                   bool test5 = false,
                                    bool test6 = true) {
   cout << "starting " << test_name << " " << start << "," << end << " " << (end - start + 1) << endl;
 
@@ -154,7 +172,7 @@ void meas_solve_time_of_cilium_recvmsg4() {
                inst(),
                inst(STXH, 10, -28, 1),
               };
-  meas_solve_time_delta_n_times(bm, p1, 11, 15, "p1");
+  meas_solve_time_delta_n_times(bm, p1, 11, 15, "p1", true, true, true, true, false, false);
 }
 
 void meas_solve_time_of_cilium_from_network() {
@@ -191,6 +209,7 @@ void meas_solve_time_of_katran_pkt_cntr() {
   string bm_name = path_prefix + "katran/xdp_pktcntr_xdp-pktcntr";
   init_benchmark_from_file(&bm, (bm_name + ".insns").c_str(),
                            (bm_name + ".maps").c_str(), (bm_name + ".desc").c_str());
+  cout << "benchmark: katran, xdp_pktcntr" << endl;
   inst p1[] = {inst(),
                inst(STDW, 10, -8, 0),
                inst(),
@@ -284,12 +303,12 @@ void meas_solve_time_of_xdp_cpumap_kthread() {
               };
   meas_solve_time_delta_n_times(bm, p1, 1, 2, "p1");
 
-  inst p2[] = {inst(LDXW, 1, 6, 24),
-               inst(),
-               inst(XADD64, 0, 0, 1),
-               inst(),
-              };
-  meas_solve_time_delta_n_times(bm, p2, 9, 12, "p2");
+  // inst p2[] = {inst(LDXW, 1, 6, 24),
+  //              inst(),
+  //              inst(XADD64, 0, 0, 1),
+  //              inst(),
+  //             };
+  // meas_solve_time_delta_n_times(bm, p2, 9, 12, "p2");
 }
 
 void meas_solve_time_of_xdp_cpumap_enqueue() {
@@ -305,39 +324,13 @@ void meas_solve_time_of_xdp_cpumap_enqueue() {
               };
   meas_solve_time_delta_n_times(bm, p1, 14, 16, "p1");
 }
-void meas_solve_time_of_network() {
-  cout << "Original program is network" << endl;
-  // Init program and static variables
-  inst::max_prog_len = N20;
-  inst network[inst::max_prog_len];
-  for (int i = 0; i < inst::max_prog_len; i++) {
-    network[i] = bm20[i];
-  }
-  //mem_t::_layout.clear();
-  inst::max_prog_len = N20;
-  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-  mem_t::set_pkt_sz(68);
-  mem_t::add_map(map_attr(64, 128, N20));
-
-  validator vld(network, inst::max_prog_len);
-  inst p1[] = {inst(MOV32XC, 2, 0),
-               inst(STXW, 1, 64, 2),
-               inst(MOV64XY, 4, 1),
-               inst(STXW, 4, 60, 2),
-               inst(STXW, 1, 56, 2),
-               inst(STXW, 4, 52, 2),
-               inst(STXW, 1, 48, 2),
-               inst(LDXW, 6, 1, 0),
-               inst(LE, 1, 32),
-               inst(MOV64XY, 9, 10),
-              };
-  meas_solve_time_delta_n_times(network, p1, 0, 10, "p3", vld);
-}
-
 
 int main(int argc, char* argv[]) {
   if (argc > 1) {
     loop_times = atoi(argv[1]);
+  }
+  if (argc > 2) {
+    path_prefix = argv[2];
   }
   logger.set_least_print_level(LOGGER_DEBUG);
   meas_solve_time_of_xdp_exception();
@@ -348,8 +341,6 @@ int main(int argc, char* argv[]) {
   meas_solve_time_of_katran_pkt_cntr();
   meas_solve_time_of_cilium_from_network();
   meas_solve_time_of_cilium_recvmsg4();
-  meas_solve_time_of_katran_xdp_balancer();
+  // meas_solve_time_of_katran_xdp_balancer();
   return 0;
-  //meas_solve_time_of_rcv_sock4();
-  meas_solve_time_of_network();
 }
