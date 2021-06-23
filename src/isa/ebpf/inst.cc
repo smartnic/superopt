@@ -643,6 +643,8 @@ void inst::insert_opcodes_not_gen(unordered_set<int>& opcode_set) const {
   opcode_set.insert(IDX_DIV64XC);
   opcode_set.insert(IDX_DIV64XY);
   opcode_set.insert(IDX_MUL64XY); // this opcode is added because of cilium which is not in camera-ready benchmarks
+  opcode_set.insert(IDX_ARSH32XC); // ARSH32XC and ARSH32XY are added because kernel 4.9 for testing katran 
+  opcode_set.insert(IDX_ARSH32XY); // does not support them
 }
 
 int inst::inst_output_opcode_type() const {
