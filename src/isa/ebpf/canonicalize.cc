@@ -1323,6 +1323,31 @@ void safety_chk_insn_mem_access(inst& insn, inst_static_state& iss) {
       int access_off = iss.reg_state[reg][j].off + off;
       if (reg_type == PTR_TO_STACK) {
         safety_chk_insn_mem_access_stack_one_reg_state(access_off, size);
+        // if load a pointer from the stack, size should be 8 bytes (ldxdw)
+        if ((insn._opcode == LDXB) || (insn._opcode == LDXH) || (insn._opcode == LDXW)) {
+          // if value stores in access_off is a pointer, fail
+          auto it_off = iss.stack_state.find(access_off);
+          if (it_off != iss.stack_state.end()) {
+            const vector<register_state>& rs_list = it_off->second;
+            for (int k = 0; k < rs_list.size(); k++) {
+              if (rs_list[k].type != SCALAR_VALUE) {
+                string err_msg = "(stack read) invalid size of register spill";
+                throw (err_msg);
+              }
+            }
+          }
+        }
+        // if store a pointer on the stack, size should be 8 bytes (stxdw)
+        if ((insn._opcode == STXB) || (insn._opcode == STXH) || (insn._opcode == STXW)) {
+          // if src_reg is a pointer, fail
+          int src_reg = insn._src_reg;
+          for (int k = 0; k < iss.reg_state[src_reg].size(); k++) {
+            if (iss.reg_state[src_reg][k].type != SCALAR_VALUE) {
+              string err_msg = "(stack write) invalid size of register spill";
+              throw (err_msg);
+            }
+          }
+        }
       } else if (reg_type == PTR_TO_MAP_VALUE) {
         safety_chk_insn_mem_access_map_one_reg_state(access_off, size, reg_map_id);
       }

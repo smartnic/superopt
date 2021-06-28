@@ -898,6 +898,26 @@ void test4() {
   test_safety_check(p1_8, sizeof(p1_8) / sizeof(inst), false, "8");
   test_safety_check_win(p1_8, sizeof(p1_8) / sizeof(inst), 0, 0, false, "8.1");
   test_safety_check_win(p1_8, sizeof(p1_8) / sizeof(inst), 1, 1, false, "8.2");
+
+  cout << "4.2 invalid size of register spill" << endl;
+  inst p2_1[] = {inst(STXW, 10, -8, 1), // store pointer on stack (spilled)
+                 inst(STXW, 10, -8, 10), // store pointer on stack (spilled)
+                 inst(LDXDW, 0, 10, -8), // read pointer from stack
+                 inst(EXIT),
+                };
+  test_safety_check(p2_1, sizeof(p2_1) / sizeof(inst), false, "2.1");
+  test_safety_check_win(p2_1, sizeof(p2_1) / sizeof(inst), 0, 0, false, "2.1.1");
+  test_safety_check_win(p2_1, sizeof(p2_1) / sizeof(inst), 1, 1, false, "2.1.2");
+
+  inst p2_2[] = {inst(STXDW, 10, -8, 1), // store pointer on stack (not spilled)
+                 inst(LDXDW, 0, 10, -8), // read pointer from stack (not spilled)
+                 inst(LDXW, 0, 10, -8), // read pointer from stack (spilled)
+                 inst(EXIT),
+                };
+  test_safety_check(p2_2, sizeof(p2_2) / sizeof(inst), false, "2.2");
+  test_safety_check_win(p2_2, sizeof(p2_2) / sizeof(inst), 0, 0, true, "2.2.1");
+  test_safety_check_win(p2_2, sizeof(p2_2) / sizeof(inst), 1, 1, true, "2.2.2");
+  test_safety_check_win(p2_2, sizeof(p2_2) / sizeof(inst), 2, 2, false, "2.2.3");
 }
 
 void test5() {
