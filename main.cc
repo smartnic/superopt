@@ -117,6 +117,7 @@ void run_mh_sampler(top_k_progs& topk_progs, input_paras &in_para, vector<inst*>
   if (in_para.meas_mode) mh.turn_on_measure();
   prog orig(bm);
   orig.print();
+  cout << "1 cost init start" << endl;
   mh._cost.init(&orig, inst::max_prog_len, inputs,
                 in_para.w_e, in_para.w_p,
                 in_para.st_ex, in_para.st_eq,
@@ -124,6 +125,7 @@ void run_mh_sampler(top_k_progs& topk_progs, input_paras &in_para, vector<inst*>
                 (! in_para.disable_prog_eq_cache),
                 in_para.enable_prog_uneq_cache,
                 in_para.is_win);
+  cout << "2 cost init end" << endl;
   try {
     mh.mcmc_iter(topk_progs, in_para.niter, &orig, in_para.is_win);
   } catch (string err_msg) {
@@ -508,6 +510,7 @@ int main(int argc, char* argv[]) {
   std::ofstream out(output_file);
   std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
   std::cout.rdbuf(out.rdbuf()); //redirect std::cout to output_file
+  cout << fixed; // print exact numbers not scientific numbers
   cout << in_para;
   // store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;

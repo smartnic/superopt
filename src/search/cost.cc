@@ -214,6 +214,7 @@ bool is_win_legal(inst* orig, int len1, inst* synth, int len2,
  */
 double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_error_cost != -1) return synth->_error_cost;
+  auto t1 = NOW, t2 = NOW;
   try {
     if (! smt_var::is_win) {
       static_safety_check_pgm(synth->inst_list, len2);
@@ -221,12 +222,17 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
       static_safety_check_win(synth->inst_list,
                               inout_t::start_insn, inout_t::end_insn,
                               _vld._pss_orig);
+      t2 = NOW;
+      cout << "[profile] error_cost, static_safety_check: " << DUR(t1, t2) << " us" << endl;
     }
   } catch (const string err_msg) {
+    t2 = NOW;
+    cout << "[profile] error_cost, static_safety_check(unsafe): " << DUR(t1, t2) << " us" << endl;
     synth->set_error_cost(ERROR_COST_MAX);
     return ERROR_COST_MAX;
   }
 
+  t1 = NOW;
   double total_cost = 0;
   inout_t output1, output2;
   output1.init();
@@ -234,17 +240,28 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   int num_successful_ex = 0;
   prog_state ps;
   ps.init();
+  t2 = NOW;
+  cout << "[profile] error_cost, interpret init: " << DUR(t1, t2) << " us" << endl;
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
     output1 = _examples._exs[i].output;
+    auto t1_tmp = NOW;
     try {
       synth->interpret(output2, ps, _examples._exs[i].input);
+      auto t2_tmp = NOW;
+      cout << "[profile] error_cost, interpret(per): " << DUR(t1_tmp, t2_tmp) << " us" << endl;
     } catch (const string err_msg) {
+      t2 = NOW;
+      cout << "[profile] error_cost, interpret(per): " << DUR(t1_tmp, t2) << " us" << endl;
+      cout << "[profile] error_cost, interpret(unsafe): " << DUR(t1, t2) << " us" << endl;
       // illegal program
       synth->set_error_cost(ERROR_COST_MAX);
       return ERROR_COST_MAX;
     }
+    t1_tmp = NOW;
     double ex_cost = get_ex_error_cost(output1, output2);
+    auto t2_tmp = NOW;
+    cout << "[profile] error_cost, interpret(get_ex_error_cost): " << DUR(t1_tmp, t2_tmp) << " us" << endl;
     if (ex_cost == 0) num_successful_ex++;
     // else if (ex_cost >= ERROR_COST_MAX) {
     //   // synthesis whose test case error cost >= ERROR_COST_MAX
@@ -254,12 +271,18 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
 
     total_cost += ex_cost;
   }
+  t2 = NOW;
+  cout << "[profile] error_cost, interpret: " << DUR(t1, t2) << " us" << endl;
+
+  t1 = NOW;
   int is_equal = 0;
   int ex_set_size = _examples._exs.size();
   if (num_successful_ex == ex_set_size) {
-    auto t1 = NOW;
+    auto t1_tmp = NOW;
     try {
       is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+      auto t2_tmp = NOW;
+      cout << "[profile] error_cost, validate: " << DUR(t1_tmp, t2_tmp) << " us" << endl;
       // if (smt_var::is_win) {
       //   // check win prog eq check result
       //   validator vld1;
@@ -274,11 +297,13 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
       //   smt_var::is_win = true;
       // }
     } catch (const string err_msg) {
+      auto t2_tmp = NOW;
+      cout << "[profile] error_cost, validate(unsafe): " << DUR(t1_tmp, t2_tmp) << " us" << endl;
       // illegal program
       synth->set_error_cost(ERROR_COST_MAX);
       return ERROR_COST_MAX;
     }
-    auto t2 = NOW;
+    t2 = NOW;
     auto dur = DUR(t1, t2);
     // cout << dur << endl;
     dur_sum += dur;
@@ -303,11 +328,14 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   // case 2: gen_counterex_flag = (is_equal == 0) && (num_successful_ex == (int)_examples._exs.size());
   if (((is_equal == 0) || (is_equal == ILLEGAL_CEX)) &&
       (num_successful_ex == (int)_examples._exs.size())) {
+    t1 = NOW;
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
     cout << "counterexample " << _examples.size() << ":" << endl;
     cout << _vld._last_counterex.input << endl;
     cout << _vld._last_counterex.output << endl;
+    t2 = NOW;
+    cout << "[profile] error_cost, counterexamples: " << DUR(t1, t2) << " us" << endl;
   }
   // in case there is overflow which makes a positive value become a negative value or
   // total_cost > ERROR_COST_MAX
@@ -363,8 +391,14 @@ double cost::perf_cost(prog* synth, int len, bool set_win) {
 
 double cost::total_prog_cost(prog * orig, int len1, prog * synth, int len2) {
   bool flag = (synth->_error_cost == -1);
+  auto t1 = NOW, t2 = NOW;
   double err_cost = error_cost(orig, len1, synth, len2);
+  t2 = NOW;
+  cout << "[profile] error_cost: " << DUR(t1, t2) << " us" << endl;
+  t1 = NOW;
   double per_cost = perf_cost(synth, len2, true);
+  t2 = NOW;
+  cout << "[profile] perf_cost: " << DUR(t1, t2) << " us" << endl;
   if (flag && logger.is_print_level(LOGGER_DEBUG)) {
     cout << "cost: " << err_cost << " " << per_cost << " "
          << (_w_e * err_cost) + (_w_p * per_cost) << endl;

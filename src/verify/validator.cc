@@ -250,19 +250,26 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   _count_is_equal_to++;
   smt_prog ps_synth;
   smt_input smt_input_synth;
+  auto t1 = NOW, t2 = NOW;
   if (_is_win) {
     prog_static_state pss_synth;
     set_up_smt_inout_win(smt_input_synth, ps_synth.sv.smt_out, _pss_orig, synth, _win_start, _win_end);
+    cout << "[profile] validator, set_up_smt_inout_win: " << DUR(t1, t2) << " us" << endl;
   }
+  t1 = NOW;
   expr pre_synth = string_to_expr("true");
 
   expr pl_synth = string_to_expr("true");
   try {
     smt_pre(pre_synth, VLD_PROG_ID_SYNTH, NUM_REGS, synth->get_input_reg(), smt_input_synth, ps_synth.sv);
     pl_synth = ps_synth.gen_smt(VLD_PROG_ID_SYNTH, synth, length_syn, _is_win, _win_start, _win_end);
+    t2 = NOW;
+    cout << "[profile] validator, formula: " << DUR(t1, t2) << " us" << endl;
   } catch (const string err_msg) {
     // TODO error program process; Now just return false
     // cerr << err_msg << endl;
+    t2 = NOW;
+    cout << "[profile] validator, formula(unsafe): " << DUR(t1, t2) << " us" << endl;
     _count_throw_err++;
     return -1;
   }
@@ -274,10 +281,13 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
     }
   }
   // check whether the synth is in the prog_eq_cache. If so, this synth is equal to the original
+  t1 = NOW;
   prog synth_prog(synth);
   if (_enable_prog_eq_cache) {
     canonicalize(synth_prog.inst_list, length_syn);
     if (is_in_prog_cache(synth_prog, _prog_eq_cache)) {
+      t2 = NOW;
+      cout << "[profile] validator, cache(found): " << DUR(t1, t2) << " us" << endl;
       _count_prog_eq_cache++;
       if (logger.is_print_level(LOGGER_DEBUG)) {
         cout << "vld synth eq from prog_eq_cache" << endl;
@@ -285,6 +295,8 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
       return 1;
     }
   }
+  t2 = NOW;
+  cout << "[profile] validator, cache(not): " << DUR(t1, t2) << " us" << endl;
 
   smt_var post_sv_synth = ps_synth.sv;
 
@@ -309,9 +321,9 @@ int validator::is_equal_to(inst* orig, int length_orig, inst* synth, int length_
   _store_f = smt;
   model mdl(smt_c);
   _count_solve_eq++;
-  auto t1 = NOW;
+  t1 = NOW;
   int is_equal = is_smt_valid(smt, mdl);
-  auto t2 = NOW;
+  t2 = NOW;
   if (logger.is_print_level(LOGGER_DEBUG)) {
     cout << "win" << _is_win << " validator solve eq: " << DUR(t1, t2) << " us" << " " << is_equal << endl;
   }

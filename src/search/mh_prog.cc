@@ -380,6 +380,7 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
 }
 
 void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool is_win) {
+  auto t1 = NOW, t2 = NOW;
   int better_store_id = 0;
   topk_progs.clear();
   // best is the program with zero error cost and minimum performance cost in MC
@@ -419,23 +420,52 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
       cout << "start from program (error and performance costs: "
            << prog_start->_error_cost << " " << prog_start-> _perf_cost << "):" << endl;
       prog_start->print();
+
+      t1 = NOW;
       if (is_win) { // reset validator original program
         inout_t::start_insn = win.first;
         inout_t::end_insn = win.second;
+
+        auto t1_tmp = NOW, t2_tmp = NOW;
         init_sample_range(&prog_start->inst_list[win.first], (win.second - win.first + 1));
+        t2_tmp = NOW;
+        cout << "[profile] [mh_sampler::mcmc_iter] reset window start init_sample_range: "
+             << DUR(t1_tmp, t2_tmp) << " us" << endl;
+
+        t1_tmp = NOW;
         static_safety_check_pgm(prog_start->inst_list, inst::max_prog_len);
+        t2_tmp = NOW;
+        cout << "[profile] [mh_sampler::mcmc_iter] reset window start static_safety_check_pgm: "
+             << DUR(t1_tmp, t2_tmp) << " us" << endl;
+
+        t1_tmp = NOW;
         _cost.set_orig(prog_start, inst::max_prog_len, win.first, win.second);
+        t2_tmp = NOW;
+        cout << "[profile] [mh_sampler::mcmc_iter] reset window start cost.set_orig: "
+             << DUR(t1_tmp, t2_tmp) << " us" << endl;
         // clear the test cases and generate new test cases
         // prog_static_state pss;
         // static_analysis(pss, prog_start->inst_list, inst::max_prog_len);
         int num_examples = 30;
         vector<inout_t> examples;
+
+        t1_tmp = NOW;
         gen_random_input_for_win(examples, num_examples,
                                  _cost._vld._pss_orig.static_state[win.first],
                                  prog_start->inst_list[win.first],
                                  win.first, win.second);
+        t2_tmp = NOW;
+        cout << "[profile] [mh_sampler::mcmc_iter] reset window start gen_random_input_for_win: "
+             << DUR(t1_tmp, t2_tmp) << " us" << endl;
+
+        t1_tmp = NOW;
         _cost.set_examples(examples, prog_start);
+        t2_tmp = NOW;
+        cout << "[profile] [mh_sampler::mcmc_iter] reset window start set_examples: "
+             << DUR(t1_tmp, t2_tmp) << " us" << endl;
       }
+      t2 = NOW;
+      cout << "[profile] [mh_sampler::mcmc_iter] reset window start: " << DUR(t1, t2) << " us" << endl;
     }
     // check whether need restart, if need, update `start`
     if (_restart.whether_to_restart(i)) {

@@ -1588,6 +1588,7 @@ void inout_t::init() {
 }
 
 void inout_t::operator=(const inout_t &rhs) {
+  auto t1 = NOW;
   input_simu_pkt_s = rhs.input_simu_pkt_s;
   input_simu_r10 = rhs.input_simu_r10;
   reg = rhs.reg;
@@ -1615,6 +1616,8 @@ void inout_t::operator=(const inout_t &rhs) {
       }
     }
   }
+  auto t2 = NOW;
+  cout << "[profile] inout_t::operator=: " << DUR(t1, t2) << " us" << endl;
 }
 
 bool inout_t::operator==(const inout_t &rhs) const {
