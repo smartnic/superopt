@@ -1580,80 +1580,11 @@ void test13() {
                inst(STXDW, 10, -8, 1),
                inst(LDXDW, 0, 10, -8),
                inst(LDXB, 0, 0, 0),   // 6:
-               inst(),
                inst(EXIT),
               };
-  inst p7_1[] = {inst(STXDW, 10, -8, 1),
-                 inst(MOV64XC, 0, 0),
-                 inst(JEQXC, 0, 0, 2),
-                 inst(ADD64XC, 1, 2),
-                 inst(STXDW, 10, -8, 1),
-                 inst(LDXDW, 0, 10, -8),
-                 inst(LDXB, 0, 0, 1),   // 6:
-                 inst(),
-                 inst(EXIT),
-                };
-  inst p7_2[] = {inst(STXDW, 10, -8, 1),
-                 inst(MOV64XC, 0, 0),
-                 inst(JEQXC, 0, 0, 2),
-                 inst(ADD64XC, 1, 2),
-                 inst(STXDW, 10, -8, 1),
-                 inst(LDXDW, 0, 10, -8),
-                 inst(ADD64XC, 0, 1),   // 6:
-                 inst(LDXB, 0, 0, 0),   // 7:
-                 inst(EXIT),
-                };
-  inst p7_3[] = {inst(STXDW, 10, -8, 1),
-                 inst(MOV64XC, 0, 0),
-                 inst(JEQXC, 0, 0, 2),
-                 inst(ADD64XC, 1, 2),
-                 inst(STXDW, 10, -8, 1),
-                 inst(LDXDW, 0, 10, -8),
-                 inst(MOV64XY, 0, 0),   // 6:
-                 inst(LDXB, 0, 0, 0),   // 7:
-                 inst(EXIT),
-                };
   int p7_len = sizeof(p7) / sizeof(inst);
-  win_start = 6, win_end = 7;
+  win_start = 6, win_end = 6;
   win_eq_check(p7, p7_len, p7, p7_len, win_start, win_end, 1, "7.1");
-  win_eq_check(p7, p7_len, p7_1, p7_len, win_start, win_end, 0, "7.2");
-  win_eq_check(p7, p7_len, p7_2, p7_len, win_start, win_end, 0, "7.3");
-  win_eq_check(p7, p7_len, p7_3, p7_len, win_start, win_end, 1, "7.4");
-  win_start = 5, win_end = 7;
-  win_eq_check(p7, p7_len, p7, p7_len, win_start, win_end, 1, "7.5");
-  win_eq_check(p7, p7_len, p7_1, p7_len, win_start, win_end, 0, "7.6");
-  win_eq_check(p7, p7_len, p7_2, p7_len, win_start, win_end, 0, "7.7");
-  win_eq_check(p7, p7_len, p7_3, p7_len, win_start, win_end, 1, "7.8");
-
-  // test pointer stored on stack and read from stack: two possibilities with different pointers
-  // one ctx pointer, the other stack pointer
-  inst p8[] = {inst(STXDW, 10, -8, 1),  // store ctx pointer ctx[0]
-               inst(MOV64XC, 0, 0),
-               inst(JEQXC, 0, 0, 3),
-               inst(MOV64XY, 1, 10),
-               inst(ADD64XC, 1, -2),    // store stack pointer stack[510]
-               inst(STXDW, 10, -8, 1),
-               inst(LDXDW, 0, 10, -8),
-               inst(LDXB, 0, 0, 0),     // 7:
-               inst(EXIT),
-              };
-  inst p8_1[] = {inst(STXDW, 10, -8, 1),  // store ctx pointer ctx[0]
-                 inst(MOV64XC, 0, 0),
-                 inst(JEQXC, 0, 0, 3),
-                 inst(MOV64XY, 1, 10),
-                 inst(ADD64XC, 1, -2),    // store stack pointer stack[511]
-                 inst(STXDW, 10, -8, 1),
-                 inst(LDXDW, 0, 10, -8),
-                 inst(LDXB, 0, 0, 1),     // 7:
-                 inst(EXIT),
-                };
-  int p8_len = sizeof(p8) / sizeof(inst);
-  win_start = 7, win_end = 7;
-  win_eq_check(p8, p8_len, p8, p8_len, win_start, win_end, 1, "8.1");
-  win_eq_check(p8, p8_len, p8_1, p8_len, win_start, win_end, 0, "8.2");
-  win_start = 6, win_end = 7;
-  win_eq_check(p8, p8_len, p8, p8_len, win_start, win_end, 1, "8.3");
-  win_eq_check(p8, p8_len, p8_1, p8_len, win_start, win_end, 0, "8.4");
 
   return;
 

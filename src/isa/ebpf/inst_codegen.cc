@@ -139,44 +139,40 @@ z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, 
   if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
     int pkt_ptrs_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs);
     vector<int> ids;
-    vector<vector<mem_ptr_info>> info_list;
+    vector<mem_ptr_info> info_list;
     sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
     for (int i = 0; i < ids.size(); i++) {
       if (ids[i] != pkt_ptrs_mem_table) continue;
-      for (int j = 0; j < info_list[i].size(); j++) {
-        z3::expr addr_off = info_list[i][j].off + off;
-        if (! enable_addr_off) {
-          addr_off = addr + off - sv.get_pkt_start_addr();
-        }
-        // the first 4 bytes are the address of pkt start, the last are the address of pkt end
-        z3::expr pc_addr_off = (addr_off == ZERO_ADDR_OFF_EXPR) || (addr_off == to_expr((int64_t)4));
-        z3::expr pc = info_list[i][j].path_cond && sv.mem_var.get_block_path_cond(block);
-        int pkt_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
-        sv.mem_var.add_ptr(out, pkt_mem_table, addr_off, pc && pc_addr_off);
+      z3::expr addr_off = info_list[i].off + off;
+      if (! enable_addr_off) {
+        addr_off = addr + off - sv.get_pkt_start_addr();
       }
+      // the first 4 bytes are the address of pkt start, the last are the address of pkt end
+      z3::expr pc_addr_off = (addr_off == ZERO_ADDR_OFF_EXPR) || (addr_off == to_expr((int64_t)4));
+      z3::expr pc = info_list[i].path_cond && sv.mem_var.get_block_path_cond(block);
+      int pkt_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
+      sv.mem_var.add_ptr(out, pkt_mem_table, addr_off, pc && pc_addr_off);
     }
   } else if (pgm_input_type == PGM_INPUT_skb) {
     int pkt_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_pkt);
     vector<int> ids;
-    vector<vector<mem_ptr_info>> info_list;
+    vector<mem_ptr_info> info_list;
     sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
     for (int i = 0; i < ids.size(); i++) {
       if (ids[i] != pkt_mem_table) continue;
-      for (int j = 0; j < info_list[i].size(); j++) {
-        z3::expr addr_off = info_list[i][j].off + off;
-        if (! enable_addr_off) {
-          addr_off = addr + off - sv.mem_var._skb_start;
-        }
-        z3::expr pc_addr_off_s = (addr_off == to_expr(SKB_data_s_off, 64));
-        z3::expr pc = info_list[i][j].path_cond && sv.mem_var.get_block_path_cond(block);
-        int skb_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_skb);
-        z3::expr skb_off = NULL_ADDR_EXPR;
-        sv.mem_var.add_ptr(out, skb_mem_table, skb_off, pc && pc_addr_off_s);
-        // todo: add skb_data_end as a pointer
-        // z3::expr pc_addr_off_e = (addr_off == to_expr(SKB_data_e_off, 64));
-        // skb_off = sv.mem_var._skb_end - sv.mem_var._skb_start;
-        // sv.mem_var.add_ptr(out, skb_mem_table, skb_off, pc && pc_addr_off_e);
+      z3::expr addr_off = info_list[i].off + off;
+      if (! enable_addr_off) {
+        addr_off = addr + off - sv.mem_var._skb_start;
       }
+      z3::expr pc_addr_off_s = (addr_off == to_expr(SKB_data_s_off, 64));
+      z3::expr pc = info_list[i].path_cond && sv.mem_var.get_block_path_cond(block);
+      int skb_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_skb);
+      z3::expr skb_off = NULL_ADDR_EXPR;
+      sv.mem_var.add_ptr(out, skb_mem_table, skb_off, pc && pc_addr_off_s);
+      // todo: add skb_data_end as a pointer
+      // z3::expr pc_addr_off_e = (addr_off == to_expr(SKB_data_e_off, 64));
+      // skb_off = sv.mem_var._skb_end - sv.mem_var._skb_start;
+      // sv.mem_var.add_ptr(out, skb_mem_table, skb_off, pc && pc_addr_off_e);
     }
   }
   return ((out.extract(63, 32) == to_expr(0, 32)) &&
@@ -194,33 +190,31 @@ z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
     bool flag_ptr_stack = true;
     int stack_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
     vector<int> ids;
-    vector<vector<mem_ptr_info>> info_list;
+    vector<mem_ptr_info> info_list;
     sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
     for (int i = 0; i < ids.size(); i++) {
       if (ids[i] != stack_mem_table) {
         flag_ptr_stack = false;
         break;
       }
-      for (int j = 0; j < info_list[i].size(); j++) {
-        z3::expr z3_stack_off = info_list[i][j].off + off;
-        // get the concrete value of z3_stack_off
-        uint64_t stack_off = get_uint64_from_bv64(z3_stack_off, true);
-        // check whether stack_off is the off_start of a pointer
-        vector<ptr_info> ptr_info_list;
-        sv.mem_var.get_ptr_info_in_stack_state(ptr_info_list, stack_off);
-        if (ptr_info_list.size() == 0) {
-          flag_ptr_stack = false;
-          break;
-        }
-        for (int k = 0; k < ptr_info_list.size(); k++) {
-          int mem_table_id = ptr_info_list[k]._mem_table_id;
-          int off = ptr_info_list[k]._off;
-          z3::expr z3_off = to_expr((int64_t)off);
-          z3::expr pc = ptr_info_list[k]._path_cond;
-          sv.mem_var.add_ptr(out, mem_table_id, z3_off, pc);
-          // todo: do we care about the value of out?
-          // how to deal with ptr_to_map_value
-        }
+      z3::expr z3_stack_off = info_list[i].off + off;
+      // get the concrete value of z3_stack_off
+      uint64_t stack_off = get_uint64_from_bv64(z3_stack_off, true);
+      // check whether stack_off is the off_start of a pointer
+      vector<ptr_info> ptr_info_list;
+      sv.mem_var.get_ptr_info_in_stack_state(ptr_info_list, stack_off);
+      if (ptr_info_list.size() == 0) {
+        flag_ptr_stack = false;
+        break;
+      }
+      for (int j = 0; j < ptr_info_list.size(); j++) {
+        int mem_table_id = ptr_info_list[j]._mem_table_id;
+        int off = ptr_info_list[j]._off;
+        z3::expr z3_off = to_expr((int64_t)off);
+        z3::expr pc = ptr_info_list[j]._path_cond;
+        sv.mem_var.add_ptr(out, mem_table_id, z3_off, pc);
+        // todo: do we care about the value of out?
+        // how to deal with ptr_to_map_value
       }
     }
 
@@ -240,7 +234,7 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
   z3::expr path_cond = sv.mem_var.get_block_path_cond(block) && cond;
   z3::expr f = Z3_true;
   vector<int> ids;
-  vector<vector<mem_ptr_info>> info_list;
+  vector<mem_ptr_info> info_list;
   sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
   // cout << "enter predicate_st_byte" << endl;
   // cout << "addr: " << addr << endl;
@@ -248,40 +242,38 @@ z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv
   // for (int i = 0; i < ids.size(); i++) cout << ids[i] << " " << info_list[i].off << " " << info_list[i].path_cond << endl;
   if (ids.size() == 0) {string s = "error!!!"; throw (s); return Z3_true;} // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
-    for (int j = 0; j < info_list[i].size(); j++) {
-      z3::expr is_valid = sv.update_is_valid();
-      z3::expr cond = path_cond && info_list[i][j].path_cond;
-      f = f && (is_valid == cond);
-      // safety check of BPF_ST storing in the input memory is not allowed
-      if (bpf_st) {
-        bool is_input_mem_table = false;
-        int input_mem_table = MEM_TABLE_pkt;
-        if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
-          is_input_mem_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs));
-        } else {
-          is_input_mem_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt));
-        }
-        if (is_input_mem_table && smt_var::enable_multi_mem_tables) {
-          // todo: safety check of a single mem table has not been implemented, so skip here
-          string err_msg = "BPF_ST stores into PTR_TO_CTX reg is not allowed";
-          throw (err_msg);
-        }
-      }
-      bool is_addr_off_table = false;
-      if (enable_addr_off) {
-        is_addr_off_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
-                            (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
-                            (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs)) ||
-                            (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_skb));
-        if (smt_var::is_win) is_addr_off_table = true;
-      }
-      if (is_addr_off_table) { // addr in the entry is offset
-        z3::expr addr_off = off + info_list[i][j].off;
-        // cout << "is_addr_off_table  addr_off: " << addr_off.simplify() << endl;
-        sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr_off, in.extract(7, 0));
+    z3::expr is_valid = sv.update_is_valid();
+    z3::expr cond = path_cond && info_list[i].path_cond;
+    f = f && (is_valid == cond);
+    // safety check of BPF_ST storing in the input memory is not allowed
+    if (bpf_st) {
+      bool is_input_mem_table = false;
+      int input_mem_table = MEM_TABLE_pkt;
+      if (mem_t::get_pgm_input_type() == PGM_INPUT_pkt_ptrs) {
+        is_input_mem_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs));
       } else {
-        sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr + off, in.extract(7, 0));
+        is_input_mem_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt));
       }
+      if (is_input_mem_table && smt_var::enable_multi_mem_tables) {
+        // todo: safety check of a single mem table has not been implemented, so skip here
+        string err_msg = "BPF_ST stores into PTR_TO_CTX reg is not allowed";
+        throw (err_msg);
+      }
+    }
+    bool is_addr_off_table = false;
+    if (enable_addr_off) {
+      is_addr_off_table = (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) ||
+                          (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt)) ||
+                          (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_pkt_ptrs)) ||
+                          (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_skb));
+      if (smt_var::is_win) is_addr_off_table = true;
+    }
+    if (is_addr_off_table) { // addr in the entry is offset
+      z3::expr addr_off = off + info_list[i].off;
+      // cout << "is_addr_off_table  addr_off: " << addr_off.simplify() << endl;
+      sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr_off, in.extract(7, 0));
+    } else {
+      sv.mem_var.add_in_mem_table_wt(ids[i], block, is_valid, addr + off, in.extract(7, 0));
     }
   }
   return f;
@@ -406,7 +398,7 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr ou
   // cout << "addr: " << addr << endl;
   z3::expr f = Z3_true;
   vector<int> ids;
-  vector<vector<mem_ptr_info>> info_list;
+  vector<mem_ptr_info> info_list;
   sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
   // cout << "enter predicate_ld_byte" << endl;
   // cout << "addr: " << addr << endl;
@@ -414,10 +406,7 @@ z3::expr predicate_ld_byte(z3::expr addr, z3::expr off, smt_var& sv, z3::expr ou
   // cout << "ids.size(): " << ids.size() << endl;
   if (ids.size() == 0) {string s = "error!!!"; throw (s); return Z3_true;} // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
-    for (int j = 0; j < info_list[i].size(); j++) {
-      f = f && predicate_ld_byte_for_one_mem_table(ids[i], info_list[i][j], addr, off,
-          sv, out, block, cond, enable_addr_off, is_win);
-    }
+    f = f && predicate_ld_byte_for_one_mem_table(ids[i], info_list[i], addr, off, sv, out, block, cond, enable_addr_off, is_win);
   }
   return f;
 }
@@ -1915,19 +1904,17 @@ z3::expr stack_safety_chk(z3::expr addr_off, int size, smt_var& sv) {
 z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off) {
   z3::expr f = Z3_true;
   vector<int> ids;
-  vector<vector<mem_ptr_info>> info_list;
+  vector<mem_ptr_info> info_list;
   sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
   if (ids.size() == 0) {string s = "error!!!"; throw (s); return Z3_true;} // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
     if (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
-      for (int j = 0; j < info_list[i].size(); j++) {
-        z3::expr addr_off = off + info_list[i][j].off;
-        if (! enable_addr_off) {
-          addr_off = addr + off - sv.get_stack_bottom_addr();
-        }
-        z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
-        f = f && z3::implies(info_list[i][j].path_cond, stack_chk);
+      z3::expr addr_off = off + info_list[i].off;
+      if (! enable_addr_off) {
+        addr_off = addr + off - sv.get_stack_bottom_addr();
       }
+      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
+      f = f && z3::implies(info_list[i].path_cond, stack_chk);
     }
   }
   return f;
@@ -1936,19 +1923,16 @@ z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool
 z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off) {
   z3::expr f = Z3_true;
   vector<int> ids;
-  vector<vector<mem_ptr_info>> info_list;
+  vector<mem_ptr_info> info_list;
   sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
   if (ids.size() == 0) {string s = "error!!!"; throw (s); return Z3_true;} // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
     if (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
-      for (int j = 0; j < info_list[i].size(); j++) {
-        z3::expr addr_off = off + info_list[i][j].off;
-        if (! enable_addr_off) {
-          addr_off = addr + off - sv.get_stack_bottom_addr();
-        }
-        z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
-        f = f && z3::implies(info_list[i][j].path_cond, stack_chk);
-      }
+      z3::expr addr_off = off + info_list[i].off;
+      if (! enable_addr_off) {
+        addr_off = addr + off - sv.get_stack_bottom_addr();
+      }      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
+      f = f && z3::implies(info_list[i].path_cond, stack_chk);
     }
   }
   return f;
@@ -1957,18 +1941,16 @@ z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool
 z3::expr safety_chk_st(z3::expr addr, z3::expr off, int size, smt_var& sv, bool enable_addr_off) {
   z3::expr f = Z3_true;
   vector<int> ids;
-  vector<vector<mem_ptr_info>> info_list;
+  vector<mem_ptr_info> info_list;
   sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
   if (ids.size() == 0) {string s = "error!!!"; throw (s); return Z3_true;} // todo: addr is not a pointer
   for (int i = 0; i < ids.size(); i++) {
     if (ids[i] == sv.mem_var.get_mem_table_id(MEM_TABLE_stack)) {
-      for (int j = 0; j < info_list[i].size(); j++) {
-        z3::expr addr_off = off + info_list[i][j].off;
-        if (! enable_addr_off) {
-          addr_off = addr + off - sv.get_stack_bottom_addr();
-        }      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
-        f = f && z3::implies(info_list[i][j].path_cond, stack_chk);
-      }
+      z3::expr addr_off = off + info_list[i].off;
+      if (! enable_addr_off) {
+        addr_off = addr + off - sv.get_stack_bottom_addr();
+      }      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
+      f = f && z3::implies(info_list[i].path_cond, stack_chk);
     }
   }
   return f;
