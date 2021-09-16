@@ -23,8 +23,7 @@ class inst_static_state {
   void copy_reg_state(int dst_reg, int src_reg);
   void set_reg_state(int reg, int type, int off = 0);
   void set_reg_state(int reg, register_state rs);
-  void insert_reg_state(inst_static_state& iss);
-  void insert_stack_state(inst_static_state& iss);
+  void insert_state(inst_static_state& iss);
   void insert_live_reg(int reg);
   void insert_live_off(int type, int off);
   void insert_live_var(inst_static_state& iss);

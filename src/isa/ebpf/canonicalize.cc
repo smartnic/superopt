@@ -182,7 +182,7 @@ void inst_static_state::set_reg_state(int reg, register_state rs) {
 }
 
 // insert iss.reg_state into self.reg_state
-void inst_static_state::insert_reg_state(inst_static_state& iss) {
+void inst_static_state::insert_state(inst_static_state& iss) {
   for (int reg = 0; reg < NUM_REGS; reg++) {
     for (int i = 0; i < iss.reg_state[reg].size(); i++) {
       // search reg_state in self.reg_state. if it is, no need to insert
@@ -199,30 +199,7 @@ void inst_static_state::insert_reg_state(inst_static_state& iss) {
     }
 
   }
-}
-
-void inst_static_state::insert_stack_state(inst_static_state& iss) {
-  // insert stack_state
-  for (auto it = iss.stack_state.begin(); it != iss.stack_state.end(); it++) {
-    int off = it->first;
-    auto it1 = stack_state.find(off);
-    if (it1 == stack_state.end()) {
-      stack_state[off] = it->second;
-    } else {
-      for (int i = 0; i < it->second.size(); i++) {
-        bool flag = false;
-        for (int j = 0; j < it1->second.size(); j++) {
-          if (it->second[i] == it1->second[j]) {
-            flag = true;
-            break;
-          }
-        }
-        if (! flag) {
-          it1->second.push_back(it->second[i]);
-        }
-      }
-    }
-  }
+  // todo: insert stack_state
 }
 
 void inst_static_state::insert_live_reg(int reg) {
@@ -489,14 +466,8 @@ void type_const_inference_inst_STXDW(inst_static_state& iss, inst& insn) {
         if (iss.stack_state.find(o) == iss.stack_state.end()) {
           iss.stack_state[o] = {rs};
         } else {
-          bool found = false;
-          for (int i = 0; i < iss.stack_state[o].size(); i++) {
-            if (iss.stack_state[o][i] == rs) {
-              found = true;
-              break;
-            }
-          }
-          if (! found) iss.stack_state[o].push_back(rs);
+          // todo: remove duplicate states
+          iss.stack_state[o].push_back(rs);
         }
       }
     }
@@ -709,8 +680,7 @@ void type_const_inference_pgm(prog_static_state& pss, inst* program, int len) {
       int block_in_insn = g.nodes[block_in]._end;
       type_const_inference_inst_block_start(iss, block_s, block_in_insn, program[block_in_insn]);
       // ss[block_s].insert_reg_state(bss[block_in]);
-      ss[block_s].insert_reg_state(iss);
-      ss[block_s].insert_stack_state(iss);
+      ss[block_s].insert_state(iss);
     }
     // process the block from the first block insn
     for (int j = block_s; j < block_e; j++) {
@@ -719,7 +689,6 @@ void type_const_inference_pgm(prog_static_state& pss, inst* program, int len) {
     }
     // update the basic block post register states
     bss[block].reg_state = ss[block_e].reg_state;
-    bss[block].stack_state = ss[block_e].stack_state;
     type_const_inference_inst(bss[block], program[block_e]);
   }
 }
