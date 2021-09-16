@@ -62,6 +62,7 @@ void eq_check(inst* p1, int len1, inst* p2, int len2, int expected, string test_
 void win_eq_check(inst* p1, int len1, inst* p2, int len2, int win_start, int win_end,
                   int expected, string test_name) {
   validator vld(p1, len1, true, win_start, win_end);
+  cout << "set orig end" << endl;
   vld._enable_prog_eq_cache = false;
   print_test_res(vld.is_equal_to(p1, len1, p2, len2) == expected, test_name);
 }
