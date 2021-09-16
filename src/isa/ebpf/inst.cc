@@ -381,9 +381,6 @@ ostream& operator<<(ostream& out, const inst& insn) {
     if (insn.is_ldmapid()) out << "LDMAPID " << insn._dst_reg << " " << insn._imm << endl;
     else if (insn.is_movdwxc()) {
       out << "MOVDWXC " << insn._dst_reg << " " << insn._imm64 << endl;
-    } else if (insn.is_ldmapval()) {
-      out << "LDMAPVAL " << insn._dst_reg << " "
-          << (uint32_t)insn._imm64 << " " << (uint32_t)(insn._imm64 >> 32) << endl;
     } else {
       out << "unknown opcode: "
           << insn._opcode << " " << insn._dst_reg << " " << insn._src_reg << " "
@@ -1017,11 +1014,6 @@ bool inst::is_ldmapid() const {
 
 bool inst::is_movdwxc() const {
   if ((_opcode == LDDW) && (_src_reg == 0)) return true;
-  else return false;
-}
-
-bool inst::is_ldmapval() const {
-  if ((_opcode == LDDW) && (_src_reg == 2)) return true;
   else return false;
 }
 
@@ -1735,7 +1727,7 @@ void safety_chk(inst & insn, prog_state & ps) {
 // set the second insn as NOP
 void convert_bpf_pgm_to_superopt_pgm(inst* program, int length) {
   for (int i = 0; i < length; i++) {
-    if (program[i].is_movdwxc() || program[i].is_ldmapval()) {
+    if (program[i].is_movdwxc()) {
       assert(i + 1 < length);
       uint64_t imm32_1 = L32(program[i]._imm);
       uint64_t imm32_2 = L32(program[i + 1]._imm);
@@ -1750,7 +1742,7 @@ void convert_bpf_pgm_to_superopt_pgm(inst* program, int length) {
 
 void convert_superopt_pgm_to_bpf_pgm(inst* program, int length) {
   for (int i = 0; i < length; i++) {
-    if (program[i].is_movdwxc() || program[i].is_ldmapval()) {
+    if (program[i].is_movdwxc()) {
       assert(i + 1 < length);
       uint64_t imm64 = program[i]._imm64;
       uint32_t imm32_1 = L32(imm64);
