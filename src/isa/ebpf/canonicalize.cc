@@ -7,8 +7,6 @@
 
 default_random_engine gen_ebpf_cano;
 uniform_real_distribution<double> unidist_ebpf_cano(0.0, 1.0);
-void get_mem_write_offs(unordered_map<int, unordered_set<int>>& mem_write_offs,
-                        vector<vector<register_state>>& reg_state, inst& insn);
 
 // if an instruction is real NOP, set it as JA 0
 void set_nops_as_JA0(inst* program, int len) {
@@ -477,8 +475,7 @@ void type_const_inference_inst_STXDW(inst_static_state& iss, inst& insn) {
   bool src_reg_ptr = must_be_ptr(iss.reg_state[src_reg]);
   // check whether dst_reg is a stack pointer
   bool dst_reg_stack_ptr = must_be_ptr_with_type(iss.reg_state[dst_reg], PTR_TO_STACK);
-  if (src_reg_ptr && dst_reg_stack_ptr) { // store a pointer (src_reg) on stack (dst_reg)
-    // all offsets of stack (dst_reg)
+  if (src_reg_ptr && dst_reg_stack_ptr) { // store a pointer on stack
     unordered_set<int> stack_offs = {};
     for (int i = 0; i < iss.reg_state[dst_reg].size(); i++) {
       stack_offs.insert(iss.reg_state[dst_reg][i].off + off);
@@ -489,43 +486,21 @@ void type_const_inference_inst_STXDW(inst_static_state& iss, inst& insn) {
       rs = iss.reg_state[src_reg][i];
 
       for (auto o : stack_offs) {
-        auto it = iss.stack_state.find(o);
-        if (it == iss.stack_state.end()) {
+        if (iss.stack_state.find(o) == iss.stack_state.end()) {
           iss.stack_state[o] = {rs};
         } else {
           bool found = false;
-          for (int i = 0; i < it->second.size(); i++) {
-            if (it->second[i] == rs) {
+          for (int i = 0; i < iss.stack_state[o].size(); i++) {
+            if (iss.stack_state[o][i] == rs) {
               found = true;
               break;
             }
           }
-          if (! found) it->second.push_back(rs);
+          if (! found) iss.stack_state[o].push_back(rs);
         }
       }
     }
-
   }
-}
-
-void  type_const_inference_inst_ST(inst_static_state& iss, inst& insn) {
-  // erase stack pointer off if overwritten
-  unordered_map<int, unordered_set<int>> mem_write_offs;
-  get_mem_write_offs(mem_write_offs, iss.reg_state, insn);
-  auto it = mem_write_offs.find(PTR_TO_STACK);
-  if (it != mem_write_offs.end()) {
-    unordered_set<int>& offs_w = it->second;
-    for (auto it1 = offs_w.begin(); it1 != offs_w.end(); it1++) {
-      int off = *it1;
-      int off_ptr = off - (off % 8); // 8 bytes is the pointer size
-      if (iss.stack_state.find(off_ptr) != iss.stack_state.end()) {
-        iss.stack_state.erase(off_ptr);
-      }
-    }
-  }
-
-  // update pointer stored on stack
-  type_const_inference_inst_STXDW(iss, insn);
 }
 
 // read pointer from stack
@@ -596,22 +571,20 @@ void type_const_inference_inst_BPF_FUNC_map_lookup_elem(inst_static_state& iss, 
 // After executing the insn, update register type in inst_static_state
 void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   int opcode_type = insn.get_opcode_type();
-  if (opcode_type == OP_ST) {
-    type_const_inference_inst_ST(iss, insn);
-    return;
-  }
-
   vector<int> opcodes_upd_dst_reg = {OP_OTHERS, OP_LD, OP_CALL};
   bool flag = false;
-  for (int i = 0; i < opcodes_upd_dst_reg.size(); i++) {
-    if (opcode_type == opcodes_upd_dst_reg[i]) {
-      flag = true;
-      break;
+  if (insn._opcode == STXDW) {
+    flag = true;
+  }
+  if (! flag) {
+    for (int i = 0; i < opcodes_upd_dst_reg.size(); i++) {
+      if (opcode_type == opcodes_upd_dst_reg[i]) {
+        flag = true;
+        break;
+      }
     }
   }
-
   if (! flag) return;
-
   int opcode = insn._opcode;
   int dst_reg = insn._dst_reg;
   int src_reg = insn._src_reg;
@@ -662,6 +635,9 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   } else if (opcode == ADD64XY) {
     // update concrete value or pointer offset
     type_const_inference_inst_ADD64XY(iss, insn);
+  } else if (opcode == STXDW) {
+    // update pointer stored on stack
+    type_const_inference_inst_STXDW(iss, insn);
   } else if (opcode == LDXDW) {
     // read pointer stored on stack
     type_const_inference_inst_LDXDW(iss, insn);
