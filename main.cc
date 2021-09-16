@@ -552,13 +552,6 @@ int main(int argc, char* argv[]) {
   if (! parse_input(argc, argv, in_para)) return 0;
 
   string output_file = in_para.path_out + "log.txt";
-  // create output_file if not exist
-  if (access(in_para.path_out.c_str(), 0) != 0) {
-    if (mkdir(in_para.path_out.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
-      cout << "ERROR: mkdir output_file " << in_para.path_out << " failed" << endl;
-      return 0;
-    }
-  }
   std::ofstream out(output_file);
   std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
   std::cout.rdbuf(out.rdbuf()); //redirect std::cout to output_file
