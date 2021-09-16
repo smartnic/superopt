@@ -113,7 +113,7 @@ inline z3::expr predicate_arsh32(z3::expr in1, z3::expr in2, z3::expr out);
 inline z3::expr predicate_st8(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
 inline z3::expr predicate_st16(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
 inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
-z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
+inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool bpf_st = false, bool enable_addr_off = true);
 // out == (read addr+off, sz, m); type: addr, off, out: bv64;
 inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
@@ -459,6 +459,12 @@ inline z3::expr predicate_st32(z3::expr in, z3::expr addr, z3::expr off, smt_var
                                unsigned int block, bool bpf_st, bool enable_addr_off) {
   return (predicate_st16(in.extract(15, 0), addr, off, sv, block, bpf_st, enable_addr_off) &&
           predicate_st16(in.extract(31, 16), addr, off + to_expr(2, 64), sv, block, bpf_st, enable_addr_off));
+}
+
+inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var &sv,
+                               unsigned int block, bool bpf_st, bool enable_addr_off) {
+  return (predicate_st32(in.extract(31, 0), addr, off, sv, block, bpf_st, enable_addr_off) &&
+          predicate_st32(in.extract(63, 32), addr, off + to_expr(4, 64), sv, block, bpf_st, enable_addr_off));
 }
 
 // implemented in inst_codegen.cc
