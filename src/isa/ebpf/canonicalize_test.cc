@@ -585,20 +585,6 @@ void test3() {
   p16_res = p16_res && (pss.static_state[4].stack_state.size() == 0);
   print_test_res(p16_res, "16");
 
-  // test constant track of lsh when dst_reg's value can be inferred
-  inst p17[] = {inst(MOV64XC, 0, 4),
-                inst(LSH64XC, 0, 2), // r0 = 4 << 2 = 16
-                inst(EXIT),
-               };
-  static_analysis(pss, p17, sizeof(p17) / sizeof(inst));
-  // check r0 state before executing insn 3
-  vector<register_state> expected_insn3_r0_p17;
-  register_state rs_p17;
-  rs_p17.type = SCALAR_VALUE;
-  rs_p17.val_flag = true;
-  rs_p17.val = 16;
-  print_test_res(reg_state_is_equal(expected_insn3_r0_p17, pss.static_state[3].reg_state[0]), "17");  
-
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
                  inst(STH, 10, -8, 0xff),
