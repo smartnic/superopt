@@ -298,6 +298,7 @@ z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
         }
       }
     }
+    if (flag_ptr_stack) return f;
     // for (int i = 0; i < ids.size(); i++) {
     //   if (ids[i] != stack_mem_table) {
     //     flag_ptr_stack = false;
