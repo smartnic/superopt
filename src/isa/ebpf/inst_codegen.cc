@@ -204,11 +204,18 @@ bool is_a_ptr_in_mem_table(smt_wt& mem_table, int entry_start) {
     if (ptr_expr_id != id) return false;
   }
 
-  // check ptr_off, ptr_off should be 0, 1, ~ 7 (pointer is added from 0 to 7)
+  // check ptr_off, ptr_off should be 0, 1, ~ 7
+  vector<int> off_count(ptr_sz);
+  for (int i = 0; i < off_count.size(); i++) {
+    off_count[i] = 0;
+  }
   for (int i = entry_start; i <= entry_end; i++) {
     int ptr_off = mem_table.ptr_info[i].ptr_off;
-    int ptr_off_exp = i - entry_start;
-    if (ptr_off != ptr_off_exp) return false;
+    if ((ptr_off < 0) || (ptr_off >= off_count.size())) return false;
+    off_count[ptr_off]++;
+  }
+  for (int i = 0; i < off_count.size(); i++) {
+    if (off_count[i] != 1) return false;
   }
   return true;
 }
