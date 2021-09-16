@@ -473,9 +473,8 @@ void type_const_inference_inst_STXDW(inst_static_state& iss, inst& insn) {
   int dst_reg = insn._dst_reg;
   int src_reg = insn._src_reg;
   int off = insn._off;
-  // check whether src_reg is a pointer or CONST_PTR_TO_MAP
+  // check whether src_reg is a pointer
   bool src_reg_ptr = must_be_ptr(iss.reg_state[src_reg]);
-  src_reg_ptr = src_reg_ptr || must_be_ptr_with_type(iss.reg_state[src_reg], CONST_PTR_TO_MAP);
   // check whether dst_reg is a stack pointer
   bool dst_reg_stack_ptr = must_be_ptr_with_type(iss.reg_state[dst_reg], PTR_TO_STACK);
   if (src_reg_ptr && dst_reg_stack_ptr) { // store a pointer (src_reg) on stack (dst_reg)
@@ -488,10 +487,6 @@ void type_const_inference_inst_STXDW(inst_static_state& iss, inst& insn) {
     for (int i = 0; i < iss.reg_state[src_reg].size(); i++) {
       register_state rs;
       rs = iss.reg_state[src_reg][i];
-      if (rs.type == CONST_PTR_TO_MAP) {
-        cout << "type_const_inference_inst_STXDW: adding CONST_PTR_TO_MAP" << endl;
-        cout << rs << endl;
-      }
 
       for (auto o : stack_offs) {
         auto it = iss.stack_state.find(o);
@@ -656,26 +651,19 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   int src_reg = insn._src_reg;
   int imm = insn._imm;
   int off = insn._off;
-  // keep track of pointers and constant
-
-  // deal with pkt pointers: pkt_start and pkt_end
-  // check 1. src_reg's type is PTR_TO_CTX
-  // 2. pkt_start: insn is: LDXW ri rj 0 (ri = *(u32*)(rj+pkt_s_off))
-  // 3. pkt_end: insn is: LDXW ri rj 4 (ri = *(u32*)(rj+pkt_e_off))
+  // keep strack of pointers and constant
   int pgm_input_type = mem_t::get_pgm_input_type();
-  int pkt_s_off = 0, pkt_e_off = 4;
-  if (pgm_input_type == PGM_INPUT_skb) {
-    pkt_s_off = SKB_data_s_off;
-    pkt_e_off = SKB_data_e_off;
-  }
-  if ((pgm_input_type == PGM_INPUT_pkt_ptrs) ||
-      (pgm_input_type == PGM_INPUT_skb)) {
+  if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
+    // deal with pkt pointers: pkt_start and pkt_end
+    // check 1. src_reg's type is PTR_TO_CTX
+    // 2. pkt_start: insn is: LDXW ri rj 0 (ri = *(u32*)(rj+0))
+    // 3. pkt_end: insn is: LDXW ri rj 4 (ri = *(u32*)(rj+4))
     if ((opcode == LDXW) && (iss.reg_state[src_reg].size() == 1)) {
       if (iss.reg_state[src_reg][0].type == PTR_TO_CTX) {
-        if ((iss.reg_state[src_reg][0].off == 0) && (off == pkt_s_off)) {
+        if ((iss.reg_state[src_reg][0].off == 0) && (off == 0)) {
           iss.set_reg_state(dst_reg, PTR_TO_PKT, 0);
           return; // return here in case the reg state is overwritten by the remaining code
-        } else if ((iss.reg_state[src_reg][0].off == 0) && (off == pkt_e_off)) {
+        } else if ((iss.reg_state[src_reg][0].off == 0) && (off == 4)) {
           iss.set_reg_state(dst_reg, PTR_TO_PACKET_END, 0);
           return;
         }
@@ -1699,11 +1687,10 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state 
             ptr_val = inputs[i].input_simu_pkt_s + ptr_off;
           }
         } else if (ptr_type == PTR_TO_PKT) {
-          if ((pgm_input_type == PGM_INPUT_pkt_ptrs) || (pgm_input_type = PGM_INPUT_skb)) {
+          if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
             ptr_val = inputs[i].input_simu_pkt_ptrs[0] + ptr_off;
           } else {
-            cout << "ERROR: [gen_random_input_for_win] no pkt memory for this program intput type: "
-                 << pgm_input_type << endl;
+            cout << "ERROR: [gen_random_input_for_win] no pkt memory for this program intput type" << endl;
           }
         } else if (ptr_type == PTR_TO_MAP_VALUE) {
           int map_id = elem.second[idx].map_id;
@@ -1713,14 +1700,8 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state 
           assert(map_id >= 0);
           assert(map_id < mem_t::maps_number());
           ptr_val = stack_top + map_v_mem_off_start + map_v_off;
-        } else if (ptr_type == CONST_PTR_TO_MAP) {
-          assert(elem.second[idx].val_flag);
-          int map_id = elem.second[idx].val;
-          assert(map_id >= 0);
-          assert(map_id < mem_t::maps_number());
-          ptr_val = map_id;
         } else {
-          cout << "ERROR: [gen_random_input_for_win] not support this ptr type: " << ptr_type << endl;
+          cout << "ERROR: [gen_random_input_for_win] not support this ptr type" << endl;
         }
         // write ptr value on stack
         for (int off_i = 0; off_i < ptr_sz; off_i++) {
