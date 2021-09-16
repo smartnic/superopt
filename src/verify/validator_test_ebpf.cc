@@ -62,7 +62,6 @@ void eq_check(inst* p1, int len1, inst* p2, int len2, int expected, string test_
 void win_eq_check(inst* p1, int len1, inst* p2, int len2, int win_start, int win_end,
                   int expected, string test_name) {
   validator vld(p1, len1, true, win_start, win_end);
-  cout << "set orig end" << endl;
   vld._enable_prog_eq_cache = false;
   print_test_res(vld.is_equal_to(p1, len1, p2, len2) == expected, test_name);
 }
@@ -1548,46 +1547,6 @@ void test13() {
   win_eq_check(p5, p5_len, p5, p5_len, win_start, win_end, 1, "5.1");
   win_eq_check(p5, p5_len, p5_1, p5_len, win_start, win_end, 0, "5.2");
 
-  mem_t::_layout.clear();
-  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
-  mem_t::set_pkt_sz(16);
-  mem_t::add_map(map_attr(16, 32, 16)); // key_sz = 2 bytes, val_sz = 4 bytes
-  mem_t::add_map(map_attr(16, 32, 16));
-  // test pointer stored on stack and read from stack
-  inst p6[] = {inst(STXDW, 10, -8, 1), // store pointer on stack
-               inst(LDXDW, 0, 10, -8), // read pointer from stack
-               inst(LDXB, 0, 0, 0),    // 2:
-               inst(EXIT),
-              };
-  inst p6_1[] = {inst(STXDW, 10, -8, 1), // store pointer on stack
-                 inst(LDXDW, 0, 10, -8), // read pointer from stack
-                 inst(LDXB, 0, 0, 1),    // 2:
-                 inst(EXIT),
-                };
-  int p6_len = sizeof(p6) / sizeof(inst);
-  win_start = 2, win_end = 2;
-  win_eq_check(p6, p6_len, p6, p6_len, win_start, win_end, 1, "6.1");
-  win_eq_check(p6, p6_len, p6_1, p6_len, win_start, win_end, 0, "6.2");
-  win_start = 1, win_end = 2;
-  win_eq_check(p6, p6_len, p6, p6_len, win_start, win_end, 1, "6.3");
-  win_eq_check(p6, p6_len, p6_1, p6_len, win_start, win_end, 0, "6.4");
-
-  // test pointer stored on stack and read from stack: two possibilities with different pointers
-  inst p7[] = {inst(STXDW, 10, -8, 1),
-               inst(MOV64XC, 0, 0),
-               inst(JEQXC, 0, 0, 2),
-               inst(ADD64XC, 1, 2),
-               inst(STXDW, 10, -8, 1),
-               inst(LDXDW, 0, 10, -8),
-               inst(LDXB, 0, 0, 0),   // 6:
-               inst(EXIT),
-              };
-  int p7_len = sizeof(p7) / sizeof(inst);
-  win_start = 6, win_end = 6;
-  win_eq_check(p7, p7_len, p7, p7_len, win_start, win_end, 1, "7.1");
-
-  return;
-
   // test xdp_exception
   mem_t::_layout.clear();
   const int xdp_exp_len = N16;
@@ -1932,8 +1891,6 @@ int main() {
   // please update inst::max_prog_len here
   inst::max_prog_len = TEST_PGM_MAX_LEN;
   try {
-    test13();
-    return 0;
     test1();
     test2();
     test3();

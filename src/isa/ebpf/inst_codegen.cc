@@ -17,7 +17,6 @@ int mem_table_type_2_reg_ptr_type(int mem_table_type);
 z3::expr smt_array_mem_set_same_input(smt_var& sv1, smt_var& sv2, int mem_sz, int mem_table_type, int map_id = -1);
 
 z3::expr predicate_get_prandom_u32_helper(z3::expr out, smt_var&sv);
-uint64_t get_uint64_from_bv64(z3::expr & z3_val, bool assert);
 
 uint64_t compute_helper_function(int func_id, uint64_t r1, uint64_t r2, uint64_t r3,
                                  uint64_t r4, uint64_t r5, simu_real& sr, prog_state& ps) {
@@ -180,52 +179,6 @@ z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, 
           predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block, Z3_true, enable_addr_off, is_win) &&
           predicate_ld_byte(addr, off + 2, sv, out.extract(23, 16), block, Z3_true, enable_addr_off, is_win) &&
           predicate_ld_byte(addr, off + 3, sv, out.extract(31, 24), block, Z3_true, enable_addr_off, is_win));
-}
-
-z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
-                        unsigned int block, bool enable_addr_off, bool is_win) {
-  z3::expr f = Z3_true;
-  if (is_win) {
-    // check whether load a pointer from the stack
-    bool flag_ptr_stack = true;
-    int stack_mem_table = sv.mem_var.get_mem_table_id(MEM_TABLE_stack);
-    vector<int> ids;
-    vector<mem_ptr_info> info_list;
-    sv.mem_var.get_mem_ptr_info(ids, info_list, addr);
-    for (int i = 0; i < ids.size(); i++) {
-      if (ids[i] != stack_mem_table) {
-        flag_ptr_stack = false;
-        break;
-      }
-      z3::expr z3_stack_off = info_list[i].off + off;
-      // get the concrete value of z3_stack_off
-      uint64_t stack_off = get_uint64_from_bv64(z3_stack_off, true);
-      // check whether stack_off is the off_start of a pointer
-      vector<ptr_info> ptr_info_list;
-      sv.mem_var.get_ptr_info_in_stack_state(ptr_info_list, stack_off);
-      if (ptr_info_list.size() == 0) {
-        flag_ptr_stack = false;
-        break;
-      }
-      for (int j = 0; j < ptr_info_list.size(); j++) {
-        int mem_table_id = ptr_info_list[j]._mem_table_id;
-        int off = ptr_info_list[j]._off;
-        z3::expr z3_off = to_expr((int64_t)off);
-        z3::expr pc = ptr_info_list[j]._path_cond;
-        sv.mem_var.add_ptr(out, mem_table_id, z3_off, pc);
-        // todo: do we care about the value of out?
-        // how to deal with ptr_to_map_value
-      }
-    }
-
-    if (flag_ptr_stack) return f;
-  }
-
-  f = predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off, is_win);
-  for (int i = 1; i < 8; i++) {
-    f = f && predicate_ld_byte(addr, off + i, sv, out.extract(8 * i + 7, 8 * i), block, Z3_true, enable_addr_off, is_win);
-  }
-  return f;
 }
 
 z3::expr predicate_st_byte(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv,
@@ -1232,7 +1185,6 @@ z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
 
   smt_pgm_set_pre_stack_state_table(sv, input);
   f = f && input.input_constraint();
-  cout << "f: \n" << f.simplify() << endl;
   f = f && sv.mem_layout_constrain();
   return f;
 }
@@ -1618,9 +1570,8 @@ string z3_bv_2_hex_str(z3::expr z3_bv) {
 // if z3 bv64 is not a constant: 1. assert flag is true, assert(false)
 // 2. assert flag is false, return 0
 uint64_t get_uint64_from_bv64(z3::expr & z3_val, bool assert) {
-  z3::expr x = z3_val.simplify();
-  bool is_num = x.is_numeral();
-  if (is_num) return x.get_numeral_uint64();
+  bool is_num = z3_val.is_numeral();
+  if (is_num) return z3_val.get_numeral_uint64();
   if (assert) {
     assert(false);
   } else {

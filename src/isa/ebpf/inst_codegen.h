@@ -118,7 +118,7 @@ inline z3::expr predicate_st64(z3::expr in, z3::expr addr, z3::expr off, smt_var
 inline z3::expr predicate_ld8(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 z3::expr predicate_ld32(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
-z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
+inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 // *(u64*)(addr+off) += in
 z3::expr predicate_xadd64(z3::expr in, z3::expr addr, z3::expr off, smt_var& sv, unsigned int block = 0, bool enable_addr_off = true, bool is_win = false);
 // *(u32*)(addr+off) += in
@@ -482,6 +482,15 @@ inline z3::expr predicate_ld16(z3::expr addr, z3::expr off, smt_var& sv, z3::exp
   return ((out.extract(63, 16) == to_expr(0, 48)) &&
           predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off, is_win) &&
           predicate_ld_byte(addr, off + 1, sv, out.extract(15, 8), block, Z3_true, enable_addr_off, is_win));
+}
+
+inline z3::expr predicate_ld64(z3::expr addr, z3::expr off, smt_var& sv, z3::expr out,
+                               unsigned int block, bool enable_addr_off, bool is_win) {
+  z3::expr f = predicate_ld_byte(addr, off, sv, out.extract(7, 0), block, Z3_true, enable_addr_off, is_win);
+  for (int i = 1; i < 8; i++) {
+    f = f && predicate_ld_byte(addr, off + i, sv, out.extract(8 * i + 7, 8 * i), block, Z3_true, enable_addr_off, is_win);
+  }
+  return f;
 }
 
 string ld_n_bytes_from_addr(const uint8_t *v, const size_t s);
