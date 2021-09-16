@@ -182,7 +182,7 @@ void inst_static_state::set_reg_state(int reg, register_state rs) {
 }
 
 // insert iss.reg_state into self.reg_state
-void inst_static_state::insert_state(inst_static_state& iss) {
+void inst_static_state::insert_reg_state(inst_static_state& iss) {
   for (int reg = 0; reg < NUM_REGS; reg++) {
     for (int i = 0; i < iss.reg_state[reg].size(); i++) {
       // search reg_state in self.reg_state. if it is, no need to insert
@@ -199,7 +199,6 @@ void inst_static_state::insert_state(inst_static_state& iss) {
     }
 
   }
-  // todo: insert stack_state
 }
 
 void inst_static_state::insert_live_reg(int reg) {
@@ -242,7 +241,6 @@ inst_static_state& inst_static_state::operator=(const inst_static_state &rhs) {
   live_var.regs = rhs.live_var.regs;
   live_var.mem = rhs.live_var.mem;
   min_pkt_sz = rhs.min_pkt_sz;
-  stack_state = rhs.stack_state;
   return *this;
 }
 
@@ -361,16 +359,7 @@ void type_const_inference_inst_block_start(inst_static_state& iss, int cur_insn,
   type_const_inference_inst_JNEXC(iss, block_in_insn, not_jmp);
 }
 
-bool must_be_ptr_with_type(vector<register_state>& rs, int pointer_type) {
-  if (rs.size() == 0) return false;
-  for (int i = 0; i < rs.size(); i++) {
-    if (rs[i].type != pointer_type) return false;
-  }
-  return true;
-}
-
 bool must_be_ptr(vector<register_state>& rs) {
-  if (rs.size() == 0) return false;
   for (int i = 0; i < rs.size(); i++) {
     if (! is_ptr(rs[i].type)) return false;
   }
@@ -379,7 +368,6 @@ bool must_be_ptr(vector<register_state>& rs) {
 
 // SCALAR_VALUE with val flag
 bool must_be_concrete_vals(vector<register_state>& rs) {
-  if (rs.size() == 0) return false;
   for (int i = 0; i < rs.size(); i++) {
     // Actually no need to check SCALAR_VALUE,
     // since only SCALAR_VALUE's val_flag can be true
@@ -442,64 +430,6 @@ void type_const_inference_inst_ADD64XY(inst_static_state& iss, inst& insn) {
   }
 }
 
-// update pointer stored on stack
-void type_const_inference_inst_STXDW(inst_static_state& iss, inst& insn) {
-  if (insn._opcode != STXDW) return;
-  int dst_reg = insn._dst_reg;
-  int src_reg = insn._src_reg;
-  int off = insn._off;
-  // check whether src_reg is a pointer
-  bool src_reg_ptr = must_be_ptr(iss.reg_state[src_reg]);
-  // check whether dst_reg is a stack pointer
-  bool dst_reg_stack_ptr = must_be_ptr_with_type(iss.reg_state[dst_reg], PTR_TO_STACK);
-  if (src_reg_ptr && dst_reg_stack_ptr) { // store a pointer on stack
-    unordered_set<int> stack_offs = {};
-    for (int i = 0; i < iss.reg_state[dst_reg].size(); i++) {
-      stack_offs.insert(iss.reg_state[dst_reg][i].off + off);
-    }
-
-    for (int i = 0; i < iss.reg_state[src_reg].size(); i++) {
-      register_state rs;
-      rs = iss.reg_state[src_reg][i];
-
-      for (auto o : stack_offs) {
-        if (iss.stack_state.find(o) == iss.stack_state.end()) {
-          iss.stack_state[o] = {rs};
-        } else {
-          // todo: remove duplicate states
-          iss.stack_state[o].push_back(rs);
-        }
-      }
-    }
-  }
-}
-
-// read pointer from stack
-void type_const_inference_inst_LDXDW(inst_static_state& iss, inst& insn) {
-  if (insn._opcode != LDXDW) return;
-  int dst_reg = insn._dst_reg;
-  int src_reg = insn._src_reg;
-  // set the default value
-  iss.set_reg_state(dst_reg, SCALAR_VALUE);
-  // check whether src_reg is a stack pointer
-  bool src_reg_stack_ptr = must_be_ptr_with_type(iss.reg_state[src_reg], PTR_TO_STACK);
-  if (src_reg_stack_ptr) {
-    iss.reg_state[dst_reg].clear();
-    for (int i = 0; i < iss.reg_state[src_reg].size(); i++) {
-      int off = iss.reg_state[src_reg][i].off + insn._off;
-      auto it = iss.stack_state.find(off);
-      if (it != iss.stack_state.end()) {
-        for (int j = 0; j < it->second.size(); j++) {
-          iss.reg_state[dst_reg].push_back(it->second[j]);
-        }
-      }
-    }
-    if (iss.reg_state[dst_reg].size() == 0) {
-      iss.set_reg_state(dst_reg, SCALAR_VALUE);
-    }
-  }
-}
-
 void type_const_inference_inst_BPF_FUNC_map_lookup_elem(inst_static_state& iss, inst& insn) {
   // get map id according to r1's value
   int map_id_reg = 1;
@@ -544,15 +474,10 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   int opcode_type = insn.get_opcode_type();
   vector<int> opcodes_upd_dst_reg = {OP_OTHERS, OP_LD, OP_CALL};
   bool flag = false;
-  if (insn._opcode == STXDW) {
-    flag = true;
-  }
-  if (! flag) {
-    for (int i = 0; i < opcodes_upd_dst_reg.size(); i++) {
-      if (opcode_type == opcodes_upd_dst_reg[i]) {
-        flag = true;
-        break;
-      }
+  for (int i = 0; i < opcodes_upd_dst_reg.size(); i++) {
+    if (opcode_type == opcodes_upd_dst_reg[i]) {
+      flag = true;
+      break;
     }
   }
   if (! flag) return;
@@ -606,12 +531,6 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
   } else if (opcode == ADD64XY) {
     // update concrete value or pointer offset
     type_const_inference_inst_ADD64XY(iss, insn);
-  } else if (opcode == STXDW) {
-    // update pointer stored on stack
-    type_const_inference_inst_STXDW(iss, insn);
-  } else if (opcode == LDXDW) {
-    // read pointer stored on stack
-    type_const_inference_inst_LDXDW(iss, insn);
   } else if (opcode == CALL) {
     iss.set_reg_state(0, SCALAR_VALUE);
     if (imm == BPF_FUNC_map_lookup_elem) type_const_inference_inst_BPF_FUNC_map_lookup_elem(iss, insn);
@@ -680,11 +599,11 @@ void type_const_inference_pgm(prog_static_state& pss, inst* program, int len) {
       int block_in_insn = g.nodes[block_in]._end;
       type_const_inference_inst_block_start(iss, block_s, block_in_insn, program[block_in_insn]);
       // ss[block_s].insert_reg_state(bss[block_in]);
-      ss[block_s].insert_state(iss);
+      ss[block_s].insert_reg_state(iss);
     }
     // process the block from the first block insn
     for (int j = block_s; j < block_e; j++) {
-      ss[j + 1] = ss[j]; // copy the previous state
+      ss[j + 1].reg_state = ss[j].reg_state; // copy the previous state
       type_const_inference_inst(ss[j + 1], program[j]); // update state according to the insn
     }
     // update the basic block post register states
