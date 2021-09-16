@@ -43,9 +43,7 @@ ostream& operator<< (ostream& out, const vector<inout> &_inout_vec) {
   return out;
 }
 
-examples::examples() {
-  _exs = {};
-}
+examples::examples() {}
 
 examples::~examples() {}
 
