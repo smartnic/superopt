@@ -1,7 +1,6 @@
 #pragma once
 
 #include <unordered_set>
-#include <unordered_map>
 #include "../../../src/verify/cfg.h"
 #include "inst.h"
 
@@ -17,13 +16,12 @@ class inst_static_state {
   vector<vector<register_state>> reg_state; // all possible states of registers
   live_variables live_var;
   unsigned int min_pkt_sz; // minimum pkt size before executing the insn.
-  unordered_map<int, vector<register_state>> stack_state; // stack start off and its state
 
   inst_static_state();
   void copy_reg_state(int dst_reg, int src_reg);
   void set_reg_state(int reg, int type, int off = 0);
   void set_reg_state(int reg, register_state rs);
-  void insert_state(inst_static_state& iss);
+  void insert_reg_state(inst_static_state& iss);
   void insert_live_reg(int reg);
   void insert_live_off(int type, int off);
   void insert_live_var(inst_static_state& iss);
