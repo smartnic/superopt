@@ -1555,12 +1555,11 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state 
           }
         } else if (inputs[i].reg_type[reg] == PTR_TO_MAP_VALUE) {
           int map_id = iss.reg_state[reg][sample].map_id;
-          // todo: assume one value
-          unsigned int map_v_mem_off_start = mem_t::get_mem_off_by_idx_in_map(map_id, 0);
-          int map_v_off = iss.reg_state[reg][sample].off;
+          int idx_in_map = iss.reg_state[reg][sample].off;
           assert(map_id >= 0);
           assert(map_id < mem_t::maps_number());
-          reg_v = stack_top + map_v_mem_off_start + map_v_off;
+          unsigned int mem_off = mem_t::get_mem_off_by_idx_in_map(map_id, idx_in_map);
+          reg_v = stack_top + mem_off;
         }
       } else if (iss.reg_state[reg][sample].val_flag) { // deal with constant
         reg_v = iss.reg_state[reg][sample].val;
@@ -1570,60 +1569,15 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state 
       inputs[i].regs[reg] = reg_v;
     }
 
-    // 3. Generte stack, use live_variable info and stack state
+    // 3. Generte stack, use live_variable info
     // live_var is the live vars after executing this insn, what we want is before
     live_variables live_vars_before = iss.live_var;
     live_analysis_inst(live_vars_before, iss.reg_state, insn);
     auto it = live_vars_before.mem.find(PTR_TO_STACK);
     if (it != live_vars_before.mem.end()) {
-      // set random values
       for (auto off : it->second) {
         inputs[i].stack_readble[off] = true;
         inputs[i].stack[off] = random_int(0, 0xff);
-      }
-      // set values from stack state
-      for (auto& elem : iss.stack_state) {
-        int stack_off_s = elem.first;
-        assert(stack_off_s >= 0);
-        int ptr_sz = 8; // 8 bytes
-        assert(stack_off_s <= (STACK_SIZE - ptr_sz));
-        // random choose a ptr
-        assert(elem.second.size() >= 1);
-        int idx = random_int(0, elem.second.size() - 1);
-        int ptr_type = elem.second[idx].type;
-        int ptr_off = elem.second[idx].off;
-        // get ptr value according
-        uint64_t ptr_val = 0;
-        if (ptr_type == PTR_TO_STACK) {
-          ptr_val = inputs[i].input_simu_r10 - STACK_SIZE + ptr_off;
-        } else if (ptr_type == PTR_TO_CTX) {
-          if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
-            ptr_val = inputs[i].input_simu_pkt_ptrs_s + ptr_off;
-          } else {
-            ptr_val = inputs[i].input_simu_pkt_s + ptr_off;
-          }
-        } else if (ptr_type == PTR_TO_PKT) {
-          if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
-            ptr_val = inputs[i].input_simu_pkt_ptrs[0] + ptr_off;
-          } else {
-            cout << "ERROR: [gen_random_input_for_win] no pkt memory for this program intput type" << endl;
-          }
-        } else if (ptr_type == PTR_TO_MAP_VALUE) {
-          int map_id = elem.second[idx].map_id;
-          // todo: assume one value
-          unsigned int map_v_mem_off_start = mem_t::get_mem_off_by_idx_in_map(map_id, 0);
-          int map_v_off = ptr_off;
-          assert(map_id >= 0);
-          assert(map_id < mem_t::maps_number());
-          ptr_val = stack_top + map_v_mem_off_start + map_v_off;
-        } else {
-          cout << "ERROR: [gen_random_input_for_win] not support this ptr type" << endl;
-        }
-        // write ptr value on stack
-        for (int off_i = 0; off_i < ptr_sz; off_i++) {
-          uint8_t v = ptr_val >> (off_i * NUM_BYTE_BITS);
-          inputs[i].stack[stack_off_s + off_i] = v;
-        }
       }
     }
   }
