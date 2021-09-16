@@ -1343,28 +1343,6 @@ void test6() {
   } else {
     print_test_res(false, "4");
   }
-
-  // test pointer (CONST_PTR_TO_MAP) from stack
-  inst p5[] = {INSN_LDMAPID(0, 1),      // 0: r0 = map1
-               inst(STXDW, 10, -8, 0),  // 1: store pointer
-               inst(LDXDW, 1, 10, -8),  // 2: load pointer
-               inst(NOP),
-               inst(EXIT),
-              };
-  win_start = 3, win_end = 3;
-  inout_t::start_insn = win_start;
-  inout_t::end_insn = win_end;
-  n_inputs = 1;
-  convert_bpf_pgm_to_superopt_pgm(p5, sizeof(p5) / sizeof(inst));
-  static_analysis(pss, p5, sizeof(p5) / sizeof(inst));
-  gen_random_input_for_win(inputs, n_inputs, pss.static_state[win_start], p5[win_start], win_start, win_end);
-  it = inputs[0].regs.find(1);
-  if (it != inputs[0].regs.end()) {
-    int64_t r1_actual = it->second;
-    print_test_res(r1_actual == 1, "5");
-  } else {
-    print_test_res(false, "5");
-  }
 }
 
 void test7() {

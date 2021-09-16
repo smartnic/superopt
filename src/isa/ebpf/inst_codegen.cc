@@ -1259,8 +1259,7 @@ int reg_ptr_type_2_mem_table_type(int reg_type) {
   }
 
   if (reg_type == PTR_TO_PKT) {
-    if ((pgm_input_type == PGM_INPUT_pkt_ptrs) ||
-        (pgm_input_type == PGM_INPUT_skb)) {
+    if (pgm_input_type == PGM_INPUT_pkt_ptrs) {
       return MEM_TABLE_pkt;
     }
   }
@@ -1350,30 +1349,23 @@ void smt_pgm_set_pre_stack_state_table(smt_var& sv, smt_input& input) {
 
       vector<register_state>& states = it->second;
       for (int i = 0; i < states.size(); i++) {
-        // add the ptr in the ptr table (except CONST_PTR_TO_MAP) and
-        // add the memory value/pointer in the stack memory urt
+        // add the ptr in the ptr table and add the memory value/pointer in the stack memory urt
         int ptr_type = states[i].type;
-        z3::expr ptr_value = Z3_true;
+        int map_id = states[i].map_id;
+        int ptr_off = states[i].off;
+        z3::expr ptr_off_expr = to_expr((uint64_t)ptr_off);
+        int table_type = reg_ptr_type_2_mem_table_type(ptr_type);
+        assert(table_type != -1);
+        int table_id = sv.mem_var.get_mem_table_id(table_type, map_id);
+        assert(table_id != -1);
         z3::expr pc = input.ptr_on_stack_path_cond(stack_off, i);
         z3::expr stack_off_name_expr = smt_input::ptr_on_stack_expr(stack_off);
-        if (ptr_type == CONST_PTR_TO_MAP) {
-          assert(states[i].val_flag);
-          int map_id = states[i].val;
-          ptr_value = to_expr(map_id);
-        } else {
-          int map_id = states[i].map_id;
-          int ptr_off = states[i].off;
-          z3::expr ptr_off_expr = to_expr((uint64_t)ptr_off);
-          int table_type = reg_ptr_type_2_mem_table_type(ptr_type);
-          assert(table_type != -1);
-          int table_id = sv.mem_var.get_mem_table_id(table_type, map_id);
-          assert(table_id != -1);
-          // add pointer info in the pointer table
-          sv.mem_var.add_ptr(stack_off_name_expr, table_id, ptr_off_expr, pc);
+        // add pointer info in the pointer table
+        sv.mem_var.add_ptr(stack_off_name_expr, table_id, ptr_off_expr, pc);
 
-          // get value expression according to ptr_type and ptr_off
-          ptr_value = get_ptr_value_expr(ptr_type, sv, map_id) + ptr_off_expr;
-        }
+        // get value expression according to ptr_type and ptr_off
+        z3::expr ptr_val_expr = Z3_true;
+        z3::expr ptr_value = get_ptr_value_expr(ptr_type, sv, map_id) + ptr_off_expr;
 
         bool is_ptr = true;
         int block = 0;  // set as root block
