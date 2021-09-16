@@ -551,10 +551,6 @@ int main(int argc, char* argv[]) {
   set_default_para_vals(in_para);
   if (! parse_input(argc, argv, in_para)) return 0;
 
-  string output_file = in_para.path_out + "log.txt";
-  std::ofstream out(output_file);
-  std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-  std::cout.rdbuf(out.rdbuf()); //redirect std::cout to output_file
   cout << in_para;
   // store_config_to_file(in_para);
   vector<inst*> bm_optis_orig;
@@ -603,7 +599,6 @@ int main(int argc, char* argv[]) {
 
   // kill z3 solver server after compiling
   kill_server();
-  std::cout.rdbuf(coutbuf); //reset to standard output again
   return 0;
 }
 
