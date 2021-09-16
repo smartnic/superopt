@@ -106,7 +106,7 @@ int read_problem_from_z3client(int PORT) {
     } while (buffer[total_read - 1] != '\0' &&
              total_read < FORMULA_SIZE_BYTES);
     if (total_read >= FORMULA_SIZE_BYTES)
-      cout << "Exhausted formula read buffer" << endl;
+      cout << "Exhausted formula read buffer\n";
 
     //cout << "z3server: Recieved Formula from client on port: " << PORT << endl;
 
@@ -116,7 +116,7 @@ int read_problem_from_z3client(int PORT) {
     strncpy(res_buffer, result.c_str(), nchars);
     res_buffer[nchars] = '\0';
 
-    //cout << "z3server: Sending formula to Client..." << endl;
+    //cout << "z3server: Sending formula to Client...\n";
     /* Send result. */
     send(acc_socket, res_buffer, nchars + 1, 0);
     close(acc_socket);

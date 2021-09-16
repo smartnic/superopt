@@ -8,20 +8,20 @@ using namespace z3;
 
 ostream& operator<<(ostream& out, vector<expr>& _expr_vec) {
   if (_expr_vec.size() > 0) {
-    out << endl;
+    out << "\n";
   }
   for (size_t i = 0; i < _expr_vec.size(); i++) {
-    out << i << ": " << _expr_vec[i] << endl;
+    out << i << ": " << _expr_vec[i] << "\n";
   }
   return out;
 }
 
 ostream& operator<<(ostream& out, vector<vector<expr> >& _expr_vec) {
   if (_expr_vec.size() > 0) {
-    out << endl;
+    out << "\n";
   }
   for (size_t i = 0; i < _expr_vec.size(); i++) {
-    out << "block" << i << ": " << _expr_vec[i] << endl;
+    out << "block" << i << ": " << _expr_vec[i] << "\n";
   }
   return out;
 }
