@@ -1883,8 +1883,8 @@ void counterex_urt_2_input_map(inout_t& input, z3::model & mdl, smt_var& sv, int
 
 void counterex_urt_2_input_map_mem_win(inout_t& input, z3::model & mdl, smt_var& sv, int mem_id, int map_id) {
   vector<pair< uint64_t, uint8_t>> mem_addr_val;
-  bool null_off_chk = false; // map memory for win prog eq check is offset-record in the table
-  get_mem_from_mdl(mem_addr_val, mdl, sv, mem_id, null_off_chk);
+  bool stack_null_off_chk = false; // map memory for win prog eq check is offset-record in the table
+  get_mem_from_mdl(mem_addr_val, mdl, sv, mem_id, stack_null_off_chk);
   assert(map_id < input.maps_mem.size());
   int map_sz = input.maps_mem[map_id].size();
 
@@ -1933,8 +1933,7 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt
     if (it != sin.prog_read.mem.end()) {
       for (auto off : it->second) {
         input.stack_readble[off] = true;
-        uint8_t val = unidist_codegen(gen_codegen) * 0x100;
-        input.stack[off] = val; // [0 - 0xff]
+        input.stack[off] = unidist_codegen(gen_codegen) * 0x100; // [0 - 0xff]
       }
     }
 
@@ -1946,8 +1945,8 @@ void counterex_urt_2_input_mem(inout_t& input, z3::model & mdl, smt_var& sv, smt
 
     for (int i = 0; i < mem_addr_val.size(); i++) {
       uint64_t off = mem_addr_val[i].first;
-      if (off >= STACK_SIZE) continue;
       uint8_t val = mem_addr_val[i].second;
+      assert(off < STACK_SIZE);
       input.stack[off] = val;
     }
 
@@ -2092,7 +2091,7 @@ z3::expr safety_chk_ldx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool
       for (int j = 0; j < info_list[i].size(); j++) {
         z3::expr addr_off = off + info_list[i][j].off;
         if (! enable_addr_off) {
-          addr_off = addr + off - sv.get_stack_start_addr();
+          addr_off = addr + off - sv.get_stack_bottom_addr();
         }
         z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
         f = f && z3::implies(info_list[i][j].path_cond, stack_chk);
@@ -2113,7 +2112,7 @@ z3::expr safety_chk_stx(z3::expr addr, z3::expr off, int size, smt_var& sv, bool
       for (int j = 0; j < info_list[i].size(); j++) {
         z3::expr addr_off = off + info_list[i][j].off;
         if (! enable_addr_off) {
-          addr_off = addr + off - sv.get_stack_start_addr();
+          addr_off = addr + off - sv.get_stack_bottom_addr();
         }
         z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
         f = f && z3::implies(info_list[i][j].path_cond, stack_chk);
@@ -2134,9 +2133,8 @@ z3::expr safety_chk_st(z3::expr addr, z3::expr off, int size, smt_var& sv, bool 
       for (int j = 0; j < info_list[i].size(); j++) {
         z3::expr addr_off = off + info_list[i][j].off;
         if (! enable_addr_off) {
-          addr_off = addr + off - sv.get_stack_start_addr();
-        }
-        z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
+          addr_off = addr + off - sv.get_stack_bottom_addr();
+        }      z3::expr stack_chk = stack_safety_chk(addr_off, size, sv);
         f = f && z3::implies(info_list[i][j].path_cond, stack_chk);
       }
     }
