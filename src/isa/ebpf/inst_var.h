@@ -222,20 +222,20 @@ class mem_table {
  public:
   int _type = -1;
   int _map_id = -1; // valid when _type == MEM_TABLE_map
-  // ptr expression id and its possible ptr information;
-  unordered_map<unsigned int, vector<mem_ptr_info>>_ptrs;
+  // ptr and its path condition;
+  // only use vector<z3::expr>[0]; z3::expr does not have a constructor without input value
+  // that is unordered_map<unsigned int, z3::expr> is not allowed
+  unordered_map<unsigned int, mem_ptr_info> _ptrs;
   smt_wt _wt;
   smt_wt _urt;
   void clear() {_ptrs.clear(); _wt.clear(); _urt.clear();}
   void add_ptr(z3::expr ptr_expr, z3::expr path_cond, z3::expr off) {
     // cout << "add_ptr: ptr:" << ptr_expr << ", off:" << off.simplify() << ", \npc:" << path_cond.simplify() << endl;
     auto found = _ptrs.find(ptr_expr.id());
-    if (found == _ptrs.end()) {
-      vector<mem_ptr_info> x = {mem_ptr_info(path_cond, off)};
-      _ptrs.insert({ptr_expr.id(), x});
-    } else {
-      // todo: do we need to check whether this ptr_info is in ptrs? and then combine.
-      found->second.push_back(mem_ptr_info(path_cond, off));
+    if (found == _ptrs.end()) _ptrs.insert({ptr_expr.id(), mem_ptr_info(path_cond, off)});
+    else {
+      found->second.path_cond = path_cond;
+      found->second.off = off;
     }
   }
   bool is_ptr_in_ptrs(z3::expr ptr_expr) {
@@ -243,10 +243,10 @@ class mem_table {
     if (found == _ptrs.end()) return false;
     else return true;
   }
-  void get_ptr_info(vector<mem_ptr_info>& ptr_info_list, z3::expr ptr_expr) {
+  mem_ptr_info get_ptr_info(z3::expr ptr_expr) {
     auto found = _ptrs.find(ptr_expr.id());
-    if (found == _ptrs.end()) return;
-    ptr_info_list = found->second;
+    if (found == _ptrs.end()) return mem_ptr_info(Z3_false, ZERO_ADDR_OFF_EXPR);
+    else return found->second;
   }
   friend ostream& operator<<(ostream& out, const mem_table& mt);
 };
@@ -288,7 +288,7 @@ class smt_mem {
   z3::expr get_and_update_addr_v_next(int map_id);
   void clear() {_mem_tables.clear(); _map_tables.clear(); _addrs_map_v_next.clear(); _path_cond_list.clear();}
   // return <table_id, block id>, table_id == -1 means not found
-  void get_mem_ptr_info(vector<int>& table_ids, vector<vector<mem_ptr_info>>& ptr_info_list, z3::expr ptr_expr);
+  void get_mem_ptr_info(vector<int>& table_ids, vector<mem_ptr_info>& ptr_info_list, z3::expr ptr_expr);
   int get_mem_table_id(int type, int map_id = -1);
   int get_type(int mem_table_id);
   void add_in_mem_table_wt(int mem_table_id, unsigned int block, z3::expr is_valid, z3::expr addr, z3::expr val);
