@@ -1756,24 +1756,6 @@ void test13() {
   // win_start = 10; win_end = 11;
   // win_eq_check(p10, p10_len, p10_2, p10_len, win_start, win_end, 0, "10.3");
 
-  // test pointer stored on stack and read from stack: overwrite pointer
-
-  inst p11[] = {inst(STXDW, 10, -8, 1), // 0: store pointer on stack
-                inst(),
-                inst(LDXDW, 0, 10, -8),
-                inst(LDXB, 0, 0, 0),    // 3: unsafe, since r0 is not a pointer
-                inst(EXIT),
-               };
-  inst p11_1[] = {inst(STXDW, 10, -8, 1), // 0: store pointer on stack
-                  inst(STB, 10, -8, 0x1), // 1: overwrite
-                  inst(LDXDW, 0, 10, -8),
-                  inst(LDXB, 0, 0, 0),    // 3: unsafe, since r0 is not a pointer
-                  inst(EXIT),
-                 };
-  int p11_len = sizeof(p11) / sizeof(inst);
-  win_start = 1, win_end = 3;
-  win_eq_check(p11, p11_len, p11_1, p11_len, win_start, win_end, -1, "11");
-
   return;
 
   // test xdp_exception
