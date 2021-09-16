@@ -841,6 +841,7 @@ z3::expr smt_input::input_constraint() {
   f = f && f_const_reg;
 
   // constraint of stack state (pointer stored on the stack) path condition
+  vector<z3::expr> path_conds;
   z3::expr f_stack_ptr_pc = Z3_true;
   auto it_stack = prog_read.mem.find(PTR_TO_STACK);
   // if there is no stack read, there is no need to set input of pointers stored on the stack
@@ -861,7 +862,6 @@ z3::expr smt_input::input_constraint() {
       // if ptr not in prog read, check next ptr
       if (! ptr_in_prog_read) continue;
 
-      vector<z3::expr> path_conds;
       vector<register_state>& states = it->second;
       for (int i = 0; i < states.size(); i++) {
         z3::expr ptr_pc = ptr_on_stack_path_cond(ptr_off, i);
