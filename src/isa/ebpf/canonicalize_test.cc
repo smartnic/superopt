@@ -597,7 +597,7 @@ void test3() {
   rs_p17.type = SCALAR_VALUE;
   rs_p17.val_flag = true;
   rs_p17.val = 16;
-  print_test_res(reg_state_is_equal(expected_insn3_r0_p17, pss.static_state[3].reg_state[0]), "17");
+  print_test_res(reg_state_is_equal(expected_insn3_r0_p17, pss.static_state[3].reg_state[0]), "17");  
 
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
@@ -851,36 +851,6 @@ void test4() {
                 };
   test_safety_check(p1_5, sizeof(p1_5) / sizeof(inst), false, "5");
   test_safety_check_win(p1_5, sizeof(p1_5) / sizeof(inst), 1, 1, false, "5.1");
-
-  // check map access out of bound
-  inst p1_6[] = {inst(STB, 10, -1, 0x1),
-                 INSN_LDMAPID(1, 0),
-                 inst(MOV64XY, 2, 10),
-                 inst(ADD64XC, 2, -1),
-                 inst(CALL, BPF_FUNC_map_lookup_elem),
-                 inst(JEQXC, 0, 0, 2),
-                 inst(LDXB, 0, 0, 1),  // 6: out of bound
-                 inst(EXIT),
-                 inst(MOV64XC, 0, 0),
-                 inst(EXIT),
-                };
-  test_safety_check(p1_6, sizeof(p1_6) / sizeof(inst), false, "6");
-  test_safety_check_win(p1_6, sizeof(p1_6) / sizeof(inst), 6, 6, false, "6.1");
-
-  // stack out of bound check
-  inst p1_7[] = {inst(STH, 10, -3, 0x1),
-                 inst(EXIT),
-                };
-  test_safety_check(p1_7, sizeof(p1_7) / sizeof(inst), false, "7");
-  test_safety_check_win(p1_7, sizeof(p1_7) / sizeof(inst), 0, 0, false, "7.1");
-  // stack aligned check
-  inst p1_8[] = {inst(STB, 10, 0, 0x1),
-                 inst(STB, 10, 1, 0x1),
-                 inst(EXIT),
-                };
-  test_safety_check(p1_8, sizeof(p1_8) / sizeof(inst), false, "8");
-  test_safety_check_win(p1_8, sizeof(p1_8) / sizeof(inst), 0, 0, false, "8.1");
-  test_safety_check_win(p1_8, sizeof(p1_8) / sizeof(inst), 1, 1, false, "8.2");
 }
 
 void test5() {

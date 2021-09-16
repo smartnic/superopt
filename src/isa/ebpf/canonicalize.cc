@@ -1252,57 +1252,9 @@ void safety_chk_insn_mem_access_ctx(inst& insn, inst_static_state& iss) {
   }
 }
 
-void safety_chk_insn_mem_access_stack_one_reg_state(int off, int size) {
-  // out of bound check
-  if ((off < 0) || (off > STACK_SIZE - size)) {
-    string err_msg = "stack access out of bound: off:" + to_string(off) + " size:" + to_string(size);
-    throw (err_msg);
-  }
-  // aligned check
-  if (off % size != 0) {
-    string err_msg = "stack access not aligned: off:" + to_string(off) + " size:" + to_string(size);
-    throw (err_msg);
-  }
-  // todo: stack[off] readable check
-}
-
-void safety_chk_insn_mem_access_map_one_reg_state(int off, int size, int map_id) {
-  int val_size = mem_t::map_val_sz(map_id) / NUM_BYTE_BITS;
-  // out of map value bound check
-  if ((off < 0) || (off > val_size - size)) {
-    string err_msg = "map value (size:" + to_string(val_size) +
-                     ") access out of bound: off:" + to_string(off) + " size:" + to_string(size);
-    throw (err_msg);
-  }
-}
-
 void safety_chk_insn_mem_access(inst& insn, inst_static_state& iss) {
   safety_chk_insn_mem_access_ctx(insn, iss);
   safety_chk_insn_mem_access_pkt(insn, iss);
-  int op_type = insn.get_opcode_type();
-  if ((op_type != OP_ST) && (op_type != OP_LD)) return;
-
-  vector<int> mem_acc_regs;
-  insn.mem_access_regs(mem_acc_regs);
-  int size = insn.mem_access_width();
-  int off = insn._off;
-  for (int i = 0; i < mem_acc_regs.size(); i++) {
-    int reg = mem_acc_regs[i];
-    for (int j = 0; j < iss.reg_state[reg].size(); j++) {
-      int reg_type = iss.reg_state[reg][j].type;
-      if (! is_ptr(reg_type)) {
-        string err_msg = "r" + to_string(reg) + " is not a pointer";
-        throw (err_msg);
-      }
-      int reg_map_id = iss.reg_state[reg][j].map_id;
-      int access_off = iss.reg_state[reg][j].off + off;
-      if (reg_type == PTR_TO_STACK) {
-        safety_chk_insn_mem_access_stack_one_reg_state(access_off, size);
-      } else if (reg_type == PTR_TO_MAP_VALUE) {
-        safety_chk_insn_mem_access_map_one_reg_state(access_off, size, reg_map_id);
-      }
-    }
-  }
 }
 
 void safety_chk_insn(inst& insn, inst_static_state& iss) {
