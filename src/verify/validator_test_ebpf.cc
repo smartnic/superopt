@@ -1618,8 +1618,7 @@ void test13() {
   rcv_sock4_1[13] = inst(MOV32XC, 8, 0);
   rcv_sock4_1[14] = inst(STXH, 10, -26, 8);
   rcv_sock4_1[15] = inst();
-  // todo: temporarily remove this test because of output memory set as window memory write
-  // win_eq_check(rcv_sock4, prog_len, rcv_sock4_1, prog_len, win_start, win_end, 1, "rcv-sock4 5");
+  win_eq_check(rcv_sock4, prog_len, rcv_sock4_1, prog_len, win_start, win_end, 1, "rcv-sock4 5");
 
   win_start = 27;
   win_end = 28;
@@ -1676,8 +1675,7 @@ void test13() {
   for (int i = 0; i < prog_len_fn; i++) from_network_1[i] = from_network[i];
   from_network_1[8] = inst();
   from_network_1[9] = inst();
-  // todo: temporarily remove this test because of output memory set as window memory write
-  // win_eq_check(from_network, prog_len_fn, from_network_1, prog_len_fn, win_start, win_end, 1, "from-network 3");
+  win_eq_check(from_network, prog_len_fn, from_network_1, prog_len_fn, win_start, win_end, 1, "from-network 3");
 
   // test constant track
   win_start = 3;
