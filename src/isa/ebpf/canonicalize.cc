@@ -722,12 +722,6 @@ void type_const_inference_inst(inst_static_state& iss, inst& insn) {
     rs.val = insn._imm64;
     rs.val_flag = true;
     iss.set_reg_state(dst_reg, rs);
-  } else if (insn.is_ldmapval()) {
-    register_state rs;
-    rs.type = PTR_TO_MAP_VALUE;
-    rs.map_id = (uint32_t)insn._imm64;
-    rs.off = (uint32_t)(insn._imm64 >> 32);
-    iss.set_reg_state(dst_reg, rs);
   } else {
     iss.set_reg_state(dst_reg, SCALAR_VALUE);
   }
