@@ -1556,10 +1556,10 @@ void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state 
         } else if (inputs[i].reg_type[reg] == PTR_TO_MAP_VALUE) {
           int map_id = iss.reg_state[reg][sample].map_id;
           // todo: assume one value
-          assert(map_id >= 0);
-          assert(map_id < mem_t::maps_number());
           unsigned int map_v_mem_off_start = mem_t::get_mem_off_by_idx_in_map(map_id, 0);
           int map_v_off = iss.reg_state[reg][sample].off;
+          assert(map_id >= 0);
+          assert(map_id < mem_t::maps_number());
           reg_v = stack_top + map_v_mem_off_start + map_v_off;
         }
       } else if (iss.reg_state[reg][sample].val_flag) { // deal with constant
