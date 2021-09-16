@@ -709,13 +709,6 @@ void smt_mem::add_ptr_in_stack_state(int stack_off_s, int mem_table_id, int ptr_
   it->second.push_back(pi);
 }
 
-void smt_mem::get_ptr_info_in_stack_state(vector<ptr_info>& ptr_info_list, int stack_off_s) {
-  ptr_info_list.clear();
-  auto it = _stack_ptr_table.find(stack_off_s);
-  if (it == _stack_ptr_table.end()) return;
-  else {ptr_info_list = it->second;}
-}
-
 ostream& operator<<(ostream& out, const smt_mem& s) {
   for (int i = 0; i < s._mem_tables.size(); i++) {
     out << "memory table " << i << endl
