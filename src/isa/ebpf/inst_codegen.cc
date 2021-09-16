@@ -1106,44 +1106,6 @@ bool is_ptr(int type) {
   return false;
 }
 
-// set up sv.mem._stack_ptr_table only for pointers on the stack read by program
-void smt_pgm_set_pre_stack_state_table(smt_var& sv, smt_input& input) {
-  auto it_stack = input.prog_read.mem.find(PTR_TO_STACK);
-  // if there is no stack read, there is no need to set input of pointers stored on the stack
-  if (it_stack != input.prog_read.mem.end()) {
-    for (auto it = smt_input::stack_state.begin(); it != smt_input::stack_state.end(); it++) {
-      int stack_off = it->first;
-      // check whether stack_state is in prog_read
-      assert(stack_off >= 0);
-      const int ptr_size = 8;
-      assert(stack_off <= STACK_SIZE - ptr_size);
-      bool ptr_in_prog_read = true;
-      for (int off_i = 0; off_i < ptr_size; off_i++) {
-        if (it_stack->second.find(stack_off + off_i) == it_stack->second.end()) {
-          ptr_in_prog_read = false;
-          break;
-        }
-      }
-      // if ptr not in prog read, check next ptr
-      if (! ptr_in_prog_read) continue;
-
-      vector<register_state>& states = it->second;
-      for (int i = 0; i < states.size(); i++) {
-        int ptr_type = states[i].type;
-        int map_id = states[i].map_id;
-        int ptr_off = states[i].off;
-        int table_type = reg_ptr_type_2_mem_table_type(ptr_type);
-        assert(table_type != -1);
-        int table_id = sv.mem_var.get_mem_table_id(table_type, map_id);
-        assert(table_id != -1);
-        z3::expr pc = input.ptr_on_stack_path_cond(stack_off, i);
-        sv.mem_var.add_ptr_in_stack_state(stack_off, table_id, ptr_off, pc);
-      }
-    }
-  }
-
-}
-
 // Generate the precondition formula and set up the pointer registers,
 // sv is the sv of program's root basic block
 z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
@@ -1182,8 +1144,6 @@ z3::expr smt_pgm_set_pre(smt_var& sv, smt_input& input) {
       // cout << reg_expr << " " << table_id << " " << off_expr << endl;
     }
   }
-
-  smt_pgm_set_pre_stack_state_table(sv, input);
   f = f && input.input_constraint();
   f = f && sv.mem_layout_constrain();
   return f;
