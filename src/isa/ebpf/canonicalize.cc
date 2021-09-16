@@ -450,7 +450,7 @@ void type_const_inference_inst_ADD64XY(inst_static_state& iss, inst& insn) {
       for (int j = 0; j < iss.reg_state[val_reg].size(); j++) {
         int off = iss.reg_state[ptr_reg][i].off + iss.reg_state[val_reg][j].val;
         register_state rs;
-        rs = iss.reg_state[ptr_reg][i];
+        rs.type = iss.reg_state[ptr_reg][i].type;
         rs.off = off;
         rss.push_back(rs);
       }
