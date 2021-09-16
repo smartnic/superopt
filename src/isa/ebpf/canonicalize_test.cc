@@ -555,36 +555,6 @@ void test3() {
   expected_insn6_r0_p14.push_back(rs_p14);
   print_test_res(reg_state_is_equal(expected_insn6_r0_p14, pss.static_state[6].reg_state[0]), "14");
 
-  // test pointer of overwriting with a different pointer
-  inst p15[] = {inst(STXDW, 10, -8, 1), // store &ctx[0] on stack (r10-8)
-                inst(MOV64XY, 1, 10),
-                inst(ADD64XC, 1, -2),
-                inst(STXDW, 10, -8, 1), // overwrite store stack pointer (r10-2)
-                inst(LDXDW, 0, 10, -8), // read pointer
-                inst(MOV64XC, 0, 0),    // 5:
-                inst(EXIT),
-               };
-  static_analysis(pss, p15, sizeof(p15) / sizeof(inst));
-  // check r0 state before executing insn 5
-  vector<register_state> expected_insn5_r0_p15;
-  register_state rs_p15;
-  rs_p15.type = PTR_TO_STACK;
-  rs_p15.off = 510;
-  expected_insn5_r0_p15.push_back(rs_p15);
-  print_test_res(reg_state_is_equal(expected_insn5_r0_p15, pss.static_state[5].reg_state[0]), "15");
-
-  // test pointer of overwriting with some value
-  inst p16[] = {inst(STXDW, 10, -8, 1), // store &ctx[0] on stack (r10-8)
-                inst(MOV64XC, 0, 0),    // 1:
-                inst(STXB, 10, -7, 0),  // overwritten by some value
-                inst(EXIT),             // 4:
-               };
-  static_analysis(pss, p16, sizeof(p16) / sizeof(inst));
-  // check stack state before executing insn 1 and 4
-  bool p16_res = (pss.static_state[1].stack_state.find(504) != pss.static_state[1].stack_state.end());
-  p16_res = p16_res && (pss.static_state[4].stack_state.size() == 0);
-  print_test_res(p16_res, "16");
-
   cout << "3.2 test live analysis" << endl;
   inst p2_1[] = {inst(),
                  inst(STH, 10, -8, 0xff),
