@@ -19,7 +19,7 @@ void init_benchmark_from_file(inst** bm, const char* insn_file, const char* map_
 #undef N9
 #undef N11
 #undef N12
-#define N0 7
+#define N0 3
 #define N1 7
 #define N2 16
 #define N3 91

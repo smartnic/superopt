@@ -468,7 +468,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.server_port = 8002;
   in_para.disable_prog_eq_cache = false;
   in_para.enable_prog_uneq_cache = false;
-  in_para.is_win = false;
+  in_para.is_win = true;
   in_para.logger_level = LOGGER_ERROR;
   in_para.disable_move_mem_exchange = false;
   in_para.disable_move_mem_exchange_gen_operands = false;
