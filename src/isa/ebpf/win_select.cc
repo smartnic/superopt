@@ -11,13 +11,6 @@ int num_symbolic = 0;
    this insn won't be selected in the windows.
 */
 bool insn_satisfy_isa_win_constraints(const inst& insn, const inst_static_state& iss) {
-  /* opcode is implemented */
-  if (! inst::is_valid_opcode(insn._opcode)) {
-    num_unimplemented++;
-    unimplemented_opcodes.insert(insn._opcode);
-    return false;
-  }
-
   /* not a function call
     (1. some helpers are not supported;
      2. can hardly improve function call;

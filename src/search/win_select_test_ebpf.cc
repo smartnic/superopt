@@ -31,10 +31,8 @@ void check_gen_wins(inst* program, int len,
                     vector<int>& win_e_expected,
                     string test_name) {
   assert(win_s_expected.size() == win_e_expected.size());
-  prog_static_state pss;
-  static_analysis(pss, program, len);
   vector<pair<int, int>> wins;
-  gen_wins(wins, program, len, pss);
+  gen_wins(wins, program, len);
   bool eq = are_wins_equal(wins, win_s_expected, win_e_expected);
   print_test_res(eq, test_name);
 }
@@ -44,10 +42,8 @@ void check_opt_wins(inst* program, int len,
                     vector<int>& win_e_expected,
                     string test_name) {
   assert(win_s_expected.size() == win_e_expected.size());
-  prog_static_state pss;
-  static_analysis(pss, program, len);
   vector<pair<int, int>> wins;
-  gen_wins(wins, program, len, pss);
+  gen_wins(wins, program, len);
   optimize_wins(wins);
   bool eq = are_wins_equal(wins, win_s_expected, win_e_expected);
   print_test_res(eq, test_name);

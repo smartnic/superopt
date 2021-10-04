@@ -110,7 +110,7 @@ void print_win_constraints_statistics(const vector<pair<int, int>>& wins) {
   cout << "# winodws:" << wins.size() << " # insns: " << sum << endl;
 }
 
-void gen_wins(vector<pair<int, int>>& wins, inst* pgm, int len, prog_static_state& pss) {
+void gen_wins(vector<pair<int, int>>& wins, inst* pgm, int len) {
   reset_win_constraints_statistics();
 
   vector<bool> insns_valid(len);
@@ -126,6 +126,9 @@ void gen_wins(vector<pair<int, int>>& wins, inst* pgm, int len, prog_static_stat
     }
     i += num_insns - 1;
   }
+
+  prog_static_state pss;
+  static_analysis(pss, pgm, len);
 
   for (int i = 0; i < len; i++) {
     if (! insns_valid[i]) continue;

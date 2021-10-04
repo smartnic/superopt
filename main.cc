@@ -474,11 +474,21 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.disable_move_mem_exchange_gen_operands = false;
 }
 
+bool check_pgm_is_supported(string &err_msg, inst* pgm, int len) {
+  /* opcode is implemented */
+  for (int i = 0; i < len; i++) {
+    if (! inst::is_valid_opcode(pgm[i]._opcode)) {
+      err_msg = "opcode " + to_string(pgm[i]._opcode) + " in instruction "
+                + to_string(i) + " is not implemented";
+      return false;
+    }
+  }
+  return true;
+}
+
 void generate_wins(vector<int>& win_s_list, vector<int>& win_e_list) {
-  prog_static_state pss;
-  static_analysis(pss, bm, inst::max_prog_len);
   vector<pair<int, int>> wins;
-  gen_wins(wins, bm, inst::max_prog_len, pss);
+  gen_wins(wins, bm, inst::max_prog_len);
   optimize_wins(wins);
   int seed = 1;
   std::srand(seed);
@@ -529,6 +539,15 @@ int main(int argc, char* argv[]) {
   }
   SERVER_PORT = in_para.server_port;
   logger.set_least_print_level(in_para.logger_level);
+  string err_msg;
+  if (! check_pgm_is_supported(err_msg, bm, inst::max_prog_len)) {
+    if (in_para.bm_from_file) {
+      delete[] bm;
+    }
+    std::cout.rdbuf(coutbuf); //reset to standard output again
+    cout << "Program is not supported by K2: " << err_msg << endl;
+    return 0;
+  }
   if (in_para.win_s_list.size() == 0) {
     generate_wins(in_para.win_s_list, in_para.win_e_list);
   }
