@@ -60,6 +60,7 @@ int inst::get_operand(int op_index) const {
 bool inst::sample_unmodifiable() const {
   if ((_opcode == CALL) && (_imm == BPF_FUNC_get_prandom_u32)) return true;
   else if ((_opcode == DIV64XC) || (_opcode == DIV64XY)) return true;
+  else if ((_opcode == DIV32XC) || (_opcode == DIV32XY)) return true;  
   // MUL64XY is added because of cilium which is not in camera-ready benchmarks
   else if (_opcode == MUL64XY) return true;
 
@@ -79,10 +80,12 @@ void inst::set_imm(int op_value) {
     return;
   }
   // opcodes_set constains opcodes whose sample imm range = the default imm range + imms from source program
-  unordered_set<int32_t> opcodes_set = {ADD64XC, MUL64XC, DIV64XC, OR64XC, AND64XC, MOV64XC, ADD32XC,
-                                        OR32XC, AND32XC, XOR64XC, MOV32XC, STB, STH, STW, STDW, LDABSH,
-                                        JEQXC, JGTXC, JLTXC, JNEXC, JSGTXC, JSLTXC, JEQ32XC, JNE32XC,
-                                       };
+  unordered_set<int32_t> opcodes_set = {
+    ADD64XC, SUB64XC, MUL64XC, DIV64XC, OR64XC, AND64XC, MOD64XC, XOR64XC, MOV64XC,
+    ADD32XC, SUB32XC, MUL32XC, DIV32XC, OR32XC, AND32XC, MOD32XC, XOR32XC, MOV32XC,
+    STB, STH, STW, STDW, LDABSH,
+    JEQXC, JGTXC, JLTXC, JNEXC, JSGTXC, JSLTXC, JEQ32XC, JNE32XC,
+  };
   auto found = opcodes_set.find(_opcode);
   if (found == opcodes_set.end()) {
     _imm = op_value;
@@ -124,15 +127,22 @@ void inst::set_off(int op_value) {
 int32_t inst::get_max_imm() const {
   switch (_opcode) {
     case ADD64XC:
+    case SUB64XC:
     case MUL64XC:
     case DIV64XC:
     case OR64XC:
-    case XOR64XC:
     case AND64XC:
+    case MOD64XC:
+    case XOR64XC:
     case MOV64XC:
     case ADD32XC:
+    case SUB32XC:
+    case MUL32XC:
+    case DIV32XC:
     case OR32XC:
     case AND32XC:
+    case MOD32XC:
+    case XOR32XC:
     case MOV32XC:
     case STB:
     case STH:
@@ -181,15 +191,22 @@ int16_t inst::get_max_off(int inst_index) const {
 int32_t inst::get_min_imm() const {
   switch (_opcode) {
     case ADD64XC:
+    case SUB64XC:
     case MUL64XC:
     case DIV64XC:
     case OR64XC:
-    case XOR64XC:
     case AND64XC:
+    case MOD64XC:
+    case XOR64XC:
     case MOV64XC:
     case ADD32XC:
+    case SUB32XC:
+    case MUL32XC:
+    case DIV32XC:
     case OR32XC:
     case AND32XC:
+    case MOD32XC:
+    case XOR32XC:
     case MOV32XC:
     case STB:
     case STH:
@@ -296,6 +313,7 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(NOP)
       MAPPER(ADD64XC)
       MAPPER(ADD64XY)
+      MAPPER(SUB64XC)
       MAPPER(SUB64XY)
       MAPPER(MUL64XC)
       MAPPER(MUL64XY)
@@ -310,6 +328,8 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(RSH64XC)
       MAPPER(RSH64XY)
       MAPPER(NEG64XC)
+      MAPPER(MOD64XC)
+      MAPPER(MOD64XY)
       MAPPER(XOR64XC)
       MAPPER(XOR64XY)
       MAPPER(MOV64XC)
@@ -318,6 +338,12 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(ARSH64XY)
       MAPPER(ADD32XC)
       MAPPER(ADD32XY)
+      MAPPER(SUB32XC)
+      MAPPER(SUB32XY)
+      MAPPER(MUL32XC)
+      MAPPER(MUL32XY)
+      MAPPER(DIV32XC)
+      MAPPER(DIV32XY)
       MAPPER(OR32XC)
       MAPPER(OR32XY)
       MAPPER(AND32XC)
@@ -326,6 +352,11 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(LSH32XY)
       MAPPER(RSH32XC)
       MAPPER(RSH32XY)
+      MAPPER(NEG32XC)
+      MAPPER(MOD32XC)
+      MAPPER(MOD32XY)
+      MAPPER(XOR32XC)
+      MAPPER(XOR32XY)
       MAPPER(MOV32XC)
       MAPPER(MOV32XY)
       MAPPER(ARSH32XC)
@@ -642,8 +673,10 @@ void inst::insert_opcodes_not_gen(unordered_set<int>& opcode_set) const {
   opcode_set.insert(IDX_LDDW);
   opcode_set.insert(IDX_DIV64XC);
   opcode_set.insert(IDX_DIV64XY);
+  opcode_set.insert(IDX_DIV32XC);
+  opcode_set.insert(IDX_DIV32XY);
   opcode_set.insert(IDX_MUL64XY); // this opcode is added because of cilium which is not in camera-ready benchmarks
-  opcode_set.insert(IDX_ARSH32XC); // ARSH32XC and ARSH32XY are added because kernel 4.9 for testing katran 
+  opcode_set.insert(IDX_ARSH32XC); // ARSH32XC and ARSH32XY are added because kernel 4.9 for testing katran
   opcode_set.insert(IDX_ARSH32XY); // does not support them
 
   int prog_input_type = mem_t::get_pgm_input_type();
@@ -739,6 +772,7 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
   switch (_opcode) {
     case ADD64XC: sv.mem_var.add_ptr(NEWDST, CURDST, IMM, path_cond); return predicate_add(CURDST, IMM, NEWDST);
     case ADD64XY: sv.mem_var.add_ptr(NEWDST, CURDST, CURSRC, path_cond); return predicate_add(CURDST, CURSRC, NEWDST);
+    case SUB64XC: return predicate_sub(CURDST, IMM, NEWDST);
     case SUB64XY: return predicate_sub(CURDST, CURSRC, NEWDST);
     case MUL64XC: return predicate_mul(CURDST, IMM, NEWDST);
     case MUL64XY: return predicate_mul(CURDST, CURSRC, NEWDST);
@@ -753,6 +787,8 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     case RSH64XC: return predicate_rsh(CURDST, IMM, NEWDST);
     case RSH64XY: return predicate_rsh(CURDST, CURSRC_L6, NEWDST);
     case NEG64XC: return predicate_mov(NEWDST, -CURDST);
+    case MOD64XC: return predicate_mod(CURDST, IMM, NEWDST);
+    case MOD64XY: return predicate_mod(CURDST, CURSRC, NEWDST);
     case XOR64XC: return predicate_xor(CURDST, IMM, NEWDST);
     case XOR64XY: return predicate_xor(CURDST, CURSRC, NEWDST);
     case MOV64XC: return predicate_mov(IMM, NEWDST);
@@ -761,6 +797,12 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     case ARSH64XY: return predicate_arsh(CURDST, CURSRC_L6, NEWDST);
     case ADD32XC: return predicate_add32(CURDST, IMM, NEWDST);
     case ADD32XY: return predicate_add32(CURDST, CURSRC, NEWDST);
+    case SUB32XC: return predicate_sub32(CURDST, IMM, NEWDST);
+    case SUB32XY: return predicate_sub32(CURDST, CURSRC, NEWDST);
+    case MUL32XC: return predicate_mul32(CURDST, IMM, NEWDST);
+    case MUL32XY: return predicate_mul32(CURDST, CURSRC, NEWDST);
+    case DIV32XC: return predicate_div32(CURDST, IMM, NEWDST);
+    case DIV32XY: return predicate_div32(CURDST, CURSRC, NEWDST);
     case OR32XC: return predicate_or32(CURDST, IMM, NEWDST);
     case OR32XY: return predicate_or32(CURDST, CURSRC, NEWDST);
     case AND32XC: return predicate_and32(CURDST, IMM, NEWDST);
@@ -769,6 +811,11 @@ z3::expr inst::smt_inst(smt_var & sv, unsigned int block) const {
     case LSH32XY: return predicate_lsh32(CURDST, CURSRC_L5, NEWDST);
     case RSH32XC: return predicate_rsh32(CURDST, IMM, NEWDST);
     case RSH32XY: return predicate_rsh32(CURDST, CURSRC_L5, NEWDST);
+    case NEG32XC: return predicate_mov32(NEWDST, -CURDST);
+    case MOD32XC: return predicate_mod32(CURDST, IMM, NEWDST);
+    case MOD32XY: return predicate_mod32(CURDST, CURSRC, NEWDST);
+    case XOR32XC: return predicate_xor32(CURDST, IMM, NEWDST);
+    case XOR32XY: return predicate_xor32(CURDST, CURSRC, NEWDST);
     case MOV32XC: return predicate_mov32(IMM, NEWDST);
     case MOV32XY: return predicate_mov32(CURSRC, NEWDST);
     case ARSH32XC: return predicate_arsh32(CURDST, IMM, NEWDST);
@@ -900,6 +947,7 @@ int opcode_2_idx(int opcode) {
     case NOP: return IDX_NOP;
     case ADD64XC: return IDX_ADD64XC;
     case ADD64XY: return IDX_ADD64XY;
+    case SUB64XC: return IDX_SUB64XC;
     case SUB64XY: return IDX_SUB64XY;
     case MUL64XC: return IDX_MUL64XC;
     case MUL64XY: return IDX_MUL64XY;
@@ -914,6 +962,8 @@ int opcode_2_idx(int opcode) {
     case RSH64XC: return IDX_RSH64XC;
     case RSH64XY: return IDX_RSH64XY;
     case NEG64XC: return IDX_NEG64XC;
+    case MOD64XC: return IDX_MOD64XC;
+    case MOD64XY: return IDX_MOD64XY;
     case XOR64XC: return IDX_XOR64XC;
     case XOR64XY: return IDX_XOR64XY;
     case MOV64XC: return IDX_MOV64XC;
@@ -922,6 +972,12 @@ int opcode_2_idx(int opcode) {
     case ARSH64XY: return IDX_ARSH64XY;
     case ADD32XC: return IDX_ADD32XC;
     case ADD32XY: return IDX_ADD32XY;
+    case SUB32XC: return IDX_SUB32XC;
+    case SUB32XY: return IDX_SUB32XY;
+    case MUL32XC: return IDX_MUL32XC;
+    case MUL32XY: return IDX_MUL32XY;
+    case DIV32XC: return IDX_DIV32XC;
+    case DIV32XY: return IDX_DIV32XY;
     case OR32XC: return IDX_OR32XC;
     case OR32XY: return IDX_OR32XY;
     case AND32XC: return IDX_AND32XC;
@@ -930,6 +986,11 @@ int opcode_2_idx(int opcode) {
     case LSH32XY: return IDX_LSH32XY;
     case RSH32XC: return IDX_RSH32XC;
     case RSH32XY: return IDX_RSH32XY;
+    case NEG32XC: return IDX_NEG32XC;
+    case MOD32XC: return IDX_MOD32XC;
+    case MOD32XY: return IDX_MOD32XY;
+    case XOR32XC: return IDX_XOR32XC;
+    case XOR32XY: return IDX_XOR32XY;
     case MOV32XC: return IDX_MOV32XC;
     case MOV32XY: return IDX_MOV32XY;
     case ARSH32XC: return IDX_ARSH32XC;
@@ -1066,6 +1127,7 @@ void inst::regs_to_read(vector<int>& regs) const {
     case NOP:      return;
     case ADD64XC:  regs = {_dst_reg}; return;
     case ADD64XY:  regs = {_dst_reg, _src_reg}; return;
+    case SUB64XC:  regs = {_dst_reg}; return;
     case SUB64XY:  regs = {_dst_reg, _src_reg}; return;
     case MUL64XC:  regs = {_dst_reg}; return;
     case MUL64XY:  regs = {_dst_reg, _src_reg}; return;
@@ -1080,6 +1142,8 @@ void inst::regs_to_read(vector<int>& regs) const {
     case RSH64XC:  regs = {_dst_reg}; return;
     case RSH64XY:  regs = {_dst_reg, _src_reg}; return;
     case NEG64XC:  regs = {_dst_reg}; return;
+    case MOD64XC:  regs = {_dst_reg}; return;
+    case MOD64XY:  regs = {_dst_reg, _src_reg}; return;
     case XOR64XC:  regs = {_dst_reg}; return;
     case XOR64XY:  regs = {_dst_reg, _src_reg}; return;
     case MOV64XC:  return;
@@ -1088,6 +1152,12 @@ void inst::regs_to_read(vector<int>& regs) const {
     case ARSH64XY: regs = {_dst_reg, _src_reg}; return;
     case ADD32XC:  regs = {_dst_reg}; return;
     case ADD32XY:  regs = {_dst_reg, _src_reg}; return;
+    case SUB32XC:  regs = {_dst_reg}; return;
+    case SUB32XY:  regs = {_dst_reg, _src_reg}; return;
+    case MUL32XC:  regs = {_dst_reg}; return;
+    case MUL32XY:  regs = {_dst_reg, _src_reg}; return;
+    case DIV32XC:  regs = {_dst_reg}; return;
+    case DIV32XY:  regs = {_dst_reg, _src_reg}; return;
     case OR32XC:   regs = {_dst_reg}; return;
     case OR32XY:   regs = {_dst_reg, _src_reg}; return;
     case AND32XC:  regs = {_dst_reg}; return;
@@ -1096,6 +1166,11 @@ void inst::regs_to_read(vector<int>& regs) const {
     case LSH32XY:  regs = {_dst_reg, _src_reg}; return;
     case RSH32XC:  regs = {_dst_reg}; return;
     case RSH32XY:  regs = {_dst_reg, _src_reg}; return;
+    case NEG32XC:  regs = {_dst_reg}; return;
+    case MOD32XC:  regs = {_dst_reg}; return;
+    case MOD32XY:  regs = {_dst_reg, _src_reg}; return;
+    case XOR32XC:  regs = {_dst_reg}; return;
+    case XOR32XY:  regs = {_dst_reg, _src_reg}; return;
     case MOV32XC:  return;
     case MOV32XY:  regs = {_src_reg}; return;
     case ARSH32XC: regs = {_dst_reg}; return;
@@ -1461,6 +1536,7 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_NOP]      = && INSN_NOP,
     [IDX_ADD64XC]  = && INSN_ADD64XC,
     [IDX_ADD64XY]  = && INSN_ADD64XY,
+    [IDX_SUB64XC]  = && INSN_SUB64XC,
     [IDX_SUB64XY]  = && INSN_SUB64XY,
     [IDX_MUL64XC]  = && INSN_MUL64XC,
     [IDX_MUL64XY]  = && INSN_MUL64XY,
@@ -1475,6 +1551,8 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_RSH64XC]  = && INSN_RSH64XC,
     [IDX_RSH64XY]  = && INSN_RSH64XY,
     [IDX_NEG64XC]  = && INSN_NEG64XC,
+    [IDX_MOD64XC]  = && INSN_MOD64XC,
+    [IDX_MOD64XY]  = && INSN_MOD64XY,
     [IDX_XOR64XC]  = && INSN_XOR64XC,
     [IDX_XOR64XY]  = && INSN_XOR64XY,
     [IDX_MOV64XC]  = && INSN_MOV64XC,
@@ -1483,6 +1561,12 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_ARSH64XY] = && INSN_ARSH64XY,
     [IDX_ADD32XC]  = && INSN_ADD32XC,
     [IDX_ADD32XY]  = && INSN_ADD32XY,
+    [IDX_SUB32XC]  = && INSN_SUB32XC,
+    [IDX_SUB32XY]  = && INSN_SUB32XY,
+    [IDX_MUL32XC]  = && INSN_MUL32XC,
+    [IDX_MUL32XY]  = && INSN_MUL32XY,
+    [IDX_DIV32XC]  = && INSN_DIV32XC,
+    [IDX_DIV32XY]  = && INSN_DIV32XY,
     [IDX_OR32XC]   = && INSN_OR32XC,
     [IDX_OR32XY]   = && INSN_OR32XY,
     [IDX_AND32XC]  = && INSN_AND32XC,
@@ -1491,6 +1575,11 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_LSH32XY]  = && INSN_LSH32XY,
     [IDX_RSH32XC]  = && INSN_RSH32XC,
     [IDX_RSH32XY]  = && INSN_RSH32XY,
+    [IDX_NEG32XC]  = && INSN_NEG32XC,
+    [IDX_MOD32XC]  = && INSN_MOD32XC,
+    [IDX_MOD32XY]  = && INSN_MOD32XY,
+    [IDX_XOR32XC]  = && INSN_XOR32XC,
+    [IDX_XOR32XY]  = && INSN_XOR32XY,
     [IDX_MOV32XC]  = && INSN_MOV32XC,
     [IDX_MOV32XY]  = && INSN_MOV32XY,
     [IDX_ARSH32XC] = && INSN_ARSH32XC,
@@ -1576,6 +1665,11 @@ INSN_NEG64XC:
   DST = compute_mov(-DST);
   CONT;
 
+INSN_NEG32XC:
+  ps.reg_safety_chk(DST_ID, vector<int> {DST_ID});
+  DST = compute_mov32(-DST);
+  CONT;
+
 #define ALU_BINARY(OPCODE, OP)                                     \
   INSN_##OPCODE##64XC:                                             \
     ps.reg_safety_chk(DST_ID, vector<int>{DST_ID});                \
@@ -1599,6 +1693,7 @@ INSN_NEG64XC:
   ALU_BINARY(DIV, div)
   ALU_BINARY(OR, or )
   ALU_BINARY(AND, and )
+  ALU_BINARY(MOD, mod)
   ALU_BINARY(XOR, xor)
 #undef ALU_BINARY
 

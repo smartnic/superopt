@@ -146,6 +146,16 @@ void test1() {
   print_test_res(z == L32(x & y), "compute_and32");
   print_test_res(is_valid(predicate_and32(v(x), v(y), v(z))), "predicate_and32 match compute_and32");
 
+  // check mod
+  c = compute_mod(a, b);
+  print_test_res(c == (a % b), "compute_mod");
+  print_test_res(is_valid(predicate_mod(v(a), v(b), v(c))), "predicate_mod match compute_mod");
+
+  // check mod32
+  z = compute_mod32(x, y);
+  print_test_res(z == L32(x % y), "compute_mod32");
+  print_test_res(is_valid(predicate_mod32(v(x), v(y), v(z))), "predicate_mod32 match compute_mod32");
+
   // check xor
   c = compute_xor(a, b);
   print_test_res(c == (a ^ b), "compute_xor");

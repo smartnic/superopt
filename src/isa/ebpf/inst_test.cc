@@ -735,8 +735,17 @@ void test2() {
   insn = inst(ADD32XY, 0, 1);
   SMT_CHECK_XY(0xffffffff, 0xffffffff, 0xfffffffe, "smt ADD32XY");
 
+  insn = inst(SUB64XC, 0, 0x1);
+  SMT_CHECK_XC(0xffffffffffffffff, 0xfffffffffffffffe, "smt SUB64XC");
+
   insn = inst(SUB64XY, 0, 1);
   SMT_CHECK_XY(0x1ffffffff, 0x1, 0x1fffffffe, "smt SUB64XY");
+
+  insn = inst(SUB32XC, 0, 0x1);
+  SMT_CHECK_XC(0xffffffff, 0xfffffffe, "smt SUB32XC");
+
+  insn = inst(SUB32XY, 0, 1);
+  SMT_CHECK_XY(0xffffffff, 0x1, 0xfffffffe, "smt SUB32XY");
 
   insn = inst(MUL64XC, 0, 5);
   SMT_CHECK_XC(10, 50, "smt MUL64XC 1");
@@ -744,9 +753,27 @@ void test2() {
   insn = inst(MUL64XC, 0, -5);
   SMT_CHECK_XC(10, -50, "smt MUL64XC 2");
 
+  insn = inst(MUL64XY, 0, 1);
+  SMT_CHECK_XY(10, 5, 50, "smt MUL64XY");
+
+  insn = inst(MUL32XC, 0, 2);
+  SMT_CHECK_XC(0xffffffff, 0xfffffffe, "smt MUL32XC");
+
+  insn = inst(MUL32XY, 0, 1);
+  SMT_CHECK_XY(0xffffffff, 2, 0xfffffffe, "smt MUL32XY");
+
   insn = inst(DIV64XC, 0, 2);
   SMT_CHECK_XC(4, 2, "smt DIV64XC 1");
   SMT_CHECK_XC(-2, -1, "smt DIV64XC 2");
+
+  insn = inst(DIV64XY, 0, 1);
+  SMT_CHECK_XY(4, 2, 2, "smt DIV64XY");
+
+  insn = inst(DIV32XC, 0, 2);
+  SMT_CHECK_XC(0xfffffffe, 0xffffffff, "smt DIV32XC");
+
+  insn = inst(DIV32XY, 0, 1);
+  SMT_CHECK_XY(0xfffffffe, 2, 0xffffffff, "smt DIV32XY");
 
   insn = inst(OR32XC, 0, 0xf0f0f0f0);
   SMT_CHECK_XC(0xfff0f00f0f, 0xf0f0ffff, "smt OR32XC");
@@ -777,11 +804,34 @@ void test2() {
   SMT_CHECK_XC(-1, 1, "smt NEG64XC 2");
   SMT_CHECK_XC(1, -1, "smt NEG64XC 3");
 
+  insn = inst(NEG32XC, 0);
+  SMT_CHECK_XC(0x0, 0x0, "smt NEG32XC 1");
+  SMT_CHECK_XC(-1, 1, "smt NEG32XC 2");
+  SMT_CHECK_XC(1, -1, "smt NEG32XC 3");
+
+  insn = inst(MOD64XC, 0, 6);
+  SMT_CHECK_XC(11, 5, "smt MOD64XC");
+
+  insn = inst(MOD64XY, 0, 1);
+  SMT_CHECK_XY(12, 5, 2, "smt MOD64XY");
+
+  insn = inst(MOD32XC, 0, 6);
+  SMT_CHECK_XC(11, 5, "smt MOD32XC");
+
+  insn = inst(MOD32XY, 0, 1);
+  SMT_CHECK_XY(12, 5, 2, "smt MOD32XY");
+
   insn = inst(XOR64XC, 0, -1);
   SMT_CHECK_XC(0x0123456789abcdef, 0xfedcba9876543210, "smt XOR64XC");
 
   insn = inst(XOR64XY, 0, 1);
   SMT_CHECK_XY(0xffffffff00000000, 0x00000000ffffffff, 0xffffffffffffffff, "smt XOR64XY");
+
+  insn = inst(XOR32XC, 0, -1);
+  SMT_CHECK_XC(0x0123456789abcdef, 0x76543210, "smt XOR32XC");
+
+  insn = inst(XOR32XY, 0, 1);
+  SMT_CHECK_XY(0xffffffff00000000, 0x00000000ffffffff, 0xffffffff, "smt XOR32XY");
 
   insn = inst(LSH64XC, 0, 63);
   SMT_CHECK_XC(0xffffffffffffffff, 0x8000000000000000, "smt LSH64XC");
@@ -1088,6 +1138,7 @@ void test3() {
   // since there is no NOP in linux bpf
   inst prog2[] = {inst(ADD64XC, 3, 1),
                   inst(ADD64XY, 3, 1),
+                  inst(SUB64XC, 3, 1),
                   inst(SUB64XY, 3, 1),
                   inst(MUL64XC, 3, 1),
                   inst(MUL64XY, 3, 1),
@@ -1102,6 +1153,8 @@ void test3() {
                   inst(RSH64XC, 3, 1),
                   inst(RSH64XY, 3, 1),
                   inst(NEG64XC, 3),
+                  inst(MOD64XC, 3, 1),
+                  inst(MOD64XY, 3, 1),
                   inst(XOR64XC, 3, 1),
                   inst(XOR64XY, 3, 1),
                   inst(MOV64XC, 3, 1),
@@ -1110,6 +1163,12 @@ void test3() {
                   inst(ARSH64XY, 3, 1),
                   inst(ADD32XC, 3, 1),
                   inst(ADD32XY, 3, 1),
+                  inst(SUB32XC, 3, 1),
+                  inst(SUB32XY, 3, 1),
+                  inst(MUL32XC, 3, 1),
+                  inst(MUL32XY, 3, 1),
+                  inst(DIV32XC, 3, 1),
+                  inst(DIV32XY, 3, 1),
                   inst(OR32XC, 3, 1),
                   inst(OR32XY, 3, 1),
                   inst(AND32XC, 3, 1),
@@ -1118,6 +1177,11 @@ void test3() {
                   inst(LSH32XY, 3, 1),
                   inst(RSH32XC, 3, 1),
                   inst(RSH32XY, 3, 1),
+                  inst(NEG32XC, 3),
+                  inst(MOD32XC, 3, 1),
+                  inst(MOD32XY, 3, 1),
+                  inst(XOR32XC, 3, 1),
+                  inst(XOR32XY, 3, 1),
                   inst(MOV32XC, 3, 1),
                   inst(MOV32XY, 3, 1),
                   inst(ARSH32XC, 3, 1),
@@ -1165,6 +1229,7 @@ void test3() {
                  };
   expected = "{7, 3, 0, 0, 1},"\
              "{15, 3, 1, 0, 0},"\
+             "{23, 3, 0, 0, 1},"\
              "{31, 3, 1, 0, 0},"\
              "{39, 3, 0, 0, 1},"\
              "{47, 3, 1, 0, 0},"\
@@ -1179,6 +1244,8 @@ void test3() {
              "{119, 3, 0, 0, 1},"\
              "{127, 3, 1, 0, 0},"\
              "{135, 3, 0, 0, 0},"\
+             "{151, 3, 0, 0, 1},"\
+             "{159, 3, 1, 0, 0},"\
              "{167, 3, 0, 0, 1},"\
              "{175, 3, 1, 0, 0},"\
              "{183, 3, 0, 0, 1},"\
@@ -1187,6 +1254,12 @@ void test3() {
              "{207, 3, 1, 0, 0},"\
              "{4, 3, 0, 0, 1},"\
              "{12, 3, 1, 0, 0},"\
+             "{20, 3, 0, 0, 1},"\
+             "{28, 3, 1, 0, 0},"\
+             "{36, 3, 0, 0, 1},"\
+             "{44, 3, 1, 0, 0},"\
+             "{52, 3, 0, 0, 1},"\
+             "{60, 3, 1, 0, 0},"\
              "{68, 3, 0, 0, 1},"\
              "{76, 3, 1, 0, 0},"\
              "{84, 3, 0, 0, 1},"\
@@ -1195,6 +1268,11 @@ void test3() {
              "{108, 3, 1, 0, 0},"\
              "{116, 3, 0, 0, 1},"\
              "{124, 3, 1, 0, 0},"\
+             "{132, 3, 0, 0, 0},"\
+             "{148, 3, 0, 0, 1},"\
+             "{156, 3, 1, 0, 0},"\
+             "{164, 3, 0, 0, 1},"\
+             "{172, 3, 1, 0, 0},"\
              "{180, 3, 0, 0, 1},"\
              "{188, 3, 1, 0, 0},"\
              "{196, 3, 0, 0, 1},"\
