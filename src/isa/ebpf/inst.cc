@@ -85,7 +85,7 @@ void inst::set_imm(int op_value) {
     ADD32XC, SUB32XC, MUL32XC, DIV32XC, OR32XC, AND32XC, MOD32XC, XOR32XC, MOV32XC,
     STB, STH, STW, STDW, LDABSH,
     JEQXC, JGTXC, JGEXC, JLTXC, JLEXC, JSETXC, JNEXC, JSGTXC, JSGEXC, JSLTXC, JSLEXC,
-    JEQ32XC, JNE32XC,
+    JEQ32XC, JGT32XC, JGE32XC, JLT32XC, JLE32XC, JSET32XC, JNE32XC, JSGT32XC, JSGE32XC, JSLT32XC, JSLE32XC,
   };
   auto found = opcodes_set.find(_opcode);
   if (found == opcodes_set.end()) {
@@ -162,7 +162,16 @@ int32_t inst::get_max_imm() const {
     case JSLTXC:
     case JSLEXC:
     case JEQ32XC:
-    case JNE32XC: return MAX_IMM + _sample_pos_imms.size();
+    case JGT32XC:
+    case JGE32XC:
+    case JLT32XC:
+    case JLE32XC:
+    case JSET32XC:
+    case JNE32XC:
+    case JSGT32XC:
+    case JSGE32XC:
+    case JSLT32XC:
+    case JSLE32XC: return MAX_IMM + _sample_pos_imms.size();
     case LSH64XC:
     case RSH64XC:
     case ARSH64XC: return MAX_IMM_SH64;
@@ -231,7 +240,16 @@ int32_t inst::get_min_imm() const {
     case JSLTXC:
     case JSLEXC:
     case JEQ32XC:
-    case JNE32XC: return MIN_IMM - _sample_neg_imms.size();
+    case JGT32XC:
+    case JGE32XC:
+    case JLT32XC:
+    case JLE32XC:
+    case JSET32XC:
+    case JNE32XC:
+    case JSGT32XC:
+    case JSGE32XC:
+    case JSLT32XC:
+    case JSLE32XC: return MIN_IMM - _sample_neg_imms.size();
     case LSH64XC:
     case RSH64XC:
     case ARSH64XC:
@@ -416,8 +434,26 @@ string inst::opcode_to_str(int opcode) {
       MAPPER(JSLEXY)
       MAPPER(JEQ32XC)
       MAPPER(JEQ32XY)
+      MAPPER(JGT32XC)
+      MAPPER(JGT32XY)
+      MAPPER(JGE32XC)
+      MAPPER(JGE32XY)
+      MAPPER(JLT32XC)
+      MAPPER(JLT32XY)
+      MAPPER(JLE32XC)
+      MAPPER(JLE32XY)
+      MAPPER(JSET32XC)
+      MAPPER(JSET32XY)
       MAPPER(JNE32XC)
       MAPPER(JNE32XY)
+      MAPPER(JSGT32XC)
+      MAPPER(JSGT32XY)
+      MAPPER(JSGE32XC)
+      MAPPER(JSGE32XY)
+      MAPPER(JSLT32XC)
+      MAPPER(JSLT32XY)
+      MAPPER(JSLE32XC)
+      MAPPER(JSLE32XY)
       MAPPER(CALL)
       MAPPER(EXIT)
     default: return "unknown opcode: " + to_string(opcode);
@@ -687,8 +723,26 @@ void inst::insert_jmp_opcodes(unordered_set<int>& jmp_set) const {
   jmp_set.insert(IDX_JSLEXY);
   jmp_set.insert(IDX_JEQ32XC);
   jmp_set.insert(IDX_JEQ32XY);
+  jmp_set.insert(IDX_JGT32XC);
+  jmp_set.insert(IDX_JGT32XY);
+  jmp_set.insert(IDX_JGE32XC);
+  jmp_set.insert(IDX_JGE32XY);
+  jmp_set.insert(IDX_JLT32XC);
+  jmp_set.insert(IDX_JLT32XY);
+  jmp_set.insert(IDX_JLE32XC);
+  jmp_set.insert(IDX_JLE32XY);
+  jmp_set.insert(IDX_JSET32XC);
+  jmp_set.insert(IDX_JSET32XY);
   jmp_set.insert(IDX_JNE32XC);
   jmp_set.insert(IDX_JNE32XY);
+  jmp_set.insert(IDX_JSGT32XC);
+  jmp_set.insert(IDX_JSGT32XY);
+  jmp_set.insert(IDX_JSGE32XC);
+  jmp_set.insert(IDX_JSGE32XY);
+  jmp_set.insert(IDX_JSLT32XC);
+  jmp_set.insert(IDX_JSLT32XY);
+  jmp_set.insert(IDX_JSLE32XC);
+  jmp_set.insert(IDX_JSLE32XY);
 }
 
 void inst::insert_exit_opcodes(unordered_set<int>& set) const {
@@ -919,8 +973,26 @@ z3::expr inst::smt_inst_jmp(smt_var & sv) const {
     case JSLEXY: return (CURDST <= CURSRC);
     case JEQ32XC: return (CURDST_L32 == IMM_L32);
     case JEQ32XY: return (CURDST_L32 == CURSRC_L32);
+    case JGT32XC: return (ugt(CURDST_L32, IMM_L32));
+    case JGT32XY: return (ugt(CURDST_L32, CURSRC_L32));
+    case JGE32XC: return (uge(CURDST_L32, IMM_L32));
+    case JGE32XY: return (uge(CURDST_L32, CURSRC_L32));
+    case JLT32XC: return (ult(CURDST_L32, IMM_L32));
+    case JLT32XY: return (ult(CURDST_L32, CURSRC_L32));
+    case JLE32XC: return (ule(CURDST_L32, IMM_L32));
+    case JLE32XY: return (ule(CURDST_L32, CURSRC_L32));
+    case JSET32XC: return (CURDST_L32 & IMM_L32);
+    case JSET32XY: return (CURDST_L32 & CURSRC_L32);
     case JNE32XC: return (CURDST_L32 != IMM_L32);
     case JNE32XY: return (CURDST_L32 != CURSRC_L32);
+    case JSGT32XC: return (CURDST_L32 > IMM_L32);
+    case JSGT32XY: return (CURDST_L32 > CURSRC_L32);
+    case JSGE32XC: return (CURDST_L32 >= IMM_L32);
+    case JSGE32XY: return (CURDST_L32 >= CURSRC_L32);
+    case JSLT32XC: return (CURDST_L32 < IMM_L32);
+    case JSLT32XY: return (CURDST_L32 < CURSRC_L32);
+    case JSLE32XC: return (CURDST_L32 <= IMM_L32);
+    case JSLE32XY: return (CURDST_L32 <= CURSRC_L32);
     default: return string_to_expr("false");
   }
 }
@@ -1074,8 +1146,26 @@ int opcode_2_idx(int opcode) {
     case JSLEXY: return IDX_JSLEXY;
     case JEQ32XC: return IDX_JEQ32XC;
     case JEQ32XY: return IDX_JEQ32XY;
+    case JGT32XC: return IDX_JGT32XC;
+    case JGT32XY: return IDX_JGT32XY;
+    case JGE32XC: return IDX_JGE32XC;
+    case JGE32XY: return IDX_JGE32XY;
+    case JLT32XC: return IDX_JLT32XC;
+    case JLT32XY: return IDX_JLT32XY;
+    case JLE32XC: return IDX_JLE32XC;
+    case JLE32XY: return IDX_JLE32XY;
+    case JSET32XC: return IDX_JSET32XC;
+    case JSET32XY: return IDX_JSET32XY;
     case JNE32XC: return IDX_JNE32XC;
     case JNE32XY: return IDX_JNE32XY;
+    case JSGT32XC: return IDX_JSGT32XC;
+    case JSGT32XY: return IDX_JSGT32XY;
+    case JSGE32XC: return IDX_JSGE32XC;
+    case JSGE32XY: return IDX_JSGE32XY;
+    case JSLT32XC: return IDX_JSLT32XC;
+    case JSLT32XY: return IDX_JSLT32XY;
+    case JSLE32XC: return IDX_JSLE32XC;
+    case JSLE32XY: return IDX_JSLE32XY;
     case CALL: return IDX_CALL;
     case EXIT: return IDX_EXIT;
     default: /* cout << "unknown opcode" << endl; */ return 0;
@@ -1262,8 +1352,26 @@ void inst::regs_to_read(vector<int>& regs) const {
     case JSLEXY:   regs = {_dst_reg, _src_reg}; return;
     case JEQ32XC:  regs = {_dst_reg}; return;
     case JEQ32XY:  regs = {_dst_reg, _src_reg}; return;
+    case JGT32XC:  regs = {_dst_reg}; return;
+    case JGT32XY:  regs = {_dst_reg, _src_reg}; return;
+    case JGE32XC:  regs = {_dst_reg}; return;
+    case JGE32XY:  regs = {_dst_reg, _src_reg}; return;
+    case JLT32XC:  regs = {_dst_reg}; return;
+    case JLT32XY:  regs = {_dst_reg, _src_reg}; return;
+    case JLE32XC:  regs = {_dst_reg}; return;
+    case JLE32XY:  regs = {_dst_reg, _src_reg}; return;
+    case JSET32XC: regs = {_dst_reg}; return;
+    case JSET32XY: regs = {_dst_reg, _src_reg}; return;
     case JNE32XC:  regs = {_dst_reg}; return;
     case JNE32XY:  regs = {_dst_reg, _src_reg}; return;
+    case JSGT32XC: regs = {_dst_reg}; return;
+    case JSGT32XY: regs = {_dst_reg, _src_reg}; return;
+    case JSGE32XC: regs = {_dst_reg}; return;
+    case JSGE32XY: regs = {_dst_reg, _src_reg}; return;
+    case JSLT32XC: regs = {_dst_reg}; return;
+    case JSLT32XY: regs = {_dst_reg, _src_reg}; return;
+    case JSLE32XC: regs = {_dst_reg}; return;
+    case JSLE32XY: regs = {_dst_reg, _src_reg}; return;
     case CALL:
       switch (_imm) {
         case BPF_FUNC_map_lookup_elem: regs = {1, 2}; return;
@@ -1679,8 +1787,26 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
     [IDX_JSLEXY]   = && INSN_JSLEXY,
     [IDX_JEQ32XC]  = && INSN_JEQ32XC,
     [IDX_JEQ32XY]  = && INSN_JEQ32XY,
+    [IDX_JGT32XC]  = && INSN_JGT32XC,
+    [IDX_JGT32XY]  = && INSN_JGT32XY,
+    [IDX_JGE32XC]  = && INSN_JGE32XC,
+    [IDX_JGE32XY]  = && INSN_JGE32XY,
+    [IDX_JLT32XC]  = && INSN_JLT32XC,
+    [IDX_JLT32XY]  = && INSN_JLT32XY,
+    [IDX_JLE32XC]  = && INSN_JLE32XC,
+    [IDX_JLE32XY]  = && INSN_JLE32XY,
+    [IDX_JSET32XC] = && INSN_JSET32XC,
+    [IDX_JSET32XY] = && INSN_JSET32XY,
     [IDX_JNE32XC]  = && INSN_JNE32XC,
     [IDX_JNE32XY]  = && INSN_JNE32XY,
+    [IDX_JSGT32XC] = && INSN_JSGT32XC,
+    [IDX_JSGT32XY] = && INSN_JSGT32XY,
+    [IDX_JSGE32XC] = && INSN_JSGE32XC,
+    [IDX_JSGE32XY] = && INSN_JSGE32XY,
+    [IDX_JSLT32XC] = && INSN_JSLT32XC,
+    [IDX_JSLT32XY] = && INSN_JSLT32XY,
+    [IDX_JSLE32XC] = && INSN_JSLE32XC,
+    [IDX_JSLE32XY] = && INSN_JSLE32XY,
     [IDX_CALL]     = && INSN_CALL,
     [IDX_EXIT]     = && INSN_EXIT,
   };
