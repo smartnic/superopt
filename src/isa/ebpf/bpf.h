@@ -1,5 +1,5 @@
 /* copy from linux/bpf.h, linux/bpf_common.h
- * commit: 9e6c535c64adf6155e4a11fe8d63b384fe3452f8
+ * commit(tag): v5.4
  */
 
 #pragma once
@@ -209,15 +209,7 @@ enum {
   FN(sk_storage_get),   \
   FN(sk_storage_delete),    \
   FN(send_signal),    \
-  FN(tcp_gen_syncookie),    \
-  FN(skb_output),     \
-  FN(probe_read_user),    \
-  FN(probe_read_kernel),    \
-  FN(probe_read_user_str),  \
-  FN(probe_read_kernel_str),  \
-  FN(tcp_send_ack),   \
-  FN(send_signal_thread),   \
-  FN(jiffies64),
+  FN(tcp_gen_syncookie),
 
 /* integer value in 'imm' field of BPF_CALL instruction selects which helper
  * function eBPF program intends to call
@@ -256,7 +248,6 @@ enum bpf_map_type {
   BPF_MAP_TYPE_STACK,
   BPF_MAP_TYPE_SK_STORAGE,
   BPF_MAP_TYPE_DEVMAP_HASH,
-  BPF_MAP_TYPE_STRUCT_OPS,
 };
 
 // not copy from linux/bpf.h or linux/bpf_common.h
