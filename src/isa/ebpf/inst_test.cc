@@ -2195,6 +2195,43 @@ void test17() {
   }
 }
 
+bool is_equal(vector<int>& vec1, vector<int>& vec2) {
+  if (vec1.size() != vec2.size()) return false;
+  for (int i = 0; i < vec1.size(); i++) {
+    if (vec1[i] != vec2[i]) return false;
+  }
+  return true;
+}
+
+void test_regs_to_read_for_helpers(int func_id, string func_name, vector<int> regs_exp) {
+  inst insn = inst(CALL, func_id);
+  vector<int> regs;
+  insn.regs_to_read(regs);
+  print_test_res(is_equal(regs, regs_exp), func_name);
+}
+
+void test18() {
+  cout << "Test 18: test registers to read for helpers" << endl;
+  test_regs_to_read_for_helpers(BPF_FUNC_map_lookup_elem, "BPF_FUNC_map_lookup_elem", {1, 2});
+  test_regs_to_read_for_helpers(BPF_FUNC_map_update_elem, "BPF_FUNC_map_update_elem", {1, 2, 3, 4});
+  test_regs_to_read_for_helpers(BPF_FUNC_map_delete_elem, "BPF_FUNC_map_delete_elem", {1, 2});
+  test_regs_to_read_for_helpers(BPF_FUNC_ktime_get_ns, "BPF_FUNC_ktime_get_ns", {});
+  test_regs_to_read_for_helpers(BPF_FUNC_get_prandom_u32, "BPF_FUNC_get_prandom_u32", {});
+  test_regs_to_read_for_helpers(BPF_FUNC_get_smp_processor_id, "BPF_FUNC_get_smp_processor_id", {});
+  test_regs_to_read_for_helpers(BPF_FUNC_skb_store_bytes, "BPF_FUNC_skb_store_bytes", {1, 2, 3, 4, 5});
+  test_regs_to_read_for_helpers(BPF_FUNC_l3_csum_replace, "BPF_FUNC_l3_csum_replace", {1, 2, 3, 4, 5});
+  test_regs_to_read_for_helpers(BPF_FUNC_l4_csum_replace, "BPF_FUNC_l4_csum_replace", {1, 2, 3, 4, 5});
+  test_regs_to_read_for_helpers(BPF_FUNC_tail_call, "BPF_FUNC_tail_call", {1, 2, 3});
+  test_regs_to_read_for_helpers(BPF_FUNC_skb_set_tunnel_key, "BPF_FUNC_skb_set_tunnel_key", {1, 2, 3, 4});
+  test_regs_to_read_for_helpers(BPF_FUNC_redirect, "BPF_FUNC_redirect", {1, 2});
+  test_regs_to_read_for_helpers(BPF_FUNC_perf_event_output, "BPF_FUNC_perf_event_output", {1, 2, 3, 4, 5});
+  test_regs_to_read_for_helpers(BPF_FUNC_skb_load_bytes, "BPF_FUNC_skb_load_bytes", {1, 2, 3, 4});
+  test_regs_to_read_for_helpers(BPF_FUNC_skb_change_type, "BPF_FUNC_skb_change_type", {1, 2});
+  test_regs_to_read_for_helpers(BPF_FUNC_xdp_adjust_head, "BPF_FUNC_xdp_adjust_head", {1, 2});
+  test_regs_to_read_for_helpers(BPF_FUNC_redirect_map, "BPF_FUNC_redirect_map", {1, 2, 3});
+  test_regs_to_read_for_helpers(BPF_FUNC_fib_lookup, "BPF_FUNC_fib_lookup", {1, 2, 3, 4});
+}
+
 int main(int argc, char *argv[]) {
   try {
     test1();
@@ -2214,6 +2251,7 @@ int main(int argc, char *argv[]) {
     test15();
     test16();
     test17();
+    test18();
   } catch (string err_msg) {
     cout << "NOT SUCCESS: " << err_msg << endl;
   }

@@ -1015,6 +1015,7 @@ class inst: public inst_base {
   bool is_stx_mem() const;
   bool is_st_mem() const;
   bool is_xadd() const;
+  static int get_num_helper_parameters(int func_id);
  public:
   // original program's additional immediate numbers which are not in [MIN_IMM, MAX_IMM]
   // overall sample space for immeditae number is

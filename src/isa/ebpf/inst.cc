@@ -316,21 +316,113 @@ string inst::func_to_str(int func_id) {
       MAPPER(map_lookup_elem)
       MAPPER(map_update_elem)
       MAPPER(map_delete_elem)
+      MAPPER(probe_read)
       MAPPER(ktime_get_ns)
+      MAPPER(trace_printk)
       MAPPER(get_prandom_u32)
       MAPPER(get_smp_processor_id)
       MAPPER(skb_store_bytes)
       MAPPER(l3_csum_replace)
       MAPPER(l4_csum_replace)
       MAPPER(tail_call)
+      MAPPER(clone_redirect)
+      MAPPER(get_current_pid_tgid)
+      MAPPER(get_current_uid_gid)
+      MAPPER(get_current_comm)
+      MAPPER(get_cgroup_classid)
+      MAPPER(skb_vlan_push)
+      MAPPER(skb_vlan_pop)
+      MAPPER(skb_get_tunnel_key)
       MAPPER(skb_set_tunnel_key)
+      MAPPER(perf_event_read)
       MAPPER(redirect)
+      MAPPER(get_route_realm)
       MAPPER(perf_event_output)
       MAPPER(skb_load_bytes)
+      MAPPER(get_stackid)
+      MAPPER(csum_diff)
+      MAPPER(skb_get_tunnel_opt)
+      MAPPER(skb_set_tunnel_opt)
+      MAPPER(skb_change_proto)
       MAPPER(skb_change_type)
+      MAPPER(skb_under_cgroup)
+      MAPPER(get_hash_recalc)
+      MAPPER(get_current_task)
+      MAPPER(probe_write_user)
+      MAPPER(current_task_under_cgroup)
+      MAPPER(skb_change_tail)
+      MAPPER(skb_pull_data)
+      MAPPER(csum_update)
+      MAPPER(set_hash_invalid)
+      MAPPER(get_numa_node_id)
+      MAPPER(skb_change_head)
       MAPPER(xdp_adjust_head)
+      MAPPER(probe_read_str)
+      MAPPER(get_socket_cookie)
+      MAPPER(get_socket_uid)
+      MAPPER(set_hash)
+      MAPPER(setsockopt)
+      MAPPER(skb_adjust_room)
       MAPPER(redirect_map)
+      MAPPER(sk_redirect_map)
+      MAPPER(sock_map_update)
+      MAPPER(xdp_adjust_meta)
+      MAPPER(perf_event_read_value)
+      MAPPER(perf_prog_read_value)
+      MAPPER(getsockopt)
+      MAPPER(override_return)
+      MAPPER(sock_ops_cb_flags_set)
+      MAPPER(msg_redirect_map)
+      MAPPER(msg_apply_bytes)
+      MAPPER(msg_cork_bytes)
+      MAPPER(msg_pull_data)
+      MAPPER(bind)
+      MAPPER(xdp_adjust_tail)
+      MAPPER(skb_get_xfrm_state)
+      MAPPER(get_stack)
+      MAPPER(skb_load_bytes_relative)
       MAPPER(fib_lookup)
+      MAPPER(sock_hash_update)
+      MAPPER(msg_redirect_hash)
+      MAPPER(sk_redirect_hash)
+      MAPPER(lwt_push_encap)
+      MAPPER(lwt_seg6_store_bytes)
+      MAPPER(lwt_seg6_adjust_srh)
+      MAPPER(lwt_seg6_action)
+      MAPPER(rc_repeat)
+      MAPPER(rc_keydown)
+      MAPPER(skb_cgroup_id)
+      MAPPER(get_current_cgroup_id)
+      MAPPER(get_local_storage)
+      MAPPER(sk_select_reuseport)
+      MAPPER(skb_ancestor_cgroup_id)
+      MAPPER(sk_lookup_tcp)
+      MAPPER(sk_lookup_udp)
+      MAPPER(sk_release)
+      MAPPER(map_push_elem)
+      MAPPER(map_pop_elem)
+      MAPPER(map_peek_elem)
+      MAPPER(msg_push_data)
+      MAPPER(msg_pop_data)
+      MAPPER(rc_pointer_rel)
+      MAPPER(spin_lock)
+      MAPPER(spin_unlock)
+      MAPPER(sk_fullsock)
+      MAPPER(tcp_sock)
+      MAPPER(skb_ecn_set_ce)
+      MAPPER(get_listener_sock)
+      MAPPER(skc_lookup_tcp)
+      MAPPER(tcp_check_syncookie)
+      MAPPER(sysctl_get_name)
+      MAPPER(sysctl_get_current_value)
+      MAPPER(sysctl_get_new_value)
+      MAPPER(sysctl_set_new_value)
+      MAPPER(strtol)
+      MAPPER(strtoul)
+      MAPPER(sk_storage_get)
+      MAPPER(sk_storage_delete)
+      MAPPER(send_signal)
+      MAPPER(tcp_gen_syncookie)
     default: return "unknown function id";
   }
 }
@@ -1254,8 +1346,26 @@ string inst::get_bytecode_str() const {
   return str;
 }
 
+int inst::get_num_helper_parameters(int func_id) {
+  const bpf_func_proto* func_proto = get_bpf_func_proto(func_id);
+  if (func_proto == NULL) return -1; // error here
+  if (func_proto->arg1_type == ARG_DONTCARE) return 0;
+  if (func_proto->arg2_type == ARG_DONTCARE) return 1;
+  if (func_proto->arg3_type == ARG_DONTCARE) return 2;
+  if (func_proto->arg4_type == ARG_DONTCARE) return 3;
+  if (func_proto->arg5_type == ARG_DONTCARE) return 4;
+  return 5;
+}
+
 void inst::regs_to_read(vector<int>& regs) const {
   regs.clear();
+  if (_opcode == CALL) {
+    int n = get_num_helper_parameters(_imm);
+    for (int i = 1; i <= n; i++) {
+      regs.push_back(i);
+    }
+    return;
+  }
   switch (_opcode) {
     case NOP:      return;
     case ADD64XC:  regs = {_dst_reg}; return;
@@ -1372,28 +1482,6 @@ void inst::regs_to_read(vector<int>& regs) const {
     case JSLT32XY: regs = {_dst_reg, _src_reg}; return;
     case JSLE32XC: regs = {_dst_reg}; return;
     case JSLE32XY: regs = {_dst_reg, _src_reg}; return;
-    case CALL:
-      switch (_imm) {
-        case BPF_FUNC_map_lookup_elem: regs = {1, 2}; return;
-        case BPF_FUNC_map_update_elem: regs = {1, 2, 3, 4}; return;
-        case BPF_FUNC_map_delete_elem: regs = {1, 2}; return;
-        case BPF_FUNC_ktime_get_ns: return;
-        case BPF_FUNC_get_prandom_u32: return;
-        case BPF_FUNC_get_smp_processor_id: return;
-        case BPF_FUNC_skb_store_bytes: regs = {1, 2, 3, 4, 5}; return;
-        case BPF_FUNC_l3_csum_replace: regs = {1, 2, 3, 4, 5}; return;
-        case BPF_FUNC_l4_csum_replace: regs = {1, 2, 3, 4, 5}; return;
-        case BPF_FUNC_tail_call: regs = {1, 2, 3}; return;
-        case BPF_FUNC_skb_set_tunnel_key: return;
-        case BPF_FUNC_redirect: regs = {1, 2}; return;
-        case BPF_FUNC_perf_event_output: regs = {1, 2, 3, 4, 5}; return;
-        case BPF_FUNC_skb_load_bytes: regs = {1, 2, 3, 4}; return;
-        case BPF_FUNC_skb_change_type: regs = {1, 2}; return;
-        case BPF_FUNC_xdp_adjust_head: regs = {1, 2}; return;
-        case BPF_FUNC_redirect_map: regs = {1, 2, 3}; return;
-        case BPF_FUNC_fib_lookup: regs = {1, 2, 3, 4}; return;
-        default: cout << "Error: unknown function id " << _imm << endl; return;
-      }
     case EXIT: return;
     default: return; /* cout << "unknown opcode" << endl; */
   }
