@@ -1798,8 +1798,8 @@ void test13() {
   z3::model mdl(smt_c);
   bool is_expected = ! get_counterex_model(mdl, smt);
   if (is_expected) {
-    smt_input sin;
-    counterex_urt_2_input_mem_for_one_sv(input, mdl, sv1, sin);
+    smt_input sin1, sin2;
+    counterex_2_input_mem(input, mdl, sv1, sv2, sin1, sin2);
     is_expected = (input.pkt[0] != input.pkt[pkt_sz - 1]);
   }
   print_test_res(is_expected, "1");
