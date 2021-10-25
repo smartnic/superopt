@@ -86,22 +86,28 @@ void test1() {
   mem_t::_layout.clear();
 
   // test PGM_INPUT_pkt_ptrs
-  const int p3_len = 8;
+  const int p3_len = 11;
   inst::max_prog_len = p3_len;
   mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
   mem_t::set_pkt_sz(32);
   mem_t::add_map(map_attr(32, 64, p3_len));
   inst p3[] = {inst(LDXW, 3, 1, 4),
                inst(LDXW, 2, 1, 0),
-               inst(LDXB, 4, 2, 12), // insn 2
+               inst(MOV64XY, 6, 2),
+               inst(ADD64XC, 6, 14),
+               inst(JGTXY, 6, 3, 5),
+               inst(LDXB, 4, 2, 12), // insn 5
                inst(LDXB, 5, 2, 13),
                inst(LSH64XC, 5, 8),
-               inst(OR64XY, 5, 4),   // insn 5
+               inst(OR64XY, 5, 4),   // insn 8
                inst(MOV64XY, 0, 5),
                inst(EXIT),
               };
   inst p3_1[] = {inst(LDXW, 3, 1, 4),
                  inst(LDXW, 2, 1, 0),
+                 inst(MOV64XY, 6, 2),
+                 inst(ADD64XC, 6, 14),
+                 inst(JGTXY, 6, 3, 5),
                  inst(LDXB, 4, 2, 12),
                  inst(LDXB, 5, 2, 13),
                  inst(LSH64XC, 5, 8),
@@ -109,9 +115,13 @@ void test1() {
                  inst(MOV64XY, 0, 5),
                  inst(EXIT),
                 };
-  win_start = 2;
-  win_end = 5;
-  print_test_res(get_error_cost(p3, p3_1, win_start, win_end) == 0, "PGM_INPUT_pkt_ptrs 1");
+  win_start = 5;
+  win_end = 8;
+  try {
+    print_test_res(get_error_cost(p3, p3_1, win_start, win_end) == 0, "PGM_INPUT_pkt_ptrs 1");
+  } catch (string err_string) {
+    cout << "ERROR: " << err_string << endl;
+  }
   mem_t::_layout.clear();
 
 
