@@ -96,7 +96,7 @@ double cost::get_ex_error_cost_from_val_lists_abs(vector<reg_t>& val_list1, vect
   double res = 0;
   assert(val_list1.size() == val_list2.size());
   for (int i = 0; i < val_list1.size(); i++) {
-    res += abs((double)val_list1[i] - (double)val_list2[i]);
+    res += abs(double(val_list1[i] - val_list2[i]));
   }
   return res;
 }
