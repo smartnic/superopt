@@ -60,14 +60,14 @@ double get_error_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
 
   inout_t::start_insn = win_start;
   inout_t::end_insn = win_end;
-  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  
   static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
-  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
   prog_static_state pss;
   //This is to infer program state while entering and leaving the window.
   static_analysis(pss, p1, inst::max_prog_len);
-  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  
   int num_examples = 30;
   //storing all the initial test cases.
   vector<inout_t> examples;
@@ -75,7 +75,7 @@ double get_error_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
                            pss.static_state[win_start], p1[win_start],
                            win_start, win_end);
   c.set_examples(examples, &prog1);
-  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  
   return c.error_cost_repair(&prog1, inst::max_prog_len, &prog2, inst::max_prog_len);
   
 }
@@ -88,14 +88,14 @@ double get_safety_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
 
   inout_t::start_insn = win_start;
   inout_t::end_insn = win_end;
-  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  
   static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
-  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
   prog_static_state pss;
   //This is to infer program state while entering and leaving the window.
   static_analysis(pss, p1, inst::max_prog_len);
-  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  
   int num_examples = 30;
   //storing all the initial test cases.
   vector<inout_t> examples;
@@ -103,7 +103,7 @@ double get_safety_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
                            pss.static_state[win_start], p1[win_start],
                            win_start, win_end);
   c.set_examples(examples, &prog1);
-  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  
   return c.safety_cost_repair(&prog1, inst::max_prog_len, &prog2, inst::max_prog_len);
   
 }
@@ -299,6 +299,9 @@ void test1() {
   mem_t::_layout.clear();
 }
 
+//Only used while initially trying to modify error_cost function and check it
+//Not applicable anymore because the error cost is back to original
+//For repair new error cost calculation functions added which are tested from test 4 onwards
 void test3(){
 
   //inst p1[N3], p2[N3];
@@ -310,13 +313,6 @@ void test3(){
   //provide a safe program for p1
   //can use win_select_test_ebpf line 60 
 
-
-  //setting the code
-  //for (int i = 0; i < N3; i++) p1[i] = bm3[i];
-  //for (int i = 0; i < N3; i++) p2[i] = bm3[i];
-  //p2[5] = inst(MOV32XY, 1, 0); //changing the 5th instruction
-  //p2[6] = inst();
-  //p2[7] = inst();
 
   inst p1[] = {inst(NOP), 
                 inst(MOV64XC, 0, 0),
@@ -335,7 +331,7 @@ void test3(){
   int win_start = 0, win_end = 0;
 
   mem_t::_layout.clear();
-  //use sizeof(program)/sizeof(ins) for below
+  
   inst::max_prog_len = sizeof(p1) / sizeof(inst);
 
   //inst_var.h (line 46): PGM_INPUT types for different kinds of program inputs
@@ -348,7 +344,6 @@ void test3(){
   mem_t::_layout._n_randoms_u32 = 1;
   smt_var::init_static_variables();
 
-  //print_test_res(get_error_cost(p1, p2, win_start, win_end) == 0, "rcv_sock4 1");
   print_test_res(get_safety_cost(p1, p2, win_start, win_end) == ERROR_COST_MAX, "cost:error change 1 check");
   mem_t::_layout.clear();
 
@@ -396,7 +391,7 @@ void test4(){
   mem_t::_layout._n_randoms_u32 = 1;
   smt_var::init_static_variables();
 
-  //print_test_res(get_error_cost(p1, p2, win_start, win_end) == 0, "rcv_sock4 1");
+  
   print_test_res(get_error_cost_repair(p1, p2, win_start, win_end) == 0, "error_cost_repair: 2 safe and equivalent programs ");
   mem_t::_layout.clear();
 
@@ -448,7 +443,6 @@ void test5(){
   mem_t::_layout._n_randoms_u32 = 1;
   smt_var::init_static_variables();
 
-  //print_test_res(get_error_cost(p1, p2, win_start, win_end) == 0, "rcv_sock4 1");
   print_test_res(get_error_cost_repair(p1, p2, win_start, win_end) > 0, "error_cost_repair: 2 safe and non-equivalent programs ");
   print_test_res(get_safety_cost_repair(p1, p2, win_start, win_end) == 0, "safety_cost_repair: 2 safe and non-equivalent programs ");
   mem_t::_layout.clear();

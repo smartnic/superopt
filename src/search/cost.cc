@@ -214,20 +214,12 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
     pass_static_safety = true;
   } catch (const string err_msg) {
     
-    //instead of error_cost_max, set it as 1 or something
-    //modify to safety_cost_max
     pass_static_safety = false;
-    //total_safety_cost += 1;
-    //synth->set_safety_cost(ERROR_COST_MAX);
-    //return ERROR_COST_MAX;
+    
   }
 
-  //double total_cost = 0;
-  //inout_t output1
   inout_t output2;
-  //output1.init();
   output2.init();
-  //int num_successful_ex = 0;
   prog_state ps;
   ps.init();
 
@@ -235,31 +227,18 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
   int num_of_unsucc_ex = 0;
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
-    //Not req
-    //output1 = _examples._exs[i].output;
     
     try {
       synth->interpret(output2, ps, _examples._exs[i].input);
     } catch (const string err_msg) {
       // illegal program
-      //synth->set_safety_cost(ERROR_COST_MAX);
-      //return ERROR_COST_MAX;
       num_of_unsucc_ex ++;
     }
 
-    //double ex_cost = get_ex_error_cost(output1, output2);
-    //if (ex_cost == 0) num_successful_ex++;
-    // else if (ex_cost >= ERROR_COST_MAX) {
-    //   // synthesis whose test case error cost >= ERROR_COST_MAX
-    //   synth->set_error_cost(ERROR_COST_MAX);
-    //   return ERROR_COST_MAX;
-    // }
-
-    //total_cost += ex_cost;
   }
 
   int is_equal = 0;
-  //int ex_set_size = _examples._exs.size();
+  
   //boolean variable to check whether it passes validator or not
   bool pass_validator = false;
   //condition: passed previous 2 modules (true, num_of_succ_ex == ex_size)
@@ -285,9 +264,6 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
       pass_validator = true;
     } catch (const string err_msg) {
       // illegal program
-      //synth->set_error_cost(ERROR_COST_MAX);
-      //synth->set_safety_cost(ERROR_COST_MAX);
-      //return ERROR_COST_MAX;
       pass_validator = false;
     }
     auto t2 = NOW;
@@ -318,8 +294,7 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
   
   //CONDITION: ONLY IF ITS UNSAFE BUT PASSES FIRST 2 MODULES
   //VALIDATOR GENERATES COUNTEREXAMPLE 
-  //if (((is_equal == 0) || (is_equal == ILLEGAL_CEX)) &&
-  //    (num_successful_ex == (int)_examples._exs.size())) {
+  
   if(pass_static_safety && (num_of_unsucc_ex == 0) && ((pass_validator == false)||is_equal==-1)){
     _examples.insert(_vld._last_counterex);
     _meas_new_counterex_gened = true;
@@ -336,13 +311,10 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
 
   //calculate safety cost based on the 3 variables
   //think of some good equation
-  //set_safety_cost below:
-  //synth->set_error_cost(total_cost);
-  //return total_cost;
   //Some function of: pass_satic_safety, num_of_unsucc_ex, pass_validator, isEqual
 
-  //The below is a very rough calculation as a placeholder for now
-  //Later the safety cost will be made more continuous and accurate
+  //The below is a very rough calculation as a placeholder for now.
+  //Later the safety cost will be made more continuous and accurate.
 
   if(pass_static_safety && (num_of_unsucc_ex == 0)){
     if(pass_validator == false){
@@ -387,9 +359,6 @@ double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
       synth->interpret(output2, ps, _examples._exs[i].input);
     } catch (const string err_msg) {
       // illegal program
-      //synth->set_error_cost(ERROR_COST_MAX);
-      //synth->set_safety_cost(ERROR_COST_MAX);
-      //return ERROR_COST_MAX;
       //This cost has already been added for safety before.
       //if this happens, we just move on to the next test case
       continue;
@@ -425,9 +394,6 @@ double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
       // }
     } catch (const string err_msg) {
       // illegal program
-      //synth->set_error_cost(ERROR_COST_MAX);
-      //synth->set_safety_cost(ERROR_COST_MAX);
-      //return ERROR_COST_MAX;
       //already took care of this situation for safety
     }
     auto t2 = NOW;
@@ -453,8 +419,6 @@ double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
   // But it should ensure that the number of initial example set is big enough.
   // case 1: gen_counterex_flag = (is_equal == 0);
   // case 2: gen_counterex_flag = (is_equal == 0) && (num_successful_ex == (int)_examples._exs.size());
-  //if (((is_equal == 0) || (is_equal == ILLEGAL_CEX)) &&
-   //   (num_successful_ex == (int)_examples._exs.size())) {
   //we already take care of is_equal < 0 for safety
   //New condition:  
   if((num_successful_ex == (int)_examples._exs.size()) && (is_equal == 0)){
