@@ -53,11 +53,7 @@ class cost {
   int _strategy_avg = 0;
   int _strategy_perf = 0;
   //define flag repair(1)/optimize(0)
-  //Later collect this info from input parameters. For now, defaulting to repair
-  //Transfer purpose here
   int _functionality = 0;
-  //add a function to set this value
-  //In the function call main.cc functions
   cost();
   ~cost();
   void init(prog* orig, int len, const vector<inout_t> &input,
@@ -74,7 +70,6 @@ class cost {
   double error_cost_repair(prog* orig, int len1, prog* synth, int len2);
   double safety_cost_repair(prog* orig, int len1, prog* synth, int len2);
   double total_prog_cost(prog* orig, int len1, prog* synth, int len2);
-  //void unitTestEx();
 };
 
 unsigned int pop_count_outputs(int64_t output1, int64_t output2);
