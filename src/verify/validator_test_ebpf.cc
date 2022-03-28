@@ -917,11 +917,12 @@ void test6() {
   mem_t::_layout.clear();
   mem_t::set_pgm_input_type(PGM_INPUT_pkt_ptrs);
   mem_t::set_pkt_sz(16);
-  inst p1[5] = {inst(MOV64XC, 0, 0),
-                inst(LDXW, 2, 1, 4),
-                inst(LDXW, 1, 1, 0),
-                inst(STB, 1, 0, 1),
-                inst(STB, 2, 0, 2),
+
+  inst p1[5] = {inst(MOV64XC, 0, 0), //r0 = 0
+                inst(LDXW, 2, 1, 4), //load, xw: 4 bytes, r2 = *(u32*)(r1 + 4) //r2 contains packet end
+                inst(LDXW, 1, 1, 0), // r1 = *(u32*)(r1 + 0) //r1 contains packet start
+                inst(STB, 1, 0, 1), //*(u8*)(r1+0) = 1
+                inst(STB, 2, 0, 2), //*(u8*)(r2+0) = 2
                };
   inst p11[9] = {inst(MOV64XC, 0, 0),
                  inst(LDXW, 2, 1, 4),

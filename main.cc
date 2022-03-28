@@ -40,6 +40,7 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
       << "desc: " << ip.desc << endl
       << "w_e:" << ip.w_e << endl
       << "w_p:" << ip.w_p << endl
+      << "w_s:" << ip.w_s << endl
       << "st_ex:" << ip.st_ex << endl
       << "st_eq:" << ip.st_eq << endl
       << "st_avg:" << ip.st_avg << endl
@@ -48,7 +49,9 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
       << "st_start_prog:" << ip.st_start_prog << endl
       << "restart_w_e_list:" << ip.restart_w_e_list << endl
       << "restart_w_p_list:" << ip.restart_w_p_list << endl
-      << "reset_win_niter:" << ip.reset_win_niter << endl;
+      //<< "restart_w_s_list:" << ip.restart_w_s_list << endl
+      << "reset_win_niter:" << ip.reset_win_niter << endl
+      << "functionality:" << ip.functionality << endl;
   out << "win list: ";
   for (int i = 0; i < ip.win_s_list.size(); i++) {
     out << "[" << ip.win_s_list[i] << "," << ip.win_e_list[i] << "] ";
@@ -64,6 +67,7 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
       << "enable_prog_uneq_cache:" << ip.enable_prog_uneq_cache << endl
       << "is_win:" << ip.is_win << endl
       << "logger_level: " << ip.logger_level << endl;
+      //<< "purpose: " << ip.purpose << endl;
   return out;
 }
 
@@ -79,6 +83,8 @@ string rm_useless_zero_digits_from_str(string s) {
 string gen_file_name_suffix_from_input(const input_paras &in_para) {
   string str_w_e = rm_useless_zero_digits_from_str(to_string(in_para.w_e));
   string str_w_p = rm_useless_zero_digits_from_str(to_string(in_para.w_p));
+  string str_w_s = rm_useless_zero_digits_from_str(to_string(in_para.w_s));
+  string str_functionality = rm_useless_zero_digits_from_str(to_string(in_para.functionality));
   string str_p_inst_operand = rm_useless_zero_digits_from_str(to_string(in_para.p_inst_operand));
   string str_p_inst = rm_useless_zero_digits_from_str(to_string(in_para.p_inst));
   string str_p_inst_as_nop = rm_useless_zero_digits_from_str(to_string(in_para.p_inst_as_nop));
@@ -90,12 +96,14 @@ string gen_file_name_suffix_from_input(const input_paras &in_para) {
                   to_string(in_para.st_perf) +
                   "_" + str_w_e +
                   "_" + str_w_p +
+                  "_" + str_w_s +
                   "_" + to_string(in_para.st_when_to_restart) +
                   "_" + to_string(in_para.st_when_to_restart_niter) +
                   "_" + to_string(in_para.st_start_prog) +
                   "_" + str_p_inst_operand +
                   "_" + str_p_inst +
                   "_" + str_p_inst_as_nop +
+                  "_" + str_functionality +
                   ".txt";
   return suffix;
 }
@@ -108,6 +116,7 @@ void run_mh_sampler(top_k_progs& topk_progs, input_paras &in_para, vector<inst*>
   mh._restart.set_st_when_to_restart(in_para.st_when_to_restart,
                                      in_para.st_when_to_restart_niter);
   mh._restart.set_st_next_start_prog(in_para.st_start_prog);
+  //to add ws
   mh._restart.set_we_wp_list(in_para.restart_w_e_list, in_para.restart_w_p_list);
   mh._next_proposal.set_probability(in_para.p_inst_operand,
                                     in_para.p_inst,
@@ -118,12 +127,12 @@ void run_mh_sampler(top_k_progs& topk_progs, input_paras &in_para, vector<inst*>
   prog orig(bm);
   orig.print();
   mh._cost.init(&orig, inst::max_prog_len, inputs,
-                in_para.w_e, in_para.w_p,
+                in_para.w_e, in_para.w_p, in_para.w_s,
                 in_para.st_ex, in_para.st_eq,
                 in_para.st_avg, in_para.st_perf,
                 (! in_para.disable_prog_eq_cache),
                 in_para.enable_prog_uneq_cache,
-                in_para.is_win);
+                in_para.is_win, in_para.functionality);
   try {
     mh.mcmc_iter(topk_progs, in_para.niter, &orig, in_para.is_win);
   } catch (string err_msg) {
@@ -292,6 +301,7 @@ void usage() {
        << setw(W) << "--desc arg" << ": bpf bytecode description file" << endl
        << setw(W) << "--w_e arg" << ": weight of error cost in cost function" << endl
        << setw(W) << "--w_p arg" << ": weight of performance cost in cost function" << endl
+       << setw(W) << "--w_s arg" << ": weight of safety cost in cost function" << endl
        << setw(W) << "--st_ex arg" << ": " +  para_st_ex_desc() << endl
        << setw(W) << "--st_eq arg" << ": " +  para_st_eq_desc() << endl
        << setw(W) << "--st_avg arg" << ": " + para_st_avg_desc() << endl
@@ -315,6 +325,7 @@ void usage() {
        << setw(W) << "--disable_prog_eq_cache: disable the usage of prog_eq_cache" << endl
        << setw(W) << "--enable_prog_uneq_cache: enable the usage of prog_uneq_cache" << endl
        << setw(W) << "--is_win: enable window program equivalence check" << endl
+       << setw(W) << "--functionality arg" << ": '0' to work for optimization, '1' to work for repair" << endl
        << endl << setw(W) << "--logger_level" << ": " << para_logger_level_desc() << endl;
 }
 
@@ -345,28 +356,30 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
     {"desc", required_argument, nullptr, 5},
     {"w_e", required_argument, nullptr, 6},
     {"w_p", required_argument, nullptr, 7},
-    {"st_ex", required_argument, nullptr, 8},
-    {"st_eq", required_argument, nullptr, 9},
-    {"st_avg", required_argument, nullptr, 10},
-    {"st_perf", required_argument, nullptr, 11},
-    {"st_when_to_restart", required_argument, nullptr, 12},
-    {"st_when_to_restart_niter", required_argument, nullptr, 13},
-    {"st_start_prog", required_argument, nullptr, 14},
-    {"restart_w_e_list", required_argument, nullptr, 15},
-    {"restart_w_p_list", required_argument, nullptr, 16},
-    {"reset_win_niter", required_argument, nullptr, 17},
-    {"win_s_list", required_argument, nullptr, 18},
-    {"win_e_list", required_argument, nullptr, 19},
-    {"p_inst_operand", required_argument, nullptr, 20},
-    {"p_inst", required_argument, nullptr, 21},
-    {"p_inst_as_nop", required_argument, nullptr, 22},
-    {"port", required_argument, nullptr, 23},
-    {"disable_prog_eq_cache", no_argument, nullptr, 24},
-    {"enable_prog_uneq_cache", no_argument, nullptr, 25},
-    {"is_win", no_argument, nullptr, 26},
-    {"logger_level", required_argument, nullptr, 27},
-    {"disable_move_mem_exchange", no_argument, nullptr, 28},
-    {"disable_move_mem_exchange_gen_operands", no_argument, nullptr, 29},
+    {"w_s", required_argument, nullptr, 8},
+    {"st_ex", required_argument, nullptr, 9},
+    {"st_eq", required_argument, nullptr, 10},
+    {"st_avg", required_argument, nullptr, 11},
+    {"st_perf", required_argument, nullptr, 12},
+    {"st_when_to_restart", required_argument, nullptr, 13},
+    {"st_when_to_restart_niter", required_argument, nullptr, 14},
+    {"st_start_prog", required_argument, nullptr, 15},
+    {"restart_w_e_list", required_argument, nullptr, 16},
+    {"restart_w_p_list", required_argument, nullptr, 17},
+    {"reset_win_niter", required_argument, nullptr, 18},
+    {"win_s_list", required_argument, nullptr, 19},
+    {"win_e_list", required_argument, nullptr, 20},
+    {"p_inst_operand", required_argument, nullptr, 21},
+    {"p_inst", required_argument, nullptr, 22},
+    {"p_inst_as_nop", required_argument, nullptr, 23},
+    {"port", required_argument, nullptr, 24},
+    {"disable_prog_eq_cache", no_argument, nullptr, 25},
+    {"enable_prog_uneq_cache", no_argument, nullptr, 26},
+    {"is_win", no_argument, nullptr, 27},
+    {"logger_level", required_argument, nullptr, 28},
+    {"disable_move_mem_exchange", no_argument, nullptr, 29},
+    {"disable_move_mem_exchange_gen_operands", no_argument, nullptr, 30},
+    {"functionality", required_argument, nullptr, 31},
     {nullptr, no_argument, nullptr, 0}
   };
   int opt;
@@ -386,28 +399,30 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
       case 5: in_para.desc = optarg; break;
       case 6: in_para.w_e = stod(optarg); break;
       case 7: in_para.w_p = stod(optarg); break;
-      case 8: in_para.st_ex = stoi(optarg); break;
-      case 9: in_para.st_eq = stoi(optarg); break;
-      case 10: in_para.st_avg = stoi(optarg); break;
-      case 11: in_para.st_perf = stoi(optarg); break;
-      case 12: in_para.st_when_to_restart = stoi(optarg); break;
-      case 13: in_para.st_when_to_restart_niter = stoi(optarg); break;
-      case 14: in_para.st_start_prog = stoi(optarg); break;
-      case 15: set_w_list(in_para.restart_w_e_list, optarg); break;
-      case 16: set_w_list(in_para.restart_w_p_list, optarg); break;
-      case 17: in_para.reset_win_niter = stoi(optarg); break;
-      case 18: set_win_list(in_para.win_s_list, optarg); break;
-      case 19: set_win_list(in_para.win_e_list, optarg); break;
-      case 20: in_para.p_inst_operand = stod(optarg); break;
-      case 21: in_para.p_inst = stod(optarg); break;
-      case 22: in_para.p_inst_as_nop = stod(optarg); break;
-      case 23: in_para.server_port = stoi(optarg); break;
-      case 24: in_para.disable_prog_eq_cache = true; break;
-      case 25: in_para.enable_prog_uneq_cache = true; break;
-      case 26: in_para.is_win = true; break;
-      case 27: in_para.logger_level = stoi(optarg); break;
-      case 28: in_para.disable_move_mem_exchange = true; break;
-      case 29: in_para.disable_move_mem_exchange_gen_operands = true; break;
+      case 8: in_para.w_s = stod(optarg); break;
+      case 9: in_para.st_ex = stoi(optarg); break;
+      case 10: in_para.st_eq = stoi(optarg); break;
+      case 11: in_para.st_avg = stoi(optarg); break;
+      case 12: in_para.st_perf = stoi(optarg); break;
+      case 13: in_para.st_when_to_restart = stoi(optarg); break;
+      case 14: in_para.st_when_to_restart_niter = stoi(optarg); break;
+      case 15: in_para.st_start_prog = stoi(optarg); break;
+      case 16: set_w_list(in_para.restart_w_e_list, optarg); break;
+      case 17: set_w_list(in_para.restart_w_p_list, optarg); break;
+      case 18: in_para.reset_win_niter = stoi(optarg); break;
+      case 19: set_win_list(in_para.win_s_list, optarg); break;
+      case 20: set_win_list(in_para.win_e_list, optarg); break;
+      case 21: in_para.p_inst_operand = stod(optarg); break;
+      case 22: in_para.p_inst = stod(optarg); break;
+      case 23: in_para.p_inst_as_nop = stod(optarg); break;
+      case 24: in_para.server_port = stoi(optarg); break;
+      case 25: in_para.disable_prog_eq_cache = true; break;
+      case 26: in_para.enable_prog_uneq_cache = true; break;
+      case 27: in_para.is_win = true; break;
+      case 28: in_para.logger_level = stoi(optarg); break;
+      case 29: in_para.disable_move_mem_exchange = true; break;
+      case 30: in_para.disable_move_mem_exchange_gen_operands = true; break;
+      case 31: in_para.functionality = stoi(optarg); break;
       case '?': usage(); return false;
     }
   }
@@ -450,6 +465,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.k = 1;
   in_para.w_e = 1.0;
   in_para.w_p = 0.0;
+  in_para.w_s = 0.0;
   in_para.st_ex = ERROR_COST_STRATEGY_ABS;
   in_para.st_eq = ERROR_COST_STRATEGY_EQ1;
   in_para.st_avg = ERROR_COST_STRATEGY_NAVG;
@@ -472,6 +488,7 @@ void set_default_para_vals(input_paras & in_para) {
   in_para.logger_level = LOGGER_ERROR;
   in_para.disable_move_mem_exchange = false;
   in_para.disable_move_mem_exchange_gen_operands = false;
+  in_para.functionality = 0;
 }
 
 bool check_pgm_is_supported(string &err_msg, inst* pgm, int len) {

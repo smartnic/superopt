@@ -14,9 +14,9 @@ cost::cost() {}
 cost::~cost() {}
 
 void cost::init(prog* orig, int len, const vector<inout_t> &input,
-                double w_e, double w_p,
+                double w_e, double w_p, double w_s,
                 int strategy_ex, int strategy_eq, int strategy_avg, int strategy_perf,
-                bool enable_prog_eq_cache, bool enable_prog_uneq_cache, bool is_win) {
+                bool enable_prog_eq_cache, bool enable_prog_uneq_cache, bool is_win, int functionality) {
   _vld._is_win = is_win;  // enable win eq chk
   smt_var::is_win = is_win;
   _num_real_orig = orig->num_real_instructions();
@@ -26,6 +26,8 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
   }
   _w_e = w_e;
   _w_p = w_p;
+  _w_s = w_s;
+  _functionality = functionality;
   _strategy_ex = strategy_ex;
   _strategy_eq = strategy_eq;
   _strategy_avg = strategy_avg;
@@ -192,9 +194,291 @@ bool is_win_legal(inst* orig, int len1, inst* synth, int len2,
   bool synth_win_can_be_end = is_orig_win_end_block;
   return synth_win_can_be_end;
 }
+/*
+*This safety_cost_repair only measures the safety of the synth program
+*
+*/
+double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
+  if (synth->_error_cost != -1) return synth->_error_cost;
+  //boolean variable: true: pass static safety, fals: fails
+  int total_safety_cost = 0;
+  bool pass_static_safety;
+  try {
+    if (! smt_var::is_win) {
+      static_safety_check_pgm(synth->inst_list, len2);
+    } else {
+      static_safety_check_win(synth->inst_list,
+                              inout_t::start_insn, inout_t::end_insn,
+                              _vld._pss_orig);
+    }
+    pass_static_safety = true;
+  } catch (const string err_msg) {
+    
+    //instead of error_cost_max, set it as 1 or something
+    //modify to safety_cost_max
+    pass_static_safety = false;
+    //total_safety_cost += 1;
+    //synth->set_safety_cost(ERROR_COST_MAX);
+    //return ERROR_COST_MAX;
+  }
+
+  //double total_cost = 0;
+  //inout_t output1
+  inout_t output2;
+  //output1.init();
+  output2.init();
+  //int num_successful_ex = 0;
+  prog_state ps;
+  ps.init();
+
+  // variable to keep track of number of tests for which output is not observed
+  int num_of_unsucc_ex = 0;
+  // process total_cost with example set
+  for (int i = 0; i < _examples._exs.size(); i++) {
+    //Not req
+    //output1 = _examples._exs[i].output;
+    
+    try {
+      synth->interpret(output2, ps, _examples._exs[i].input);
+    } catch (const string err_msg) {
+      // illegal program
+      //synth->set_safety_cost(ERROR_COST_MAX);
+      //return ERROR_COST_MAX;
+      num_of_unsucc_ex ++;
+    }
+
+    //double ex_cost = get_ex_error_cost(output1, output2);
+    //if (ex_cost == 0) num_successful_ex++;
+    // else if (ex_cost >= ERROR_COST_MAX) {
+    //   // synthesis whose test case error cost >= ERROR_COST_MAX
+    //   synth->set_error_cost(ERROR_COST_MAX);
+    //   return ERROR_COST_MAX;
+    // }
+
+    //total_cost += ex_cost;
+  }
+
+  int is_equal = 0;
+  //int ex_set_size = _examples._exs.size();
+  //boolean variable to check whether it passes validator or not
+  bool pass_validator = false;
+  //condition: passed previous 2 modules (true, num_of_succ_ex == ex_size)
+  if (pass_static_safety && (num_of_unsucc_ex == 0)) {
+    
+    auto t1 = NOW;
+    try {
+      is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+      //Check this: Return: 0(unequal), 1(equal), -1(unsafe) 
+      // if (smt_var::is_win) {
+      //   // check win prog eq check result
+      //   validator vld1;
+      //   vld1._is_win = false;
+      //   smt_var::is_win = false;
+      //   vld1.set_orig(orig->inst_list, len1);
+      //   int is_equal_expected = vld1.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+      //   cout << "win prog check: " << is_equal << " " << is_equal_expected << endl;
+      //   if (is_equal_expected != is_equal) {
+      //     cout << "win prog check fail: " << is_equal << " " << is_equal_expected << endl;
+      //   }
+      //   smt_var::is_win = true;
+      // }
+      pass_validator = true;
+    } catch (const string err_msg) {
+      // illegal program
+      //synth->set_error_cost(ERROR_COST_MAX);
+      //synth->set_safety_cost(ERROR_COST_MAX);
+      //return ERROR_COST_MAX;
+      pass_validator = false;
+    }
+    auto t2 = NOW;
+    auto dur = DUR(t1, t2);
+    // cout << dur << endl;
+    dur_sum += dur;
+    if (dur > 50000) {
+      dur_sum_long += dur;
+      n_sum_long++;
+      // synth->print();
+    }
+  }
+  
+
+  //int avg_value = get_avg_value(ex_set_size);
+  //total_cost = get_final_error_cost(total_cost, is_equal,
+                                    //ex_set_size, num_successful_ex,
+                                    //avg_value);
+  // process counterexamples
+  // If num_successful_ex < (int)_examples._exs.size(),
+  // it shows the example that synth fails in the example set is a counterexample.
+  // The counterexample generated from this synth may have already been in the examples set.
+  // Thus, only when num_successful_ex == (int)_examples._exs.size(),
+  // the counterexample generated from this synth must can be added into the example set.
+  // But it should ensure that the number of initial example set is big enough.
+  // case 1: gen_counterex_flag = (is_equal == 0);
+  // case 2: gen_counterex_flag = (is_equal == 0) && (num_successful_ex == (int)_examples._exs.size());
+  
+  //CONDITION: ONLY IF ITS UNSAFE BUT PASSES FIRST 2 MODULES
+  //VALIDATOR GENERATES COUNTEREXAMPLE 
+  //if (((is_equal == 0) || (is_equal == ILLEGAL_CEX)) &&
+  //    (num_successful_ex == (int)_examples._exs.size())) {
+  if(pass_static_safety && (num_of_unsucc_ex == 0) && ((pass_validator == false)||is_equal==-1)){
+    _examples.insert(_vld._last_counterex);
+    _meas_new_counterex_gened = true;
+    cout << "counterexample " << _examples.size() << ":" << endl;
+    cout << _vld._last_counterex.input << endl;
+    cout << _vld._last_counterex.output << endl;
+  }
+  // in case there is overflow which makes a positive value become a negative value or
+  // total_cost > ERROR_COST_MAX
+  // if ((total_cost > ERROR_COST_MAX) || (total_cost < 0)) {
+  //   synth->set_error_cost(ERROR_COST_MAX);
+  //   return ERROR_COST_MAX;
+  // }
+
+  //calculate safety cost based on the 3 variables
+  //think of some good equation
+  //set_safety_cost below:
+  //synth->set_error_cost(total_cost);
+  //return total_cost;
+  //Some function of: pass_satic_safety, num_of_unsucc_ex, pass_validator, isEqual
+
+  //The below is a very rough calculation as a placeholder for now
+  //Later the safety cost will be made more continuous and accurate
+
+  if(pass_static_safety && (num_of_unsucc_ex == 0)){
+    if(pass_validator == false){
+        total_safety_cost += 2;
+    }else if(is_equal < 0){
+        total_safety_cost += 1;
+    }
+  }else{
+    if(!pass_static_safety){
+      total_safety_cost += 3;
+    }
+    total_safety_cost += num_of_unsucc_ex;
+  }
+
+  synth->set_safety_cost(total_safety_cost);
+  return total_safety_cost;
+}
 
 /*
+*This error_cost_repair only measures the error or distance from original program, not safety
+*
+*/
+double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
+  if (synth->_error_cost != -1) return synth->_error_cost;
+  
+  double total_cost = 0;
+  inout_t output1, output2;
+  output1.init();
+  output2.init();
+  int num_successful_ex = 0;
+  prog_state ps;
+  ps.init();
+  // process total_cost with example set
+  for (int i = 0; i < _examples._exs.size(); i++) {
+    output1 = _examples._exs[i].output;
+    //2 VARIABLES
+    //1: NUM OF TEST CASES THAT CAN GET OUTPUT
+    //2: OUTPUTS TO COMPARE TO ORIGINAL PROGRAMS OUTPUT
+    //TRY TO GENERATE PRIVATE/TEMPORARY MEMORY TO SHARE RESULTS BETWEEN ERROR AND SAFETY COST
+    //CALCULATE RESULT AND PASS TO THE TWO FUNCTIONS TO SAVE TIME.
+    try {
+      synth->interpret(output2, ps, _examples._exs[i].input);
+    } catch (const string err_msg) {
+      // illegal program
+      //synth->set_error_cost(ERROR_COST_MAX);
+      //synth->set_safety_cost(ERROR_COST_MAX);
+      //return ERROR_COST_MAX;
+      //This cost has already been added for safety before.
+      //if this happens, we just move on to the next test case
+      continue;
+    }
+    double ex_cost = get_ex_error_cost(output1, output2);
+    if (ex_cost == 0) num_successful_ex++;
+    // else if (ex_cost >= ERROR_COST_MAX) {
+    //   // synthesis whose test case error cost >= ERROR_COST_MAX
+    //   synth->set_error_cost(ERROR_COST_MAX);
+    //   return ERROR_COST_MAX;
+    // }
+
+    total_cost += ex_cost;
+  }
+  int is_equal = 0;
+  int ex_set_size = _examples._exs.size();
+  if (num_successful_ex == ex_set_size) {
+    auto t1 = NOW;
+    try {
+      is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+      // if (smt_var::is_win) {
+      //   // check win prog eq check result
+      //   validator vld1;
+      //   vld1._is_win = false;
+      //   smt_var::is_win = false;
+      //   vld1.set_orig(orig->inst_list, len1);
+      //   int is_equal_expected = vld1.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+      //   cout << "win prog check: " << is_equal << " " << is_equal_expected << endl;
+      //   if (is_equal_expected != is_equal) {
+      //     cout << "win prog check fail: " << is_equal << " " << is_equal_expected << endl;
+      //   }
+      //   smt_var::is_win = true;
+      // }
+    } catch (const string err_msg) {
+      // illegal program
+      //synth->set_error_cost(ERROR_COST_MAX);
+      //synth->set_safety_cost(ERROR_COST_MAX);
+      //return ERROR_COST_MAX;
+      //already took care of this situation for safety
+    }
+    auto t2 = NOW;
+    auto dur = DUR(t1, t2);
+    // cout << dur << endl;
+    dur_sum += dur;
+    if (dur > 50000) {
+      dur_sum_long += dur;
+      n_sum_long++;
+      // synth->print();
+    }
+  }
+  int avg_value = get_avg_value(ex_set_size);
+  total_cost = get_final_error_cost(total_cost, is_equal,
+                                    ex_set_size, num_successful_ex,
+                                    avg_value);
+  // process counterexamples
+  // If num_successful_ex < (int)_examples._exs.size(),
+  // it shows the example that synth fails in the example set is a counterexample.
+  // The counterexample generated from this synth may have already been in the examples set.
+  // Thus, only when num_successful_ex == (int)_examples._exs.size(),
+  // the counterexample generated from this synth must can be added into the example set.
+  // But it should ensure that the number of initial example set is big enough.
+  // case 1: gen_counterex_flag = (is_equal == 0);
+  // case 2: gen_counterex_flag = (is_equal == 0) && (num_successful_ex == (int)_examples._exs.size());
+  //if (((is_equal == 0) || (is_equal == ILLEGAL_CEX)) &&
+   //   (num_successful_ex == (int)_examples._exs.size())) {
+  //we already take care of is_equal < 0 for safety
+  //New condition:  
+  if((num_successful_ex == (int)_examples._exs.size()) && (is_equal == 0)){
+    _examples.insert(_vld._last_counterex);
+    _meas_new_counterex_gened = true;
+    cout << "counterexample " << _examples.size() << ":" << endl;
+    cout << _vld._last_counterex.input << endl;
+    cout << _vld._last_counterex.output << endl;
+  }
+  // in case there is overflow which makes a positive value become a negative value or
+  // total_cost > ERROR_COST_MAX
+  // if ((total_cost > ERROR_COST_MAX) || (total_cost < 0)) {
+  //   synth->set_error_cost(ERROR_COST_MAX);
+  //   return ERROR_COST_MAX;
+  // }
+
+  synth->set_error_cost(total_cost);
+  return total_cost;
+}
+
+/*
+ * This error cost has both safety and error costs incorporated.
  * Steps for error cost computation:
+ *
  * 1. Compute c_ex, the error cost from EACH example
  *   Two strategy for c_ex:
  *     a. ERROR_COST_STRATEGY_ABS: c_ex = abs(output_orig - output_synth)
@@ -361,13 +645,32 @@ double cost::perf_cost(prog* synth, int len, bool set_win) {
   return total_cost;
 }
 
+//called by alpha
 double cost::total_prog_cost(prog * orig, int len1, prog * synth, int len2) {
   bool flag = (synth->_error_cost == -1);
-  double err_cost = error_cost(orig, len1, synth, len2);
-  double per_cost = perf_cost(synth, len2, true);
-  if (flag && logger.is_print_level(LOGGER_DEBUG)) {
-    cout << "cost: " << err_cost << " " << per_cost << " "
-         << (_w_e * err_cost) + (_w_p * per_cost) << endl;
+  double err_cost = 0.0;
+  double per_cost = 0.0;
+  double safe_cost = 0.0;
+
+  if (_functionality == 1){
+    //for repair
+    err_cost = error_cost_repair(orig, len1, synth, len2);
+    safe_cost = safety_cost_repair(orig, len1, synth, len2);
+
+    return (_w_e * err_cost) + (_w_s * safe_cost);
+
+  }else{
+    //for optimize
+    err_cost = error_cost(orig, len1, synth, len2);
+    per_cost = perf_cost(synth, len2, true);
+    if (flag && logger.is_print_level(LOGGER_DEBUG)) {
+      cout << "cost: " << err_cost << " " << per_cost << " "
+           << (_w_e * err_cost) + (_w_p * per_cost) << endl;
+    }
+
+    return (_w_e * err_cost) + (_w_p * per_cost);
+
   }
-  return (_w_e * err_cost) + (_w_p * per_cost);
+  
 }
+

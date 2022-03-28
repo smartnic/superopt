@@ -44,7 +44,7 @@ struct map_attr { // map attribute
 ostream& operator<<(ostream& out, const map_attr& m_attr);
 
 enum pgm_input_type {
-  PGM_INPUT_constant,
+  PGM_INPUT_constant, //input(r1) -> constant
   PGM_INPUT_pkt, // input(r1) -> pkt_start_addr
   PGM_INPUT_pkt_ptrs, // input(r1) -> {pkt_start_addr(32-bit), pkt_end_addr(32-bit)}
   PGM_INPUT_skb,

@@ -232,6 +232,7 @@ prog* mh_sampler::mh_next(prog* curr, prog* orig) {
   }
   // next->canonicalize();
   double uni_sample = random_double_unit();
+  //probability of whether or not to accept the proposal
   double a = alpha(curr, next, orig);
   _meas_data.insert_proposal(*next, uni_sample < a);
   int iter_num = _meas_data._proposals.size() - 1;

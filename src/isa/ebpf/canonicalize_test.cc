@@ -830,7 +830,7 @@ void test4() {
   // test_safety_check(p1_1, sizeof(p1_1) / sizeof(inst), false, "1");
   // test_safety_check_win(p1_1, sizeof(p1_1) / sizeof(inst), 0, 0, false, "1.1");
 
-  inst p1_2[] = {inst(AND64XC, 1),
+  inst p1_2[] = {inst(AND64XC, 1), 
                  inst(EXIT),
                 };
   test_safety_check(p1_2, sizeof(p1_2) / sizeof(inst), false, "2");
