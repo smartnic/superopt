@@ -15,6 +15,7 @@ class prog {
   int freq_count;
   double  _error_cost;
   double  _perf_cost;
+  double _safety_cost;
   prog(const prog& other);
   prog(inst* instructions);
   prog();
@@ -25,6 +26,7 @@ class prog {
   void set_vals(const prog &x);
   void set_error_cost(double cost);
   void set_perf_cost(double cost);
+  void set_safety_cost(double cost);
   int to_rel_bv(const prog &p) const;
   int to_rel_bv(const vector<prog> &ps) const;
   void to_abs_bv(vector<op_t>& bv) const;

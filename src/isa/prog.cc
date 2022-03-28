@@ -11,6 +11,7 @@ prog::prog(const prog& other) {
   freq_count = other.freq_count;
   _error_cost = other._error_cost;
   _perf_cost = other._perf_cost;
+  _safety_cost = other._safety_cost;
 }
 
 prog::prog(inst* instructions) {
@@ -21,18 +22,21 @@ prog::prog(inst* instructions) {
   freq_count = 0;
   _error_cost = -1;
   _perf_cost = -1;
+  _safety_cost = -1;
 }
 
 void prog::reset_vals() {
   freq_count = 0;
   _error_cost = -1;
   _perf_cost = -1;
+  _safety_cost = -1;
 }
 
 prog::prog() {
   freq_count = 0;
   _error_cost = -1;
   _perf_cost = -1;
+  _safety_cost = -1;
 }
 
 prog::~prog() {
@@ -58,6 +62,7 @@ void prog::set_vals(const prog &x) {
   freq_count = x.freq_count;
   _error_cost = x._error_cost;
   _perf_cost = x._perf_cost;
+  _safety_cost = x._safety_cost;
 }
 
 void prog::set_error_cost(double cost) {
@@ -66,6 +71,10 @@ void prog::set_error_cost(double cost) {
 
 void prog::set_perf_cost(double cost) {
   _perf_cost = cost;
+}
+
+void prog::set_safety_cost(double cost) {
+  _safety_cost = cost;
 }
 
 int prog::to_rel_bv(const prog &p) const {

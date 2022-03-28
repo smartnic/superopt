@@ -16,8 +16,10 @@ double get_error_cost(inst* p1, inst* p2, int win_start, int win_end) {
   static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
   prog_static_state pss;
+  //This is to infer program state while entering and leaving the window.
   static_analysis(pss, p1, inst::max_prog_len);
   int num_examples = 30;
+  //storing all the initial test cases.
   vector<inout_t> examples;
   gen_random_input_for_win(examples, num_examples,
                            pss.static_state[win_start], p1[win_start],
@@ -26,12 +28,93 @@ double get_error_cost(inst* p1, inst* p2, int win_start, int win_end) {
   return c.error_cost(&prog1, inst::max_prog_len, &prog2, inst::max_prog_len);
 }
 
+double get_safety_cost(inst* p1, inst* p2, int win_start, int win_end) {
+  cost c;
+  c._vld._is_win = true;
+  smt_var::is_win = true;
+  prog prog1(p1), prog2(p2);
+
+  inout_t::start_insn = win_start;
+  inout_t::end_insn = win_end;
+  static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
+  c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
+  prog_static_state pss;
+  //This is to infer program state while entering and leaving the window.
+  static_analysis(pss, p1, inst::max_prog_len);
+  int num_examples = 30;
+  //storing all the initial test cases.
+  vector<inout_t> examples;
+  gen_random_input_for_win(examples, num_examples,
+                           pss.static_state[win_start], p1[win_start],
+                           win_start, win_end);
+  c.set_examples(examples, &prog1);
+  c.error_cost(&prog1, inst::max_prog_len, &prog2, inst::max_prog_len);
+  return prog2._safety_cost;
+}
+
+double get_error_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
+  cost c;
+  c._vld._is_win = true;
+  smt_var::is_win = true;
+  prog prog1(p1), prog2(p2);
+
+  inout_t::start_insn = win_start;
+  inout_t::end_insn = win_end;
+  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
+  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
+  prog_static_state pss;
+  //This is to infer program state while entering and leaving the window.
+  static_analysis(pss, p1, inst::max_prog_len);
+  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  int num_examples = 30;
+  //storing all the initial test cases.
+  vector<inout_t> examples;
+  gen_random_input_for_win(examples, num_examples,
+                           pss.static_state[win_start], p1[win_start],
+                           win_start, win_end);
+  c.set_examples(examples, &prog1);
+  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  return c.error_cost_repair(&prog1, inst::max_prog_len, &prog2, inst::max_prog_len);
+  
+}
+
+double get_safety_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
+  cost c;
+  c._vld._is_win = true;
+  smt_var::is_win = true;
+  prog prog1(p1), prog2(p2);
+
+  inout_t::start_insn = win_start;
+  inout_t::end_insn = win_end;
+  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
+  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
+  prog_static_state pss;
+  //This is to infer program state while entering and leaving the window.
+  static_analysis(pss, p1, inst::max_prog_len);
+  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  int num_examples = 30;
+  //storing all the initial test cases.
+  vector<inout_t> examples;
+  gen_random_input_for_win(examples, num_examples,
+                           pss.static_state[win_start], p1[win_start],
+                           win_start, win_end);
+  c.set_examples(examples, &prog1);
+  //cout << "Test4: executed till here in get_error_cost_repair" << endl;
+  return c.safety_cost_repair(&prog1, inst::max_prog_len, &prog2, inst::max_prog_len);
+  
+}
+
 void test1() {
   cout << "Test1: test error cost" << endl;
   inst p1[N3], p2[N3];
+  //The bm3 program is there in benchmark_ebf.cc under the measure folder
   for (int i = 0; i < N3; i++) p1[i] = bm3[i];
   for (int i = 0; i < N3; i++) p2[i] = bm3[i];
-  p2[5] = inst(MOV32XY, 1, 0);
+  p2[5] = inst(MOV32XY, 1, 0); //changing the 5th instruction
   p2[6] = inst();
   p2[7] = inst();
   int win_start = 5, win_end = 7;
@@ -44,7 +127,9 @@ void test1() {
   mem_t::add_map(map_attr(64, 128, 91));
   mem_t::_layout._n_randoms_u32 = 1;
   smt_var::init_static_variables();
-
+  //The expected error cost is 0 because in this window interval we expect the 
+  //2 programs to be semantically equivalent.
+  //Making sure expected error cost is same as the result
   print_test_res(get_error_cost(p1, p2, win_start, win_end) == 0, "rcv_sock4 1");
   mem_t::_layout.clear();
 
@@ -214,8 +299,217 @@ void test1() {
   mem_t::_layout.clear();
 }
 
+void test3(){
+
+  //inst p1[N3], p2[N3];
+  //N3: constant
+  //generate new program length
+  //both should be same length
+  //p1: orig, p2: synth
+  //synth not easy, doesnt pass static check
+  //provide a safe program for p1
+  //can use win_select_test_ebpf line 60 
+
+
+  //setting the code
+  //for (int i = 0; i < N3; i++) p1[i] = bm3[i];
+  //for (int i = 0; i < N3; i++) p2[i] = bm3[i];
+  //p2[5] = inst(MOV32XY, 1, 0); //changing the 5th instruction
+  //p2[6] = inst();
+  //p2[7] = inst();
+
+  inst p1[] = {inst(NOP), 
+                inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+
+  inst p2[] = {inst(AND64XC, 1, 0), 
+                inst(MOV64XC, 0, 0),
+                 inst(EXIT),
+                };
+  //part to be verified
+  //only this interval's code is different between p1 and p2
+  //Other parts (code outside the window) of p1 and p2 are identical
+  //make sure unsafe instruction is in the window
+  //wind_start can be from 0 instruction index
+  int win_start = 0, win_end = 0;
+
+  mem_t::_layout.clear();
+  //use sizeof(program)/sizeof(ins) for below
+  inst::max_prog_len = sizeof(p1) / sizeof(inst);
+
+  //inst_var.h (line 46): PGM_INPUT types for different kinds of program inputs
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  //we don't use packet in the above programs
+  mem_t::set_pkt_sz(4);
+  //mem_t::add_map(map_attr(128, 64, 91));
+  //mem_t::add_map(map_attr(96, 96, 91));
+  //mem_t::add_map(map_attr(64, 128, 91));
+  mem_t::_layout._n_randoms_u32 = 1;
+  smt_var::init_static_variables();
+
+  //print_test_res(get_error_cost(p1, p2, win_start, win_end) == 0, "rcv_sock4 1");
+  print_test_res(get_safety_cost(p1, p2, win_start, win_end) == ERROR_COST_MAX, "cost:error change 1 check");
+  mem_t::_layout.clear();
+
+}
+
+void test4(){
+
+  //Two safe programs that are semantically equivalent output a 0 error cost
+
+  // *(u32 *)pkt = 0
+  //r1 is pkt start address
+  inst p1[] = { inst(MOV64XC, 0, 0),
+                inst(STXB, 1, 0, 0), // *(u8 *)(pkt + 0) = r0
+                inst(STXB, 1, 1, 0), // *(u8 *)(pkt + 1) = r0
+                inst(STXB, 1, 2, 0), // *(u8 *)(pkt + 2) = r0
+                inst(STXB, 1, 3, 0), // *(u8 *)(pkt + 3) = r0
+                //inst(MOV64XC, 0, 0),
+                inst(),
+                inst(),
+               };
+  //optimization: changing 4 bytes at once
+  inst p2[] = {inst(MOV64XC, 0, 0),
+                    inst(STXW, 1, 0, 0), // *(u32 *)(pkt + 0) = r0
+                    
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                      inst(),
+                     };
+
+  int win_start = 0, win_end = 4;
+
+  mem_t::_layout.clear();
+  //use sizeof(program)/sizeof(ins) for below
+  inst::max_prog_len = sizeof(p1) / sizeof(inst);
+
+  //inst_var.h (line 46): PGM_INPUT types for different kinds of program inputs
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  //we don't use packet in the above programs
+  mem_t::set_pkt_sz(5);
+  //mem_t::add_map(map_attr(128, 64, 91));
+  //mem_t::add_map(map_attr(96, 96, 91));
+  //mem_t::add_map(map_attr(64, 128, 91));
+  mem_t::_layout._n_randoms_u32 = 1;
+  smt_var::init_static_variables();
+
+  //print_test_res(get_error_cost(p1, p2, win_start, win_end) == 0, "rcv_sock4 1");
+  print_test_res(get_error_cost_repair(p1, p2, win_start, win_end) == 0, "error_cost_repair: 2 safe and equivalent programs ");
+  mem_t::_layout.clear();
+
+
+}
+
+void test5(){
+
+  //2 safe programs that are not equivalent should have error cost > 0 and safety cost = 0
+
+  // *(u32 *)pkt = 0
+  //r1 is pkt start address
+  inst p1[] = { inst(MOV64XC, 0, 0),
+                inst(STXB, 1, 0, 0), // *(u8 *)(pkt + 0) = r0
+                inst(STXB, 1, 1, 0), // *(u8 *)(pkt + 1) = r0
+                inst(STXB, 1, 2, 0), // *(u8 *)(pkt + 2) = r0
+                inst(STXB, 1, 3, 0), // *(u8 *)(pkt + 3) = r0
+                //inst(MOV64XC, 0, 0),
+                inst(),
+                inst(),
+               };
+
+
+  inst p2[] = { inst(MOV64XC, 0, 1), //Moving 0 into register r0
+                inst(STXB, 1, 0, 0), // *(u8 *)(pkt + 0) = r0
+                inst(STXB, 1, 1, 0), // *(u8 *)(pkt + 1) = r0
+                inst(STXB, 1, 2, 0), // *(u8 *)(pkt + 2) = r0
+                inst(STXB, 1, 3, 0), // *(u8 *)(pkt + 3) = r0
+                //inst(MOV64XC, 0, 0),
+                inst(),
+                inst(),
+               };
+  
+
+
+  int win_start = 0, win_end = 0;
+
+  mem_t::_layout.clear();
+  //use sizeof(program)/sizeof(ins) for below
+  inst::max_prog_len = sizeof(p1) / sizeof(inst);
+
+  //inst_var.h (line 46): PGM_INPUT types for different kinds of program inputs
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  //we don't use packet in the above programs
+  mem_t::set_pkt_sz(5);
+  //mem_t::add_map(map_attr(128, 64, 91));
+  //mem_t::add_map(map_attr(96, 96, 91));
+  //mem_t::add_map(map_attr(64, 128, 91));
+  mem_t::_layout._n_randoms_u32 = 1;
+  smt_var::init_static_variables();
+
+  //print_test_res(get_error_cost(p1, p2, win_start, win_end) == 0, "rcv_sock4 1");
+  print_test_res(get_error_cost_repair(p1, p2, win_start, win_end) > 0, "error_cost_repair: 2 safe and non-equivalent programs ");
+  print_test_res(get_safety_cost_repair(p1, p2, win_start, win_end) == 0, "safety_cost_repair: 2 safe and non-equivalent programs ");
+  mem_t::_layout.clear();
+
+}
+
+void test6(){
+
+  //orig: safe program
+  //synth: unsafe program
+  //safety_cost_repair should be greater than 0.
+
+  // *(u32 *)pkt = 0
+  //r1 is pkt start address
+  inst p1[] = { inst(MOV64XC, 0, 0),
+                inst(STXB, 1, 0, 0), // *(u8 *)(pkt + 0) = r0
+                inst(STXB, 1, 1, 0), // *(u8 *)(pkt + 1) = r0
+                inst(STXB, 1, 2, 0), // *(u8 *)(pkt + 2) = r0
+                inst(STXB, 1, 3, 0), // *(u8 *)(pkt + 3) = r0
+                inst(),
+                inst(),
+               };
+
+  inst p2[] = {inst(STXB, 1, 0, 0), // *(u8 *)(pkt + 0) = r0
+                inst(STXB, 1, 1, 0), // *(u8 *)(pkt + 1) = r0
+                inst(STXB, 1, 2, 0), // *(u8 *)(pkt + 2) = r0
+                inst(STXB, 1, 3, 0), // *(u8 *)(pkt + 3) = r0
+                inst(MOV64XC, 0, 0),
+                inst(),
+                inst(),
+              };
+
+  int win_start = 0, win_end = 4;
+
+  mem_t::_layout.clear();
+  //use sizeof(program)/sizeof(ins) for below
+  inst::max_prog_len = sizeof(p1) / sizeof(inst);
+
+  //inst_var.h (line 46): PGM_INPUT types for different kinds of program inputs
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  //we don't use packet in the above programs
+  mem_t::set_pkt_sz(5);
+  //mem_t::add_map(map_attr(128, 64, 91));
+  //mem_t::add_map(map_attr(96, 96, 91));
+  //mem_t::add_map(map_attr(64, 128, 91));
+  mem_t::_layout._n_randoms_u32 = 1;
+  smt_var::init_static_variables();
+
+  print_test_res(get_safety_cost_repair(p1, p2, win_start, win_end) > 0, "safety_cost_repair: 2 safe and non-equivalent programs ");
+
+  mem_t::_layout.clear();
+
+
+}
+
 int main() {
   test1();
+  //test3();
+  test4();
+  test5();
+  test6();
   kill_server();
   return 0;
 }

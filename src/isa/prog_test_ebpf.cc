@@ -134,8 +134,27 @@ void test2() {
   print_test_res(check_top_k_progs_res(perf_costs_2, topk_progs2), "6.2");
 }
 
+void test3(){
+
+  //Testing set_safety_cost
+  prog * myProg = new prog();
+  (* myProg).set_safety_cost(23);
+  
+  //cout << "\n--------------------------------------\n";
+  cout << "Testing set_safety_cost\n";
+
+  if(myProg->_safety_cost == 23){
+    cout << "Safety cost successfully verified to be 23\n";
+  }else{
+    cout << "NOT SUCCESS\n";
+  }
+  
+
+}
+
 int main() {
   test1();
   test2();
+  test3();
   return 0;
 }

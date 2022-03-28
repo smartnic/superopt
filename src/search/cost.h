@@ -13,6 +13,7 @@ extern int dur_sum_long;
 extern int n_sum_long;
 
 #define ERROR_COST_MAX 100000
+#define SAFETY_COST_MAX 100000
 
 #define ERROR_COST_STRATEGY_ABS 0
 #define ERROR_COST_STRATEGY_POP 1
@@ -42,26 +43,38 @@ class cost {
   validator _vld;
   examples _examples;
   bool _meas_new_counterex_gened;
+  
   double _w_e = 0.5;
   double _w_p = 0.5;
+  //add a weight for safety
+  double _w_s = 0.5;
   int _strategy_ex = 0;
   int _strategy_eq = 0;
   int _strategy_avg = 0;
   int _strategy_perf = 0;
+  //define flag repair(1)/optimize(0)
+  //Later collect this info from input parameters. For now, defaulting to repair
+  //Transfer purpose here
+  int _functionality = 0;
+  //add a function to set this value
+  //In the function call main.cc functions
   cost();
   ~cost();
   void init(prog* orig, int len, const vector<inout_t> &input,
-            double w_e = 0.5, double w_p = 0.5,
+            double w_e = 0.5, double w_p = 0.5, double w_s = 0.5,
             int strategy_ex = 0, int strategy_eq = 0,
             int strategy_avg = 0, int strategy_perf = 0,
             bool enable_prog_eq_cache = true,
             bool enable_prog_uneq_cache = false,
-            bool is_win = false);
+            bool is_win = false, int functionality = 0);
   void set_examples(const vector<inout_t> &input, prog* orig);
   void set_orig(prog* orig, int len, int win_start = 0, int win_end = inst::max_prog_len);
   double error_cost(prog* orig, int len1, prog* synth, int len2);
   double perf_cost(prog* synth, int len, bool set_win = false);
+  double error_cost_repair(prog* orig, int len1, prog* synth, int len2);
+  double safety_cost_repair(prog* orig, int len1, prog* synth, int len2);
   double total_prog_cost(prog* orig, int len1, prog* synth, int len2);
+  //void unitTestEx();
 };
 
 unsigned int pop_count_outputs(int64_t output1, int64_t output2);

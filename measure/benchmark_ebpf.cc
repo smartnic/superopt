@@ -195,6 +195,7 @@ inst bm_opti40[N4] = {inst(MOV64XY, 0, 1), // r0 = r1
                      };
 
 // *(u32 *)pkt = 0
+//r1 is pkt start address
 inst bm5[N5] = {inst(STB, 1, 0, 0), // *(u8 *)(pkt + 0) = 0
                 inst(STB, 1, 1, 0), // *(u8 *)(pkt + 1) = 0
                 inst(STB, 1, 2, 0), // *(u8 *)(pkt + 2) = 0
@@ -203,6 +204,7 @@ inst bm5[N5] = {inst(STB, 1, 0, 0), // *(u8 *)(pkt + 0) = 0
                 inst(),
                 inst(),
                };
+//optimization: changing 4 bytes at once
 inst bm_opti50[N5] = {inst(STW, 1, 0, 0), // *(u32 *)(pkt + 0) = 0
                       inst(MOV64XC, 0, 0),
                       inst(),

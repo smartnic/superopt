@@ -15,6 +15,8 @@ class input_paras {
   string desc;
   double w_e;
   double w_p;
+  //added weight for safety
+  double w_s;
   bool meas_mode;
   string path_out;
   int st_ex;
@@ -40,4 +42,10 @@ class input_paras {
   // memory exchange move related
   bool disable_move_mem_exchange;
   bool disable_move_mem_exchange_gen_operands;
+  //add an int flag (repair(1)/optimize(k2)(0))
+  //refer to main.cc code
+  //default value: optimize(0)
+  //for now: public member in cost class
+  //if needed in other classes, then as a globalvalue
+  int functionality;
 };
