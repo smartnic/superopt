@@ -51,95 +51,98 @@ pair<int, int> mh_sampler_next_win::update_and_get_next_win() {
 mh_sampler_restart::mh_sampler_restart() {
   set_st_when_to_restart(MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART);
   set_st_next_start_prog(MH_SAMPLER_ST_NEXT_START_PROG_ORIG);
-  set_we_wp_list(vector<double> {1}, vector<double> {0});
+  set_we_wp_ws_list(vector<double> {1}, vector<double> {0}, vector<double> {0});
 }
 
 mh_sampler_restart::~mh_sampler_restart() {}
 
 void mh_sampler_restart::set_st_when_to_restart(unsigned int st, unsigned int max_num_iter) {
   switch (st) {
-    case MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART:
-      cout << "set strategy MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART" << endl;
-      _st_when_to_start = MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART;
-      _max_num_iter = 0;
-      return;
-    case MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER:
-      cout << "set strategy MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER with max_num_iter "
-           << max_num_iter << endl;
-      _st_when_to_start = MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER;
-      _max_num_iter = max_num_iter;
-      return;
-    default:
-      cout << "ERROR: no when_to_restart strategy matches." << endl;
-      set_st_when_to_restart(MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART);
-      return;
+  case MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART:
+    cout << "set strategy MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART" << endl;
+    _st_when_to_start = MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART;
+    _max_num_iter = 0;
+    return;
+  case MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER:
+    cout << "set strategy MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER with max_num_iter "
+         << max_num_iter << endl;
+    _st_when_to_start = MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER;
+    _max_num_iter = max_num_iter;
+    return;
+  default:
+    cout << "ERROR: no when_to_restart strategy matches." << endl;
+    set_st_when_to_restart(MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART);
+    return;
   }
 }
 
 void mh_sampler_restart::set_st_next_start_prog(unsigned int st) {
   switch (st) {
-    case MH_SAMPLER_ST_NEXT_START_PROG_ORIG:
-      cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_ORIG" << endl;
-      _st_next_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ORIG;
-      return;
-    case MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS:
-      cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS" << endl;
-      _st_next_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS;
-      return;
-    case MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS:
-      cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS" << endl;
-      _st_next_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS;
-      return;
-    default:
-      cout << "ERROR: no next_start_prog strategy matches." << endl;
-      set_st_next_start_prog(MH_SAMPLER_ST_NEXT_START_PROG_ORIG);
-      return;
+  case MH_SAMPLER_ST_NEXT_START_PROG_ORIG:
+    cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_ORIG" << endl;
+    _st_next_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ORIG;
+    return;
+  case MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS:
+    cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS" << endl;
+    _st_next_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS;
+    return;
+  case MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS:
+    cout << "set strategy MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS" << endl;
+    _st_next_start_prog = MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS;
+    return;
+  default:
+    cout << "ERROR: no next_start_prog strategy matches." << endl;
+    set_st_next_start_prog(MH_SAMPLER_ST_NEXT_START_PROG_ORIG);
+    return;
   }
 }
 
-void mh_sampler_restart::set_we_wp_list(const vector<double> &w_e_list,
-                                        const vector<double> &w_p_list) {
+void mh_sampler_restart::set_we_wp_ws_list(const vector<double> &w_e_list,
+    const vector<double> &w_p_list, const vector<double> &w_s_list) {
   _w_e_list.clear();
   _w_p_list.clear();
+  _w_s_list.clear();
   _cur_w_pointer = 0;
   int len = min((int)w_e_list.size(), (int)w_p_list.size());
+  len = min(len, (int)w_s_list.size());
   for (int i = 0; i < len; i++) {
     _w_e_list.push_back(w_e_list[i]);
     _w_p_list.push_back(w_p_list[i]);
+    _w_s_list.push_back(w_s_list[i]);
   }
-  cout << "set w_e and w_p pairs as: ";
+  cout << "set w_e, w_p, and w_s values as: ";
   for (int i = 0; i < _w_e_list.size(); i++) {
-    cout << _w_e_list[i] << "," << _w_p_list[i] << " ";
+    cout << _w_e_list[i] << "," << _w_p_list[i] << "," << _w_s_list[i] << " ";
   }
   cout << endl;
 }
 
 bool mh_sampler_restart::whether_to_restart(unsigned int iter_num) {
   switch (_st_when_to_start) {
-    case MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART: return false;
-    case MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER:
-      // iter_num starts from 0 but not 1
-      if ((iter_num % _max_num_iter) == 0) return true;
-      else return false;
-    default:
-      cout << "ERROR: no when_to_restart strategy matches. "
-           << "return false" << endl;
-      return false;
+  case MH_SAMPLER_ST_WHEN_TO_RESTART_NO_RESTART: return false;
+  case MH_SAMPLER_ST_WHEN_TO_RESTART_MAX_ITER:
+    // iter_num starts from 0 but not 1
+    if ((iter_num % _max_num_iter) == 0) return true;
+    else return false;
+  default:
+    cout << "ERROR: no when_to_restart strategy matches. "
+         << "return false" << endl;
+    return false;
   }
 }
 
 prog* mh_sampler_restart::next_start_prog(prog* curr) {
   switch (_st_next_start_prog) {
-    case MH_SAMPLER_ST_NEXT_START_PROG_ORIG:
-      return curr;
-    case MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS:
-      return mod_random_k_cont_insts(*curr, inst::max_prog_len);
-    case MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS:
-      return mod_random_cont_insts(*curr);
-    default:
-      cout << "ERROR: no next_start_prog strategy matches. "
-           << "return the same program" << endl;
-      return curr;
+  case MH_SAMPLER_ST_NEXT_START_PROG_ORIG:
+    return curr;
+  case MH_SAMPLER_ST_NEXT_START_PROG_ALL_INSTS:
+    return mod_random_k_cont_insts(*curr, inst::max_prog_len);
+  case MH_SAMPLER_ST_NEXT_START_PROG_K_CONT_INSTS:
+    return mod_random_cont_insts(*curr);
+  default:
+    cout << "ERROR: no next_start_prog strategy matches. "
+         << "return the same program" << endl;
+    return curr;
   }
 }
 
