@@ -26,7 +26,7 @@ extern int n_sum_long;
 #define PERF_COST_STRATEGY_RUNTIME 1 // runtime of programs
 
 class cost {
- private:
+private:
   // perf_cost_base_win is a cache of perf cost of all program instrcutions except window instructions
   // perf_csot = perf_cost_base_win + perf_cost of window
   double _perf_cost_base_win = 0; // -1 means not set
@@ -39,21 +39,21 @@ class cost {
   double get_ex_error_cost_from_val_lists_abs(vector<reg_t>& val_list1, vector<reg_t>& val_list2);
   double get_ex_error_cost_from_val_lists_pop(vector<reg_t>& val_list1, vector<reg_t>& val_list2);
   void set_perf_cost_base_win(prog* orig, int len, int win_start, int win_end);
- public:
+public:
   validator _vld;
   examples _examples;
   bool _meas_new_counterex_gened;
-  
+
   double _w_e = 0.5;
   double _w_p = 0.5;
-  //add a weight for safety
+  // add a weight for safety
   double _w_s = 0.5;
   int _strategy_ex = 0;
   int _strategy_eq = 0;
   int _strategy_avg = 0;
   int _strategy_perf = 0;
-  //define flag repair(1)/optimize(0)
-  int _functionality = 0;
+  // define flag repair(1)/optimize(0)
+  int _functionality = FUNC_optimize;
   cost();
   ~cost();
   void init(prog* orig, int len, const vector<inout_t> &input,
@@ -62,7 +62,7 @@ class cost {
             int strategy_avg = 0, int strategy_perf = 0,
             bool enable_prog_eq_cache = true,
             bool enable_prog_uneq_cache = false,
-            bool is_win = false, int functionality = 0);
+            bool is_win = false, int functionality = FUNC_optimize);
   void set_examples(const vector<inout_t> &input, prog* orig);
   void set_orig(prog* orig, int len, int win_start = 0, int win_end = inst::max_prog_len);
   double error_cost(prog* orig, int len1, prog* synth, int len2);
