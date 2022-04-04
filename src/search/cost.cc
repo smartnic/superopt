@@ -117,23 +117,23 @@ double cost::get_ex_error_cost(inout_t& output1, inout_t& output2) {
   get_cmp_lists(val_list1, val_list2, output1, output2);
   double res = 0;
   switch (_strategy_ex) {
-  // `double`: in case there is overflow which makes a positive value
-  // become a negative value
-  case ERROR_COST_STRATEGY_ABS: return get_ex_error_cost_from_val_lists_abs(val_list1, val_list2);
-  case ERROR_COST_STRATEGY_POP: return get_ex_error_cost_from_val_lists_pop(val_list1, val_list2);
-  default:
-    cout << "ERROR: no error cost example strategy matches." << endl;
-    return ERROR_COST_MAX;
+    // `double`: in case there is overflow which makes a positive value
+    // become a negative value
+    case ERROR_COST_STRATEGY_ABS: return get_ex_error_cost_from_val_lists_abs(val_list1, val_list2);
+    case ERROR_COST_STRATEGY_POP: return get_ex_error_cost_from_val_lists_pop(val_list1, val_list2);
+    default:
+      cout << "ERROR: no error cost example strategy matches." << endl;
+      return ERROR_COST_MAX;
   }
 }
 
 int cost::get_avg_value(int ex_set_size) {
   switch (_strategy_avg) {
-  case ERROR_COST_STRATEGY_AVG: return ex_set_size;
-  case ERROR_COST_STRATEGY_NAVG: return 1;
-  default:
-    cout << "ERROR: no error cost average strategy matches." << endl;
-    return 1;
+    case ERROR_COST_STRATEGY_AVG: return ex_set_size;
+    case ERROR_COST_STRATEGY_NAVG: return 1;
+    default:
+      cout << "ERROR: no error cost average strategy matches." << endl;
+      return 1;
   }
 }
 
@@ -141,18 +141,18 @@ double cost::get_final_error_cost(double exs_cost, int is_equal,
                                   int ex_set_size, int num_successful_ex,
                                   int avg_value) {
   switch (_strategy_eq) {
-  case ERROR_COST_STRATEGY_EQ1:
-    if (is_equal == 0) return ((double)(exs_cost + num_successful_ex) / avg_value);
-    else if (is_equal < 0) return ERROR_COST_MAX;
-    else return exs_cost;
-  case ERROR_COST_STRATEGY_EQ2:
-    if (is_equal == 0) return  (1 + (double)(exs_cost + ex_set_size
-                                  - num_successful_ex) / avg_value);
-    else if (is_equal < 0) return ERROR_COST_MAX;
-    else return exs_cost;
-  default:
-    cout << "ERROR: no error cost equation strategy matches." << endl;
-    return ERROR_COST_MAX;
+    case ERROR_COST_STRATEGY_EQ1:
+      if (is_equal == 0) return ((double)(exs_cost + num_successful_ex) / avg_value);
+      else if (is_equal < 0) return ERROR_COST_MAX;
+      else return exs_cost;
+    case ERROR_COST_STRATEGY_EQ2:
+      if (is_equal == 0) return  (1 + (double)(exs_cost + ex_set_size
+                                    - num_successful_ex) / avg_value);
+      else if (is_equal < 0) return ERROR_COST_MAX;
+      else return exs_cost;
+    default:
+      cout << "ERROR: no error cost equation strategy matches." << endl;
+      return ERROR_COST_MAX;
   }
 }
 
@@ -263,7 +263,6 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
       // synth->print();
     }
   }
-
 
   // process counterexamples
   // If num_successful_ex < (int)_examples._exs.size(),
