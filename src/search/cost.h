@@ -26,7 +26,7 @@ extern int n_sum_long;
 #define PERF_COST_STRATEGY_RUNTIME 1 // runtime of programs
 
 class cost {
-private:
+ private:
   // perf_cost_base_win is a cache of perf cost of all program instrcutions except window instructions
   // perf_csot = perf_cost_base_win + perf_cost of window
   double _perf_cost_base_win = 0; // -1 means not set
@@ -39,7 +39,7 @@ private:
   double get_ex_error_cost_from_val_lists_abs(vector<reg_t>& val_list1, vector<reg_t>& val_list2);
   double get_ex_error_cost_from_val_lists_pop(vector<reg_t>& val_list1, vector<reg_t>& val_list2);
   void set_perf_cost_base_win(prog* orig, int len, int win_start, int win_end);
-public:
+ public:
   validator _vld;
   examples _examples;
   bool _meas_new_counterex_gened;

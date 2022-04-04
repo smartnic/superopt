@@ -312,11 +312,9 @@ void test2() {
   mem_t::_layout._n_randoms_u32 = 1;
   smt_var::init_static_variables();
 
-
   print_test_res(get_error_cost_repair(p1, p2, win_start, win_end) == 0, "error_cost_repair: 2 safe and equivalent programs ");
   print_test_res(get_safety_cost_repair(p1, p2, win_start, win_end) == 0, "safety_cost_repair: 2 safe and equivalent programs ");
   mem_t::_layout.clear();
-
 
 }
 
@@ -344,8 +342,6 @@ void test3() {
                 inst(),
                 inst(),
               };
-
-
 
   int win_start = 0, win_end = 0;
 
@@ -408,7 +404,6 @@ void test4() {
   print_test_res(get_safety_cost_repair(p1, p2, win_start, win_end) > 0, "safety_cost_repair: 2nd program unsafe ");
 
   mem_t::_layout.clear();
-
 
 }
 

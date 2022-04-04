@@ -23,7 +23,6 @@
 #include "src/verify/z3client.h"
 using namespace std;
 
-
 string FILE_CONFIG = "config";
 
 inst* bm;
@@ -68,7 +67,6 @@ ostream& operator<<(ostream& out, const input_paras& ip) {
       << "enable_prog_uneq_cache:" << ip.enable_prog_uneq_cache << endl
       << "is_win:" << ip.is_win << endl
       << "logger_level: " << ip.logger_level << endl;
-  //<< "purpose: " << ip.purpose << endl;
   return out;
 }
 
@@ -395,44 +393,44 @@ bool parse_input(int argc, char* argv[], input_paras &in_para) {
   while ((opt = getopt_long(argc, argv, short_opts,
                             long_opts, &opt_idx)) != -1) {
     switch (opt) {
-    case 'h': usage(); return false;
-    case 'm': in_para.meas_mode = true; break;
-    case 'n': in_para.niter = stoi(optarg); break;
-    case 'k': in_para.k = stoi(optarg); break;
-    case 0: in_para.path_out = optarg; break;
-    case 1: in_para.bm = stoi(optarg); break;
-    case 2: in_para.bm_from_file = true; break;
-    case 3: in_para.bytecode = optarg; break;
-    case 4: in_para.map = optarg; break;
-    case 5: in_para.desc = optarg; break;
-    case 6: in_para.w_e = stod(optarg); break;
-    case 7: in_para.w_p = stod(optarg); break;
-    case 8: in_para.w_s = stod(optarg); break;
-    case 9: in_para.st_ex = stoi(optarg); break;
-    case 10: in_para.st_eq = stoi(optarg); break;
-    case 11: in_para.st_avg = stoi(optarg); break;
-    case 12: in_para.st_perf = stoi(optarg); break;
-    case 13: in_para.st_when_to_restart = stoi(optarg); break;
-    case 14: in_para.st_when_to_restart_niter = stoi(optarg); break;
-    case 15: in_para.st_start_prog = stoi(optarg); break;
-    case 16: set_w_list(in_para.restart_w_e_list, optarg); break;
-    case 17: set_w_list(in_para.restart_w_p_list, optarg); break;
-    case 18: set_w_list(in_para.restart_w_s_list, optarg); break;
-    case 19: in_para.reset_win_niter = stoi(optarg); break;
-    case 20: set_win_list(in_para.win_s_list, optarg); break;
-    case 21: set_win_list(in_para.win_e_list, optarg); break;
-    case 22: in_para.p_inst_operand = stod(optarg); break;
-    case 23: in_para.p_inst = stod(optarg); break;
-    case 24: in_para.p_inst_as_nop = stod(optarg); break;
-    case 25: in_para.server_port = stoi(optarg); break;
-    case 26: in_para.disable_prog_eq_cache = true; break;
-    case 27: in_para.enable_prog_uneq_cache = true; break;
-    case 28: in_para.is_win = true; break;
-    case 29: in_para.logger_level = stoi(optarg); break;
-    case 30: in_para.disable_move_mem_exchange = true; break;
-    case 31: in_para.disable_move_mem_exchange_gen_operands = true; break;
-    case 32: in_para.functionality = stoi(optarg); break;
-    case '?': usage(); return false;
+      case 'h': usage(); return false;
+      case 'm': in_para.meas_mode = true; break;
+      case 'n': in_para.niter = stoi(optarg); break;
+      case 'k': in_para.k = stoi(optarg); break;
+      case 0: in_para.path_out = optarg; break;
+      case 1: in_para.bm = stoi(optarg); break;
+      case 2: in_para.bm_from_file = true; break;
+      case 3: in_para.bytecode = optarg; break;
+      case 4: in_para.map = optarg; break;
+      case 5: in_para.desc = optarg; break;
+      case 6: in_para.w_e = stod(optarg); break;
+      case 7: in_para.w_p = stod(optarg); break;
+      case 8: in_para.w_s = stod(optarg); break;
+      case 9: in_para.st_ex = stoi(optarg); break;
+      case 10: in_para.st_eq = stoi(optarg); break;
+      case 11: in_para.st_avg = stoi(optarg); break;
+      case 12: in_para.st_perf = stoi(optarg); break;
+      case 13: in_para.st_when_to_restart = stoi(optarg); break;
+      case 14: in_para.st_when_to_restart_niter = stoi(optarg); break;
+      case 15: in_para.st_start_prog = stoi(optarg); break;
+      case 16: set_w_list(in_para.restart_w_e_list, optarg); break;
+      case 17: set_w_list(in_para.restart_w_p_list, optarg); break;
+      case 18: set_w_list(in_para.restart_w_s_list, optarg); break;
+      case 19: in_para.reset_win_niter = stoi(optarg); break;
+      case 20: set_win_list(in_para.win_s_list, optarg); break;
+      case 21: set_win_list(in_para.win_e_list, optarg); break;
+      case 22: in_para.p_inst_operand = stod(optarg); break;
+      case 23: in_para.p_inst = stod(optarg); break;
+      case 24: in_para.p_inst_as_nop = stod(optarg); break;
+      case 25: in_para.server_port = stoi(optarg); break;
+      case 26: in_para.disable_prog_eq_cache = true; break;
+      case 27: in_para.enable_prog_uneq_cache = true; break;
+      case 28: in_para.is_win = true; break;
+      case 29: in_para.logger_level = stoi(optarg); break;
+      case 30: in_para.disable_move_mem_exchange = true; break;
+      case 31: in_para.disable_move_mem_exchange_gen_operands = true; break;
+      case 32: in_para.functionality = stoi(optarg); break;
+      case '?': usage(); return false;
     }
   }
   return true;

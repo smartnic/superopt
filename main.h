@@ -5,7 +5,7 @@
 using namespace std;
 
 class input_paras {
-public:
+ public:
   int niter;
   unsigned int k;
   int bm;
