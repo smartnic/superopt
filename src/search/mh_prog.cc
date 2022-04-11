@@ -428,7 +428,13 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
         inout_t::start_insn = win.first;
         inout_t::end_insn = win.second;
         init_sample_range(&prog_start->inst_list[win.first], (win.second - win.first + 1));
-        static_safety_check_pgm(prog_start->inst_list, inst::max_prog_len);
+        if (static_safety_check_pgm(prog_start->inst_list, inst::max_prog_len) > 0){
+          // stop execution here 
+          // error message would have already been thrown by static_safety_check_pgm
+          // so throw empty err message to stop execution
+          string err_msg = "";
+          throw(err_msg);
+        }
         _cost.set_orig(prog_start, inst::max_prog_len, win.first, win.second);
         // clear the test cases and generate new test cases
         // prog_static_state pss;
