@@ -202,20 +202,18 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_safety_cost != -1) return synth->_safety_cost;
   // boolean variable: true: pass static safety, false: fails
   int total_safety_cost = 0;
-  bool pass_static_safety;
-  try {
-    if (! smt_var::is_win) {
-      static_safety_check_pgm(synth->inst_list, len2);
-    } else {
-      static_safety_check_win(synth->inst_list,
-                              inout_t::start_insn, inout_t::end_insn,
-                              _vld._pss_orig);
-    }
+  bool pass_static_safety = false;
+  int num_static_unsafe_ins = 0;
+  if (! smt_var::is_win) {
+      num_static_unsafe_ins = static_safety_check_pgm(synth->inst_list, len2);
+  } else {
+      num_static_unsafe_ins = static_safety_check_win(synth->inst_list,
+                                                      inout_t::start_insn, inout_t::end_insn,
+                                                      _vld._pss_orig);
+  }
+
+  if (num_static_unsafe_ins == 0){
     pass_static_safety = true;
-  } catch (const string err_msg) {
-
-    pass_static_safety = false;
-
   }
 
   inout_t output2;
@@ -288,8 +286,8 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
   // calculate safety cost based on the 4 variables
   // Function of: pass_satic_safety, num_of_unsafe_ex, pass_validator, isEqual
 
-  // If initial static analysis has failed, then since this first safety check itself
-  // failed, added the largest constant (3).
+  // If initial static analysis has failed: greater # of unsafe instructions, greater cost should be added to safety.
+  // Add number of unsafe instructions to toatl_safety_cost.
   // Greater the # of unsafe examples, greater cost should be added to safety.
   // Add number of unsafe examples to toatl_safety_cost.
   // In case there are no issues with static analysis and examples, then constant(2)
@@ -305,7 +303,7 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
     }
   } else {
     if (!pass_static_safety) {
-      total_safety_cost += 3;
+      total_safety_cost += num_static_unsafe_ins;
     }
     total_safety_cost += num_of_unsafe_ex;
   }
@@ -419,15 +417,16 @@ double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
  */
 double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_error_cost != -1) return synth->_error_cost;
-  try {
-    if (! smt_var::is_win) {
-      static_safety_check_pgm(synth->inst_list, len2);
+  int num_static_unsafe_ins = 0;
+  if (! smt_var::is_win) {
+      num_static_unsafe_ins = static_safety_check_pgm(synth->inst_list, len2);
     } else {
-      static_safety_check_win(synth->inst_list,
-                              inout_t::start_insn, inout_t::end_insn,
-                              _vld._pss_orig);
-    }
-  } catch (const string err_msg) {
+      num_static_unsafe_ins = static_safety_check_win(synth->inst_list,
+                                                      inout_t::start_insn, inout_t::end_insn,
+                                                      _vld._pss_orig);
+  }
+
+  if (num_static_unsafe_ins > 0){
     synth->set_error_cost(ERROR_COST_MAX);
     return ERROR_COST_MAX;
   }

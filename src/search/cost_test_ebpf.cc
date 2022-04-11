@@ -13,7 +13,14 @@ double get_error_cost(inst* p1, inst* p2, int win_start, int win_end) {
 
   inout_t::start_insn = win_start;
   inout_t::end_insn = win_end;
-  static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
+  int num_static_unsafe_ins = static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
+  if (num_static_unsafe_ins > 0){
+    // stop execution here since the p1 is unsafe
+    // error message would have already been thrown by static_safety_check_pgm
+    // so throw empty err message to stop execution
+    string err_msg = "";
+    throw(err_msg);
+  }
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
   prog_static_state pss;
   // This is to infer program state while entering and leaving the window.
@@ -37,7 +44,14 @@ double get_error_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
   inout_t::start_insn = win_start;
   inout_t::end_insn = win_end;
 
-  static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
+  int num_static_unsafe_ins = static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
+  if (num_static_unsafe_ins > 0){
+    // stop execution here since the p1 is unsafe
+    // error message would have already been thrown by static_safety_check_pgm
+    // so throw empty err message to stop execution
+    string err_msg = "";
+    throw(err_msg);
+  }
 
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
   prog_static_state pss;
@@ -65,7 +79,14 @@ double get_safety_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
   inout_t::start_insn = win_start;
   inout_t::end_insn = win_end;
 
-  static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
+  int num_static_unsafe_ins = static_safety_check_pgm(prog1.inst_list, inst::max_prog_len);
+  if (num_static_unsafe_ins > 0){
+    // stop execution here since the p1 is unsafe
+    // error message would have already been thrown by static_safety_check_pgm
+    // so throw empty err message to stop execution
+    string err_msg = "";
+    throw(err_msg);
+  }
 
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
   prog_static_state pss;

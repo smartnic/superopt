@@ -1424,20 +1424,39 @@ void safety_chk_insn(inst& insn, inst_static_state& iss) {
     safety_chk_insn_mem_access(insn, iss);
   }
 }
-
-void static_safety_check_pgm(inst * program, int len) {
+/*
+* returns the number of unsafe instructions in the program
+*
+*/
+int static_safety_check_pgm(inst * program, int len) {
+  // pss: program static state
+  // going through instructions and inferring the states.
   prog_static_state pss;
   pss.static_state.resize(len + 1);
   pss.g.gen_graph(program, len);
   topo_sort_for_graph(pss.dag, pss.g);
   type_const_inference_pgm(pss, program, len);
   min_pkt_sz_inference_pgm(pss, program, len);
+  // utilizing static states to check safety of each instruction.
+  int num_of_unsafe_ins = 0;
   for (int i = 0; i < len; i++) {
-    safety_chk_insn(program[i], pss.static_state[i]);
+    try{
+      //throws a string error message if instruction is unsafe
+      safety_chk_insn(program[i], pss.static_state[i]);
+    }
+    catch(string err_msg){
+      num_of_unsafe_ins++;
+      cout << err_msg << endl;
+    }
   }
+  return num_of_unsafe_ins;
 }
 
-void static_safety_check_win(inst * win_prog, int win_start, int win_end, prog_static_state & pss_orig) {
+/*
+* returns the number of unsafe instructions in the program window
+*
+*/
+int static_safety_check_win(inst * win_prog, int win_start, int win_end, prog_static_state & pss_orig) {
   int win_len = win_end - win_start + 1;
   // 1. compute ss_win according to the ss_orig and the window program
   vector<inst_static_state> ss_win(win_len); // [win_start, win_end]
@@ -1453,9 +1472,18 @@ void static_safety_check_win(inst * win_prog, int win_start, int win_end, prog_s
   }
   min_pkt_sz_inference_win(ss_win, pss_orig.static_state[win_start]);
 
+  int num_of_unsafe_ins = 0;
   for (int i = 0; i < win_len; i++) {
-    safety_chk_insn(win_prog[i + win_start], ss_win[i]);
+    try{
+      //throws a string error message if instruction is unsafe
+      safety_chk_insn(win_prog[i + win_start], ss_win[i]);
+    }
+    catch(string err_msg){
+      num_of_unsafe_ins++;
+      cout << err_msg << endl;
+    }
   }
+  return num_of_unsafe_ins;
 }
 
 // update the original program's pre-condition and post-condition
