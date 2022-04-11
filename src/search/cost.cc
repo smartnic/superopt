@@ -566,6 +566,8 @@ double cost::total_prog_cost(prog * orig, int len1, prog * synth, int len2) {
 
     return (_w_e * err_cost) + (_w_p * per_cost);
 
+  } else{
+    throw("invalid functionality input parameter detected in cost::total_prog_cost");
   }
 
 }
