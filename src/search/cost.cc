@@ -550,8 +550,14 @@ double cost::total_prog_cost(prog * orig, int len1, prog * synth, int len2) {
 
   if (_functionality == FUNC_repair) {
     //for repair
-    err_cost = error_cost_repair(orig, len1, synth, len2);
+    if(_w_e > 0){
+      err_cost = error_cost_repair(orig, len1, synth, len2);
+    }
     safe_cost = safety_cost_repair(orig, len1, synth, len2);
+    if (flag && logger.is_print_level(LOGGER_DEBUG)) {
+      cout << "cost: " << err_cost << " " << safe_cost << " "
+           << (_w_e * err_cost) + (_w_s * safe_cost) << endl;
+    }
 
     return (_w_e * err_cost) + (_w_s * safe_cost);
 
@@ -566,7 +572,7 @@ double cost::total_prog_cost(prog * orig, int len1, prog * synth, int len2) {
 
     return (_w_e * err_cost) + (_w_p * per_cost);
 
-  } else{
+  } else {
     throw("invalid functionality input parameter detected in cost::total_prog_cost");
   }
 

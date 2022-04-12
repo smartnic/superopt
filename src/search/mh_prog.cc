@@ -339,7 +339,14 @@ void write_desc_to_file(prog* current_program, string prefix_name) {
   string output_file = prefix_name + ".desc";
   ofstream fout;
   fout.open(output_file, ios::out | ios::trunc);
-  fout << "perf_cost: " << current_program->_perf_cost << endl;
+  if(logger.k2_functionality == FUNC_optimize){
+    fout << "perf_cost: " << current_program->_perf_cost << endl;
+  } else if(logger.k2_functionality == FUNC_repair){
+    fout << "safety_cost: " << current_program->_safety_cost << endl;
+    //todo: change this to error_cost for final repair tool
+  } else {
+    throw("invalid functionality detected in write_desc_to_file");
+  }
   fout << "readable program: " << endl;
   for (int i = 0; i < inst::max_prog_len; i++) {
     fout << i << ": " << current_program->inst_list[i];
@@ -474,14 +481,22 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
       found_better_condition = (next->_error_cost == 0) && (next->_perf_cost < best->_perf_cost);
     } else if (logger.k2_functionality == FUNC_repair){
       found_better_condition = (next->_safety_cost) < (best->_safety_cost);
+      //todo: include a condition about lower error cost
     } else{
-      throw("invalid functionality in mcmc_iter");
+      throw("invalid functionality detected in mcmc_iter");
     }
 
     if (found_better_condition) {
       found_better = true;
-      cout << "find a better program at " << i
-           << " cost: " << next->_error_cost << " " << next->_perf_cost << endl;
+      if(logger.k2_functionality == FUNC_optimize){
+        cout << "find a better program at " << i
+             << " cost: " << next->_error_cost << " " << next->_perf_cost << endl;
+      }else if(logger.k2_functionality == FUNC_repair){
+        cout << "find a better program at " << i
+             << " cost: " << next->_safety_cost << endl;
+        //todo: print error cost here as well
+      }
+      
       for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
         cout << i << ": ";
         next->inst_list[i].print();
