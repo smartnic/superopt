@@ -401,7 +401,15 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
   prog_start = new prog(*orig);
   // set the error cost and perf cost of the prog start
   prog_start->_error_cost = 0;
-  _cost.perf_cost(prog_start, inst::max_prog_len);
+  if(logger.k2_functionality == FUNC_optimize){
+    _cost.perf_cost(prog_start, inst::max_prog_len);
+  }else if (logger.k2_functionality == FUNC_repair){
+    // cout << "call safety_cost_repair" << endl; 
+    // _cost.safety_cost_repair(prog_start, inst::max_prog_len, prog_start, inst::max_prog_len);
+    // cout << "safety_cost_repair " << prog_start->_safety_cost << endl;
+    prog_start->set_safety_cost(100);
+  }
+
   cout << "original program's perf cost: " << prog_start->_perf_cost << endl;
 
   best = new prog(*prog_start);
@@ -428,8 +436,14 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
         delete curr;
         curr = new prog(*prog_start);
       }
-      cout << "start from program (error and performance costs: "
-           << prog_start->_error_cost << " " << prog_start-> _perf_cost << "):" << endl;
+      if(logger.k2_functionality == FUNC_optimize){
+        cout << "start from program (error and performance costs: "
+            << prog_start->_error_cost << " " << prog_start-> _perf_cost << "):" << endl;
+      }else if (logger.k2_functionality == FUNC_repair){
+        cout << "start from program (safety cost: "
+            << prog_start->_safety_cost << "):" << endl;
+        // todo: add print for error cost
+      }
       prog_start->print();
       if (is_win) { // reset validator original program
         inout_t::start_insn = win.first;
@@ -504,6 +518,7 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
       // store the better program if _enable_better_store is true
       if (_enable_better_store) {
         // programs are not stored in the order of performance cost
+        cout << "calling write_optimized_prog_to_file" << endl;
         write_optimized_prog_to_file(next, better_store_id, _better_store_path);
         better_store_id = (better_store_id + 1) % _max_n_better_store;
       }

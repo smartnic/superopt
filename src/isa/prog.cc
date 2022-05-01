@@ -218,20 +218,24 @@ top_k_progs::top_k_progs(unsigned int k_val) {
   assert(k_val > 0);
   k = k_val;
   cout << "[top_k_progs] set k = " << k << endl;
-  max_perf_cost = numeric_limits<double>::max();
-  max_perf_cost_id = -1;
+  max_cost = numeric_limits<double>::max();
+  max_cost_id = -1;
 }
 
 top_k_progs::~top_k_progs() {
   progs.clear();
-  max_perf_cost = numeric_limits<double>::max();
-  max_perf_cost_id = -1;
+  max_cost = numeric_limits<double>::max();
+  max_cost_id = -1;
 }
 
 // check whether program p is in the progs
 bool top_k_progs::can_find(prog* p) {
   for (int i = 0; i < progs.size(); i++) {
-    if (progs[i]->_perf_cost != p->_perf_cost) continue;
+    if (logger.k2_functionality == FUNC_optimize) {
+      if (progs[i]->_perf_cost != p->_perf_cost) continue;
+    } else if (logger.k2_functionality == FUNC_repair) {
+      if (progs[i]->_safety_cost != p->_safety_cost) continue;
+    }
     // further check whether two programs are the same
     if (*(progs[i]) == *p) {
       return true;
@@ -247,30 +251,52 @@ void top_k_progs::insert_without_check(prog* p) {
   prog* p_copy = new prog(*p);
   if (progs.size() < k) progs.push_back(p_copy);
   else {
-    delete progs[max_perf_cost_id];
-    progs[max_perf_cost_id] = p_copy;
+    delete progs[max_cost_id];
+    progs[max_cost_id] = p_copy;
   }
-
-  max_perf_cost = progs[0]->_perf_cost;
-  max_perf_cost_id = 0;
+  if(logger.k2_functionality == FUNC_optimize){
+    max_cost = progs[0]->_perf_cost;
+  }else if (logger.k2_functionality == FUNC_repair){
+    max_cost = progs[0]->_safety_cost;
+  }
+  max_cost_id = 0;
   for (int i = 1; i < progs.size(); i++) {
-    if (progs[i]->_perf_cost > max_perf_cost) {
-      max_perf_cost = progs[i]->_perf_cost;
-      max_perf_cost_id = i;
+    if(logger.k2_functionality == FUNC_optimize){
+      if (progs[i]->_perf_cost > max_cost) {
+        max_cost = progs[i]->_perf_cost;
+        max_cost_id = i;
+      }
+    }else if(logger.k2_functionality == FUNC_repair){
+      if (progs[i]->_safety_cost > max_cost) {
+        max_cost = progs[i]->_safety_cost;
+        max_cost_id = i;
+      }
     }
   }
 }
 
 void top_k_progs::insert(prog* p) {
-  if (p->_error_cost != 0) return;
-  if (progs.size() < k) { // check whether this program is in the progs
-    if (can_find(p)) return;
-    insert_without_check(p);
-  } else {
-    assert(progs.size() != 0);
-    if (p->_perf_cost >= max_perf_cost) return;
-    if (can_find(p)) return;
-    insert_without_check(p);
+  if (logger.k2_functionality == FUNC_optimize) {
+    if (p->_error_cost != 0) return;
+    if (progs.size() < k) { // check whether this program is in the progs
+      if (can_find(p)) return;
+      insert_without_check(p);
+    } else {
+      assert(progs.size() != 0);
+      if (p->_perf_cost >= max_cost) return;
+      if (can_find(p)) return;
+      insert_without_check(p);
+    }
+  } else if (logger.k2_functionality == FUNC_repair) {
+    if (progs.size() < k) { // check whether this program is in the progs
+      if (can_find(p)) return;
+      insert_without_check(p);
+    } else {
+      assert(progs.size() != 0);
+      if (p->_safety_cost >= max_cost) return;
+      if (can_find(p)) return;
+      insert_without_check(p);
+    }
   }
 }
 
@@ -282,18 +308,35 @@ void top_k_progs::clear() {
 }
 
 bool top_k_progs_sort_function(prog* x, prog* y) {
-  return (x->_perf_cost < y->_perf_cost);
+  if(logger.k2_functionality == FUNC_optimize){
+    return (x->_perf_cost < y->_perf_cost);
+  }else if(logger.k2_functionality == FUNC_repair){
+    return (x->_safety_cost < y->_safety_cost);
+  }else{
+    throw("invalid functionality");
+  }
 }
 
 void top_k_progs::sort() {
   if (progs.size() == 0) return;
   std::sort(progs.begin(), progs.end(), top_k_progs_sort_function);
-  max_perf_cost = progs[0]->_perf_cost;
-  max_perf_cost_id = 0;
+  if(logger.k2_functionality == FUNC_optimize){
+    max_cost = progs[0]->_perf_cost;
+  }else if (logger.k2_functionality == FUNC_repair){
+    max_cost = progs[0]->_safety_cost;
+  }
+  max_cost_id = 0;
   for (int i = 1; i < progs.size(); i++) {
-    if (progs[i]->_perf_cost > max_perf_cost) {
-      max_perf_cost = progs[i]->_perf_cost;
-      max_perf_cost_id = i;
+    if(logger.k2_functionality == FUNC_optimize){
+      if (progs[i]->_perf_cost > max_cost) {
+        max_cost = progs[i]->_perf_cost;
+        max_cost_id = i;
+      }
+    }else if (logger.k2_functionality == FUNC_repair){
+      if (progs[i]->_safety_cost > max_cost) {
+        max_cost = progs[i]->_safety_cost;
+        max_cost_id = i;
+      }
     }
   }
 }

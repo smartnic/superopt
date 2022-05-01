@@ -790,12 +790,15 @@ void test3() {
 
 // expected_safe is either true for safe or false for unsafe
 void test_safety_check(inst* program, int len, bool expected_safe, string test_name) {
+  //set logger.k2functionality to optimize
   bool is_succ = false;
   int num_of_unsafe_ins = static_safety_check_pgm(program, len);
   if((expected_safe && (num_of_unsafe_ins == 0)) || (!(expected_safe) && (num_of_unsafe_ins > 0))){
     is_succ = true;
   }
   print_test_res(is_succ, test_name);
+  //modify logger.k2functionality to repair
+  //repeat
 }
 
 void test_safety_check_win(inst* program, int len,
