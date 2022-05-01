@@ -216,11 +216,13 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
     pass_static_safety = true;
   }
 
+  //cout << "static_safety_check done" << endl;
   inout_t output2;
   output2.init();
   prog_state ps;
   ps.init();
 
+  //cout << "Examples size: " << _examples._exs.size() << endl;
   // variable to keep track of number of tests for which output is not observed
   int num_of_unsafe_ex = 0;
   // process total_cost with example set
@@ -235,6 +237,7 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
 
   }
 
+  //cout << "interpreter loop done" << endl;
   int is_equal = 0;
 
   // boolean variable to check whether it passes validator or not

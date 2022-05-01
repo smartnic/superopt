@@ -48,8 +48,8 @@ struct progHash {
 // assume k is a small number
 class top_k_progs {
  private:
-  double max_perf_cost;
-  int max_perf_cost_id;
+  double max_cost;
+  int max_cost_id;
   unsigned int k;
   bool can_find(prog* p);
   void insert_without_check(prog* p);

@@ -6,6 +6,7 @@
 
 using namespace std;
 
+
 // --bm 0 --w_e 0.5 --w_p 1.5 --st_perf 0 --win_s_list 0 --win_e_list 1 -n 10000 --reset_win_niter 10000
 inst bm0[N0] = {inst(MOV64XC, 0, 0x1),  /* mov64 r0, 0x1 */
                 inst(ADD64XY, 0, 0),  /* add64 r0, r0 */
@@ -833,6 +834,11 @@ inst bm25[N25] = {inst(97, 1, 2, 4, 0),
                   inst(149, 0, 0, 0, 0),
                  };
 
+// unsafe program for initial unsafe to safe repair functionality testing
+inst bm26[N26] = {inst(MUL64XC, 1, 0x6),  /* mul64 r1, 0x6 */
+                  inst(MOV64XC, 0, 0x0),
+                 };
+
 // trim from start (in place)
 static inline void ltrim(std::string &s) {
   s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
@@ -1210,6 +1216,12 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::add_map(map_attr(32, 64, N25));
       mem_t::add_map(map_attr(32, 32, N25));
       *bm = bm25;
+      break;
+    case 26:
+      inst::max_prog_len = N26;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
+      *bm = bm26;
       break;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;
