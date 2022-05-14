@@ -231,9 +231,9 @@ top_k_progs::~top_k_progs() {
 // check whether program p is in the progs
 bool top_k_progs::can_find(prog* p) {
   for (int i = 0; i < progs.size(); i++) {
-    if (logger.k2_functionality == FUNC_optimize) {
+    if (k2_config.functionality == FUNC_optimize) {
       if (progs[i]->_perf_cost != p->_perf_cost) continue;
-    } else if (logger.k2_functionality == FUNC_repair) {
+    } else if (k2_config.functionality == FUNC_repair) {
       if (progs[i]->_safety_cost != p->_safety_cost) continue;
     }
     // further check whether two programs are the same
@@ -254,19 +254,19 @@ void top_k_progs::insert_without_check(prog* p) {
     delete progs[max_cost_id];
     progs[max_cost_id] = p_copy;
   }
-  if(logger.k2_functionality == FUNC_optimize){
+  if (k2_config.functionality == FUNC_optimize) {
     max_cost = progs[0]->_perf_cost;
-  }else if (logger.k2_functionality == FUNC_repair){
+  } else if (k2_config.functionality == FUNC_repair) {
     max_cost = progs[0]->_safety_cost;
   }
   max_cost_id = 0;
   for (int i = 1; i < progs.size(); i++) {
-    if(logger.k2_functionality == FUNC_optimize){
+    if (k2_config.functionality == FUNC_optimize) {
       if (progs[i]->_perf_cost > max_cost) {
         max_cost = progs[i]->_perf_cost;
         max_cost_id = i;
       }
-    }else if(logger.k2_functionality == FUNC_repair){
+    } else if(k2_config.functionality == FUNC_repair) {
       if (progs[i]->_safety_cost > max_cost) {
         max_cost = progs[i]->_safety_cost;
         max_cost_id = i;
@@ -276,7 +276,7 @@ void top_k_progs::insert_without_check(prog* p) {
 }
 
 void top_k_progs::insert(prog* p) {
-  if (logger.k2_functionality == FUNC_optimize) {
+  if (k2_config.functionality == FUNC_optimize) {
     if (p->_error_cost != 0) return;
     if (progs.size() < k) { // check whether this program is in the progs
       if (can_find(p)) return;
@@ -287,7 +287,7 @@ void top_k_progs::insert(prog* p) {
       if (can_find(p)) return;
       insert_without_check(p);
     }
-  } else if (logger.k2_functionality == FUNC_repair) {
+  } else if (k2_config.functionality == FUNC_repair) {
     if (progs.size() < k) { // check whether this program is in the progs
       if (can_find(p)) return;
       insert_without_check(p);
@@ -308,11 +308,11 @@ void top_k_progs::clear() {
 }
 
 bool top_k_progs_sort_function(prog* x, prog* y) {
-  if(logger.k2_functionality == FUNC_optimize){
+  if (k2_config.functionality == FUNC_optimize) {
     return (x->_perf_cost < y->_perf_cost);
-  }else if(logger.k2_functionality == FUNC_repair){
+  } else if (k2_config.functionality == FUNC_repair) {
     return (x->_safety_cost < y->_safety_cost);
-  }else{
+  } else {
     throw("invalid functionality");
   }
 }
@@ -320,19 +320,19 @@ bool top_k_progs_sort_function(prog* x, prog* y) {
 void top_k_progs::sort() {
   if (progs.size() == 0) return;
   std::sort(progs.begin(), progs.end(), top_k_progs_sort_function);
-  if(logger.k2_functionality == FUNC_optimize){
+  if (k2_config.functionality == FUNC_optimize) {
     max_cost = progs[0]->_perf_cost;
-  }else if (logger.k2_functionality == FUNC_repair){
+  } else if (k2_config.functionality == FUNC_repair) {
     max_cost = progs[0]->_safety_cost;
   }
   max_cost_id = 0;
   for (int i = 1; i < progs.size(); i++) {
-    if(logger.k2_functionality == FUNC_optimize){
+    if (k2_config.functionality == FUNC_optimize) {
       if (progs[i]->_perf_cost > max_cost) {
         max_cost = progs[i]->_perf_cost;
         max_cost_id = i;
       }
-    }else if (logger.k2_functionality == FUNC_repair){
+    } else if (k2_config.functionality == FUNC_repair) {
       if (progs[i]->_safety_cost > max_cost) {
         max_cost = progs[i]->_safety_cost;
         max_cost_id = i;

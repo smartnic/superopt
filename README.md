@@ -19,4 +19,9 @@ git clone https://github.com/smartnic/superopt.git
 cd superopt
 make main_ebpf.out
 ```
+
+Example command to run k2 for repair:
+
+./main_ebpf.out --bm 26 --functionality 1 --w_e 0 --w_p 0 --w_s 2 -k 1 --port 8000 --logger_level 1 --p_inst_operand 0.33333333 --p_inst 0.33333333 --p_inst_as_nop 0.15 --is_win --win_s_list 0 --win_e_list 1 -n 1000 --reset_win_niter 800 --path_res output/
+
 Todo: add more instructions soon

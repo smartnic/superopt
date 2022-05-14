@@ -564,7 +564,7 @@ int main(int argc, char* argv[]) {
   }
   SERVER_PORT = in_para.server_port;
   logger.set_least_print_level(in_para.logger_level);
-  logger.set_k2_functionality(in_para.functionality);
+  k2_config.set_functionality(in_para.functionality);
   string err_msg;
   if (! check_pgm_is_supported(err_msg, bm, inst::max_prog_len)) {
     if (in_para.bm_from_file) {

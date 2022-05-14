@@ -205,24 +205,22 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
   bool pass_static_safety = false;
   int num_static_unsafe_ins = 0;
   if (! smt_var::is_win) {
-      num_static_unsafe_ins = static_safety_check_pgm(synth->inst_list, len2);
+      num_static_unsafe_ins = static_safety_check_pgm(synth->inst_list, len2, false);
   } else {
       num_static_unsafe_ins = static_safety_check_win(synth->inst_list,
                                                       inout_t::start_insn, inout_t::end_insn,
-                                                      _vld._pss_orig);
+                                                      _vld._pss_orig, false);
   }
 
   if (num_static_unsafe_ins == 0){
     pass_static_safety = true;
   }
 
-  //cout << "static_safety_check done" << endl;
   inout_t output2;
   output2.init();
   prog_state ps;
   ps.init();
 
-  //cout << "Examples size: " << _examples._exs.size() << endl;
   // variable to keep track of number of tests for which output is not observed
   int num_of_unsafe_ex = 0;
   // process total_cost with example set
@@ -237,7 +235,6 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
 
   }
 
-  //cout << "interpreter loop done" << endl;
   int is_equal = 0;
 
   // boolean variable to check whether it passes validator or not
@@ -422,11 +419,11 @@ double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_error_cost != -1) return synth->_error_cost;
   int num_static_unsafe_ins = 0;
   if (! smt_var::is_win) {
-      num_static_unsafe_ins = static_safety_check_pgm(synth->inst_list, len2);
+      num_static_unsafe_ins = static_safety_check_pgm(synth->inst_list, len2, true);
     } else {
       num_static_unsafe_ins = static_safety_check_win(synth->inst_list,
                                                       inout_t::start_insn, inout_t::end_insn,
-                                                      _vld._pss_orig);
+                                                      _vld._pss_orig, true);
   }
 
   if (num_static_unsafe_ins > 0){

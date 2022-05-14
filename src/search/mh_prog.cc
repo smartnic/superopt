@@ -339,9 +339,9 @@ void write_desc_to_file(prog* current_program, string prefix_name) {
   string output_file = prefix_name + ".desc";
   ofstream fout;
   fout.open(output_file, ios::out | ios::trunc);
-  if(logger.k2_functionality == FUNC_optimize){
+  if(k2_config.functionality == FUNC_optimize){
     fout << "perf_cost: " << current_program->_perf_cost << endl;
-  } else if(logger.k2_functionality == FUNC_repair){
+  } else if(k2_config.functionality == FUNC_repair){
     fout << "safety_cost: " << current_program->_safety_cost << endl;
     //todo: change this to error_cost for final repair tool
   } else {
@@ -401,10 +401,9 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
   prog_start = new prog(*orig);
   // set the error cost and perf cost of the prog start
   prog_start->_error_cost = 0;
-  if(logger.k2_functionality == FUNC_optimize){
+  if(k2_config.functionality == FUNC_optimize){
     _cost.perf_cost(prog_start, inst::max_prog_len);
-  }else if (logger.k2_functionality == FUNC_repair){
-    // cout << "call safety_cost_repair" << endl; 
+  }else if (k2_config.functionality == FUNC_repair){
     // _cost.safety_cost_repair(prog_start, inst::max_prog_len, prog_start, inst::max_prog_len);
     // cout << "safety_cost_repair " << prog_start->_safety_cost << endl;
     prog_start->set_safety_cost(100);
@@ -436,10 +435,10 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
         delete curr;
         curr = new prog(*prog_start);
       }
-      if(logger.k2_functionality == FUNC_optimize){
+      if(k2_config.functionality == FUNC_optimize){
         cout << "start from program (error and performance costs: "
             << prog_start->_error_cost << " " << prog_start-> _perf_cost << "):" << endl;
-      }else if (logger.k2_functionality == FUNC_repair){
+      }else if (k2_config.functionality == FUNC_repair){
         cout << "start from program (safety cost: "
             << prog_start->_safety_cost << "):" << endl;
         // todo: add print for error cost
@@ -449,9 +448,9 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
         inout_t::start_insn = win.first;
         inout_t::end_insn = win.second;
         init_sample_range(&prog_start->inst_list[win.first], (win.second - win.first + 1));
-        if(logger.k2_functionality == FUNC_optimize){
+        if(k2_config.functionality == FUNC_optimize){
           // for repair this static check is not needed because original program may not be safe
-          if (static_safety_check_pgm(prog_start->inst_list, inst::max_prog_len) > 0){
+          if (static_safety_check_pgm(prog_start->inst_list, inst::max_prog_len, true) > 0){
             // stop execution here 
             // error message would have already been thrown by static_safety_check_pgm
             // so throw empty err message to stop execution
@@ -491,9 +490,9 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
     // update best by next
     bool found_better = false;
     bool found_better_condition;
-    if(logger.k2_functionality == FUNC_optimize){
+    if(k2_config.functionality == FUNC_optimize){
       found_better_condition = (next->_error_cost == 0) && (next->_perf_cost < best->_perf_cost);
-    } else if (logger.k2_functionality == FUNC_repair){
+    } else if (k2_config.functionality == FUNC_repair){
       found_better_condition = (next->_safety_cost) < (best->_safety_cost);
       //todo: include a condition about lower error cost
     } else{
@@ -502,10 +501,10 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
 
     if (found_better_condition) {
       found_better = true;
-      if(logger.k2_functionality == FUNC_optimize){
+      if(k2_config.functionality == FUNC_optimize){
         cout << "find a better program at " << i
              << " cost: " << next->_error_cost << " " << next->_perf_cost << endl;
-      }else if(logger.k2_functionality == FUNC_repair){
+      }else if(k2_config.functionality == FUNC_repair){
         cout << "find a better program at " << i
              << " cost: " << next->_safety_cost << endl;
         //todo: print error cost here as well
@@ -518,7 +517,6 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
       // store the better program if _enable_better_store is true
       if (_enable_better_store) {
         // programs are not stored in the order of performance cost
-        cout << "calling write_optimized_prog_to_file" << endl;
         write_optimized_prog_to_file(next, better_store_id, _better_store_path);
         better_store_id = (better_store_id + 1) % _max_n_better_store;
       }

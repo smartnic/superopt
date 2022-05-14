@@ -71,10 +71,15 @@ class logger_class {
  private:
   int least_print_level = LOGGER_ERROR;
  public:
-  int k2_functionality = FUNC_optimize;
   void set_least_print_level(int level) {least_print_level = level;}
-  void set_k2_functionality(int functionality){k2_functionality = functionality;}
   bool is_print_level(int level) {return (level <= least_print_level);}
 };
 
+class k2_config_class {
+  public:
+    int functionality = FUNC_optimize;
+    void set_functionality(int functionality){this->functionality = functionality;}
+};
+
 extern logger_class logger;
+extern k2_config_class k2_config;
