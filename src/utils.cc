@@ -4,6 +4,7 @@
 using namespace std;
 
 logger_class logger;
+k2_config_class k2_config;
 
 default_random_engine gen_utils;
 uniform_real_distribution<double> unidist_utils(0.0, 1.0);
