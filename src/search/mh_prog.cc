@@ -403,13 +403,20 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
   prog_start->_error_cost = 0;
   if(k2_config.functionality == FUNC_optimize){
     _cost.perf_cost(prog_start, inst::max_prog_len);
+    cout << "original program's perf cost: " << prog_start->_perf_cost << endl;
   }else if (k2_config.functionality == FUNC_repair){
+    // todo: Make the below line work
     // _cost.safety_cost_repair(prog_start, inst::max_prog_len, prog_start, inst::max_prog_len);
-    // cout << "safety_cost_repair " << prog_start->_safety_cost << endl;
-    prog_start->set_safety_cost(100);
-  }
 
-  cout << "original program's perf cost: " << prog_start->_perf_cost << endl;
+    // placeholder: random initial safety cost since above is giving issues:
+    // prog_start->set_safety_cost(100);
+
+    // Better alternative placeholder: # of unsafe instructions in original program
+    int num_unsafe_ins_start_prog = static_safety_check_pgm(prog_start->inst_list, inst::max_prog_len, false);
+    prog_start->set_safety_cost(num_unsafe_ins_start_prog);
+
+    cout << "original program's safety cost: " << prog_start->_safety_cost << endl;   
+  }
 
   best = new prog(*prog_start);
   curr = new prog(*prog_start);
@@ -437,11 +444,10 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
       }
       if(k2_config.functionality == FUNC_optimize){
         cout << "start from program (error and performance costs: "
-            << prog_start->_error_cost << " " << prog_start-> _perf_cost << "):" << endl;
+            << prog_start->_error_cost << " " << prog_start->_perf_cost << "):" << endl;
       }else if (k2_config.functionality == FUNC_repair){
-        cout << "start from program (safety cost: "
-            << prog_start->_safety_cost << "):" << endl;
-        // todo: add print for error cost
+        cout << "start from program (safety and error costs: "
+            << prog_start->_safety_cost << " " << prog_start->_error_cost << "):" << endl;
       }
       prog_start->print();
       if (is_win) { // reset validator original program
@@ -506,8 +512,7 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
              << " cost: " << next->_error_cost << " " << next->_perf_cost << endl;
       }else if(k2_config.functionality == FUNC_repair){
         cout << "find a better program at " << i
-             << " cost: " << next->_safety_cost << endl;
-        //todo: print error cost here as well
+             << " cost: " << next->_safety_cost << " " << next->_error_cost << endl;
       }
       
       for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
