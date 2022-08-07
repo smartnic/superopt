@@ -1425,13 +1425,13 @@ void safety_chk_insn(inst& insn, inst_static_state& iss) {
   }
 }
 /*
-* if quick_check parameter is true, this function returns 0 if 
+* if binary_check_mode parameter is true, this function returns 0 if 
 * program is safe and 1 if program is unsafe.
 *
-* if quick_check parameter is false, this function returns 
+* if binary_check_mode parameter is false, this function returns 
 * the number of unsafe instructions in the program.
 */
-int static_safety_check_pgm(inst * program, int len, bool quick_check) {
+int static_safety_check_pgm(inst * program, int len, bool binary_check_mode) {
   // pss: program static state
   // going through instructions and inferring the states.
   prog_static_state pss;
@@ -1448,8 +1448,8 @@ int static_safety_check_pgm(inst * program, int len, bool quick_check) {
       safety_chk_insn(program[i], pss.static_state[i]);
     } catch(string err_msg) {
       // if this is the first unsafe instruction, then different
-      // operations need to be done based on 'quick_check' parameter.
-      if(num_of_unsafe_ins == 0 && quick_check){
+      // operations need to be done based on 'binary_check_mode' parameter.
+      if(num_of_unsafe_ins == 0 && binary_check_mode){
           cout << err_msg << endl;
           return 1;
       }
@@ -1463,13 +1463,13 @@ int static_safety_check_pgm(inst * program, int len, bool quick_check) {
 }
 
 /*
-* if quick_check parameter is true, this function returns 0 if 
+* if binary_check_mode parameter is true, this function returns 0 if 
 * program window is safe and 1 if program window is unsafe.
 *
-* if quick_check parameter is false, this function returns 
+* if binary_check_mode parameter is false, this function returns 
 * the number of unsafe instructions in the program window.
 */
-int static_safety_check_win(inst * win_prog, int win_start, int win_end, prog_static_state & pss_orig, bool quick_check) {
+int static_safety_check_win(inst * win_prog, int win_start, int win_end, prog_static_state & pss_orig, bool binary_check_mode) {
   int win_len = win_end - win_start + 1;
   // 1. compute ss_win according to the ss_orig and the window program
   vector<inst_static_state> ss_win(win_len); // [win_start, win_end]
@@ -1492,8 +1492,8 @@ int static_safety_check_win(inst * win_prog, int win_start, int win_end, prog_st
       safety_chk_insn(win_prog[i + win_start], ss_win[i]);
     } catch(string err_msg) {
       // if this is the first unsafe instruction, then different
-      // operations need to be done based on 'quick_check' parameter.
-      if(num_of_unsafe_ins == 0 && quick_check){
+      // operations need to be done based on 'binary_check_mode' parameter.
+      if(num_of_unsafe_ins == 0 && binary_check_mode){
           cout << err_msg << endl;
           return 1;
       }
