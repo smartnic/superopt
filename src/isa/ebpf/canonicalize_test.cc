@@ -797,7 +797,7 @@ void test3() {
 void test_safety_check(inst* program, int len, bool expected_safe, string test_name) {
   bool is_succ = false;
   int num_of_unsafe_ins = static_safety_check_pgm(program, len, true);
-  if((expected_safe && (num_of_unsafe_ins == 0)) || (!(expected_safe) && (num_of_unsafe_ins > 0))){
+  if((expected_safe && (num_of_unsafe_ins == 0)) || ((!expected_safe) && (num_of_unsafe_ins > 0))){
     is_succ = true;
   }
   print_test_res(is_succ, test_name);
@@ -817,7 +817,7 @@ void test_safety_check_win(inst* program, int len,
 
   bool is_succ = false;
   int num_of_unsafe_ins = static_safety_check_win(program, win_start, win_end, pss, true);
-  if ((expected_safe && (num_of_unsafe_ins == 0)) || (!(expected_safe) && (num_of_unsafe_ins > 0))) {
+  if ((expected_safe && (num_of_unsafe_ins == 0)) || ((!expected_safe) && (num_of_unsafe_ins > 0))) {
     is_succ = true;
   }
   print_test_res(is_succ, test_name);
@@ -830,7 +830,7 @@ void test_safety_check_win(inst* program, int len,
 * expected_unsafe_num is the number of unsafe instructions the program is expected to have
 * (this would be 0 if the program is expected to be safe).
 */
-void test_safety_check_disable_quick_check(inst* program, int len, int expected_unsafe_num, string test_name) {
+void test_safety_check_disable_binary_check_mode(inst* program, int len, int expected_unsafe_num, string test_name) {
   bool is_succ = false;
   int num_of_unsafe_ins = static_safety_check_pgm(program, len, false);
   if (num_of_unsafe_ins == expected_unsafe_num) {
@@ -846,7 +846,7 @@ void test_safety_check_disable_quick_check(inst* program, int len, int expected_
 * expected_unsafe_num is the number of unsafe instructions the program window is 
 * expected to have (this would be 0 if the program window is expected to be safe).
 */
-void test_safety_check_disable_quick_check_win(inst* program, int len,
+void test_safety_check_disable_binary_check_mode_win(inst* program, int len,
                            int win_start, int win_end,
                            int expected_unsafe_num, string test_name) {
   prog_static_state pss;
@@ -880,8 +880,8 @@ void test4() {
   test_safety_check(p1_2, sizeof(p1_2) / sizeof(inst), false, "2.1");
   test_safety_check_win(p1_2, sizeof(p1_2) / sizeof(inst), 0, 0, false, "2.2");
 
-  test_safety_check_disable_quick_check(p1_2, sizeof(p1_2) / sizeof(inst), 1, "2.3");
-  test_safety_check_disable_quick_check_win(p1_2, sizeof(p1_2) / sizeof(inst), 0, 0, 1, "2.4");
+  test_safety_check_disable_binary_check_mode(p1_2, sizeof(p1_2) / sizeof(inst), 1, "2.3");
+  test_safety_check_disable_binary_check_mode_win(p1_2, sizeof(p1_2) / sizeof(inst), 0, 0, 1, "2.4");
 
   inst p1_3[] = {inst(STB, 10, -1, 0x1),
                  INSN_LDMAPID(1, 0),
@@ -899,10 +899,10 @@ void test4() {
   test_safety_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 8, 8, true, "3.3");
   test_safety_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 5, 5, true, "3.4");
 
-  test_safety_check_disable_quick_check(p1_3, sizeof(p1_3) / sizeof(inst), 0, "3.5");
-  test_safety_check_disable_quick_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 6, 6, 0, "3.6");
-  test_safety_check_disable_quick_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 8, 8, 0, "3.7");
-  test_safety_check_disable_quick_check_win(p1_3, sizeof(p1_3) / sizeof(inst), 5, 5, 0, "3.8");
+  test_safety_check_disable_binary_check_mode(p1_3, sizeof(p1_3) / sizeof(inst), 0, "3.5");
+  test_safety_check_disable_binary_check_mode_win(p1_3, sizeof(p1_3) / sizeof(inst), 6, 6, 0, "3.6");
+  test_safety_check_disable_binary_check_mode_win(p1_3, sizeof(p1_3) / sizeof(inst), 8, 8, 0, "3.7");
+  test_safety_check_disable_binary_check_mode_win(p1_3, sizeof(p1_3) / sizeof(inst), 5, 5, 0, "3.8");
 
   // check add64xy
   inst p1_4[] = {inst(MOV64XC, 0, 0),
@@ -913,8 +913,8 @@ void test4() {
   test_safety_check(p1_4, sizeof(p1_4) / sizeof(inst), true, "4.1");
   test_safety_check_win(p1_4, sizeof(p1_4) / sizeof(inst), 1, 1, true, "4.2");
 
-  test_safety_check_disable_quick_check(p1_4, sizeof(p1_4) / sizeof(inst), 0, "4.3");
-  test_safety_check_disable_quick_check_win(p1_4, sizeof(p1_4) / sizeof(inst), 1, 1, 0, "4.4");
+  test_safety_check_disable_binary_check_mode(p1_4, sizeof(p1_4) / sizeof(inst), 0, "4.3");
+  test_safety_check_disable_binary_check_mode_win(p1_4, sizeof(p1_4) / sizeof(inst), 1, 1, 0, "4.4");
 
   // check add64xy
   inst p1_5[] = {inst(MOV64XC, 0, 0),
@@ -925,8 +925,8 @@ void test4() {
   test_safety_check(p1_5, sizeof(p1_5) / sizeof(inst), false, "5.1");
   test_safety_check_win(p1_5, sizeof(p1_5) / sizeof(inst), 1, 1, false, "5.2");
 
-  test_safety_check_disable_quick_check(p1_5, sizeof(p1_5) / sizeof(inst), 1, "5.3");
-  test_safety_check_disable_quick_check_win(p1_5, sizeof(p1_5) / sizeof(inst), 1, 1, 1, "5.4");
+  test_safety_check_disable_binary_check_mode(p1_5, sizeof(p1_5) / sizeof(inst), 1, "5.3");
+  test_safety_check_disable_binary_check_mode_win(p1_5, sizeof(p1_5) / sizeof(inst), 1, 1, 1, "5.4");
 
   // check map access out of bound
   inst p1_6[] = {inst(STB, 10, -1, 0x1),
@@ -943,8 +943,8 @@ void test4() {
   test_safety_check(p1_6, sizeof(p1_6) / sizeof(inst), false, "6.1");
   test_safety_check_win(p1_6, sizeof(p1_6) / sizeof(inst), 6, 6, false, "6.2");
 
-  test_safety_check_disable_quick_check(p1_6, sizeof(p1_6) / sizeof(inst), 1, "6.3");
-  test_safety_check_disable_quick_check_win(p1_6, sizeof(p1_6) / sizeof(inst), 6, 6, 1, "6.4");
+  test_safety_check_disable_binary_check_mode(p1_6, sizeof(p1_6) / sizeof(inst), 1, "6.3");
+  test_safety_check_disable_binary_check_mode_win(p1_6, sizeof(p1_6) / sizeof(inst), 6, 6, 1, "6.4");
 
   // stack out of bound check
   inst p1_7[] = {inst(STH, 10, -3, 0x1),
@@ -953,8 +953,8 @@ void test4() {
   test_safety_check(p1_7, sizeof(p1_7) / sizeof(inst), false, "7.1");
   test_safety_check_win(p1_7, sizeof(p1_7) / sizeof(inst), 0, 0, false, "7.2");
 
-  test_safety_check_disable_quick_check(p1_7, sizeof(p1_7) / sizeof(inst), 1, "7.3");
-  test_safety_check_disable_quick_check_win(p1_7, sizeof(p1_7) / sizeof(inst), 0, 0, 1, "7.4");
+  test_safety_check_disable_binary_check_mode(p1_7, sizeof(p1_7) / sizeof(inst), 1, "7.3");
+  test_safety_check_disable_binary_check_mode_win(p1_7, sizeof(p1_7) / sizeof(inst), 0, 0, 1, "7.4");
 
   // stack aligned check
   inst p1_8[] = {inst(STB, 10, 0, 0x1),
@@ -965,9 +965,9 @@ void test4() {
   test_safety_check_win(p1_8, sizeof(p1_8) / sizeof(inst), 0, 0, false, "8.2");
   test_safety_check_win(p1_8, sizeof(p1_8) / sizeof(inst), 1, 1, false, "8.3");
 
-  test_safety_check_disable_quick_check(p1_8, sizeof(p1_8) / sizeof(inst), 2, "8.4");
-  test_safety_check_disable_quick_check_win(p1_8, sizeof(p1_8) / sizeof(inst), 0, 0, 1, "8.5");
-  test_safety_check_disable_quick_check_win(p1_8, sizeof(p1_8) / sizeof(inst), 1, 1, 1, "8.6");
+  test_safety_check_disable_binary_check_mode(p1_8, sizeof(p1_8) / sizeof(inst), 2, "8.4");
+  test_safety_check_disable_binary_check_mode_win(p1_8, sizeof(p1_8) / sizeof(inst), 0, 0, 1, "8.5");
+  test_safety_check_disable_binary_check_mode_win(p1_8, sizeof(p1_8) / sizeof(inst), 1, 1, 1, "8.6");
 
   cout << "4.2 invalid size of register spill" << endl;
   inst p2_1[] = {inst(STXW, 10, -8, 1), // store pointer on stack (spilled)
@@ -979,9 +979,9 @@ void test4() {
   test_safety_check_win(p2_1, sizeof(p2_1) / sizeof(inst), 0, 0, false, "2.1.2");
   test_safety_check_win(p2_1, sizeof(p2_1) / sizeof(inst), 1, 1, false, "2.1.3");
 
-  test_safety_check_disable_quick_check(p2_1, sizeof(p2_1) / sizeof(inst), 2, "2.1.4");
-  test_safety_check_disable_quick_check_win(p2_1, sizeof(p2_1) / sizeof(inst), 0, 0, 1, "2.1.5");
-  test_safety_check_disable_quick_check_win(p2_1, sizeof(p2_1) / sizeof(inst), 1, 1, 1, "2.1.6");
+  test_safety_check_disable_binary_check_mode(p2_1, sizeof(p2_1) / sizeof(inst), 2, "2.1.4");
+  test_safety_check_disable_binary_check_mode_win(p2_1, sizeof(p2_1) / sizeof(inst), 0, 0, 1, "2.1.5");
+  test_safety_check_disable_binary_check_mode_win(p2_1, sizeof(p2_1) / sizeof(inst), 1, 1, 1, "2.1.6");
 
   inst p2_2[] = {inst(STXDW, 10, -8, 1), // store pointer on stack (not spilled)
                  inst(LDXDW, 0, 10, -8), // read pointer from stack (not spilled)
@@ -993,10 +993,10 @@ void test4() {
   test_safety_check_win(p2_2, sizeof(p2_2) / sizeof(inst), 1, 1, true, "2.2.3");
   test_safety_check_win(p2_2, sizeof(p2_2) / sizeof(inst), 2, 2, false, "2.2.4");
 
-  test_safety_check_disable_quick_check(p2_2, sizeof(p2_2) / sizeof(inst), 1, "2.2.5");
-  test_safety_check_disable_quick_check_win(p2_2, sizeof(p2_2) / sizeof(inst), 0, 0, 0, "2.2.6");
-  test_safety_check_disable_quick_check_win(p2_2, sizeof(p2_2) / sizeof(inst), 1, 1, 0, "2.2.7");
-  test_safety_check_disable_quick_check_win(p2_2, sizeof(p2_2) / sizeof(inst), 2, 2, 1, "2.2.8");
+  test_safety_check_disable_binary_check_mode(p2_2, sizeof(p2_2) / sizeof(inst), 1, "2.2.5");
+  test_safety_check_disable_binary_check_mode_win(p2_2, sizeof(p2_2) / sizeof(inst), 0, 0, 0, "2.2.6");
+  test_safety_check_disable_binary_check_mode_win(p2_2, sizeof(p2_2) / sizeof(inst), 1, 1, 0, "2.2.7");
+  test_safety_check_disable_binary_check_mode_win(p2_2, sizeof(p2_2) / sizeof(inst), 2, 2, 1, "2.2.8");
 }
 
 void test5() {
