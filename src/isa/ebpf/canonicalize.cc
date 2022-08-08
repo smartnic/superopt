@@ -1424,6 +1424,31 @@ void safety_chk_insn(inst& insn, inst_static_state& iss) {
     safety_chk_insn_mem_access(insn, iss);
   }
 }
+
+// utilizes static states to check safety of each instruction.
+int static_safety_check_helper(int offset, int len, inst * p, vector<inst_static_state> ss, bool binary_check_mode){
+  int num_of_unsafe_ins = 0;
+  for (int i = 0; i < len; i++) {
+    try {
+      // throws a string error message if instruction is unsafe
+      safety_chk_insn(p[i+offset], ss[i]);
+    } catch(string err_msg) {
+      // if this is the first unsafe instruction, then different
+      // operations need to be done based on 'binary_check_mode' parameter.
+      if(num_of_unsafe_ins == 0 && binary_check_mode){
+          cout << err_msg << endl;
+          return 1;
+      }
+      num_of_unsafe_ins++;
+      if(logger.is_print_level(LOGGER_DEBUG)){
+        cout << err_msg << endl;
+      }
+    }
+  }
+
+  return num_of_unsafe_ins;
+}
+
 /*
 * if binary_check_mode parameter is true, this function returns 0 if 
 * program is safe and 1 if program is unsafe.
@@ -1440,26 +1465,8 @@ int static_safety_check_pgm(inst * program, int len, bool binary_check_mode) {
   topo_sort_for_graph(pss.dag, pss.g);
   type_const_inference_pgm(pss, program, len);
   min_pkt_sz_inference_pgm(pss, program, len);
-  // utilizing static states to check safety of each instruction.
-  int num_of_unsafe_ins = 0;
-  for (int i = 0; i < len; i++) {
-    try {
-      // throws a string error message if instruction is unsafe
-      safety_chk_insn(program[i], pss.static_state[i]);
-    } catch(string err_msg) {
-      // if this is the first unsafe instruction, then different
-      // operations need to be done based on 'binary_check_mode' parameter.
-      if(num_of_unsafe_ins == 0 && binary_check_mode){
-          cout << err_msg << endl;
-          return 1;
-      }
-      num_of_unsafe_ins++;
-      if(logger.is_print_level(LOGGER_DEBUG)){
-        cout << err_msg << endl;
-      }
-    }
-  }
-  return num_of_unsafe_ins;
+  
+  return static_safety_check_helper(0, len, program, pss.static_state, binary_check_mode);
 }
 
 /*
@@ -1485,25 +1492,7 @@ int static_safety_check_win(inst * win_prog, int win_start, int win_end, prog_st
   }
   min_pkt_sz_inference_win(ss_win, pss_orig.static_state[win_start]);
 
-  int num_of_unsafe_ins = 0;
-  for (int i = 0; i < win_len; i++) {
-    try {
-      //throws a string error message if instruction is unsafe
-      safety_chk_insn(win_prog[i + win_start], ss_win[i]);
-    } catch(string err_msg) {
-      // if this is the first unsafe instruction, then different
-      // operations need to be done based on 'binary_check_mode' parameter.
-      if(num_of_unsafe_ins == 0 && binary_check_mode){
-          cout << err_msg << endl;
-          return 1;
-      }
-      num_of_unsafe_ins++;
-      if(logger.is_print_level(LOGGER_DEBUG)){
-        cout << err_msg << endl;
-      }
-    }
-  }
-  return num_of_unsafe_ins;
+  return static_safety_check_helper(win_start, win_len, win_prog, ss_win, binary_check_mode);
 }
 
 // update the original program's pre-condition and post-condition

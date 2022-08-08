@@ -48,6 +48,7 @@ void set_up_smt_inout_win(smt_input& sin, smt_output& sout, prog_static_state& p
 // todo: move random input related functions to other place
 void gen_random_input(vector<inout_t>& inputs, int n, int64_t reg_min, int64_t reg_max);
 void gen_random_input_for_win(vector<inout_t>& inputs, int n, inst_static_state& iss, inst& insn, int win_start, int win_end);
+int static_safety_check_helper(int start_index, int len, inst * p, vector<inst_static_state> ss, bool binary_check_mode);
 int static_safety_check_pgm(inst* program, int len, bool binary_check_mode);
 int static_safety_check_win(inst* win_prog, int win_start, int win_end, prog_static_state& pss_orig, bool binary_check_mode);
 
