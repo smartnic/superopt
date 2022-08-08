@@ -244,6 +244,21 @@ bool top_k_progs::can_find(prog* p) {
   return false;
 }
 
+// update the max_cost or max_cost_id if program at "index" has greater cost
+void top_k_progs::update_max_cost_and_max_cost_id_if_needed(int index){
+  if (k2_config.functionality == FUNC_optimize) {
+    if (progs[index]->_perf_cost > max_cost) {
+      max_cost = progs[index]->_perf_cost;
+      max_cost_id = index;
+    }
+  } else if(k2_config.functionality == FUNC_repair) {
+    if (progs[index]->_safety_cost > max_cost) {
+      max_cost = progs[index]->_safety_cost;
+      max_cost_id = index;
+    }
+  }
+}
+
 void top_k_progs::insert_without_check(prog* p) {
   if (logger.is_print_level(LOGGER_DEBUG)) {
     cout << "insert a new program in top_k_progs" << endl;
@@ -261,43 +276,24 @@ void top_k_progs::insert_without_check(prog* p) {
   }
   max_cost_id = 0;
   for (int i = 1; i < progs.size(); i++) {
-    if (k2_config.functionality == FUNC_optimize) {
-      if (progs[i]->_perf_cost > max_cost) {
-        max_cost = progs[i]->_perf_cost;
-        max_cost_id = i;
-      }
-    } else if(k2_config.functionality == FUNC_repair) {
-      if (progs[i]->_safety_cost > max_cost) {
-        max_cost = progs[i]->_safety_cost;
-        max_cost_id = i;
-      }
-    }
+    update_max_cost_and_max_cost_id_if_needed(i);
   }
 }
 
 void top_k_progs::insert(prog* p) {
   if (k2_config.functionality == FUNC_optimize) {
     if (p->_error_cost != 0) return;
-    if (progs.size() < k) { // check whether this program is in the progs
-      if (can_find(p)) return;
-      insert_without_check(p);
-    } else {
-      assert(progs.size() != 0);
+  }
+  if (progs.size() >= k) { 
+    assert(progs.size() != 0);
+    if(k2_config.functionality == FUNC_optimize){
       if (p->_perf_cost >= max_cost) return;
-      if (can_find(p)) return;
-      insert_without_check(p);
-    }
-  } else if (k2_config.functionality == FUNC_repair) {
-    if (progs.size() < k) { // check whether this program is in the progs
-      if (can_find(p)) return;
-      insert_without_check(p);
-    } else {
-      assert(progs.size() != 0);
+    } else if(k2_config.functionality == FUNC_repair){
       if (p->_safety_cost >= max_cost) return;
-      if (can_find(p)) return;
-      insert_without_check(p);
     }
   }
+  if (can_find(p)) return;
+  insert_without_check(p);
 }
 
 void top_k_progs::clear() {
@@ -327,16 +323,6 @@ void top_k_progs::sort() {
   }
   max_cost_id = 0;
   for (int i = 1; i < progs.size(); i++) {
-    if (k2_config.functionality == FUNC_optimize) {
-      if (progs[i]->_perf_cost > max_cost) {
-        max_cost = progs[i]->_perf_cost;
-        max_cost_id = i;
-      }
-    } else if (k2_config.functionality == FUNC_repair) {
-      if (progs[i]->_safety_cost > max_cost) {
-        max_cost = progs[i]->_safety_cost;
-        max_cost_id = i;
-      }
-    }
+    update_max_cost_and_max_cost_id_if_needed(i);
   }
 }

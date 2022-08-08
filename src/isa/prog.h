@@ -53,6 +53,7 @@ class top_k_progs {
   unsigned int k;
   bool can_find(prog* p);
   void insert_without_check(prog* p);
+  void update_max_cost_and_max_cost_id_if_needed(int index);
  public:
   // `greater` makes progs in descending order of keys
   // key: perf cost, value.first: prog hash value, value.second: prog pointer
