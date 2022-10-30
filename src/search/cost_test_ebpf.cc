@@ -18,7 +18,7 @@ double get_error_cost(inst* p1, inst* p2, int win_start, int win_end) {
     // stop execution here since the p1 is unsafe
     // error message would have already been thrown by static_safety_check_pgm
     // so throw empty err message to stop execution
-    string err_msg = "";
+    string err_msg = "Program p1 is unsafe in cost_test_ebpf.cc's get_error_cost function.";
     throw(err_msg);
   }
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
@@ -49,7 +49,7 @@ double get_error_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
     // stop execution here since the p1 is unsafe
     // error message would have already been thrown by static_safety_check_pgm
     // so throw empty err message to stop execution
-    string err_msg = "";
+    string err_msg = "Program p1 is unsafe in cost_test_ebpf.cc's get_error_cost_repair function.";
     throw(err_msg);
   }
 
@@ -84,7 +84,7 @@ double get_safety_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
     // stop execution here since the p1 is unsafe
     // error message would have already been thrown by static_safety_check_pgm
     // so throw empty err message to stop execution
-    string err_msg = "";
+    string err_msg = "Program p1 is unsafe in cost_test_ebpf.cc's get_safety_cost_repair function.";
     throw(err_msg);
   }
 
