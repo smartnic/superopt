@@ -460,7 +460,7 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
             // stop execution here 
             // error message would have already been thrown by static_safety_check_pgm
             // so throw empty err message to stop execution
-            string err_msg = "";
+            string err_msg = "An original program/window in mcmc_iter is unsafe.";
             throw(err_msg);
           }
         }
