@@ -1751,6 +1751,10 @@ void interpret(inout_t& output, inst * program, int length, prog_state & ps, con
 #define DST_ID (insn->_dst_reg)
 #define SRC_ID (insn->_src_reg)
 
+  //if (logger.is_print_level(LOGGER_DEBUG)) {
+    //cout << "In interpret of isa/eBPF/inst.cc" << endl;
+  //}
+
   int start_insn = input.start_insn;
   if (smt_var::is_win) { // length is from 0
     length = inout_t::end_insn + 1;

@@ -216,8 +216,11 @@ double mh_sampler::cost_to_pi(double cost) {
 
 /* compute acceptance function */
 double mh_sampler::alpha(prog* curr, prog* next, prog* orig) {
+  cout << "current program's cost" << endl;
   double curr_cost = _cost.total_prog_cost(orig, inst::max_prog_len, curr, inst::max_prog_len);
+  cout << "next program's cost" << endl;
   double next_cost = _cost.total_prog_cost(orig, inst::max_prog_len, next, inst::max_prog_len);
+  //cout << "done calculating next program's cost" << endl;
   // res = min(1.0, cost_to_pi(next_cost) / cost_to_pi(curr_cost));
   // use equation b^(-x) / b^(-y) = b^(-(x-y)) to simplify the calculation
   double d = next_cost - curr_cost;
@@ -227,7 +230,16 @@ double mh_sampler::alpha(prog* curr, prog* next, prog* orig) {
 
 prog* mh_sampler::mh_next(prog* curr, prog* orig) {
   prog* next = _next_proposal.next_proposal(curr);
+  cout << "sampling next program" << endl;
+  cout << "orig program for cost calculation" << endl;
+  if (logger.is_print_level(LOGGER_DEBUG)) {
+    for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
+      cout << i << ": ";
+      orig->inst_list[i].print();
+    }
+  }
   // print each modification
+  cout << "next program sampled" << endl;
   if (logger.is_print_level(LOGGER_DEBUG)) {
     for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
       cout << i << ": ";
@@ -343,6 +355,7 @@ void write_desc_to_file(prog* current_program, string prefix_name) {
     fout << "perf_cost: " << current_program->_perf_cost << endl;
   } else if(k2_config.functionality == FUNC_repair){
     fout << "safety_cost: " << current_program->_safety_cost << endl;
+    fout << "error_cost: " << current_program->_error_cost << endl;
     //todo: change this to error_cost for final repair tool
   } else {
     throw("invalid functionality detected in write_desc_to_file");
@@ -392,6 +405,7 @@ void write_optimized_prog_to_file(prog* current_program, int id, string path_out
 }
 
 void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool is_win) {
+  cout << "In mcmc_iter: " << endl;
   int better_store_id = 0;
   topk_progs.clear();
   // best is the program with zero error cost and minimum performance cost in MC
@@ -399,23 +413,17 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
   // curr->canonicalize();
   auto start = NOW;
   prog_start = new prog(*orig);
-  // set the error cost and perf cost of the prog start
+  // set the costs of the prog start
   prog_start->_error_cost = 0;
   if(k2_config.functionality == FUNC_optimize){
     _cost.perf_cost(prog_start, inst::max_prog_len);
     cout << "original program's perf cost: " << prog_start->_perf_cost << endl;
   }else if (k2_config.functionality == FUNC_repair){
-    // todo: Make the below line work
-    // _cost.safety_cost_repair(prog_start, inst::max_prog_len, prog_start, inst::max_prog_len);
-
-    // placeholder: random initial safety cost since above is giving issues:
-    // prog_start->set_safety_cost(100);
-
-    // Better alternative placeholder: # of unsafe instructions in original program
+    //_cost.safety_cost_repair(prog_start, inst::max_prog_len, prog_start, inst::max_prog_len);
     int num_unsafe_ins_start_prog = static_safety_check_pgm(prog_start->inst_list, inst::max_prog_len, false);
     prog_start->set_safety_cost(num_unsafe_ins_start_prog);
 
-    cout << "original program's safety cost: " << prog_start->_safety_cost << endl;   
+    cout << "original program's initial safety cost: " << prog_start->_safety_cost << endl; 
   }
 
   best = new prog(*prog_start);
@@ -451,6 +459,7 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
       }
       prog_start->print();
       if (is_win) { // reset validator original program
+        cout << "In is_win: " << endl;
         inout_t::start_insn = win.first;
         inout_t::end_insn = win.second;
         init_sample_range(&prog_start->inst_list[win.first], (win.second - win.first + 1));
@@ -463,17 +472,23 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
             string err_msg = "An original program/window in mcmc_iter is unsafe.";
             throw(err_msg);
           }
+          _cost.set_orig(prog_start, inst::max_prog_len, win.first, win.second);
+        }else if(k2_config.functionality == FUNC_repair){
+          //entire set_orig fails, so start of with just the static analysis part
+          static_analysis(_cost._vld._pss_orig, prog_start->inst_list, inst::max_prog_len);
         }
-        _cost.set_orig(prog_start, inst::max_prog_len, win.first, win.second);
+        
         // clear the test cases and generate new test cases
         // prog_static_state pss;
         // static_analysis(pss, prog_start->inst_list, inst::max_prog_len);
         int num_examples = 30;
         vector<inout_t> examples;
+        cout << "Starting gen_random_input_for_win " << endl;
         gen_random_input_for_win(examples, num_examples,
                                  _cost._vld._pss_orig.static_state[win.first],
                                  prog_start->inst_list[win.first],
                                  win.first, win.second);
+        cout << "Done with gen_random_input_for_win " << endl;
         _cost.set_examples(examples, prog_start);
       }
     }

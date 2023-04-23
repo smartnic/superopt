@@ -44,7 +44,8 @@ double get_error_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
   inout_t::start_insn = win_start;
   inout_t::end_insn = win_end;
 
-  int num_static_unsafe_ins = static_safety_check_pgm(prog1.inst_list, inst::max_prog_len, true);
+  //int num_static_unsafe_ins = static_safety_check_pgm(prog1.inst_list, inst::max_prog_len, true);
+  /*
   if (num_static_unsafe_ins > 0){
     // stop execution here since the p1 is unsafe
     // error message would have already been thrown by static_safety_check_pgm
@@ -52,7 +53,7 @@ double get_error_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
     string err_msg = "Program p1 is unsafe in cost_test_ebpf.cc's get_error_cost_repair function.";
     throw(err_msg);
   }
-
+  */
   c.set_orig(&prog1, inst::max_prog_len, win_start, win_end);
   prog_static_state pss;
   // This is to infer program state while entering and leaving the window.
@@ -428,11 +429,51 @@ void test4() {
 
 }
 
+void test5(){
+
+  cout << "started test 5 in cost_test_ebpf" << endl;
+
+  inst p1[] = { inst(MUL64XC, 1, 0x6),  /* mul64 r1, 0x6 */
+                inst(MOV64XC, 0, 0x0),
+              };
+
+  inst p2[] = { inst(),
+                inst(MOV64XC, 0, -0x3),
+              };
+
+  inst p3[] = { inst(),
+                inst(MOV64XC, 0, 0x0),
+              };
+
+  int win_start = 0, win_end = 1;
+
+  mem_t::_layout.clear();
+
+  inst::max_prog_len = sizeof(p1) / sizeof(inst);
+
+  //we don't use a packet
+  mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+  mem_t::set_pkt_sz(5);
+
+  mem_t::_layout._n_randoms_u32 = 1;
+  smt_var::init_static_variables();
+
+  cout << "starting test 5, part 1" << endl;
+  print_test_res(get_error_cost_repair(p1, p3, win_start, win_end) == 0, "error_cost_repair: 2 equivalent programs where initial program is unsafe");
+
+  cout << "starting test 5, part 2" << endl;
+  print_test_res(get_error_cost_repair(p1, p2, win_start, win_end) > 0, "error_cost_repair: 2 different programs where initial program is unsafe");
+
+  mem_t::_layout.clear();
+
+}
+
 int main() {
   test1();
   test2();
   test3();
   test4();
+  test5();
   kill_server();
   return 0;
 }

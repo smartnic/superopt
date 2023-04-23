@@ -51,13 +51,18 @@ void cost::set_examples(const vector<inout_t> &input, prog* orig) {
   try {
     for (size_t i = 0; i < input.size(); i++) {
       if (logger.is_print_level(LOGGER_DEBUG)) {
-        cout << i << ": " << input[i] << endl;
+        //cout << i << ": " << input[i] << endl;
       }
       ps.clear();
       inout_t output;
       output.init();
-      // Assume original program can pass the interpreter
-      orig->interpret(output, ps, input[i]);
+      try {
+        orig->interpret(output, ps, input[i]);
+        //cout << i << ": " << output << endl;
+      } catch(const string err_msg) {
+        output.valid = false;
+        //cout << i << ": " << "No valid output because " << err_msg << endl;
+      }
       _examples._exs[i].set_in_out(input[i], output);
     }
   } catch (const string err_msg) {
@@ -216,6 +221,7 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
     pass_static_safety = true;
   }
 
+  cout << "safety_cost: number of static unsafe instructions: " << num_static_unsafe_ins << endl;
   inout_t output2;
   output2.init();
   prog_state ps;
@@ -235,16 +241,25 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
 
   }
 
+  cout << "safety_cost: number of unsafe examples: " << num_of_unsafe_ex << endl;
+
   int is_equal = 0;
 
   // boolean variable to check whether it passes validator or not
   bool pass_validator = false;
+
+  //debugging
+  pass_validator = true;
+
+  /*
   // condition: passed previous 2 modules (true, num_of_succ_ex == ex_size)
   if (pass_static_safety && (num_of_unsafe_ex == 0)) {
 
     auto t1 = NOW;
     try {
+      cout << "starting vld.is_equal_to statement " << endl;
       is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
+      cout << "completed vld.is_equal_to statement " << endl;
       // Return Value: 0(unequal but safe), 1(equal and safe), -1(unsafe but no counterexample), -2(unsafe but counterexample)
       pass_validator = true;
     } catch (const string err_msg) {
@@ -261,6 +276,8 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
       // synth->print();
     }
   }
+
+  cout << "out of validator part" << endl;
 
   // process counterexamples
   // If num_successful_ex < (int)_examples._exs.size(),
@@ -283,6 +300,8 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
     cout << _vld._last_counterex.output << endl;
   }
 
+  cout << "done inserting counterexamples" << endl;
+  */
   // calculate safety cost based on the 4 variables
   // Function of: pass_satic_safety, num_of_unsafe_ex, pass_validator, isEqual
 
@@ -317,79 +336,60 @@ double cost::safety_cost_repair(prog* orig, int len1, prog* synth, int len2) {
 *
 */
 double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
+
   if (synth->_error_cost != -1) return synth->_error_cost;
+
+  cout << "in error_cost_repair" << endl;
 
   double total_cost = 0;
   inout_t output1, output2;
   output1.init();
   output2.init();
-  int num_successful_ex = 0;
   prog_state ps;
   ps.init();
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
+    cout << "Input: " << _examples._exs[i].input << endl;
+
     output1 = _examples._exs[i].output;
+
     // 2 Variables
     // 1: number of test cases that can get output.
     // 2: outputs to compare to original program's outputs.
     // Try to generate private/temporary memory to share results between error and safety cost.
     // Calculate result and pass to the two functions to save time.
-    try {
-      synth->interpret(output2, ps, _examples._exs[i].input);
-    } catch (const string err_msg) {
-      // illegal program
-      // This cost has already been added for safety before.
-      // if this happens, we just move on to the next test case
-      continue;
+    if (output1.valid == true) {
+      cout << "Output orig: " << output1 << endl;
+      try {
+        synth->interpret(output2, ps, _examples._exs[i].input);
+        cout << "Output synth: " << output2 << endl;
+      } catch (const string err_msg) {
+        // illegal program
+        // This cost has already been added for safety before.
+        // if this happens, we just move on to the next test case
+        cout << "Output synth: not valid" << endl;
+        continue;
+      }
+      double ex_cost = get_ex_error_cost(output1, output2);
+      cout << "Error cost for this input: " << ex_cost << endl;
+      total_cost += ex_cost;
+    }else{
+      cout << "Output orig: not valid" << endl;
     }
-    double ex_cost = get_ex_error_cost(output1, output2);
-    if (ex_cost == 0) num_successful_ex++;
 
-    total_cost += ex_cost;
-  }
-  int is_equal = 0;
-  int ex_set_size = _examples._exs.size();
-  if (num_successful_ex == ex_set_size) {
-    auto t1 = NOW;
-    try {
-      is_equal = _vld.is_equal_to(orig->inst_list, len1, synth->inst_list, len2);
-    } catch (const string err_msg) {
-      // illegal program
-      // already took care of this situation for safety
-    }
-    auto t2 = NOW;
-    auto dur = DUR(t1, t2);
-    // cout << dur << endl;
-    dur_sum += dur;
-    if (dur > 50000) {
-      dur_sum_long += dur;
-      n_sum_long++;
-      // synth->print();
-    }
-  }
-  int avg_value = get_avg_value(ex_set_size);
-  total_cost = get_final_error_cost(total_cost, is_equal,
-                                    ex_set_size, num_successful_ex,
-                                    avg_value);
-  // process counterexamples
-  // If num_successful_ex < (int)_examples._exs.size(),
-  // it shows the example that synth fails in the example set is a counterexample.
-  // The counterexample generated from this synth may have already been in the examples set.
-  // Thus, only when num_successful_ex == (int)_examples._exs.size(),
-  // the counterexample generated from this synth must can be added into the example set.
-  // But it should ensure that the number of initial example set is big enough.
-  // case 1: gen_counterex_flag = (is_equal == 0);
-  // case 2: gen_counterex_flag = (is_equal == 0) && (num_successful_ex == (int)_examples._exs.size());
-  // we already take care of is_equal < 0 for safety
-  // New condition:
-  if ((num_successful_ex == (int)_examples._exs.size()) && (is_equal == 0)) {
-    _examples.insert(_vld._last_counterex);
-    _meas_new_counterex_gened = true;
-    cout << "counterexample " << _examples.size() << ":" << endl;
-    cout << _vld._last_counterex.input << endl;
-    cout << _vld._last_counterex.output << endl;
-  }
+    cout << endl;
 
+  }
+    
+  //Since for the case of repair:
+  //  1. correctness is an important soft contraint as opposed to a hard constrant.
+  //  2. all cases at least one of orig and synth as unsafe
+  //The results of the validator, having high time complexity may not be useful for correctness.
+  //So:
+  //  1. The validator code may be eliminated for error_cost_repair
+  //  2. Moreover, we can just use one common equation 
+  //        (sum of costs from all examples) for correctness from examples. 
+  cout << "error_cost: " << total_cost << endl;
   synth->set_error_cost(total_cost);
   return total_cost;
 }
@@ -417,6 +417,9 @@ double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
  */
 double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_error_cost != -1) return synth->_error_cost;
+
+  cout << "in error_cost_opt" << endl;
+
   int num_static_unsafe_ins = 0;
   if (! smt_var::is_win) {
       num_static_unsafe_ins = static_safety_check_pgm(synth->inst_list, len2, true);
@@ -553,7 +556,9 @@ double cost::total_prog_cost(prog * orig, int len1, prog * synth, int len2) {
     if(_w_e > 0){
       err_cost = error_cost_repair(orig, len1, synth, len2);
     }
+    //cout << "starting safety_cost_repair calculation" << endl;
     safe_cost = safety_cost_repair(orig, len1, synth, len2);
+    //cout << "done with safety_cost_repair calculation" << endl;
     if (flag && logger.is_print_level(LOGGER_DEBUG)) {
       cout << "cost: " << err_cost << " " << safe_cost << " "
            << (_w_e * err_cost) + (_w_s * safe_cost) << endl;

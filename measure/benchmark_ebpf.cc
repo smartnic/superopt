@@ -839,6 +839,13 @@ inst bm26[N26] = {inst(MUL64XC, 1, 0x6),  /* mul64 r1, 0x6 */
                   inst(MOV64XC, 0, 0x0),
                  };
 
+// format: (operation, source, destination, offset, imm)
+inst bm27[N27] = {inst(39, 0, 1, 0, 6), //MUL64XC 1 6
+                  inst(183, 0, 0, 0, 0), //MOV64XC 0 0
+                  inst(121, 1, 0, 0, 0), //LDXDW 0 1 0
+                 };
+
+
 // trim from start (in place)
 static inline void ltrim(std::string &s) {
   s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
@@ -1222,6 +1229,12 @@ void init_benchmarks(inst** bm, vector<inst*> &bm_optis_orig, int bm_id) {
       mem_t::set_pgm_input_type(PGM_INPUT_pkt);
       mem_t::set_pkt_sz(8);
       *bm = bm26;
+      break;
+    case 27:
+      inst::max_prog_len = N27;
+      mem_t::set_pgm_input_type(PGM_INPUT_pkt);
+      mem_t::set_pkt_sz(8);
+      *bm = bm27;
       break;
     default:
       cout << "ERROR: ebpf bm_id " + to_string(bm_id) + " is out of range {0, 1, 2}" << endl;

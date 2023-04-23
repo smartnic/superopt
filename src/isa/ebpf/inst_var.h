@@ -547,6 +547,7 @@ class prog_state: public prog_state_base {
 // BPF maps, register for input/output register
 class inout_t: public inout_t_base {
  public:
+  bool valid = true;
   // uint64_t input_simu_r10, input_simu_pkt_ptrs[2];
   uint64_t input_simu_r10;
   uint64_t input_simu_pkt_s;
