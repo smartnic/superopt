@@ -428,8 +428,12 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
 
   best = new prog(*prog_start);
   curr = new prog(*prog_start);
-  topk_progs.insert(prog_start);
-  if (topk_progs.progs.size() == 0) cout << "ERROR: not able to insert original program" << endl;
+
+  //added
+  if(k2_config.functionality == FUNC_optimize){
+    topk_progs.insert(prog_start);
+    if (topk_progs.progs.size() == 0) cout << "ERROR: not able to insert original program" << endl;
+  }
 
   for (int i = 0; i < niter; i++) {
     if (logger.is_print_level(LOGGER_DEBUG)) {
@@ -474,8 +478,17 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
           }
           _cost.set_orig(prog_start, inst::max_prog_len, win.first, win.second);
         }else if(k2_config.functionality == FUNC_repair){
+          //added code
+          smt_prog ps_orig;
+          _cost._vld._win_start = win.first;
+          _cost._vld._win_end = win.second;
           //entire set_orig fails, so start of with just the static analysis part
           static_analysis(_cost._vld._pss_orig, prog_start->inst_list, inst::max_prog_len);
+
+          //added code
+          set_up_smt_inout_orig(_cost._vld._pss_orig, prog_start->inst_list, inst::max_prog_len, _cost._vld._win_start, _cost._vld._win_end);
+          set_up_smt_inout_win(_cost._vld._smt_input_orig, ps_orig.sv.smt_out, _cost._vld._pss_orig, prog_start->inst_list, _cost._vld._win_start, _cost._vld._win_end);
+
         }
         
         // clear the test cases and generate new test cases
@@ -484,6 +497,8 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
         int num_examples = 30;
         vector<inout_t> examples;
         cout << "Starting gen_random_input_for_win " << endl;
+        cout << "win.first = " << win.first << endl;
+        cout << "win.second = " << win.second << endl;
         gen_random_input_for_win(examples, num_examples,
                                  _cost._vld._pss_orig.static_state[win.first],
                                  prog_start->inst_list[win.first],

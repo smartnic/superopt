@@ -38,9 +38,11 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
 }
 
 void cost::set_examples(const vector<inout_t> &input, prog* orig) {
-  if (logger.is_print_level(LOGGER_DEBUG)) {
-    cout << "set_examples" << endl;
-  }
+  
+  cout << "In set_examples" << endl;
+  cout << "Original Program:" << endl;
+  orig->print();
+  
   _examples.clear();
   prog_state ps;
   ps.init();
@@ -50,18 +52,18 @@ void cost::set_examples(const vector<inout_t> &input, prog* orig) {
   _examples._exs.resize(input.size());
   try {
     for (size_t i = 0; i < input.size(); i++) {
-      if (logger.is_print_level(LOGGER_DEBUG)) {
-        //cout << i << ": " << input[i] << endl;
-      }
+      //if (logger.is_print_level(LOGGER_DEBUG)) {
+      //  cout << i << ": " << input[i] << endl;
+      //}
       ps.clear();
       inout_t output;
       output.init();
       try {
         orig->interpret(output, ps, input[i]);
-        //cout << i << ": " << output << endl;
+        cout << i << ": " << output << endl;
       } catch(const string err_msg) {
         output.valid = false;
-        //cout << i << ": " << "No valid output because " << err_msg << endl;
+        cout << i << ": " << "No valid output because " << err_msg << endl;
       }
       _examples._exs[i].set_in_out(input[i], output);
     }

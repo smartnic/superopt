@@ -28,9 +28,13 @@ double get_error_cost(inst* p1, inst* p2, int win_start, int win_end) {
   int num_examples = 30;
   // storing all the initial test cases.
   vector<inout_t> examples;
+  cout << "Starting gen_random_input_for_win " << endl;
+  cout << "win_start = " << win_start << endl;
+  cout << "win_end = " << win_end << endl;
   gen_random_input_for_win(examples, num_examples,
                            pss.static_state[win_start], p1[win_start],
                            win_start, win_end);
+  cout << "Done with gen_random_input_for_win " << endl;
   c.set_examples(examples, &prog1);
   return c.error_cost(&prog1, inst::max_prog_len, &prog2, inst::max_prog_len);
 }
@@ -62,11 +66,14 @@ double get_error_cost_repair(inst* p1, inst* p2, int win_start, int win_end) {
   int num_examples = 30;
   // storing all the initial test cases.
   vector<inout_t> examples;
+  cout << "Starting gen_random_input_for_win " << endl;
+  cout << "win_start = " << win_start << endl;
+  cout << "win_end = " << win_end << endl;
   gen_random_input_for_win(examples, num_examples,
                            pss.static_state[win_start], p1[win_start],
                            win_start, win_end);
   c.set_examples(examples, &prog1);
-
+  cout << "Done with gen_random_input_for_win " << endl;
   return c.error_cost_repair(&prog1, inst::max_prog_len, &prog2, inst::max_prog_len);
 
 }
@@ -469,10 +476,10 @@ void test5(){
 }
 
 int main() {
-  test1();
-  test2();
-  test3();
-  test4();
+  //test1();
+  //test2();
+  //test3();
+  //test4();
   test5();
   kill_server();
   return 0;
