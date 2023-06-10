@@ -1807,12 +1807,12 @@ void update_ps_by_input(prog_state& ps, const inout_t& input) {
 void update_output_by_ps_win(inout_t& output, const prog_state& ps) {
   // update V_post_r in output
   const live_variables& post_r = smt_output::post_prog_r;
-  cout << "length of live registers" << post_r.regs.size() << endl;
+  //cout << "length of live registers" << post_r.regs.size() << endl;
   // 1. update registers
   for (auto reg : post_r.regs) {
     output.regs[reg] = ps._regs[reg];
-    cout << reg << endl;
-    cout << ps._regs[reg] << endl;
+    //cout << reg << endl;
+    //cout << ps._regs[reg] << endl;
   }
   // 2. update stack
   auto it = post_r.mem.find(PTR_TO_STACK);
@@ -1866,7 +1866,7 @@ void update_output_by_ps(inout_t& output, const prog_state& ps) {
   output.clear();
   output.init();
   if (smt_var::is_win) {
-    cout << "Going into update_output_by_ps_win" << endl;
+    //cout << "Going into update_output_by_ps_win" << endl;
     update_output_by_ps_win(output, ps);
     return;
   }

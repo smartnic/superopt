@@ -1180,9 +1180,7 @@ void static_analysis(prog_static_state& pss, inst* program, int len) {
   pss.g.gen_graph(program, len);
   topo_sort_for_graph(pss.dag, pss.g);
   type_const_inference_pgm(pss, program, len);
-  cout << "Into live analysis: " << endl;
   live_analysis_pgm(pss, program, len);
-  cout << "Out of live analysis: " << endl;
   min_pkt_sz_inference_pgm(pss, program, len);
 }
 

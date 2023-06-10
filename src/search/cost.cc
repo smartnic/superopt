@@ -39,9 +39,9 @@ void cost::init(prog* orig, int len, const vector<inout_t> &input,
 
 void cost::set_examples(const vector<inout_t> &input, prog* orig) {
   
-  cout << "In set_examples" << endl;
-  cout << "Original Program:" << endl;
-  orig->print();
+  //cout << "In set_examples" << endl;
+  //cout << "Original Program:" << endl;
+  //orig->print();
   
   _examples.clear();
   prog_state ps;
@@ -60,10 +60,10 @@ void cost::set_examples(const vector<inout_t> &input, prog* orig) {
       output.init();
       try {
         orig->interpret(output, ps, input[i]);
-        cout << i << ": " << output << endl;
+        //cout << i << ": " << output << endl;
       } catch(const string err_msg) {
         output.valid = false;
-        cout << i << ": " << "No valid output because " << err_msg << endl;
+        //cout << i << ": " << "No valid output because " << err_msg << endl;
       }
       _examples._exs[i].set_in_out(input[i], output);
     }
@@ -341,7 +341,7 @@ double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
 
   if (synth->_error_cost != -1) return synth->_error_cost;
 
-  cout << "in error_cost_repair" << endl;
+  //cout << "in error_cost_repair" << endl;
 
   double total_cost = 0;
   inout_t output1, output2;
@@ -351,7 +351,7 @@ double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
   ps.init();
   // process total_cost with example set
   for (int i = 0; i < _examples._exs.size(); i++) {
-    cout << "Input: " << _examples._exs[i].input << endl;
+    //cout << "Input: " << _examples._exs[i].input << endl;
 
     output1 = _examples._exs[i].output;
 
@@ -361,25 +361,25 @@ double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
     // Try to generate private/temporary memory to share results between error and safety cost.
     // Calculate result and pass to the two functions to save time.
     if (output1.valid == true) {
-      cout << "Output orig: " << output1 << endl;
+      //cout << "Output orig: " << output1 << endl;
       try {
         synth->interpret(output2, ps, _examples._exs[i].input);
-        cout << "Output synth: " << output2 << endl;
+        //cout << "Output synth: " << output2 << endl;
       } catch (const string err_msg) {
         // illegal program
         // This cost has already been added for safety before.
         // if this happens, we just move on to the next test case
-        cout << "Output synth: not valid" << endl;
+        //cout << "Output synth: not valid" << endl;
         continue;
       }
       double ex_cost = get_ex_error_cost(output1, output2);
-      cout << "Error cost for this input: " << ex_cost << endl;
+      //cout << "Error cost for this input: " << ex_cost << endl;
       total_cost += ex_cost;
     }else{
-      cout << "Output orig: not valid" << endl;
+      //cout << "Output orig: not valid" << endl;
     }
 
-    cout << endl;
+    //cout << endl;
 
   }
     
@@ -420,7 +420,7 @@ double cost::error_cost_repair(prog* orig, int len1, prog* synth, int len2) {
 double cost::error_cost(prog* orig, int len1, prog* synth, int len2) {
   if (synth->_error_cost != -1) return synth->_error_cost;
 
-  cout << "in error_cost_opt" << endl;
+  //cout << "in error_cost_opt" << endl;
 
   int num_static_unsafe_ins = 0;
   if (! smt_var::is_win) {
