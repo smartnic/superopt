@@ -1530,11 +1530,16 @@ void compute_win_w(live_variables & win_w, vector<inst_static_state>& ss_win, in
 void set_up_smt_output_win(smt_output & sout, vector<inst_static_state>& ss_win,
                            vector<inst_static_state>& ss_orig,
                            inst * program, int win_start, int win_end) {
+  
   live_variables win_w;
   compute_win_w(win_w, ss_win, program, win_start, win_end);
   // set output_var = win_w intersection post_r
   live_variables post_r = ss_orig[win_end].live_var;
   live_variables::intersection(sout.output_var, win_w, post_r);
+  
+  cout << "In set_up_smt_output_win" << endl;
+  //sout.output_var = ss_orig[win_end].live_var;
+  cout << sout.output_var << endl;
 }
 
 void set_up_smt_inout_win(smt_input & sin, smt_output & sout,

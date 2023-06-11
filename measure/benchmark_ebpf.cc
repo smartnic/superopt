@@ -836,7 +836,8 @@ inst bm25[N25] = {inst(97, 1, 2, 4, 0),
 
 // unsafe program for initial unsafe to safe repair functionality testing
 inst bm26[N26] = {inst(MUL64XC, 1, 0x6),  /* mul64 r1, 0x6 */
-                  inst(MOV64XC, 0, 0x0),
+                  inst(MOV64XC, 0, 0x1),
+                  inst(EXIT),
                  };
 
 // format: (operation, source, destination, offset, imm)

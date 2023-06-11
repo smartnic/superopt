@@ -230,6 +230,8 @@ double mh_sampler::alpha(prog* curr, prog* next, prog* orig) {
 
 prog* mh_sampler::mh_next(prog* curr, prog* orig) {
   prog* next = _next_proposal.next_proposal(curr);
+
+  //logging information
   cout << "sampling next program" << endl;
   cout << "orig program for cost calculation" << endl;
   if (logger.is_print_level(LOGGER_DEBUG)) {
@@ -239,13 +241,29 @@ prog* mh_sampler::mh_next(prog* curr, prog* orig) {
     }
   }
   // print each modification
-  cout << "next program sampled" << endl;
+  cout << "potential next program sampled" << endl;
   if (logger.is_print_level(LOGGER_DEBUG)) {
     for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
       cout << i << ": ";
       next->inst_list[i].print();
     }
   }
+
+/*
+  //check if all are nop instructions
+  bool allNOP = true;
+  for (int i = _next_proposal._win_start; i <= _next_proposal._win_end; i++) {
+    if((next->inst_list[i])._opcode != NOP){
+      allNOP = false;
+    }
+  }
+
+  if (allNOP){
+    cout << "Not sampling all NOP program" << endl;
+    delete next;
+    return curr;
+  }
+*/
   // next->canonicalize();
   double uni_sample = random_double_unit();
   //probability of whether or not to accept the proposal
@@ -477,6 +495,7 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
           }
           _cost.set_orig(prog_start, inst::max_prog_len, win.first, win.second);
         }else if(k2_config.functionality == FUNC_repair){
+          cout << "static analysis for repair" << endl;
           //added code
           smt_prog ps_orig;
           _cost._vld._win_start = win.first;
@@ -487,7 +506,6 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
           //added code
           set_up_smt_inout_orig(_cost._vld._pss_orig, prog_start->inst_list, inst::max_prog_len, _cost._vld._win_start, _cost._vld._win_end);
           set_up_smt_inout_win(_cost._vld._smt_input_orig, ps_orig.sv.smt_out, _cost._vld._pss_orig, prog_start->inst_list, _cost._vld._win_start, _cost._vld._win_end);
-
         }
         
         // clear the test cases and generate new test cases
@@ -522,6 +540,10 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
     }
     // sample one program
     next = mh_next(curr, prog_start);
+
+    cout << "next program sampled" << endl;
+    next->print();
+
     // update best by next
     bool found_better = false;
     bool found_better_condition;

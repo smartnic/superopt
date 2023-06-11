@@ -45,7 +45,7 @@ void init_benchmark_from_file(inst** bm, const char* insn_file, const char* map_
 #define N23 43
 #define N24 22
 #define N25 35
-#define N26 2
+#define N26 3
 #define N27 3
 
 extern inst bm0[N0];
