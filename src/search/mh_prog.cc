@@ -445,6 +445,7 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
 
   best = new prog(*prog_start);
   curr = new prog(*prog_start);
+  bool bestEqualOrig = true;
 
   //added
   if(k2_config.functionality == FUNC_optimize){
@@ -550,11 +551,10 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
     if(k2_config.functionality == FUNC_optimize){
       found_better_condition = (next->_error_cost == 0) && (next->_perf_cost < best->_perf_cost);
     } else if (k2_config.functionality == FUNC_repair){
-      //found_better_condition = (next->_safety_cost) < (best->_safety_cost);
-      if(*best == *orig){
-        found_better_condition = (next->_safety_cost == 0) && (next->_error_cost == 0);
+      if(bestEqualOrig){
+        found_better_condition = (next->_safety_cost < best->_safety_cost) && (next->_error_cost == 0);
       }else{
-        found_better_condition = (next->_safety_cost == 0) && (next->_error_cost < best->_error_cost);
+        found_better_condition = (next->_safety_cost < best->_safety_cost) && (next->_error_cost < best->_error_cost);
       }
     } else{
       throw("invalid functionality detected in mcmc_iter");
@@ -583,6 +583,7 @@ void mh_sampler::mcmc_iter(top_k_progs& topk_progs, int niter, prog* orig, bool 
 
       delete best;
       best = new prog(*next);
+      bestEqualOrig = (*best == *orig) ? true : false;  
     }
     // update measurement data and update current program with the next program
     if (curr != next) {
